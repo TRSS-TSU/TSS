@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="540" viewBox="0 0 900 540" role="img" aria-labelledby="title desc">
+  <title id="title">Animation root motion settings</title>
+  <desc id="desc">Unity animation import settings showing loop time enabled and root transform options baked into pose.</desc>
+  <rect width="900" height="540" fill="#f8fafc"/>
+  <rect x="160" y="40" width="580" height="460" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <rect x="160" y="40" width="580" height="54" rx="8" fill="#1f2937"/>
+  <text x="188" y="75" fill="#ffffff" font-family="Arial" font-size="21" font-weight="700">Inspector > Animations</text>
+  <rect x="202" y="126" width="28" height="28" rx="4" fill="#0f766e"/>
+  <path d="M208 140l7 8 14-17" fill="none" stroke="#fff" stroke-width="4"/>
+  <text x="250" y="149" fill="#0f172a" font-family="Arial" font-size="21" font-weight="700">Loop Time</text>
+  <rect x="202" y="196" width="496" height="48" rx="5" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <text x="226" y="227" fill="#334155" font-family="Arial" font-size="19">Root Transform Rotation: Bake Into Pose</text>
+  <rect x="202" y="266" width="496" height="48" rx="5" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <text x="226" y="297" fill="#334155" font-family="Arial" font-size="19">Root Transform Position Y: Bake Into Pose</text>
+  <rect x="202" y="336" width="496" height="48" rx="5" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="226" y="367" fill="#9a3412" font-family="Arial" font-size="19" font-weight="700">Root Transform Position XZ: Bake Into Pose</text>
+  <rect x="566" y="424" width="132" height="48" rx="5" fill="#0f766e"/>
+  <text x="608" y="456" fill="#ffffff" font-family="Arial" font-size="20" font-weight="700">Apply</text>
+</svg>

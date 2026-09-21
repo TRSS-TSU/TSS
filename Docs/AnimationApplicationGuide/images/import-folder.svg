@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="540" viewBox="0 0 900 540" role="img" aria-labelledby="title desc">
+  <title id="title">Project folder import location</title>
+  <desc id="desc">A Unity Project window showing the ReadyPlayerMe animation folder with idle walk and run FBX files.</desc>
+  <rect width="900" height="540" fill="#f8fafc"/>
+  <rect x="44" y="48" width="812" height="444" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <rect x="44" y="48" width="812" height="52" rx="8" fill="#1f2937"/>
+  <text x="70" y="82" fill="#ffffff" font-family="Arial" font-size="21" font-weight="700">Project</text>
+  <rect x="70" y="128" width="270" height="328" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <text x="94" y="170" fill="#334155" font-family="Arial" font-size="18">Assets</text>
+  <text x="118" y="208" fill="#334155" font-family="Arial" font-size="18">Animations</text>
+  <text x="142" y="246" fill="#0f766e" font-family="Arial" font-size="18" font-weight="700">ReadyPlayerMe</text>
+  <rect x="384" y="130" width="420" height="72" rx="8" fill="#e0f2fe" stroke="#93c5fd"/>
+  <text x="414" y="174" fill="#0f172a" font-family="Arial" font-size="22" font-weight="700">F_Standing_Idle_001.fbx</text>
+  <rect x="384" y="234" width="420" height="72" rx="8" fill="#dcfce7" stroke="#86efac"/>
+  <text x="414" y="278" fill="#0f172a" font-family="Arial" font-size="22" font-weight="700">F_Walk_002.fbx</text>
+  <rect x="384" y="338" width="420" height="72" rx="8" fill="#ffedd5" stroke="#fdba74"/>
+  <text x="414" y="382" fill="#0f172a" font-family="Arial" font-size="22" font-weight="700">F_Run_001.fbx</text>
+</svg>

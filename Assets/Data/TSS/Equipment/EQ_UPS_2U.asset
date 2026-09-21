@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c16d82249036fba4799da2ff07af2de1, type: 3}
+  m_Name: EQ_UPS_2U
+  m_EditorClassIdentifier: Assembly-CSharp::EquipmentDefinition
+  equipmentId: EQ_UPS_2U
+  displayName: UPS
+  category: 2
+  rackUnits: 2
+  rackPrefab: {fileID: 919132149155446097, guid: de92cd98ddfbb3547bf9dc67dbd2c8a3, type: 3}
+  carryPrefab: {fileID: 919132149155446097, guid: de92cd98ddfbb3547bf9dc67dbd2c8a3, type: 3}
+  useRearRackPlacement: 0
+  rackLocalOffset: {x: -0.002, y: 0.0241, z: -0.072}
+  rackLocalEuler: {x: 0, y: 0, z: 0}
+  rackLocalScale: {x: 1, y: 1, z: 1}
+  carryLocalOffset: {x: 0, y: 0, z: 0}
+  carryLocalEuler: {x: -90, y: 0, z: 0}
+  carryLocalScale: {x: 1, y: 1, z: 1}
+  interfaces:
+  - name: Data-ready
+    connectorType: TBD
+    label: Future ports

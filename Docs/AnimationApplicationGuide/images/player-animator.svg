@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="540" viewBox="0 0 900 540" role="img" aria-labelledby="title desc">
+  <title id="title">Starter Player Animator assignment</title>
+  <desc id="desc">Starter Player inspector with an Animator component using the override controller and Apply Root Motion off.</desc>
+  <rect width="900" height="540" fill="#f8fafc"/>
+  <rect x="72" y="74" width="256" height="392" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <rect x="72" y="74" width="256" height="54" rx="8" fill="#1f2937"/>
+  <text x="100" y="109" fill="#ffffff" font-family="Arial" font-size="21" font-weight="700">Hierarchy</text>
+  <rect x="104" y="170" width="188" height="50" rx="5" fill="#e6f4f1" stroke="#99d5ca"/>
+  <text x="124" y="202" fill="#0f766e" font-family="Arial" font-size="20" font-weight="700">Starter Player</text>
+  <rect x="390" y="74" width="438" height="392" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <rect x="390" y="74" width="438" height="54" rx="8" fill="#1f2937"/>
+  <text x="418" y="109" fill="#ffffff" font-family="Arial" font-size="21" font-weight="700">Inspector</text>
+  <text x="424" y="174" fill="#0f172a" font-family="Arial" font-size="22" font-weight="700">Animator</text>
+  <text x="424" y="236" fill="#334155" font-family="Arial" font-size="19">Controller</text>
+  <rect x="560" y="206" width="228" height="44" rx="5" fill="#f1f5f9" stroke="#cbd5e1"/>
+  <text x="580" y="234" fill="#0f766e" font-family="Arial" font-size="18" font-weight="700">Sophia_Override</text>
+  <rect x="424" y="296" width="28" height="28" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="3"/>
+  <text x="468" y="318" fill="#334155" font-family="Arial" font-size="19">Apply Root Motion</text>
+  <text x="424" y="386" fill="#9a3412" font-family="Arial" font-size="18" font-weight="700">Keep this off for Starter Assets movement.</text>
+</svg>

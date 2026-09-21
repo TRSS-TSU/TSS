@@ -1,0 +1,28 @@
+* text=auto
+
+*.cs text
+*.shader text
+*.cginc text
+*.hlsl text
+*.json text
+*.asmdef text
+*.asmref text
+*.unity text
+*.prefab text
+*.asset text
+*.mat text
+*.meta text
+*.controller text
+*.overrideController text
+*.inputactions text
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.fbx binary
+*.blend binary
+*.blend1 binary
+*.pdf binary
+*.docx binary

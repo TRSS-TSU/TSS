@@ -1,0 +1,26 @@
+Equipment case placement report
+Scene: Assets/Scenes/SampleScene.unity
+
+Equipment Case Inventory A
+  Asset: Assets/Generated/Blender/EquipmentCase_InventoryStandIn/EquipmentCase_InventoryStandIn.fbx
+  Position: (-11.8, -0.004, 3.6)
+  Rotation: (0, 0, 0)
+  Scale: (1, 1, 1)
+  Bounds min/max: (-12.525, 0, 3.115) / (-11.075, 1.136, 4.205)
+  Bounds size: (1.45, 1.136, 1.09)
+  Contains lid shell: True
+  Contains lid foam: True
+  Contains lid hinge: True
+  Added visible lid: True
+
+Equipment Case Inventory B
+  Asset: Assets/Generated/Blender/EquipmentCase_InventoryStandIn_VariantB/EquipmentCase_InventoryStandIn_VariantB.fbx
+  Position: (-9.8, -0.004, 3.6)
+  Rotation: (0, 0, 0)
+  Scale: (1, 1, 1)
+  Bounds min/max: (-10.525, 0, 3.115) / (-9.075, 1.136, 4.205)
+  Bounds size: (1.45, 1.136, 1.09)
+  Contains lid shell: True
+  Contains lid foam: True
+  Contains lid hinge: True
+  Added visible lid: True

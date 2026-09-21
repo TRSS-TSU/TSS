@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Character Animation Application Guide</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="hero">
+    <div>
+      <p class="eyebrow">Unity Starter Assets</p>
+      <h1>Apply Idle, Walk, and Run Animations</h1>
+      <p class="intro">Use Animator Override Controllers to test character animations without changing the movement controller.</p>
+    </div>
+    <img src="images/overview.svg" alt="Unity workflow overview showing FBX clips feeding an Animator Override Controller and a Starter Player.">
+  </header>
+
+  <main>
+    <section class="notice">
+      <strong>Baseline:</strong> keep the Starter Assets Third Person Controller in charge of movement. Replace animation clips only.
+    </section>
+
+    <section class="steps">
+      <article>
+        <div class="step-copy">
+          <span class="step-number">1</span>
+          <h2>Import the FBX animation files</h2>
+          <p>Place the idle, walk, and run files in <code>Assets/Animations/ReadyPlayerMe/</code>.</p>
+          <p>Select each FBX in Unity and use the Inspector to prepare it as a humanoid animation.</p>
+        </div>
+        <img src="images/import-folder.svg" alt="Project window with idle, walk, and run FBX animation files.">
+      </article>
+
+      <article>
+        <div class="step-copy">
+          <span class="step-number">2</span>
+          <h2>Set the Rig tab to Humanoid</h2>
+          <p>For every animation FBX, open <strong>Inspector > Rig</strong>.</p>
+          <ul>
+            <li>Animation Type: <strong>Humanoid</strong></li>
+            <li>Avatar Definition: <strong>Create From This Model</strong></li>
+            <li>Click <strong>Apply</strong></li>
+          </ul>
+        </div>
+        <img src="images/rig-settings.svg" alt="Unity Inspector Rig tab with Humanoid selected.">
+      </article>
+
+      <article>
+        <div class="step-copy">
+          <span class="step-number">3</span>
+          <h2>Loop and lock root motion</h2>
+          <p>Open <strong>Inspector > Animations</strong> for each clip.</p>
+          <ul>
+            <li>Enable <strong>Loop Time</strong></li>
+            <li>Set Root Transform Rotation to <strong>Bake Into Pose</strong></li>
+            <li>Set Root Transform Position Y to <strong>Bake Into Pose</strong></li>
+            <li>Set Root Transform Position XZ to <strong>Bake Into Pose</strong></li>
+          </ul>
+          <p class="why">This prevents the animation from pulling the model away from the camera/controller.</p>
+        </div>
+        <img src="images/root-motion.svg" alt="Unity animation import settings with Loop Time and root transform bake options enabled.">
+      </article>
+
+      <article>
+        <div class="step-copy">
+          <span class="step-number">4</span>
+          <h2>Create an Animator Override Controller</h2>
+          <p>In the Project window, choose <strong>Create > Animator Override Controller</strong>.</p>
+          <p>Assign this base controller:</p>
+          <code>Assets/Starter Assets/Runtime/ThirdPersonController/Character/Animations/StarterAssetsThirdPerson.controller</code>
+        </div>
+        <img src="images/override-controller.svg" alt="Animator Override Controller using the Starter Assets base controller.">
+      </article>
+
+      <article>
+        <div class="step-copy">
+          <span class="step-number">5</span>
+          <h2>Replace only idle, walk, and run</h2>
+          <p>In the override controller, swap these clips and leave the rest alone.</p>
+          <table>
+            <thead>
+              <tr>
+                <th>Starter Assets clip</th>
+                <th>Replacement</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><code>Stand--Idle</code></td>
+                <td>Idle clip</td>
+              </tr>
+              <tr>
+                <td><code>Locomotion--Walk_N</code></td>
+                <td>Walk clip</td>
+              </tr>
+              <tr>
+                <td><code>Locomotion--Run_N</code></td>
+                <td>Run clip</td>
+              </tr>
+              <tr>
+                <td><code>Locomotion--Run_S</code></td>
+                <td>Run clip, optional</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <img src="images/clip-replacement.svg" alt="Override clip list with idle walk and run replacements.">
+      </article>
+
+      <article>
+        <div class="step-copy">
+          <span class="step-number">6</span>
+          <h2>Assign the override to the player</h2>
+          <p>Select <strong>Starter Player</strong> in the scene.</p>
+          <ul>
+            <li>Animator Controller: your new override controller</li>
+            <li>Apply Root Motion: <strong>Off</strong></li>
+          </ul>
+          <p>Press Play and test idle, walk, and run. If the character jumps forward, re-check the root transform settings first.</p>
+        </div>
+        <img src="images/player-animator.svg" alt="Starter Player Animator component with override controller assigned and Apply Root Motion off.">
+      </article>
+    </section>
+
+    <section class="checklist">
+      <h2>Quick Validation</h2>
+      <ul>
+        <li>Unity enters Play Mode with no animation errors.</li>
+        <li>The character animates while the Starter Assets controller moves it.</li>
+        <li>The model stays with the controller and does not slide away from the camera.</li>
+        <li>The camera follows the character normally inside the building.</li>
+      </ul>
+    </section>
+  </main>
+</body>
+</html>

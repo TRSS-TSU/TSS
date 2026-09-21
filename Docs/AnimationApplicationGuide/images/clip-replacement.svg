@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="540" viewBox="0 0 900 540" role="img" aria-labelledby="title desc">
+  <title id="title">Override clip replacement list</title>
+  <desc id="desc">Animator Override Controller clip table replacing idle walk and run clips.</desc>
+  <rect width="900" height="540" fill="#f8fafc"/>
+  <rect x="82" y="54" width="736" height="432" rx="8" fill="#ffffff" stroke="#cbd5e1" stroke-width="2"/>
+  <rect x="82" y="54" width="736" height="54" rx="8" fill="#1f2937"/>
+  <text x="112" y="89" fill="#ffffff" font-family="Arial" font-size="21" font-weight="700">Animator Override Controller</text>
+  <rect x="120" y="142" width="660" height="48" fill="#edf2f6"/>
+  <text x="148" y="174" fill="#334155" font-family="Arial" font-size="19" font-weight="700">Original clip</text>
+  <text x="490" y="174" fill="#334155" font-family="Arial" font-size="19" font-weight="700">Override clip</text>
+  <g font-family="Arial" font-size="19">
+    <rect x="120" y="206" width="660" height="48" fill="#ffffff" stroke="#e2e8f0"/>
+    <text x="148" y="237" fill="#0f172a">Stand--Idle</text>
+    <text x="490" y="237" fill="#0f766e" font-weight="700">F_Standing_Idle_001</text>
+    <rect x="120" y="268" width="660" height="48" fill="#ffffff" stroke="#e2e8f0"/>
+    <text x="148" y="299" fill="#0f172a">Locomotion--Walk_N</text>
+    <text x="490" y="299" fill="#0f766e" font-weight="700">F_Walk_002</text>
+    <rect x="120" y="330" width="660" height="48" fill="#ffffff" stroke="#e2e8f0"/>
+    <text x="148" y="361" fill="#0f172a">Locomotion--Run_N</text>
+    <text x="490" y="361" fill="#0f766e" font-weight="700">F_Run_001</text>
+    <rect x="120" y="392" width="660" height="48" fill="#ffffff" stroke="#e2e8f0"/>
+    <text x="148" y="423" fill="#0f172a">Locomotion--Run_S</text>
+    <text x="490" y="423" fill="#64748b" font-weight="700">same run clip</text>
+  </g>
+</svg>

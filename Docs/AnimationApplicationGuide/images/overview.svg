@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="540" viewBox="0 0 900 540" role="img" aria-labelledby="title desc">
+  <title id="title">Animation workflow overview</title>
+  <desc id="desc">Idle walk and run animation clips connect to an Animator Override Controller, then to Starter Player.</desc>
+  <rect width="900" height="540" fill="#f8fafc"/>
+  <rect x="48" y="72" width="214" height="108" rx="8" fill="#e0f2fe" stroke="#93c5fd"/>
+  <text x="78" y="114" fill="#0f172a" font-family="Arial" font-size="25" font-weight="700">Idle FBX</text>
+  <text x="78" y="146" fill="#475569" font-family="Arial" font-size="20">Looped humanoid clip</text>
+  <rect x="48" y="216" width="214" height="108" rx="8" fill="#dcfce7" stroke="#86efac"/>
+  <text x="78" y="258" fill="#0f172a" font-family="Arial" font-size="25" font-weight="700">Walk FBX</text>
+  <text x="78" y="290" fill="#475569" font-family="Arial" font-size="20">Root XZ baked</text>
+  <rect x="48" y="360" width="214" height="108" rx="8" fill="#ffedd5" stroke="#fdba74"/>
+  <text x="78" y="402" fill="#0f172a" font-family="Arial" font-size="25" font-weight="700">Run FBX</text>
+  <text x="78" y="434" fill="#475569" font-family="Arial" font-size="20">Root motion locked</text>
+  <path d="M284 126h116" stroke="#64748b" stroke-width="5" marker-end="url(#arrow)"/>
+  <path d="M284 270h116" stroke="#64748b" stroke-width="5" marker-end="url(#arrow)"/>
+  <path d="M284 414h116" stroke="#64748b" stroke-width="5" marker-end="url(#arrow)"/>
+  <rect x="430" y="182" width="250" height="176" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="2"/>
+  <text x="460" y="230" fill="#0f172a" font-family="Arial" font-size="26" font-weight="700">Animator Override</text>
+  <text x="460" y="266" fill="#475569" font-family="Arial" font-size="20">Base: Starter Assets</text>
+  <rect x="460" y="292" width="190" height="12" fill="#0f766e"/>
+  <rect x="460" y="318" width="142" height="12" fill="#64748b"/>
+  <path d="M700 270h92" stroke="#64748b" stroke-width="5" marker-end="url(#arrow)"/>
+  <circle cx="816" cy="214" r="34" fill="#cbd5e1"/>
+  <rect x="790" y="248" width="52" height="104" rx="24" fill="#334155"/>
+  <line x1="792" y1="282" x2="748" y2="324" stroke="#334155" stroke-width="16" stroke-linecap="round"/>
+  <line x1="840" y1="282" x2="876" y2="324" stroke="#334155" stroke-width="16" stroke-linecap="round"/>
+  <line x1="806" y1="350" x2="782" y2="444" stroke="#334155" stroke-width="16" stroke-linecap="round"/>
+  <line x1="828" y1="350" x2="852" y2="444" stroke="#334155" stroke-width="16" stroke-linecap="round"/>
+  <text x="746" y="492" fill="#0f172a" font-family="Arial" font-size="24" font-weight="700">Starter Player</text>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto">
+      <path d="M2 2l8 4-8 4z" fill="#64748b"/>
+    </marker>
+  </defs>
+</svg>

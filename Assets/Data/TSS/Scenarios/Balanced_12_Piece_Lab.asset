@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 73fc06879073722478ee3ea1e441c750, type: 3}
+  m_Name: Balanced_12_Piece_Lab
+  m_EditorClassIdentifier: Assembly-CSharp::TssScenarioDefinition
+  scenarioId: BALANCED_12_PIECE_LAB
+  displayName: Balanced 12-Piece Lab
+  sceneName: SampleScene
+  inventory:
+  - equipment: {fileID: 11400000, guid: 20bfae7a5c31d384b979d1fd86cdea22, type: 2}
+    quantity: 2
+  - equipment: {fileID: 11400000, guid: 74d166d60c72f8d41a124fbc6d08b4e3, type: 2}
+    quantity: 1
+  - equipment: {fileID: 11400000, guid: 9f73692d4caf61749a4b7bf4e3e4f26e, type: 2}
+    quantity: 1
+  - equipment: {fileID: 11400000, guid: 95a078d50a6161e4a8a8ae625df1e2fe, type: 2}
+    quantity: 2
+  - equipment: {fileID: 11400000, guid: fc6fc05c6c9a74e45b9af3472abf428e, type: 2}
+    quantity: 2
+  - equipment: {fileID: 11400000, guid: aad63f0d746b5b14fa0ca199452df2c7, type: 2}
+    quantity: 4
+  racks:
+  - rackId: Rack01
+    lowestU: 1
+    highestU: 40
+    firstInstallableU: 3
+    lastInstallableU: 39
+    reservedUPositions: 28000000
+  - rackId: Rack02
+    lowestU: 1
+    highestU: 40
+    firstInstallableU: 3
+    lastInstallableU: 39
+    reservedUPositions: 28000000
+  sopSections:
+  - title: Objective
+    body: Select equipment from either case, carry one item at a time, and install
+      it only in valid rack U positions.
+  - title: Rack Rules
+    body: U1 and U2 are blocked. U40 is reserved for the existing patch panel. Two-U
+      equipment must start at U3 through U38.
+  - title: Workflow
+    body: Start with power equipment, then network devices, then servers. The guide
+      is reference-only and does not grade the result.
