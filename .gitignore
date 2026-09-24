@@ -52,6 +52,7 @@ crashlytics-build.properties
 ~UnityDirMonSyncFile~*
 
 Assets/AssetStoreTools/
+Assets/Imported/
 Assets/Plugins/PlasticSCM*
 Assets/AddressableAssetsData/*/*.bin*
 Assets/StreamingAssets/aa.meta
