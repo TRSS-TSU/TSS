@@ -32,6 +32,6 @@ MonoBehaviour:
   interfaces:
   - name: Eth01
     connectorType: RJ45
-    label: Ethernet
-    supportedCableTypes: 00000000
+    label: ' Ethernet Port 01'
+    supportedCableTypes: 000000000100000002000000
     portAnchorPath: Model/Ports/Eth01
