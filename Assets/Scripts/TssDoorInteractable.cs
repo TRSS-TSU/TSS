@@ -1,8 +1,4 @@
 using UnityEngine;
-#if ENABLE_INPUT_SYSTEM
-using UnityEngine.InputSystem;
-#endif
-
 public sealed class TssDoorInteractable : MonoBehaviour
 {
     [SerializeField] private Transform doorPanel;
@@ -35,21 +31,10 @@ public sealed class TssDoorInteractable : MonoBehaviour
 
     private void OnMouseDown()
     {
-        Toggle(Camera.main ? Camera.main.transform : null);
-    }
-
-    private void OnTriggerStay(Collider other)
-    {
-        if (!other.CompareTag("Player"))
+        if (IsGameplayInputBlocked())
             return;
 
-#if ENABLE_INPUT_SYSTEM
-        if (Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame)
-            Toggle(GetInteractor(other));
-#else
-        if (Input.GetKeyDown(KeyCode.E))
-            Toggle(GetInteractor(other));
-#endif
+        Toggle(Camera.main ? Camera.main.transform : null);
     }
 
     private void Toggle(Transform interactor)
@@ -70,8 +55,8 @@ public sealed class TssDoorInteractable : MonoBehaviour
         return interactorLocalZ > 0f ? angle : -angle;
     }
 
-    private static Transform GetInteractor(Collider other)
+    private static bool IsGameplayInputBlocked()
     {
-        return other.attachedRigidbody ? other.attachedRigidbody.transform : other.transform;
+        return TssRuntimeUi.Instance && TssRuntimeUi.Instance.IsGameplayInputBlocked;
     }
 }

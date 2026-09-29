@@ -13,41 +13,114 @@ MonoBehaviour:
   m_Name: Balanced_12_Piece_Lab
   m_EditorClassIdentifier: Assembly-CSharp::TssScenarioDefinition
   scenarioId: BALANCED_12_PIECE_LAB
-  displayName: Balanced 12-Piece Lab
-  sceneName: SampleScene
+  displayName: WP1 Physical Installation
+  sceneName: TSS
   inventory:
-  - equipment: {fileID: 11400000, guid: 20bfae7a5c31d384b979d1fd86cdea22, type: 2}
-    quantity: 2
-  - equipment: {fileID: 11400000, guid: 74d166d60c72f8d41a124fbc6d08b4e3, type: 2}
-    quantity: 1
-  - equipment: {fileID: 11400000, guid: 9f73692d4caf61749a4b7bf4e3e4f26e, type: 2}
-    quantity: 1
-  - equipment: {fileID: 11400000, guid: 95a078d50a6161e4a8a8ae625df1e2fe, type: 2}
-    quantity: 2
   - equipment: {fileID: 11400000, guid: fc6fc05c6c9a74e45b9af3472abf428e, type: 2}
     quantity: 2
+  - equipment: {fileID: 11400000, guid: 9f73692d4caf61749a4b7bf4e3e4f26e, type: 2}
+    quantity: 2
+  - equipment: {fileID: 11400000, guid: 20bfae7a5c31d384b979d1fd86cdea22, type: 2}
+    quantity: 1
   - equipment: {fileID: 11400000, guid: aad63f0d746b5b14fa0ca199452df2c7, type: 2}
+    quantity: 1
+  - equipment: {fileID: 11400000, guid: 58333cb4cb4d710489d12c4c0735acd1, type: 2}
     quantity: 4
+  - equipment: {fileID: 11400000, guid: 80d9778a03ef5fb4496297da1a96e5d4, type: 2}
+    quantity: 2
   racks:
   - rackId: Rack01
-    lowestU: 1
-    highestU: 40
+    lowestU: 3
+    highestU: 38
     firstInstallableU: 3
-    lastInstallableU: 39
-    reservedUPositions: 28000000
+    lastInstallableU: 38
+    reservedUPositions: 27000000
   - rackId: Rack02
-    lowestU: 1
-    highestU: 40
+    lowestU: 3
+    highestU: 38
     firstInstallableU: 3
-    lastInstallableU: 39
-    reservedUPositions: 28000000
+    lastInstallableU: 38
+    reservedUPositions: 27000000
+  expectedRackPlacements:
+  - phaseLabel: Phase 1
+    rackId: Rack01
+    startingU: 35
+    endingU: 38
+    category: 3
+    requiredName: PDU1
+  - phaseLabel: Phase 1
+    rackId: Rack01
+    startingU: 35
+    endingU: 38
+    category: 1
+    requiredName: AN-1
+  - phaseLabel: Phase 1
+    rackId: Rack01
+    startingU: 30
+    endingU: 34
+    category: 0
+    requiredName: CN-1
+  - phaseLabel: Phase 1
+    rackId: Rack01
+    startingU: 3
+    endingU: 8
+    category: 4
+    requiredName: IT2
+  - phaseLabel: Phase 2
+    rackId: Rack02
+    startingU: 35
+    endingU: 38
+    category: 3
+    requiredName: PDU2
+  - phaseLabel: Phase 2
+    rackId: Rack02
+    startingU: 35
+    endingU: 38
+    category: 1
+    requiredName: AN-2
+  expectedEndpointPlacements:
+  - phaseLabel: Phase 3
+    stationId: ITDesk
+    category: 6
+    requiredName: IT1
+  - phaseLabel: Phase 3
+    stationId: ReceptionDesk
+    category: 6
+    requiredName: Reception1
+  - phaseLabel: Phase 3
+    stationId: ReceptionDesk
+    category: 7
+    requiredName: Reception2
+  - phaseLabel: Phase 4
+    stationId: Office1Desk
+    category: 6
+    requiredName: Data1
+  - phaseLabel: Phase 4
+    stationId: Office2Desk
+    category: 6
+    requiredName: Data2
+  - phaseLabel: Phase 4
+    stationId: Office2Desk
+    category: 7
+    requiredName: Data3
   sopSections:
-  - title: Objective
-    body: Select equipment from either case, carry one item at a time, and install
-      it only in valid rack U positions.
-  - title: Rack Rules
-    body: U1 and U2 are blocked. U40 is reserved for the existing patch panel. Two-U
-      equipment must start at U3 through U38.
-  - title: Workflow
-    body: Start with power equipment, then network devices, then servers. The guide
-      is reference-only and does not grade the result.
+  - title: Phases 1 - 4
+    body: "Open the Equipment Box and carry one item at a time.  Rack01: install
+      the following:\nPDU1 (Rear - U35 - U38)\nAN-1  (Front - U35 - U38)\nCN-1 (Front
+      - U30 - U34)\nIT2 (Front - U3 - U8)\n\nRack02: install the following:\nPDU2
+      (Rear - U35 - U38)\nAN-2 (Front - U35 - U38)\n\nDesks: \nDesktop (IT1) at IT
+      Desk\nDesktop PC (Reception1) and Printer (Reception2) at Reception Desk\nDesktop
+      PC (Data1) at Office 1 Desk\nDesktop PC (Data2) and Printer (Data3) at Office
+      2 Desk."
+  - title: Phases 5 - 8
+    body: Physical cabling and carrier handoff instructions will be added after the
+      placement workflow is validated.
+  - title: Phases 9 - 15
+    body: Layer 2 switch hardening, VLAN, switchport, trunk, and verification instructions
+      will be added in a later pass.
+  - title: Phases 16 - 19
+    body: Router hardening, router-on-a-stick, WAN/default route, and end-to-end
+      verification instructions will be added in a later pass.
+  - title: Phases 20 - 22
+    body: Wireless AP installation, browser configuration, and wireless verification
+      instructions will be added in a later pass.

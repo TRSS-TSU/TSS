@@ -9,6 +9,12 @@ public sealed class TssCarryArmPose : MonoBehaviour
     [SerializeField] private float elbowSideOffset = 0.34f;
     [SerializeField] private float elbowForwardOffset = 0.12f;
     [SerializeField] private float elbowHeightOffset = -0.08f;
+    [SerializeField] private float desktopPcHandSide = 1.5f;
+    [SerializeField] private float desktopPcHandHeightOffset = -0.1f;
+    [SerializeField] private float desktopPcHandForwardOffset = -0.2f;
+    [SerializeField] private float desktopPcElbowSideOffset = 0.1f;
+    [SerializeField] private float desktopPcElbowForwardOffset = -0.04f;
+    [SerializeField] private float desktopPcElbowHeightOffset = -0.3f;
     [SerializeField] private float blendSpeed = 12f;
 
     private float _weight;
@@ -33,14 +39,30 @@ public sealed class TssCarryArmPose : MonoBehaviour
 
         var root = animator.transform;
         var side = Mathf.Max(Vector3.Dot(bounds.extents, Abs(root.right)), 0.08f) + handSidePadding;
-        var handCenter = bounds.center + root.up * handHeightOffset + root.forward * handForwardOffset;
+        var heightOffset = handHeightOffset;
+        var forwardOffset = handForwardOffset;
+        var elbowSide = elbowSideOffset;
+        var elbowForward = elbowForwardOffset;
+        var elbowHeight = elbowHeightOffset;
+
+        if (session.HeldItem.category == EquipmentCategory.DesktopPc)
+        {
+            side = Mathf.Min(side, desktopPcHandSide);
+            heightOffset = desktopPcHandHeightOffset;
+            forwardOffset = desktopPcHandForwardOffset;
+            elbowSide = desktopPcElbowSideOffset;
+            elbowForward = desktopPcElbowForwardOffset;
+            elbowHeight = desktopPcElbowHeightOffset;
+        }
+
+        var handCenter = bounds.center + root.up * heightOffset + root.forward * forwardOffset;
         var leftHand = handCenter - root.right * side;
         var rightHand = handCenter + root.right * side;
 
         animator.SetIKPosition(AvatarIKGoal.LeftHand, leftHand);
         animator.SetIKPosition(AvatarIKGoal.RightHand, rightHand);
-        animator.SetIKHintPosition(AvatarIKHint.LeftElbow, leftHand - root.right * elbowSideOffset + root.forward * elbowForwardOffset + root.up * elbowHeightOffset);
-        animator.SetIKHintPosition(AvatarIKHint.RightElbow, rightHand + root.right * elbowSideOffset + root.forward * elbowForwardOffset + root.up * elbowHeightOffset);
+        animator.SetIKHintPosition(AvatarIKHint.LeftElbow, leftHand - root.right * elbowSide + root.forward * elbowForward + root.up * elbowHeight);
+        animator.SetIKHintPosition(AvatarIKHint.RightElbow, rightHand + root.right * elbowSide + root.forward * elbowForward + root.up * elbowHeight);
     }
 
     private void SetIkWeight(AvatarIKGoal hand, AvatarIKHint elbow, float weight)

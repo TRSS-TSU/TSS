@@ -29,6 +29,7 @@ public sealed class RackMountController : MonoBehaviour
     private readonly HashSet<int> _rearOccupied = new();
     private readonly Dictionary<int, GameObject> _slots = new();
     private readonly Dictionary<int, InstalledRackItem> _installedItems = new();
+    private TssTrainingSession _session;
     private bool _playerInRange;
     private Material _slotMaterial;
     private Camera _mainCamera;
@@ -54,14 +55,19 @@ public sealed class RackMountController : MonoBehaviour
 
     private void OnEnable()
     {
-        if (TssTrainingSession.Instance)
-            TssTrainingSession.Instance.StateChanged += RefreshHighlights;
+        SubscribeSession();
     }
 
     private void OnDisable()
     {
-        if (TssTrainingSession.Instance)
-            TssTrainingSession.Instance.StateChanged -= RefreshHighlights;
+        if (_session)
+            _session.StateChanged -= HandleSessionStateChanged;
+        _session = null;
+    }
+
+    private void Start()
+    {
+        SubscribeSession();
     }
 
     private void Update()
@@ -175,17 +181,51 @@ public sealed class RackMountController : MonoBehaviour
 
     public void ClickU(int startingU)
     {
+        if (TssRuntimeUi.Instance && TssRuntimeUi.Instance.IsGameplayInputBlocked)
+            return;
+
         if (!TssTrainingSession.Instance)
             return;
 
-        TssTrainingSession.Instance.TryInstallHeld(this, startingU, out _);
+        var held = TssTrainingSession.Instance.HeldItem;
+        if (!held)
+            return;
+
+        if (TssRuntimeUi.Instance)
+        {
+            TssRuntimeUi.Instance.ShowNamePrompt($"Name {held.displayName}", string.Empty, deviceName =>
+            {
+                TssTrainingSession.Instance.TryInstallHeld(this, startingU, deviceName, out _);
+            });
+            return;
+        }
+
+        TssTrainingSession.Instance.TryInstallHeld(this, startingU, held.displayName, out _);
     }
 
     public void ClickInstalled(int startingU)
     {
+        if (TssRuntimeUi.Instance && TssRuntimeUi.Instance.IsGameplayInputBlocked)
+            return;
+
         if (!TssTrainingSession.Instance || !_installedItems.TryGetValue(startingU, out var item))
             return;
 
+        if (TssRuntimeUi.Instance)
+        {
+            TssRuntimeUi.Instance.ShowPlacementCorrection(
+                $"{RackId} U{startingU}",
+                GetInstalledDeviceName(startingU),
+                deviceName => TssTrainingSession.Instance.RenameRackInstalled(RackId, startingU, deviceName),
+                () => PickupInstalled(startingU, item));
+            return;
+        }
+
+        PickupInstalled(startingU, item);
+    }
+
+    private void PickupInstalled(int startingU, InstalledRackItem item)
+    {
         if (!TssTrainingSession.Instance.TryPickupInstalled(this, item.Equipment, startingU, item.RackUnits, out _))
             return;
 
@@ -199,6 +239,21 @@ public sealed class RackMountController : MonoBehaviour
 
         _installedItems.Remove(startingU);
         RefreshHighlights();
+    }
+
+    private string GetInstalledDeviceName(int startingU)
+    {
+        var session = TssTrainingSession.Instance;
+        if (!session)
+            return string.Empty;
+
+        foreach (var record in session.Installed)
+        {
+            if (record.RackId == RackId && record.StartingU == startingU)
+                return record.DeviceName;
+        }
+
+        return string.Empty;
     }
 
     private void ApplyScenarioConfig()
@@ -225,6 +280,25 @@ public sealed class RackMountController : MonoBehaviour
             RefreshHighlights();
             return;
         }
+    }
+
+    private void HandleSessionStateChanged()
+    {
+        ApplyScenarioConfig();
+        RefreshHighlights();
+    }
+
+    private void SubscribeSession()
+    {
+        if (_session)
+            return;
+
+        _session = TssTrainingSession.Instance;
+        if (!_session)
+            return;
+
+        _session.StateChanged += HandleSessionStateChanged;
+        HandleSessionStateChanged();
     }
 
     private void CreateSlots()
@@ -317,6 +391,12 @@ public sealed class RackMountController : MonoBehaviour
 
     private static bool WasPrimaryPressed(out Vector2 screenPosition)
     {
+        if (TssRuntimeUi.Instance && TssRuntimeUi.Instance.IsGameplayInputBlocked)
+        {
+            screenPosition = default;
+            return false;
+        }
+
 #if ENABLE_INPUT_SYSTEM
         if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {

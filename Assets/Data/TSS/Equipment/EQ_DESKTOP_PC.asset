@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c16d82249036fba4799da2ff07af2de1, type: 3}
+  m_Name: EQ_DESKTOP_PC
+  m_EditorClassIdentifier: Assembly-CSharp::EquipmentDefinition
+  equipmentId: EQ_DESKTOP_PC
+  displayName: Desktop PC
+  category: 6
+  rackUnits: 1
+  rackPrefab: {fileID: 0}
+  carryPrefab: {fileID: 8754142908855366041, guid: 3e20fca3c99e79e478de1650318e27f1, type: 3}
+  useRearRackPlacement: 0
+  rackLocalOffset: {x: 0, y: 0, z: 0}
+  rackLocalEuler: {x: 0, y: 0, z: 0}
+  rackLocalScale: {x: 1, y: 1, z: 1}
+  carryLocalOffset: {x: 0, y: 0.3, z: 0.1}
+  carryLocalEuler: {x: -180, y: -4.5, z: 0}
+  carryLocalScale: {x: 0.6, y: 0.6, z: 0.6}
+  placementPrefab: {fileID: 8754142908855366041, guid: 3e20fca3c99e79e478de1650318e27f1, type: 3}
+  placementLocalOffset: {x: 0, y: 0.1, z: 0}
+  placementLocalEuler: {x: 0, y: 0, z: 0}
+  placementLocalScale: {x: 1, y: 1, z: 1}
+  interfaces:
+  - name: Data-ready
+    connectorType: TBD
+    label: Future ports

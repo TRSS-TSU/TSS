@@ -7,7 +7,10 @@ public enum EquipmentCategory
     Switch,
     Ups,
     Pdu,
-    Server
+    Server,
+    PatchPanel,
+    DesktopPc,
+    Printer
 }
 
 [CreateAssetMenu(menuName = "TSS/Equipment Definition")]
@@ -26,7 +29,19 @@ public sealed class EquipmentDefinition : ScriptableObject
     public Vector3 carryLocalOffset;
     public Vector3 carryLocalEuler;
     public Vector3 carryLocalScale = Vector3.one;
+    public GameObject placementPrefab;
+    public Vector3 placementLocalOffset;
+    public Vector3 placementLocalEuler;
+    public Vector3 placementLocalScale = Vector3.one;
     public EquipmentInterface[] interfaces;
+
+    public GameObject GetPlacementPrefab()
+    {
+        if (placementPrefab)
+            return placementPrefab;
+
+        return carryPrefab ? carryPrefab : rackPrefab;
+    }
 }
 
 [Serializable]

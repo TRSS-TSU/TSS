@@ -166,6 +166,8 @@ MonoBehaviour:
   scenarios:
   - {fileID: 11400000, guid: 03ef307cb63959b4994c6dc2e5f93aca, type: 2}
   session: {fileID: 0}
+  scenarioMenuCanvasPrefab: {fileID: 2219538347250863404, guid: 8eb1309a14b22724eaf82d4743347628, type: 3}
+  scenarioButtonPrefab: {fileID: 1297116939038653213, guid: 5c74f0e1ffe8e0848bc197e98622fe8f, type: 3}
 --- !u!1 &1279493785
 GameObject:
   m_ObjectHideFlags: 0

@@ -13,6 +13,9 @@ public sealed class RackUClickTarget : MonoBehaviour
 
     public void Click()
     {
+        if (TssRuntimeUi.Instance && TssRuntimeUi.Instance.IsGameplayInputBlocked)
+            return;
+
         if (Rack)
             Rack.ClickU(U);
     }

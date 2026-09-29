@@ -1,6 +1,8 @@
 {
     "name": "TSS.EditMode.Tests",
-    "references": [],
+    "references": [
+        "TSS.Runtime"
+    ],
     "includePlatforms": [
         "Editor"
     ],

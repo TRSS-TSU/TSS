@@ -3,11 +3,66 @@ guid: 481c88066df76bb47b8770517e158f7e
 ModelImporter:
   serializedVersion: 24300
   internalIDToNameTable: []
-  externalObjects: {}
+  externalObjects:
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PP48_Dark_Plastic
+    second: {fileID: 2100000, guid: 36a3b9ffba58d2d4c9d92942a320f5b6, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PP48_IDC_White_Plastic
+    second: {fileID: 2100000, guid: 037fffd5fdde4d64ab3ee929ce1ba093, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PP48_Label_White_Ink
+    second: {fileID: 2100000, guid: 74c8785494aef1c4bab1d82615843d94, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PP48_Matte_Black_Metal
+    second: {fileID: 2100000, guid: b71292c7b3048f44d95e5c2653abfcd8, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PP48_Port_Recess_Black
+    second: {fileID: 2100000, guid: 782d7d13dbf5ea04085c34060948cae3, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PP48_Screw_Brushed_Metal
+    second: {fileID: 2100000, guid: 2d9991d414377a641b8a4b203f21c6f5, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PP48_T568_Blue
+    second: {fileID: 2100000, guid: 90a29ce5d39680145ae5fcc142246ecf, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PP48_T568_Brown
+    second: {fileID: 2100000, guid: ef5e2cb520c6ba14c933341cf50a4e8d, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PP48_T568_Green
+    second: {fileID: 2100000, guid: d9b4879c8ebf8fb479ebc680f414a7ac, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PP48_T568_Orange
+    second: {fileID: 2100000, guid: fd8fee89eb3ffec41b1d32f51a4c62c7, type: 2}
+  - first:
+      type: UnityEngine:Material
+      assembly: UnityEngine.CoreModule
+      name: PP48_T568_White_Stripe
+    second: {fileID: 2100000, guid: 63217eb78593a744ba3185ce888106d3, type: 2}
   materials:
-    materialImportMode: 2
-    materialName: 0
-    materialSearch: 1
+    materialImportMode: 1
+    materialName: 1
+    materialSearch: 0
     materialLocation: 1
     searchTexturesGlobally: 0
   animations:
@@ -49,7 +104,7 @@ ModelImporter:
     swapUVChannels: 0
     generateSecondaryUV: 0
     useFileUnits: 1
-    keepQuads: 0
+    keepQuads: 1
     weldVertices: 1
     bakeAxisConversion: 0
     preserveHierarchy: 0
@@ -76,11 +131,11 @@ ModelImporter:
     normalImportMode: 0
     tangentImportMode: 3
     normalCalculationMode: 4
-    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 0
-    blendShapeNormalImportMode: 1
+    legacyComputeAllNormalsFromSmoothingGroupsWhenMeshHasBlendShapes: 1
+    blendShapeNormalImportMode: 0
     normalSmoothingSource: 0
   referencedClips: []
-  importAnimation: 1
+  importAnimation: 0
   humanDescription:
     serializedVersion: 3
     human: []

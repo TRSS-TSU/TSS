@@ -9,6 +9,8 @@ public sealed class TssScenarioDefinition : ScriptableObject
     public string sceneName = "SampleScene";
     public ScenarioInventoryItem[] inventory;
     public RackScenarioConfig[] racks;
+    public ExpectedRackPlacement[] expectedRackPlacements;
+    public ExpectedEndpointPlacement[] expectedEndpointPlacements;
     public SopSection[] sopSections;
 }
 
@@ -28,6 +30,27 @@ public sealed class RackScenarioConfig
     public int firstInstallableU = 3;
     public int lastInstallableU = 39;
     public int[] reservedUPositions = { 40 };
+}
+
+[Serializable]
+public sealed class ExpectedRackPlacement
+{
+    public string phaseLabel;
+    public string rackId;
+    public int startingU;
+    // ponytail: zero preserves existing exact-U scenarios; set endingU for an inclusive range.
+    public int endingU;
+    public EquipmentCategory category;
+    public string requiredName;
+}
+
+[Serializable]
+public sealed class ExpectedEndpointPlacement
+{
+    public string phaseLabel;
+    public string stationId;
+    public EquipmentCategory category;
+    public string requiredName;
 }
 
 [Serializable]

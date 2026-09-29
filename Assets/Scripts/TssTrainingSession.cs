@@ -12,6 +12,7 @@ public sealed class TssTrainingSession : MonoBehaviour
 
     private readonly Dictionary<EquipmentDefinition, int> _remaining = new();
     private readonly List<InstalledEquipmentRecord> _installed = new();
+    private readonly List<EndpointPlacementRecord> _endpointPlacements = new();
     private GameObject _carryVisual;
 
     public event Action StateChanged;
@@ -19,6 +20,7 @@ public sealed class TssTrainingSession : MonoBehaviour
     public EquipmentDefinition HeldItem { get; private set; }
     public GameObject CarryVisual => _carryVisual;
     public IReadOnlyList<InstalledEquipmentRecord> Installed => _installed;
+    public IReadOnlyList<EndpointPlacementRecord> EndpointPlacements => _endpointPlacements;
 
     private void Awake()
     {
@@ -50,6 +52,7 @@ public sealed class TssTrainingSession : MonoBehaviour
         HeldItem = null;
         _remaining.Clear();
         _installed.Clear();
+        _endpointPlacements.Clear();
         ClearCarryVisual();
 
         if (scenario && scenario.inventory != null)
@@ -118,7 +121,7 @@ public sealed class TssTrainingSession : MonoBehaviour
         return true;
     }
 
-    public bool TryInstallHeld(RackMountController rack, int startingU, out string message)
+    public bool TryInstallHeld(RackMountController rack, int startingU, string deviceName, out string message)
     {
         if (!HeldItem)
         {
@@ -130,7 +133,7 @@ public sealed class TssTrainingSession : MonoBehaviour
         if (!rack.TryInstall(equipment, startingU, out message))
             return false;
 
-        _installed.Add(new InstalledEquipmentRecord(rack.RackId, equipment, startingU, equipment.rackUnits));
+        _installed.Add(new InstalledEquipmentRecord(rack.RackId, equipment, startingU, equipment.rackUnits, CleanDeviceName(deviceName)));
         HeldItem = null;
         ClearCarryVisual();
         StateChanged?.Invoke();
@@ -169,6 +172,95 @@ public sealed class TssTrainingSession : MonoBehaviour
         return true;
     }
 
+    public bool TryPlaceHeldEndpoint(EndpointPlacementStation station, string deviceName, out EndpointPlacementRecord record, out string message)
+    {
+        record = default;
+        if (!HeldItem)
+        {
+            message = "Pick up equipment first.";
+            return false;
+        }
+
+        if (!station || !station.CanPlace(HeldItem))
+        {
+            message = "That equipment cannot be placed here.";
+            return false;
+        }
+
+        var equipment = HeldItem;
+        var placementId = station.NextPlacementId(equipment);
+        record = new EndpointPlacementRecord(placementId, station.StationId, equipment, CleanDeviceName(deviceName));
+        _endpointPlacements.Add(record);
+        HeldItem = null;
+        ClearCarryVisual();
+        message = $"Placed {equipment.displayName} at {station.StationId}";
+        StateChanged?.Invoke();
+        return true;
+    }
+
+    public bool TryPickupEndpoint(string placementId, EquipmentDefinition equipment, out string message)
+    {
+        if (HeldItem)
+        {
+            message = "Place or return the carried item first.";
+            return false;
+        }
+
+        if (!equipment)
+        {
+            message = "No placed equipment selected.";
+            return false;
+        }
+
+        for (var i = _endpointPlacements.Count - 1; i >= 0; i--)
+        {
+            if (_endpointPlacements[i].PlacementId != placementId)
+                continue;
+
+            _endpointPlacements.RemoveAt(i);
+            HeldItem = equipment;
+            CreateCarryVisual(equipment);
+            message = $"Picked up {equipment.displayName}";
+            StateChanged?.Invoke();
+            return true;
+        }
+
+        message = "Placed equipment was not found.";
+        return false;
+    }
+
+    public bool RenameRackInstalled(string rackId, int startingU, string deviceName)
+    {
+        for (var i = 0; i < _installed.Count; i++)
+        {
+            var record = _installed[i];
+            if (record.RackId != rackId || record.StartingU != startingU)
+                continue;
+
+            _installed[i] = record.WithDeviceName(CleanDeviceName(deviceName));
+            StateChanged?.Invoke();
+            return true;
+        }
+
+        return false;
+    }
+
+    public bool RenameEndpoint(string placementId, string deviceName)
+    {
+        for (var i = 0; i < _endpointPlacements.Count; i++)
+        {
+            var record = _endpointPlacements[i];
+            if (record.PlacementId != placementId)
+                continue;
+
+            _endpointPlacements[i] = record.WithDeviceName(CleanDeviceName(deviceName));
+            StateChanged?.Invoke();
+            return true;
+        }
+
+        return false;
+    }
+
     public TssScenarioDefinition GetFallbackScenario()
     {
         return fallbackScenario;
@@ -202,6 +294,11 @@ public sealed class TssTrainingSession : MonoBehaviour
             Destroy(_carryVisual);
         _carryVisual = null;
     }
+
+    private static string CleanDeviceName(string deviceName)
+    {
+        return string.IsNullOrWhiteSpace(deviceName) ? string.Empty : deviceName.Trim();
+    }
 }
 
 public readonly struct InstalledEquipmentRecord
@@ -210,13 +307,41 @@ public readonly struct InstalledEquipmentRecord
     public readonly EquipmentDefinition Equipment;
     public readonly int StartingU;
     public readonly int RackUnits;
+    public readonly string DeviceName;
 
-    public InstalledEquipmentRecord(string rackId, EquipmentDefinition equipment, int startingU, int rackUnits)
+    public InstalledEquipmentRecord(string rackId, EquipmentDefinition equipment, int startingU, int rackUnits, string deviceName)
     {
         RackId = rackId;
         Equipment = equipment;
         StartingU = startingU;
         RackUnits = rackUnits;
+        DeviceName = deviceName;
+    }
+
+    public InstalledEquipmentRecord WithDeviceName(string deviceName)
+    {
+        return new InstalledEquipmentRecord(RackId, Equipment, StartingU, RackUnits, deviceName);
+    }
+}
+
+public readonly struct EndpointPlacementRecord
+{
+    public readonly string PlacementId;
+    public readonly string StationId;
+    public readonly EquipmentDefinition Equipment;
+    public readonly string DeviceName;
+
+    public EndpointPlacementRecord(string placementId, string stationId, EquipmentDefinition equipment, string deviceName)
+    {
+        PlacementId = placementId;
+        StationId = stationId;
+        Equipment = equipment;
+        DeviceName = deviceName;
+    }
+
+    public EndpointPlacementRecord WithDeviceName(string deviceName)
+    {
+        return new EndpointPlacementRecord(PlacementId, StationId, Equipment, deviceName);
     }
 }
 

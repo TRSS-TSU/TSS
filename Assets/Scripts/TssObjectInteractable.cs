@@ -84,13 +84,13 @@ public sealed class TssObjectInteractable : MonoBehaviour
             return;
         }
 
-        if (_playerInRange && (WasInteractPressed() || (_isHovered && WasPrimaryClickPressed())))
+        if (_playerInRange && _isHovered && WasPrimaryClickPressed())
             EnterFirstPerson();
     }
 
     private void OnMouseDown()
     {
-        if (_playerInRange && !_isFirstPerson && _transition == null)
+        if (_playerInRange && !_isFirstPerson && _transition == null && !IsGameplayInputBlocked())
             EnterFirstPerson();
     }
 
@@ -386,6 +386,9 @@ public sealed class TssObjectInteractable : MonoBehaviour
 
     private static bool WasPrimaryClickPressed()
     {
+        if (IsGameplayInputBlocked())
+            return false;
+
 #if ENABLE_INPUT_SYSTEM
         return Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
 #else
@@ -398,15 +401,6 @@ public sealed class TssObjectInteractable : MonoBehaviour
         return other.CompareTag("Player") || other.GetComponentInParent<ThirdPersonController>();
     }
 
-    private static bool WasInteractPressed()
-    {
-#if ENABLE_INPUT_SYSTEM
-        return Keyboard.current != null && Keyboard.current.eKey.wasPressedThisFrame;
-#else
-        return Input.GetKeyDown(KeyCode.E);
-#endif
-    }
-
     private static bool WasExitPressed()
     {
 #if ENABLE_INPUT_SYSTEM
@@ -414,5 +408,10 @@ public sealed class TssObjectInteractable : MonoBehaviour
 #else
         return Input.GetKeyDown(KeyCode.Escape);
 #endif
+    }
+
+    private static bool IsGameplayInputBlocked()
+    {
+        return TssRuntimeUi.Instance && TssRuntimeUi.Instance.IsGameplayInputBlocked;
     }
 }

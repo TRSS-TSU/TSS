@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Reflection;
 using NUnit.Framework;
 
 public sealed class RackSpanValidatorTests
@@ -31,19 +30,12 @@ public sealed class RackSpanValidatorTests
         IReadOnlyCollection<int> reservedU,
         IReadOnlyCollection<int> occupiedU)
     {
-        // ponytail: reflection avoids adding production asmdefs just so this one EditMode test can see Assembly-CSharp.
-        var type = Assembly.Load("Assembly-CSharp").GetType("RackSpanValidator", throwOnError: true);
-        var method = type.GetMethod("CanPlace", BindingFlags.Public | BindingFlags.Static);
-        Assert.IsNotNull(method);
-
-        return (bool)method.Invoke(null, new object[]
-        {
+        return RackSpanValidator.CanPlace(
             startingU,
             rackUnits,
             firstInstallableU,
             lastInstallableU,
             reservedU,
-            occupiedU
-        });
+            occupiedU);
     }
 }
