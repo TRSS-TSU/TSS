@@ -313,10 +313,14 @@ public sealed class TssRuntimeUi : MonoBehaviour
             return;
 
         if (_heldText)
-            _heldText.text = session.HeldItem ? $"Held: {session.HeldItem.displayName}" : "Held: none";
+            _heldText.text = session.HeldItem
+                ? $"Held: {session.HeldItem.displayName}"
+                : session.HeldCable
+                    ? $"Held cable: {session.HeldCable.displayName}"
+                    : "Held: none";
 
         if (_cancelHeldButton)
-            _cancelHeldButton.SetActive(session.HeldItem != null);
+            _cancelHeldButton.SetActive(session.HeldItem != null || session.HeldCable != null);
 
         RefreshCasePanel();
         RefreshSopPanel();
@@ -439,6 +443,46 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
             y -= 42f;
         }
+
+        foreach (var item in session.GetScenarioCableInventory())
+        {
+            if (item == null || !item.cable)
+                continue;
+
+            var cable = item.cable;
+            GameObject rowInstance;
+            if (inventoryRowPrefab)
+            {
+                rowInstance = Instantiate(inventoryRowPrefab, _caseItemsContainer, false);
+            }
+            else
+            {
+                Debug.LogWarning("TssRuntimeUi requires an inventory row prefab.");
+                return;
+            }
+
+            var rt = rowInstance.GetComponent<RectTransform>();
+            if (rt)
+            {
+                rt.anchorMin = new Vector2(0, 1);
+                rt.anchorMax = new Vector2(1, 1);
+                rt.pivot = new Vector2(0.5f, 1);
+                rt.anchoredPosition = new Vector2(0, y);
+            }
+
+            var label = rowInstance.transform.Find("ItemLabel")?.GetComponent<Text>();
+            if (label)
+                label.text = $"{cable.displayName} cable  x{session.GetRemaining(cable)}";
+
+            var btn = rowInstance.transform.Find("TakeButton")?.GetComponent<Button>();
+            if (btn)
+            {
+                btn.onClick.RemoveAllListeners();
+                btn.onClick.AddListener(() => _openCase?.CheckoutCable(cable));
+            }
+
+            y -= 42f;
+        }
     }
 
     private void RefreshSopPanel()
@@ -524,7 +568,9 @@ public sealed class TssRuntimeUi : MonoBehaviour
             return;
 
         var result = TssPlacementEvaluator.Evaluate(session.Scenario, session.Installed, session.EndpointPlacements);
-        _debugText.text = result.IsComplete ? "WP1 equipment placement complete." : string.Join("\n", result.Messages);
+        var placementText = result.IsComplete ? "WP1 equipment placement complete." : string.Join("\n", result.Messages);
+        var cableText = PhysicalConnectionText(session);
+        _debugText.text = string.IsNullOrWhiteSpace(cableText) ? placementText : $"{placementText}\n\nPhysical connections:\n{cableText}";
     }
 
     private void ToggleSop()
@@ -600,7 +646,13 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
     private void CancelHeld()
     {
-        session?.ReturnHeldItem(out _);
+        if (!session)
+            return;
+
+        if (session.HeldItem)
+            session.ReturnHeldItem(out _);
+        else if (session.HeldCable)
+            session.ReturnHeldCable(out _);
     }
 
     private void ApplyGameplayInputLock(bool locked)
@@ -675,6 +727,21 @@ public sealed class TssRuntimeUi : MonoBehaviour
     {
         for (var i = parent.childCount - 1; i >= 0; i--)
             Destroy(parent.GetChild(i).gameObject);
+    }
+
+    private static string PhysicalConnectionText(TssTrainingSession session)
+    {
+        if (session.PhysicalConnections.Count == 0)
+            return string.Empty;
+
+        var lines = new string[session.PhysicalConnections.Count];
+        for (var i = 0; i < session.PhysicalConnections.Count; i++)
+        {
+            var connection = session.PhysicalConnections[i];
+            lines[i] = $"{connection.CableType} - {connection.EndpointAId} <-> {connection.EndpointBId}";
+        }
+
+        return string.Join("\n", lines);
     }
 
     private static void EnsureEventSystem()

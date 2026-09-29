@@ -30,6 +30,8 @@ MonoBehaviour:
   placementLocalEuler: {x: 0, y: 0, z: 0}
   placementLocalScale: {x: 145, y: 145, z: 145}
   interfaces:
-  - name: Data-ready
-    connectorType: TBD
-    label: Future ports
+  - name: Eth01
+    connectorType: RJ45
+    label: Ethernet
+    supportedCableTypes: 00000000
+    portAnchorPath: Model/Ports/Eth01

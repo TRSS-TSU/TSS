@@ -18,13 +18,135 @@ MonoBehaviour:
   rackUnits: 1
   rackPrefab: {fileID: 919132149155446097, guid: 89bb960552b6008438032c974998eed2, type: 3}
   carryPrefab: {fileID: 919132149155446097, guid: 89bb960552b6008438032c974998eed2, type: 3}
+  useRearRackPlacement: 0
   rackLocalOffset: {x: 0, y: 0, z: 0.165}
   rackLocalEuler: {x: -90, y: 0, z: 0}
   rackLocalScale: {x: 1, y: 1, z: 1}
   carryLocalOffset: {x: 0, y: 0, z: 0}
   carryLocalEuler: {x: 180, y: 0, z: 0}
   carryLocalScale: {x: 1, y: 1, z: 1}
+  placementPrefab: {fileID: 0}
+  placementLocalOffset: {x: 0, y: 0, z: 0}
+  placementLocalEuler: {x: 0, y: 0, z: 0}
+  placementLocalScale: {x: 1, y: 1, z: 1}
   interfaces:
-  - name: Data-ready
-    connectorType: TBD
-    label: Future ports
+  - name: Fa01
+    connectorType: RJ45
+    label: FastEthernet 0/1
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa01
+  - name: Fa02
+    connectorType: RJ45
+    label: FastEthernet 0/2
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa02
+  - name: Fa03
+    connectorType: RJ45
+    label: FastEthernet 0/3
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa03
+  - name: Fa04
+    connectorType: RJ45
+    label: FastEthernet 0/4
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa04
+  - name: Fa05
+    connectorType: RJ45
+    label: FastEthernet 0/5
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa05
+  - name: Fa06
+    connectorType: RJ45
+    label: FastEthernet 0/6
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa06
+  - name: Fa07
+    connectorType: RJ45
+    label: FastEthernet 0/7
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa07
+  - name: Fa08
+    connectorType: RJ45
+    label: FastEthernet 0/8
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa08
+  - name: Fa09
+    connectorType: RJ45
+    label: FastEthernet 0/9
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa09
+  - name: Fa10
+    connectorType: RJ45
+    label: FastEthernet 0/10
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa10
+  - name: Fa11
+    connectorType: RJ45
+    label: FastEthernet 0/11
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa11
+  - name: Fa12
+    connectorType: RJ45
+    label: FastEthernet 0/12
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa12
+  - name: Fa13
+    connectorType: RJ45
+    label: FastEthernet 0/13
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa13
+  - name: Fa14
+    connectorType: RJ45
+    label: FastEthernet 0/14
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa14
+  - name: Fa15
+    connectorType: RJ45
+    label: FastEthernet 0/15
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa15
+  - name: Fa16
+    connectorType: RJ45
+    label: FastEthernet 0/16
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa16
+  - name: Fa17
+    connectorType: RJ45
+    label: FastEthernet 0/17
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa17
+  - name: Fa18
+    connectorType: RJ45
+    label: FastEthernet 0/18
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa18
+  - name: Fa19
+    connectorType: RJ45
+    label: FastEthernet 0/19
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa19
+  - name: Fa20
+    connectorType: RJ45
+    label: FastEthernet 0/20
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa20
+  - name: Fa21
+    connectorType: RJ45
+    label: FastEthernet 0/21
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa21
+  - name: Fa22
+    connectorType: RJ45
+    label: FastEthernet 0/22
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa22
+  - name: Fa23
+    connectorType: RJ45
+    label: FastEthernet 0/23
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa23
+  - name: Fa24
+    connectorType: RJ45
+    label: FastEthernet 0/24
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/CiscoCatalyst2960PoE_1U_A/Ports/Fa24

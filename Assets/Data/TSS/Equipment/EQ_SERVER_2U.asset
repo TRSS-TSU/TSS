@@ -25,7 +25,13 @@ MonoBehaviour:
   carryLocalOffset: {x: 0, y: 0, z: 0}
   carryLocalEuler: {x: 180, y: 0, z: 0}
   carryLocalScale: {x: 100, y: 100, z: 100}
+  placementPrefab: {fileID: 0}
+  placementLocalOffset: {x: 0, y: 0, z: 0}
+  placementLocalEuler: {x: 0, y: 0, z: 0}
+  placementLocalScale: {x: 1, y: 1, z: 1}
   interfaces:
-  - name: Data-ready
-    connectorType: TBD
-    label: Future ports
+  - name: GE01
+    connectorType: RJ45
+    label: GE0/1
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/Rack_Server_2U_A/Model/Ports/RS2U_Rear_RJ45_Port_01/GE01

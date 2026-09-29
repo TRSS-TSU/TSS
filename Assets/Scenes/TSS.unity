@@ -3385,6 +3385,7 @@ Transform:
   m_Children:
   - {fileID: 832575519}
   - {fileID: 1611195656}
+  - {fileID: 823646345}
   m_Father: {fileID: 902827105}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &108403457
@@ -3412,7 +3413,7 @@ Transform:
   m_GameObject: {fileID: 108403457}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -6.067, y: 0.42, z: -15.781}
+  m_LocalPosition: {x: -20.988, y: 3.995, z: -6.993}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -10684,6 +10685,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 1490075847}
   - {fileID: 38093012}
   - {fileID: 331290056}
   - {fileID: 955258322}
@@ -15867,6 +15869,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TssObjectInteractable
   firstPersonView: {fileID: 534905708}
+  firstPersonLocalPositionOffset: {x: 0, y: 0, z: 0}
+  firstPersonLocalEulerOffset: {x: 0, y: 0, z: 0}
   mainCamera: {fileID: 1106324773}
   transitionSeconds: 0.75
   firstPersonFieldOfView: 50
@@ -16040,7 +16044,6 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 630747825}
-  - {fileID: 1231500964}
   m_Father: {fileID: 1984369563}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &577235118
@@ -23304,6 +23307,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TssObjectInteractable
   firstPersonView: {fileID: 1270163338}
+  firstPersonLocalPositionOffset: {x: 0, y: 0, z: 0}
+  firstPersonLocalEulerOffset: {x: 0, y: 0, z: 0}
   mainCamera: {fileID: 1106324773}
   transitionSeconds: 0.75
   firstPersonFieldOfView: 50
@@ -23532,6 +23537,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 90
       objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Center.x
+      value: -0.000000059604645
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -23734,6 +23743,51 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6430890726198682700, guid: 7699f5af06713974ba61777a8a830f6e, type: 3}
   m_PrefabInstance: {fileID: 821575317}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &823646344
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 823646345}
+  - component: {fileID: 823646346}
+  m_Layer: 0
+  m_Name: TssCableRouteProvider
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &823646345
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 823646344}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 107805410}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &823646346
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 823646344}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10d0b13b82994fc69b7f9c74b58a2b91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssCableRouteProvider
+  routeNodes: []
 --- !u!1 &825672137
 GameObject:
   m_ObjectHideFlags: 0
@@ -24398,6 +24452,30 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 866075517}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &873789375 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5434201692928001423, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+  m_PrefabInstance: {fileID: 1703339093}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &873789380
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 873789375}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: WallPort:IT1:Port04
+  displayLabel: IT Office 1 Port 04
+  connectorType: RJ45
+  supportedCableTypes: 000000000100000002000000
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
 --- !u!4 &874503433 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2070925441746177912, guid: a1a802ecaf6775746bb2a929fb554ad8, type: 3}
@@ -30215,6 +30293,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TssObjectInteractable
   firstPersonView: {fileID: 1416388366}
+  firstPersonLocalPositionOffset: {x: 0, y: 0, z: 0}
+  firstPersonLocalEulerOffset: {x: 0, y: 0, z: 0}
   mainCamera: {fileID: 1106324773}
   transitionSeconds: 0.75
   firstPersonFieldOfView: 50
@@ -31229,6 +31309,46 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1695997091518649726, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: interactable
+      value: 
+      objectReference: {fileID: 1155123800}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Center.x
+      value: 0.000000059604645
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Center.z
+      value: 0.000000029802322
+      objectReference: {fileID: 0}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: avatarRoot
+      value: 
+      objectReference: {fileID: 624814064}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: mainCamera
+      value: 
+      objectReference: {fileID: 1106324773}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: playerInput
+      value: 
+      objectReference: {fileID: 624814067}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonView
+      value: 
+      objectReference: {fileID: 1155123799}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: playerController
+      value: 
+      objectReference: {fileID: 624814065}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonLocalEulerOffset.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonLocalPositionOffset.z
+      value: 0
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -31239,6 +31359,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
   m_PrefabInstance: {fileID: 1155123798}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1155123800 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+  m_PrefabInstance: {fileID: 1155123798}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da10ebdc195f9be45a7ebb000866a5f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssObjectInteractable
 --- !u!1001 &1160451566
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -33439,23 +33570,23 @@ PrefabInstance:
   serializedVersion: 2
   m_Modification:
     serializedVersion: 3
-    m_TransformParent: {fileID: 575916719}
+    m_TransformParent: {fileID: 1490075847}
     m_Modifications:
     - target: {fileID: 705352464216514510, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_Name
-      value: Lobby Wall Port 1
+      value: Reception Wall Port 1
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 9.851
+      value: 9.599999
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.036
+      value: 0.07700002
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -10.519
+      value: -10.9
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalRotation.w
@@ -33463,7 +33594,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.7071068
+      value: -0.7071068
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalRotation.y
@@ -33471,7 +33602,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0
+      value: -0
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -33483,7 +33614,147 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 1695997091518649726, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: interactable
+      value: 
+      objectReference: {fileID: 1231500965}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Size.x
+      value: 1.2173734
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Size.y
+      value: 1.566048
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Size.z
+      value: 1.542427
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Center.x
+      value: -0.14131333
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Center.y
+      value: -0.40652966
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Center.z
+      value: -0.6281901
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: endpointId
+      value: WallPort:Reception:Port03
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: displayLabel
+      value: Reception Port 03
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: supportedCableTypes.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[1]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[2]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: avatarRoot
+      value: 
+      objectReference: {fileID: 624814064}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: mainCamera
+      value: 
+      objectReference: {fileID: 1106324773}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: playerInput
+      value: 
+      objectReference: {fileID: 624814067}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonView
+      value: 
+      objectReference: {fileID: 1231500964}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: playerController
+      value: 
+      objectReference: {fileID: 624814065}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonLocalEulerOffset.z
       value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonLocalPositionOffset.y
+      value: -0.057
+      objectReference: {fileID: 0}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonLocalPositionOffset.z
+      value: -2.118999
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: endpointId
+      value: WallPort:Reception:Port02
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: displayLabel
+      value: Reception Port 02
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: supportedCableTypes.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[1]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[2]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123241715427133633, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: endpointId
+      value: WallPort:Reception:Port01
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123241715427133633, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: displayLabel
+      value: Reception Port 01
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123241715427133633, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: supportedCableTypes.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123241715427133633, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[1]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123241715427133633, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[2]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: endpointId
+      value: WallPort:Reception:Port04
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: displayLabel
+      value: Reception Port 04
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: supportedCableTypes.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[1]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[2]'
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -33495,6 +33766,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
   m_PrefabInstance: {fileID: 1231500963}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1231500965 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+  m_PrefabInstance: {fileID: 1231500963}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da10ebdc195f9be45a7ebb000866a5f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssObjectInteractable
 --- !u!1 &1232896036
 GameObject:
   m_ObjectHideFlags: 0
@@ -34968,6 +35250,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TssObjectInteractable
   firstPersonView: {fileID: 878358558}
+  firstPersonLocalPositionOffset: {x: 0, y: 0, z: 0}
+  firstPersonLocalEulerOffset: {x: 0, y: 0, z: 0}
   mainCamera: {fileID: 1106324773}
   transitionSeconds: 0.75
   firstPersonFieldOfView: 50
@@ -35916,6 +36200,94 @@ PrefabInstance:
       propertyPath: m_Name
       value: PatchPanel
       objectReference: {fileID: 0}
+    - target: {fileID: 479923492158728412, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port06
+      objectReference: {fileID: 0}
+    - target: {fileID: 479923492158728412, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 06
+      objectReference: {fileID: 0}
+    - target: {fileID: 489198761563946042, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port28
+      objectReference: {fileID: 0}
+    - target: {fileID: 489198761563946042, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 28
+      objectReference: {fileID: 0}
+    - target: {fileID: 644989225404561999, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port14
+      objectReference: {fileID: 0}
+    - target: {fileID: 644989225404561999, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 14
+      objectReference: {fileID: 0}
+    - target: {fileID: 745472705532574745, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port40
+      objectReference: {fileID: 0}
+    - target: {fileID: 745472705532574745, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 40
+      objectReference: {fileID: 0}
+    - target: {fileID: 1043706776940741194, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port44
+      objectReference: {fileID: 0}
+    - target: {fileID: 1043706776940741194, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 44
+      objectReference: {fileID: 0}
+    - target: {fileID: 1220898497423108656, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port46
+      objectReference: {fileID: 0}
+    - target: {fileID: 1220898497423108656, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 46
+      objectReference: {fileID: 0}
+    - target: {fileID: 1356253570849867139, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port07
+      objectReference: {fileID: 0}
+    - target: {fileID: 1356253570849867139, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 07
+      objectReference: {fileID: 0}
+    - target: {fileID: 1489630188148083604, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port43
+      objectReference: {fileID: 0}
+    - target: {fileID: 1489630188148083604, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 43
+      objectReference: {fileID: 0}
+    - target: {fileID: 1514888261066642988, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port08
+      objectReference: {fileID: 0}
+    - target: {fileID: 1514888261066642988, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 08
+      objectReference: {fileID: 0}
+    - target: {fileID: 1551192597423336507, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port22
+      objectReference: {fileID: 0}
+    - target: {fileID: 1551192597423336507, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 22
+      objectReference: {fileID: 0}
+    - target: {fileID: 1707705965464919612, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port16
+      objectReference: {fileID: 0}
+    - target: {fileID: 1707705965464919612, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 16
+      objectReference: {fileID: 0}
     - target: {fileID: 2083005269158916278, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -35955,6 +36327,318 @@ PrefabInstance:
     - target: {fileID: 2083005269158916278, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2260739130803354243, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port32
+      objectReference: {fileID: 0}
+    - target: {fileID: 2260739130803354243, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 32
+      objectReference: {fileID: 0}
+    - target: {fileID: 2278700076270434475, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port47
+      objectReference: {fileID: 0}
+    - target: {fileID: 2278700076270434475, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 47
+      objectReference: {fileID: 0}
+    - target: {fileID: 2282568243973221251, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port24
+      objectReference: {fileID: 0}
+    - target: {fileID: 2282568243973221251, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 24
+      objectReference: {fileID: 0}
+    - target: {fileID: 2611898160762576037, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port19
+      objectReference: {fileID: 0}
+    - target: {fileID: 2611898160762576037, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 19
+      objectReference: {fileID: 0}
+    - target: {fileID: 2653381092769078728, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: avatarRoot
+      value: 
+      objectReference: {fileID: 624814064}
+    - target: {fileID: 2653381092769078728, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: mainCamera
+      value: 
+      objectReference: {fileID: 1106324773}
+    - target: {fileID: 2653381092769078728, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: playerInput
+      value: 
+      objectReference: {fileID: 624814067}
+    - target: {fileID: 2653381092769078728, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: playerController
+      value: 
+      objectReference: {fileID: 624814065}
+    - target: {fileID: 2744766679811765274, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port23
+      objectReference: {fileID: 0}
+    - target: {fileID: 2744766679811765274, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 23
+      objectReference: {fileID: 0}
+    - target: {fileID: 2939265059404442390, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port26
+      objectReference: {fileID: 0}
+    - target: {fileID: 2939265059404442390, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 26
+      objectReference: {fileID: 0}
+    - target: {fileID: 3399321393442699336, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port34
+      objectReference: {fileID: 0}
+    - target: {fileID: 3399321393442699336, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 34
+      objectReference: {fileID: 0}
+    - target: {fileID: 3586883297018516472, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port38
+      objectReference: {fileID: 0}
+    - target: {fileID: 3586883297018516472, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 38
+      objectReference: {fileID: 0}
+    - target: {fileID: 4211004341974969680, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port31
+      objectReference: {fileID: 0}
+    - target: {fileID: 4211004341974969680, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 31
+      objectReference: {fileID: 0}
+    - target: {fileID: 4408210515728177913, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port17
+      objectReference: {fileID: 0}
+    - target: {fileID: 4408210515728177913, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 17
+      objectReference: {fileID: 0}
+    - target: {fileID: 4449580728231347298, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port18
+      objectReference: {fileID: 0}
+    - target: {fileID: 4449580728231347298, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 18
+      objectReference: {fileID: 0}
+    - target: {fileID: 4791334556995801599, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port04
+      objectReference: {fileID: 0}
+    - target: {fileID: 4791334556995801599, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 04
+      objectReference: {fileID: 0}
+    - target: {fileID: 4887661874701878355, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port11
+      objectReference: {fileID: 0}
+    - target: {fileID: 4887661874701878355, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 11
+      objectReference: {fileID: 0}
+    - target: {fileID: 4990012650840240360, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port21
+      objectReference: {fileID: 0}
+    - target: {fileID: 4990012650840240360, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 21
+      objectReference: {fileID: 0}
+    - target: {fileID: 5253637699997410007, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port42
+      objectReference: {fileID: 0}
+    - target: {fileID: 5253637699997410007, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 42
+      objectReference: {fileID: 0}
+    - target: {fileID: 5504246937571837596, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port33
+      objectReference: {fileID: 0}
+    - target: {fileID: 5504246937571837596, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 33
+      objectReference: {fileID: 0}
+    - target: {fileID: 5832838662454095348, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port20
+      objectReference: {fileID: 0}
+    - target: {fileID: 5832838662454095348, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 20
+      objectReference: {fileID: 0}
+    - target: {fileID: 5883297600435467249, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port35
+      objectReference: {fileID: 0}
+    - target: {fileID: 5883297600435467249, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 35
+      objectReference: {fileID: 0}
+    - target: {fileID: 6070335759632405249, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port36
+      objectReference: {fileID: 0}
+    - target: {fileID: 6070335759632405249, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 36
+      objectReference: {fileID: 0}
+    - target: {fileID: 6437889901275280486, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port27
+      objectReference: {fileID: 0}
+    - target: {fileID: 6437889901275280486, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 27
+      objectReference: {fileID: 0}
+    - target: {fileID: 6645007976513249525, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port45
+      objectReference: {fileID: 0}
+    - target: {fileID: 6645007976513249525, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 45
+      objectReference: {fileID: 0}
+    - target: {fileID: 6696356309265223173, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port03
+      objectReference: {fileID: 0}
+    - target: {fileID: 6696356309265223173, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 03
+      objectReference: {fileID: 0}
+    - target: {fileID: 6970227703321316471, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port37
+      objectReference: {fileID: 0}
+    - target: {fileID: 6970227703321316471, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 37
+      objectReference: {fileID: 0}
+    - target: {fileID: 7015705217182013454, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port02
+      objectReference: {fileID: 0}
+    - target: {fileID: 7015705217182013454, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 02
+      objectReference: {fileID: 0}
+    - target: {fileID: 7021991407678747383, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port29
+      objectReference: {fileID: 0}
+    - target: {fileID: 7021991407678747383, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 29
+      objectReference: {fileID: 0}
+    - target: {fileID: 7042717970770921735, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port05
+      objectReference: {fileID: 0}
+    - target: {fileID: 7042717970770921735, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 05
+      objectReference: {fileID: 0}
+    - target: {fileID: 7102610042701937535, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port09
+      objectReference: {fileID: 0}
+    - target: {fileID: 7102610042701937535, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 09
+      objectReference: {fileID: 0}
+    - target: {fileID: 7446531812119455690, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port10
+      objectReference: {fileID: 0}
+    - target: {fileID: 7446531812119455690, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 10
+      objectReference: {fileID: 0}
+    - target: {fileID: 7481859981684587887, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port30
+      objectReference: {fileID: 0}
+    - target: {fileID: 7481859981684587887, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 30
+      objectReference: {fileID: 0}
+    - target: {fileID: 7739755541733491529, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port41
+      objectReference: {fileID: 0}
+    - target: {fileID: 7739755541733491529, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 41
+      objectReference: {fileID: 0}
+    - target: {fileID: 7865976534599768693, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port15
+      objectReference: {fileID: 0}
+    - target: {fileID: 7865976534599768693, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 15
+      objectReference: {fileID: 0}
+    - target: {fileID: 7921832443695603859, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port13
+      objectReference: {fileID: 0}
+    - target: {fileID: 7921832443695603859, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 8010199859703378538, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port48
+      objectReference: {fileID: 0}
+    - target: {fileID: 8010199859703378538, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 48
+      objectReference: {fileID: 0}
+    - target: {fileID: 8170050544097759612, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port25
+      objectReference: {fileID: 0}
+    - target: {fileID: 8170050544097759612, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 25
+      objectReference: {fileID: 0}
+    - target: {fileID: 8578677034553702706, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port01
+      objectReference: {fileID: 0}
+    - target: {fileID: 8578677034553702706, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 01
+      objectReference: {fileID: 0}
+    - target: {fileID: 8671980740269639041, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port39
+      objectReference: {fileID: 0}
+    - target: {fileID: 8671980740269639041, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 39
+      objectReference: {fileID: 0}
+    - target: {fileID: 8905692440282838878, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: endpointId
+      value: PatchPanel:Rack01:Port12
+      objectReference: {fileID: 0}
+    - target: {fileID: 8905692440282838878, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: displayLabel
+      value: PP 01 Port 12
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -38253,11 +38937,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8944336655422409503, guid: f6d148d888ffbf54b9afe9936dfaec1f, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 6.2833314
+      value: 6.283331
       objectReference: {fileID: 0}
     - target: {fileID: 8944336655422409503, guid: f6d148d888ffbf54b9afe9936dfaec1f, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.52499986
+      value: 0.5250001
       objectReference: {fileID: 0}
     - target: {fileID: 8944336655422409503, guid: f6d148d888ffbf54b9afe9936dfaec1f, type: 3}
       propertyPath: m_LocalPosition.z
@@ -40591,19 +41275,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -40611,11 +41295,155 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 90
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 1695997091518649726, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: interactable
+      value: 
+      objectReference: {fileID: 1770176952}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Size.x
+      value: 1.1240466
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Size.y
+      value: 0.7512555
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Size.z
+      value: 2.439153
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Center.x
+      value: -0.18797672
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Center.y
+      value: -0.19142318
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Center.z
+      value: -0.92166555
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: endpointId
+      value: WallPort:Office02:Port03
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: displayLabel
+      value: Office 02 Port 03
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: supportedCableTypes.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[1]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[2]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: avatarRoot
+      value: 
+      objectReference: {fileID: 624814064}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: mainCamera
+      value: 
+      objectReference: {fileID: 1106324773}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: playerInput
+      value: 
+      objectReference: {fileID: 624814067}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonView
+      value: 
+      objectReference: {fileID: 1446318204}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: playerController
+      value: 
+      objectReference: {fileID: 624814065}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonLocalEulerOffset.z
       value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonLocalPositionOffset.z
+      value: -2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: endpointId
+      value: WallPort:Office02:Port02
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: displayLabel
+      value: Office 02 Port 02
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: supportedCableTypes.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[1]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[2]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8271844786946377890, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Name
+      value: Ethernet Port 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123241715427133633, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: endpointId
+      value: WallPort:Office02:Port01
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123241715427133633, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: displayLabel
+      value: Office 02 Port 01
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123241715427133633, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: supportedCableTypes.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123241715427133633, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[1]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123241715427133633, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[2]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 9161066121302056237, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Name
+      value: Ethernet Port 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: endpointId
+      value: WallPort:Office02:Port04
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: displayLabel
+      value: Office 02 Port 04
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: supportedCableTypes.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[1]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[2]'
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -41108,19 +41936,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalRotation.x
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -41128,11 +41956,155 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 90
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 1695997091518649726, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: interactable
+      value: 
+      objectReference: {fileID: 1474562615}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Size.x
+      value: 1.0878046
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Size.y
+      value: 1.5375125
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Size.z
+      value: 1.8499365
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Center.x
+      value: -0.20609772
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Center.y
+      value: 0.30621755
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Center.z
+      value: -0.6621957
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: endpointId
+      value: WallPort:Office01:Port03
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: displayLabel
+      value: Office 01 Port 03
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: supportedCableTypes.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[1]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[2]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: avatarRoot
+      value: 
+      objectReference: {fileID: 624814064}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: mainCamera
+      value: 
+      objectReference: {fileID: 1106324773}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: playerInput
+      value: 
+      objectReference: {fileID: 624814067}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonView
+      value: 
+      objectReference: {fileID: 1474562614}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: playerController
+      value: 
+      objectReference: {fileID: 624814065}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonLocalEulerOffset.z
       value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonLocalPositionOffset.z
+      value: -3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: endpointId
+      value: WallPort:Office01:Port02
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: displayLabel
+      value: Office 01 Port 02
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: supportedCableTypes.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[1]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[2]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8271844786946377890, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Name
+      value: Ethernet Port 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123241715427133633, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: endpointId
+      value: WallPort:Office01:Port01
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123241715427133633, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: displayLabel
+      value: Office 01 Port 01
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123241715427133633, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: supportedCableTypes.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123241715427133633, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[1]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9123241715427133633, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[2]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 9161066121302056237, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Name
+      value: Ethernet Port 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: endpointId
+      value: WallPort:Office01:Port04
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: displayLabel
+      value: Office 01 Port 04
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: supportedCableTypes.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[1]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[2]'
+      value: 2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -41144,6 +42116,17 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
   m_PrefabInstance: {fileID: 1474562613}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1474562615 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+  m_PrefabInstance: {fileID: 1474562613}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da10ebdc195f9be45a7ebb000866a5f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssObjectInteractable
 --- !u!1 &1478104001
 GameObject:
   m_ObjectHideFlags: 0
@@ -41730,6 +42713,38 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1489454176}
   m_Mesh: {fileID: 8741771576809289837, guid: 9bb121eb368bca1419160dcb7b3554cc, type: 3}
+--- !u!1 &1490075846
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1490075847}
+  m_Layer: 0
+  m_Name: Reception Wall Port
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1490075847
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1490075846}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1231500964}
+  m_Father: {fileID: 377754914}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1493110425
 GameObject:
   m_ObjectHideFlags: 0
@@ -46744,11 +47759,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2070925441746177912, guid: a1a802ecaf6775746bb2a929fb554ad8, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 6.2833314
+      value: 6.283331
       objectReference: {fileID: 0}
     - target: {fileID: 2070925441746177912, guid: a1a802ecaf6775746bb2a929fb554ad8, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 0.52499986
+      value: 0.5250001
       objectReference: {fileID: 0}
     - target: {fileID: 2070925441746177912, guid: a1a802ecaf6775746bb2a929fb554ad8, type: 3}
       propertyPath: m_LocalPosition.z
@@ -47065,6 +48080,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::TssObjectInteractable
   firstPersonView: {fileID: 2063612271}
+  firstPersonLocalPositionOffset: {x: 0, y: 0, z: 0}
+  firstPersonLocalEulerOffset: {x: 0, y: 0, z: 0}
   mainCamera: {fileID: 1106324773}
   transitionSeconds: 0.75
   firstPersonFieldOfView: 50
@@ -48001,6 +49018,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 90
       objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Center.x
+      value: -0.000000059604645
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -48300,16 +49321,167 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 90
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    - target: {fileID: 1695997091518649726, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: interactable
+      value: 
+      objectReference: {fileID: 1703339095}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Size.x
+      value: 1.0748446
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Size.y
+      value: 1.6238627
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Size.z
+      value: 2.5413566
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Center.x
+      value: 0.21257773
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Center.y
+      value: 0.22559953
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Center.z
+      value: -0.5206783
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: endpointId
+      value: WallPort:IT1:Port02
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: displayLabel
+      value: IT Office 1 Port 02
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: connectorType
+      value: RJ45
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: supportedCableTypes.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[1]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2903446754309694399, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[2]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 3079802531799078466, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Name
+      value: Ethernet Port 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5434201692928001423, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Name
+      value: Ethernet Port 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: avatarRoot
+      value: 
+      objectReference: {fileID: 624814064}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: mainCamera
+      value: 
+      objectReference: {fileID: 1106324773}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: playerInput
+      value: 
+      objectReference: {fileID: 624814067}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonView
+      value: 
+      objectReference: {fileID: 1703339094}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: playerController
+      value: 
+      objectReference: {fileID: 624814065}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonLocalEulerOffset.z
+      value: -90
+      objectReference: {fileID: 0}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonLocalPositionOffset.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonLocalPositionOffset.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: firstPersonLocalPositionOffset.z
+      value: -2.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: endpointId
+      value: WallPort:IT1:Port03
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: displayLabel
+      value: IT Office 1 Port 03
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: supportedCableTypes.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[1]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[2]'
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: endpointId
+      value: WallPort:IT1:Port01
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: displayLabel
+      value: IT Office 1 Port 01
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: supportedCableTypes.Array.size
+      value: 3
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[1]'
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9171282933797224067, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: 'supportedCableTypes.Array.data[2]'
+      value: 2
+      objectReference: {fileID: 0}
+    m_RemovedComponents:
+    - {fileID: 9123241715427133633, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 5434201692928001423, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 873789380}
   m_SourcePrefab: {fileID: 100100000, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
 --- !u!4 &1703339094 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
   m_PrefabInstance: {fileID: 1703339093}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1703339095 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+  m_PrefabInstance: {fileID: 1703339093}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da10ebdc195f9be45a7ebb000866a5f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssObjectInteractable
 --- !u!1 &1706185134
 GameObject:
   m_ObjectHideFlags: 0
@@ -49534,6 +50706,22 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2653381092769078728, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: avatarRoot
+      value: 
+      objectReference: {fileID: 624814064}
+    - target: {fileID: 2653381092769078728, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: mainCamera
+      value: 
+      objectReference: {fileID: 1106324773}
+    - target: {fileID: 2653381092769078728, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: playerInput
+      value: 
+      objectReference: {fileID: 624814067}
+    - target: {fileID: 2653381092769078728, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: playerController
+      value: 
+      objectReference: {fileID: 624814065}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -50070,6 +51258,17 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1768861245}
   m_Mesh: {fileID: -6688409815593967531, guid: 9bb121eb368bca1419160dcb7b3554cc, type: 3}
+--- !u!114 &1770176952 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+  m_PrefabInstance: {fileID: 1446318203}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da10ebdc195f9be45a7ebb000866a5f0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssObjectInteractable
 --- !u!1 &1771967945
 GameObject:
   m_ObjectHideFlags: 0
@@ -58118,6 +59317,10 @@ PrefabInstance:
     - target: {fileID: 1397928566890316015, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 2133442377191474114, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: m_Center.x
+      value: -0.000000059604645
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

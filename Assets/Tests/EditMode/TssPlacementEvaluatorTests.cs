@@ -160,6 +160,38 @@ public sealed class TssPlacementEvaluatorTests
     }
 
     [Test]
+    public void CableCheckoutConnectDisconnectAndPickupBlock()
+    {
+        var go = new GameObject("Session");
+        var session = go.AddComponent<TssTrainingSession>();
+        var scenario = CreateScenario();
+        var cable = Cable(TssCableType.StraightThrough);
+        scenario.cableInventory = new[] { new ScenarioCableInventoryItem { cable = cable, quantity = 1 } };
+        session.BeginScenario(scenario);
+
+        var endpointA = EndpointObject("A").AddComponent<TssPortEndpoint>();
+        var endpointB = EndpointObject("B").AddComponent<TssPortEndpoint>();
+        endpointA.Configure(TssTrainingSession.GetEndpointOwnerPrefix("ITDesk:PC:1") + ":Eth01", Port("Eth01"));
+        endpointB.Configure("WallPort:Office01:Port04", Port("Port04"));
+
+        Assert.AreEqual(1, session.GetRemaining(cable));
+        Assert.IsTrue(session.TryCheckoutCable(cable, out _));
+        Assert.AreEqual(0, session.GetRemaining(cable));
+        Assert.IsTrue(session.TryUsePort(endpointA, out _));
+        Assert.IsTrue(session.TryUsePort(endpointB, out _));
+        Assert.AreEqual(1, session.PhysicalConnections.Count);
+        Assert.IsFalse(session.TryPickupEndpoint("ITDesk:PC:1", Equipment(EquipmentCategory.DesktopPc), out _));
+
+        Assert.IsTrue(session.TryUsePort(endpointA, out _));
+        Assert.AreEqual(0, session.PhysicalConnections.Count);
+        Assert.AreEqual(1, session.GetRemaining(cable));
+
+        Object.DestroyImmediate(endpointA.gameObject);
+        Object.DestroyImmediate(endpointB.gameObject);
+        Object.DestroyImmediate(go);
+    }
+
+    [Test]
     public void EndpointStationUsesCategoryAnchorsBeforeFallbackAnchors()
     {
         var stationObject = new GameObject("Station");
@@ -278,6 +310,31 @@ public sealed class TssPlacementEvaluatorTests
         equipment.equipmentId = category.ToString();
         equipment.displayName = category.ToString();
         return equipment;
+    }
+
+    private static TssCableDefinition Cable(TssCableType type)
+    {
+        var cable = ScriptableObject.CreateInstance<TssCableDefinition>();
+        cable.cableType = type;
+        cable.cableId = type.ToString();
+        cable.displayName = type.ToString();
+        return cable;
+    }
+
+    private static EquipmentInterface Port(string name)
+    {
+        return new EquipmentInterface
+        {
+            name = name,
+            label = name,
+            connectorType = "RJ45",
+            supportedCableTypes = new[] { TssCableType.StraightThrough }
+        };
+    }
+
+    private static GameObject EndpointObject(string name)
+    {
+        return GameObject.CreatePrimitive(PrimitiveType.Cube);
     }
 
     private static Transform GetFreeAnchor(EndpointPlacementStation station, EquipmentDefinition equipment)

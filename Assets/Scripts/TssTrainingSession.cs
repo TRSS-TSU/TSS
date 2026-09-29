@@ -11,16 +11,23 @@ public sealed class TssTrainingSession : MonoBehaviour
     [SerializeField] private GameObject scenarioMenuHost;
 
     private readonly Dictionary<EquipmentDefinition, int> _remaining = new();
+    private readonly Dictionary<TssCableDefinition, int> _remainingCables = new();
     private readonly List<InstalledEquipmentRecord> _installed = new();
     private readonly List<EndpointPlacementRecord> _endpointPlacements = new();
+    private readonly List<TssPhysicalConnectionRecord> _physicalConnections = new();
     private GameObject _carryVisual;
+    private TssPortEndpoint _selectedCableEndpoint;
+    private int _nextConnectionNumber = 1;
 
     public event Action StateChanged;
     public TssScenarioDefinition Scenario { get; private set; }
     public EquipmentDefinition HeldItem { get; private set; }
+    public TssCableDefinition HeldCable { get; private set; }
+    public TssPortEndpoint SelectedCableEndpoint => _selectedCableEndpoint;
     public GameObject CarryVisual => _carryVisual;
     public IReadOnlyList<InstalledEquipmentRecord> Installed => _installed;
     public IReadOnlyList<EndpointPlacementRecord> EndpointPlacements => _endpointPlacements;
+    public IReadOnlyList<TssPhysicalConnectionRecord> PhysicalConnections => _physicalConnections;
 
     private void Awake()
     {
@@ -50,9 +57,14 @@ public sealed class TssTrainingSession : MonoBehaviour
     {
         Scenario = scenario;
         HeldItem = null;
+        HeldCable = null;
+        _selectedCableEndpoint = null;
+        _nextConnectionNumber = 1;
         _remaining.Clear();
+        _remainingCables.Clear();
         _installed.Clear();
         _endpointPlacements.Clear();
+        ClearPhysicalConnections();
         ClearCarryVisual();
 
         if (scenario && scenario.inventory != null)
@@ -64,17 +76,36 @@ public sealed class TssTrainingSession : MonoBehaviour
             }
         }
 
+        if (scenario && scenario.cableInventory != null)
+        {
+            foreach (var item in scenario.cableInventory)
+            {
+                if (item != null && item.cable)
+                    _remainingCables[item.cable] = Mathf.Max(0, item.quantity);
+            }
+        }
+
         StateChanged?.Invoke();
     }
 
     public IEnumerable<ScenarioInventoryItem> GetScenarioInventory()
     {
-        return Scenario ? Scenario.inventory : Array.Empty<ScenarioInventoryItem>();
+        return Scenario && Scenario.inventory != null ? Scenario.inventory : Array.Empty<ScenarioInventoryItem>();
+    }
+
+    public IEnumerable<ScenarioCableInventoryItem> GetScenarioCableInventory()
+    {
+        return Scenario && Scenario.cableInventory != null ? Scenario.cableInventory : Array.Empty<ScenarioCableInventoryItem>();
     }
 
     public int GetRemaining(EquipmentDefinition equipment)
     {
         return equipment && _remaining.TryGetValue(equipment, out var count) ? count : 0;
+    }
+
+    public int GetRemaining(TssCableDefinition cable)
+    {
+        return cable && _remainingCables.TryGetValue(cable, out var count) ? count : 0;
     }
 
     public bool TryCheckout(EquipmentDefinition equipment, out string message)
@@ -85,7 +116,7 @@ public sealed class TssTrainingSession : MonoBehaviour
             return false;
         }
 
-        if (HeldItem)
+        if (HeldItem || HeldCable)
         {
             message = "Return the carried item first.";
             return false;
@@ -105,6 +136,35 @@ public sealed class TssTrainingSession : MonoBehaviour
         return true;
     }
 
+    public bool TryCheckoutCable(TssCableDefinition cable, out string message)
+    {
+        if (!Scenario)
+        {
+            message = "Select a scenario first.";
+            return false;
+        }
+
+        if (HeldItem || HeldCable)
+        {
+            message = "Return the carried item first.";
+            return false;
+        }
+
+        if (!cable || GetRemaining(cable) <= 0)
+        {
+            message = "No cables remaining.";
+            return false;
+        }
+
+        _remainingCables[cable]--;
+        HeldCable = cable;
+        _selectedCableEndpoint = null;
+        CreateCableCarryVisual(cable);
+        message = $"Carrying {cable.displayName}";
+        StateChanged?.Invoke();
+        return true;
+    }
+
     public bool ReturnHeldItem(out string message)
     {
         if (!HeldItem)
@@ -116,6 +176,23 @@ public sealed class TssTrainingSession : MonoBehaviour
         _remaining[HeldItem] = GetRemaining(HeldItem) + 1;
         message = $"Returned {HeldItem.displayName}";
         HeldItem = null;
+        ClearCarryVisual();
+        StateChanged?.Invoke();
+        return true;
+    }
+
+    public bool ReturnHeldCable(out string message)
+    {
+        if (!HeldCable)
+        {
+            message = "No cable to return.";
+            return false;
+        }
+
+        _remainingCables[HeldCable] = GetRemaining(HeldCable) + 1;
+        message = $"Returned {HeldCable.displayName}";
+        HeldCable = null;
+        _selectedCableEndpoint = null;
         ClearCarryVisual();
         StateChanged?.Invoke();
         return true;
@@ -142,7 +219,7 @@ public sealed class TssTrainingSession : MonoBehaviour
 
     public bool TryPickupInstalled(RackMountController rack, EquipmentDefinition equipment, int startingU, int rackUnits, out string message)
     {
-        if (HeldItem)
+        if (HeldItem || HeldCable)
         {
             message = "Place or return the carried item first.";
             return false;
@@ -151,6 +228,12 @@ public sealed class TssTrainingSession : MonoBehaviour
         if (!rack || !equipment)
         {
             message = "No installed equipment selected.";
+            return false;
+        }
+
+        if (HasConnectionForOwnerPrefix(GetRackOwnerPrefix(rack.RackId, startingU)))
+        {
+            message = "Disconnect cables before moving this equipment.";
             return false;
         }
 
@@ -200,7 +283,7 @@ public sealed class TssTrainingSession : MonoBehaviour
 
     public bool TryPickupEndpoint(string placementId, EquipmentDefinition equipment, out string message)
     {
-        if (HeldItem)
+        if (HeldItem || HeldCable)
         {
             message = "Place or return the carried item first.";
             return false;
@@ -209,6 +292,12 @@ public sealed class TssTrainingSession : MonoBehaviour
         if (!equipment)
         {
             message = "No placed equipment selected.";
+            return false;
+        }
+
+        if (HasConnectionForOwnerPrefix(GetEndpointOwnerPrefix(placementId)))
+        {
+            message = "Disconnect cables before moving this equipment.";
             return false;
         }
 
@@ -266,6 +355,107 @@ public sealed class TssTrainingSession : MonoBehaviour
         return fallbackScenario;
     }
 
+    public bool TryUsePort(TssPortEndpoint endpoint, out string message)
+    {
+        if (!endpoint)
+        {
+            message = "No port selected.";
+            return false;
+        }
+
+        if (!HeldCable)
+        {
+            if (TryDisconnectEndpoint(endpoint.EndpointId, out message))
+                return true;
+
+            message = "Select a cable first.";
+            return false;
+        }
+
+        if (IsEndpointConnected(endpoint.EndpointId))
+        {
+            message = $"{endpoint.DisplayLabel} is already connected.";
+            return false;
+        }
+
+        if (!endpoint.Supports(HeldCable.cableType))
+        {
+            message = $"{endpoint.DisplayLabel} does not support {HeldCable.cableType}.";
+            return false;
+        }
+
+        if (!_selectedCableEndpoint)
+        {
+            _selectedCableEndpoint = endpoint;
+            message = $"Selected {endpoint.DisplayLabel}";
+            StateChanged?.Invoke();
+            return true;
+        }
+
+        if (_selectedCableEndpoint == endpoint)
+        {
+            _selectedCableEndpoint = null;
+            message = "Cleared first port.";
+            StateChanged?.Invoke();
+            return false;
+        }
+
+        if (!ConnectsTo(_selectedCableEndpoint, endpoint, out message))
+            return false;
+
+        var visual = TssCableVisual.Create(HeldCable, _selectedCableEndpoint, endpoint);
+        var record = new TssPhysicalConnectionRecord(
+            $"Cable{_nextConnectionNumber++:000}",
+            HeldCable,
+            HeldCable.cableType,
+            _selectedCableEndpoint.EndpointId,
+            endpoint.EndpointId,
+            visual ? visual.gameObject : null);
+        _physicalConnections.Add(record);
+        HeldCable = null;
+        _selectedCableEndpoint = null;
+        ClearCarryVisual();
+        message = $"Connected {record.EndpointAId} to {record.EndpointBId}";
+        StateChanged?.Invoke();
+        return true;
+    }
+
+    public bool IsEndpointConnected(string endpointId)
+    {
+        foreach (var connection in _physicalConnections)
+        {
+            if (connection.EndpointAId == endpointId || connection.EndpointBId == endpointId)
+                return true;
+        }
+
+        return false;
+    }
+
+    public bool IsFirstSelectedEndpoint(TssPortEndpoint endpoint)
+    {
+        return endpoint && _selectedCableEndpoint == endpoint;
+    }
+
+    public bool CanSelectEndpoint(TssPortEndpoint endpoint)
+    {
+        return endpoint && (HeldCable || IsEndpointConnected(endpoint.EndpointId));
+    }
+
+    public bool HasConnectionForOwnerPrefix(string ownerPrefix)
+    {
+        if (string.IsNullOrWhiteSpace(ownerPrefix))
+            return false;
+
+        foreach (var connection in _physicalConnections)
+        {
+            if (connection.EndpointAId.StartsWith(ownerPrefix, StringComparison.Ordinal)
+                || connection.EndpointBId.StartsWith(ownerPrefix, StringComparison.Ordinal))
+                return true;
+        }
+
+        return false;
+    }
+
     private void CreateCarryVisual(EquipmentDefinition equipment)
     {
         ClearCarryVisual();
@@ -288,16 +478,124 @@ public sealed class TssTrainingSession : MonoBehaviour
             rigidbody.isKinematic = true;
     }
 
+    private void CreateCableCarryVisual(TssCableDefinition cable)
+    {
+        ClearCarryVisual();
+        if (!carryAnchor || !cable || !cable.carryPrefab)
+            return;
+
+        _carryVisual = Instantiate(cable.carryPrefab, carryAnchor);
+        foreach (var collider in _carryVisual.GetComponentsInChildren<Collider>(true))
+            collider.enabled = false;
+
+        foreach (var rigidbody in _carryVisual.GetComponentsInChildren<Rigidbody>(true))
+            rigidbody.isKinematic = true;
+    }
+
     private void ClearCarryVisual()
     {
         if (_carryVisual)
-            Destroy(_carryVisual);
+            DestroyUnityObject(_carryVisual);
         _carryVisual = null;
     }
 
     private static string CleanDeviceName(string deviceName)
     {
         return string.IsNullOrWhiteSpace(deviceName) ? string.Empty : deviceName.Trim();
+    }
+
+    public static string GetRackOwnerPrefix(string rackId, int startingU)
+    {
+        return $"Rack:{rackId}:U{startingU:00}";
+    }
+
+    public static string GetEndpointOwnerPrefix(string placementId)
+    {
+        return $"Endpoint:{placementId}";
+    }
+
+    private bool TryDisconnectEndpoint(string endpointId, out string message)
+    {
+        for (var i = _physicalConnections.Count - 1; i >= 0; i--)
+        {
+            var connection = _physicalConnections[i];
+            if (connection.EndpointAId != endpointId && connection.EndpointBId != endpointId)
+                continue;
+
+            if (connection.Visual)
+                DestroyUnityObject(connection.Visual);
+
+            if (connection.Cable)
+                _remainingCables[connection.Cable] = GetRemaining(connection.Cable) + 1;
+
+            _physicalConnections.RemoveAt(i);
+            message = $"Disconnected {endpointId}";
+            StateChanged?.Invoke();
+            return true;
+        }
+
+        message = "No cable connected.";
+        return false;
+    }
+
+    private void ClearPhysicalConnections()
+    {
+        foreach (var connection in _physicalConnections)
+        {
+            if (connection.Visual)
+                DestroyUnityObject(connection.Visual);
+        }
+
+        _physicalConnections.Clear();
+    }
+
+    private bool ConnectsTo(TssPortEndpoint first, TssPortEndpoint second, out string message)
+    {
+        if (!string.Equals(first.ConnectorType, second.ConnectorType, StringComparison.OrdinalIgnoreCase))
+        {
+            message = "Connector types do not match.";
+            return false;
+        }
+
+        if (!second.Supports(HeldCable.cableType))
+        {
+            message = $"{second.DisplayLabel} does not support {HeldCable.cableType}.";
+            return false;
+        }
+
+        message = string.Empty;
+        return true;
+    }
+
+    private static void DestroyUnityObject(UnityEngine.Object target)
+    {
+        if (!target)
+            return;
+
+        if (Application.isPlaying)
+            Destroy(target);
+        else
+            DestroyImmediate(target);
+    }
+}
+
+public readonly struct TssPhysicalConnectionRecord
+{
+    public readonly string ConnectionId;
+    public readonly TssCableDefinition Cable;
+    public readonly TssCableType CableType;
+    public readonly string EndpointAId;
+    public readonly string EndpointBId;
+    public readonly GameObject Visual;
+
+    public TssPhysicalConnectionRecord(string connectionId, TssCableDefinition cable, TssCableType cableType, string endpointAId, string endpointBId, GameObject visual)
+    {
+        ConnectionId = connectionId;
+        Cable = cable;
+        CableType = cableType;
+        EndpointAId = endpointAId;
+        EndpointBId = endpointBId;
+        Visual = visual;
     }
 }
 

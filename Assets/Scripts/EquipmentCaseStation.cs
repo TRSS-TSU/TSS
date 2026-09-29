@@ -68,14 +68,38 @@ public sealed class EquipmentCaseStation : MonoBehaviour
 
         if (session.HeldItem)
             session.ReturnHeldItem(out _);
+        else if (session.HeldCable)
+            session.ReturnHeldCable(out _);
 
         if (session.TryCheckout(equipment, out _))
             ClosePanel();
     }
 
+    public void CheckoutCable(TssCableDefinition cable)
+    {
+        var session = TssTrainingSession.Instance;
+        if (!session)
+            return;
+
+        if (session.HeldItem)
+            session.ReturnHeldItem(out _);
+        else if (session.HeldCable)
+            session.ReturnHeldCable(out _);
+
+        if (session.TryCheckoutCable(cable, out _))
+            ClosePanel();
+    }
+
     public void ReturnHeld()
     {
-        TssTrainingSession.Instance?.ReturnHeldItem(out _);
+        var session = TssTrainingSession.Instance;
+        if (!session)
+            return;
+
+        if (session.HeldItem)
+            session.ReturnHeldItem(out _);
+        else if (session.HeldCable)
+            session.ReturnHeldCable(out _);
     }
 
     public void ClosePanel()

@@ -29,6 +29,8 @@ public sealed class EndpointPlacementStation : MonoBehaviour
     [SerializeField] private float nameSignTextSize = 1.6f;
     [SerializeField] private Vector3 placedInteractionTriggerCenter = new(0f, 0.6f, 0f);
     [SerializeField] private Vector3 placedInteractionTriggerSize = new(1.5f, 1.2f, 1.5f);
+    [SerializeField] private Vector3 printerPlacedInteractionTriggerCenter = new(0f, 0.35f, 0f);
+    [SerializeField] private Vector3 printerPlacedInteractionTriggerSize = new(0.75f, 0.7f, 0.75f);
     [SerializeField] private Color hoverTint = new(0.2f, 0.75f, 1f, 1f);
     [SerializeField, Range(0f, 1f)] private float hoverBlend = 0.35f;
 
@@ -150,9 +152,15 @@ public sealed class EndpointPlacementStation : MonoBehaviour
             visual.transform.localPosition = record.Equipment.placementLocalOffset;
             visual.transform.localRotation = Quaternion.Euler(record.Equipment.placementLocalEuler);
             visual.transform.localScale = record.Equipment.placementLocalScale;
+            TssPortEndpointBinder.ConfigureEndpoints(visual, TssTrainingSession.GetEndpointOwnerPrefix(record.PlacementId), record.Equipment);
 
             foreach (var collider in visual.GetComponentsInChildren<Collider>(true))
+            {
+                if (collider.GetComponentInParent<TssPortEndpoint>())
+                    continue;
+
                 collider.enabled = false;
+            }
 
             foreach (var rigidbody in visual.GetComponentsInChildren<Rigidbody>(true))
                 rigidbody.isKinematic = true;
@@ -160,8 +168,8 @@ public sealed class EndpointPlacementStation : MonoBehaviour
 
         var target = root.AddComponent<BoxCollider>();
         target.isTrigger = true;
-        target.center = placedInteractionTriggerCenter;
-        target.size = placedInteractionTriggerSize;
+        target.center = GetPlacedInteractionTriggerCenter(record.Equipment);
+        target.size = GetPlacedInteractionTriggerSize(record.Equipment);
         root.AddComponent<EndpointPlacedEquipmentTarget>().Initialize(this, record.PlacementId, record.Equipment);
         CreateNameSign(root.transform, record);
         _placedVisuals[record.PlacementId] = root;
@@ -171,6 +179,9 @@ public sealed class EndpointPlacementStation : MonoBehaviour
     {
         var session = TssTrainingSession.Instance;
         if (!CanInspectPlacedEndpoint(session))
+            return;
+
+        if (session.HeldCable && TryEnterPlacedCableView(placementId))
             return;
 
         var currentName = GetDeviceName(placementId);
@@ -200,6 +211,19 @@ public sealed class EndpointPlacementStation : MonoBehaviour
     internal static bool CanInspectPlacedEndpoint(TssTrainingSession session)
     {
         return session && !session.HeldItem && !IsGameplayInputBlocked();
+    }
+
+    private bool TryEnterPlacedCableView(string placementId)
+    {
+        if (!_placedVisuals.TryGetValue(placementId, out var visual) || !visual)
+            return false;
+
+        var interactable = visual.GetComponentInChildren<TssObjectInteractable>(true);
+        if (!interactable)
+            return false;
+
+        interactable.EnterFirstPerson();
+        return true;
     }
 
     private void PickupPlaced(string placementId, EquipmentDefinition equipment)
@@ -365,6 +389,16 @@ public sealed class EndpointPlacementStation : MonoBehaviour
     private Vector3 GetNameSignPanelSize(EquipmentDefinition equipment)
     {
         return equipment && equipment.category == EquipmentCategory.Printer ? printerNameSignPanelSize : nameSignPanelSize;
+    }
+
+    private Vector3 GetPlacedInteractionTriggerCenter(EquipmentDefinition equipment)
+    {
+        return equipment && equipment.category == EquipmentCategory.Printer ? printerPlacedInteractionTriggerCenter : placedInteractionTriggerCenter;
+    }
+
+    private Vector3 GetPlacedInteractionTriggerSize(EquipmentDefinition equipment)
+    {
+        return equipment && equipment.category == EquipmentCategory.Printer ? printerPlacedInteractionTriggerSize : placedInteractionTriggerSize;
     }
 
     private static string GetDeviceName(string placementId)

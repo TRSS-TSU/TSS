@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b9ddad5d6cf46839dd4ef2de5f12689, type: 3}
+  m_Name: Cable_StraightThrough
+  m_EditorClassIdentifier: TSS.Runtime::TssCableDefinition
+  cableId: straight-through
+  displayName: Straight-Through Ethernet Cable
+  cableType: 0
+  carryPrefab: {fileID: 0}
+  visualMaterial: {fileID: 2202073336491403462, guid: 47ef83918e2e0c243ba388c579faa39e, type: 3}
+  radiusMeters: 0.012

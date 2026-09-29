@@ -165,9 +165,15 @@ public sealed class RackMountController : MonoBehaviour
         instance.transform.localPosition = GetInstalledLocalPosition(equipment, startingU);
         instance.transform.localRotation = Quaternion.Euler(installedLocalEuler + equipment.rackLocalEuler);
         instance.transform.localScale = equipment.rackLocalScale;
+        TssPortEndpointBinder.ConfigureEndpoints(instance, TssTrainingSession.GetRackOwnerPrefix(RackId, startingU), equipment);
 
         foreach (var collider in instance.GetComponentsInChildren<Collider>(true))
+        {
+            if (collider.GetComponentInParent<TssPortEndpoint>())
+                continue;
+
             collider.enabled = false;
+        }
 
         var grabTarget = CreateInstalledGrabTarget(equipment, startingU);
         _installedItems[startingU] = new InstalledRackItem(equipment, instance, grabTarget, equipment.rackUnits);

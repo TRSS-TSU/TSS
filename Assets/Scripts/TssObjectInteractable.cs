@@ -13,9 +13,12 @@ public sealed class TssObjectInteractable : MonoBehaviour
     private static TssObjectInteractable _activeInteractable;
     public event Action EnteredFirstPerson;
     public event Action ReturnedToThirdPerson;
+    public bool IsFirstPerson => _isFirstPerson;
 
     [Header("View")]
     [SerializeField] private Transform firstPersonView;
+    [SerializeField] private Vector3 firstPersonLocalPositionOffset;
+    [SerializeField] private Vector3 firstPersonLocalEulerOffset;
     [SerializeField] private Camera mainCamera;
     [SerializeField] private float transitionSeconds = 0.75f;
     [SerializeField] private float firstPersonFieldOfView = 50f;
@@ -164,7 +167,9 @@ public sealed class TssObjectInteractable : MonoBehaviour
         SetCinemachine(false);
         SetHovered(false);
         ShowCanvas();
-        StartMove(target.position, target.rotation, firstPersonFieldOfView, () => EnteredFirstPerson?.Invoke());
+        var targetPosition = target.TransformPoint(firstPersonLocalPositionOffset);
+        var targetRotation = target.rotation * Quaternion.Euler(firstPersonLocalEulerOffset);
+        StartMove(targetPosition, targetRotation, firstPersonFieldOfView, () => EnteredFirstPerson?.Invoke());
     }
 
     public void ReturnToThirdPerson()

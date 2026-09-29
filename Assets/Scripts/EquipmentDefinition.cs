@@ -50,4 +50,20 @@ public sealed class EquipmentInterface
     public string name;
     public string connectorType;
     public string label;
+    public TssCableType[] supportedCableTypes;
+    public string portAnchorPath;
+
+    public bool Supports(TssCableType cableType)
+    {
+        if (supportedCableTypes == null || supportedCableTypes.Length == 0)
+            return true;
+
+        foreach (var supported in supportedCableTypes)
+        {
+            if (supported == cableType)
+                return true;
+        }
+
+        return false;
+    }
 }

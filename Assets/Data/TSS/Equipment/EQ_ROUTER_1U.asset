@@ -18,13 +18,35 @@ MonoBehaviour:
   rackUnits: 1
   rackPrefab: {fileID: 919132149155446097, guid: 47676e7773992df48b4977c8cbdad1a3, type: 3}
   carryPrefab: {fileID: 919132149155446097, guid: 47676e7773992df48b4977c8cbdad1a3, type: 3}
+  useRearRackPlacement: 0
   rackLocalOffset: {x: 0, y: 0, z: 0}
   rackLocalEuler: {x: 0, y: 0, z: 0}
   rackLocalScale: {x: 1, y: 1, z: 1}
   carryLocalOffset: {x: 0, y: 0, z: 0}
   carryLocalEuler: {x: -90, y: 0, z: 0}
   carryLocalScale: {x: 1, y: 1, z: 1}
+  placementPrefab: {fileID: 0}
+  placementLocalOffset: {x: 0, y: 0, z: 0}
+  placementLocalEuler: {x: 0, y: 0, z: 0}
+  placementLocalScale: {x: 1, y: 1, z: 1}
   interfaces:
-  - name: Data-ready
-    connectorType: TBD
-    label: Future ports
+  - name: Aux01
+    connectorType: RJ45
+    label: Aux
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/RackRouter_1U_RearFourLED_19in/RearPorts/Ports/Router_rear_AUX_port_cavity/Aux01
+  - name: Con01
+    connectorType: RJ45
+    label: Console
+    supportedCableTypes: 02000000
+    portAnchorPath: Model/RackRouter_1U_RearFourLED_19in/RearPorts/Ports/Router_rear_CONSOLE_port_cavity/Con01
+  - name: GE00
+    connectorType: RJ45
+    label: GE0/0
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/RackRouter_1U_RearFourLED_19in/RearPorts/Ports/Router_rear_GE00_port_cavity/GE00
+  - name: GE01
+    connectorType: RJ45
+    label: GE0/1
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/RackRouter_1U_RearFourLED_19in/RearPorts/Ports/Router_rear_GE01_port_cavity/GE01

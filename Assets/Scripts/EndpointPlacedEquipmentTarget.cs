@@ -16,6 +16,7 @@ public sealed class EndpointPlacedEquipmentTarget : MonoBehaviour
     private Color[][] _baseColors;
     private Camera _mainCamera;
     private bool _isHovered;
+    private TssObjectInteractable _interactable;
 
     public void Initialize(EndpointPlacementStation station, string placementId, EquipmentDefinition equipment)
     {
@@ -23,12 +24,15 @@ public sealed class EndpointPlacedEquipmentTarget : MonoBehaviour
         _placementId = placementId;
         _equipment = equipment;
         _mainCamera = Camera.main;
+        _interactable = GetComponentInChildren<TssObjectInteractable>(true);
         CacheRenderers();
     }
 
     private void Update()
     {
-        var hovered = EndpointPlacementStation.CanInspectPlacedEndpoint(TssTrainingSession.Instance) && IsMouseOverTarget();
+        var hovered = EndpointPlacementStation.CanInspectPlacedEndpoint(TssTrainingSession.Instance)
+            && (!_interactable || !_interactable.IsFirstPerson)
+            && IsMouseOverTarget();
         SetHighlight(hovered);
         _isHovered = hovered;
 
@@ -89,6 +93,9 @@ public sealed class EndpointPlacedEquipmentTarget : MonoBehaviour
 
         for (var rendererIndex = 0; rendererIndex < _materials.Length; rendererIndex++)
         {
+            if (_renderers[rendererIndex] && _renderers[rendererIndex].GetComponentInParent<TssPortEndpoint>())
+                continue;
+
             var materials = _materials[rendererIndex];
             for (var materialIndex = 0; materialIndex < materials.Length; materialIndex++)
             {

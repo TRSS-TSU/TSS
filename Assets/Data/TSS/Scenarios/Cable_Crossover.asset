@@ -1,0 +1,20 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b9ddad5d6cf46839dd4ef2de5f12689, type: 3}
+  m_Name: Cable_Crossover
+  m_EditorClassIdentifier: TSS.Runtime::TssCableDefinition
+  cableId: crossover
+  displayName: Crossover Ethernet Cable
+  cableType: 1
+  carryPrefab: {fileID: 0}
+  visualMaterial: {fileID: 2100000, guid: fb698345bbbc4d74ba2ca7b2bb59eb9d, type: 2}
+  radiusMeters: 0.012

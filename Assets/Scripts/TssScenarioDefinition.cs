@@ -8,6 +8,7 @@ public sealed class TssScenarioDefinition : ScriptableObject
     public string displayName;
     public string sceneName = "SampleScene";
     public ScenarioInventoryItem[] inventory;
+    public ScenarioCableInventoryItem[] cableInventory;
     public RackScenarioConfig[] racks;
     public ExpectedRackPlacement[] expectedRackPlacements;
     public ExpectedEndpointPlacement[] expectedEndpointPlacements;
@@ -18,6 +19,13 @@ public sealed class TssScenarioDefinition : ScriptableObject
 public sealed class ScenarioInventoryItem
 {
     public EquipmentDefinition equipment;
+    [Min(0)] public int quantity;
+}
+
+[Serializable]
+public sealed class ScenarioCableInventoryItem
+{
+    public TssCableDefinition cable;
     [Min(0)] public int quantity;
 }
 

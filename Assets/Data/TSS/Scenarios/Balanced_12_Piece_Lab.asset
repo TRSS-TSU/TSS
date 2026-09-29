@@ -28,6 +28,13 @@ MonoBehaviour:
     quantity: 4
   - equipment: {fileID: 11400000, guid: 80d9778a03ef5fb4496297da1a96e5d4, type: 2}
     quantity: 2
+  cableInventory:
+  - cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    quantity: 10
+  - cable: {fileID: 11400000, guid: 18ea62672fb58f347bda2f79a48dc0a5, type: 2}
+    quantity: 5
+  - cable: {fileID: 11400000, guid: 7a8091403b6214e47a1c50a3939bd562, type: 2}
+    quantity: 5
   racks:
   - rackId: Rack01
     lowestU: 3
