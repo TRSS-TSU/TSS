@@ -52,7 +52,7 @@ public sealed class TssPhysicalConnectionPanel : MonoBehaviour
         {
             foreach (var connection in session.PhysicalConnections)
             {
-                AddRow(FormatConnectionRow(connection), activeColor, y);
+                AddRow(FormatConnectionRow(connection, session), activeColor, y);
                 y -= rowHeight + rowGap;
             }
 
@@ -60,7 +60,7 @@ public sealed class TssPhysicalConnectionPanel : MonoBehaviour
         }
 
         if (session.HeldCable && session.SelectedCableEndpoint)
-            AddRow($"{session.HeldCable.displayName}: first port {session.SelectedCableEndpoint.DisplayLabel}", heldColor, y);
+            AddRow($"{session.HeldCable.displayName}: first port {EndpointLabel(session.SelectedCableEndpoint.EndpointId, session)}", heldColor, y);
         else if (session.HeldCable)
             AddRow($"{session.HeldCable.displayName}: select first port", heldColor, y);
         else
@@ -90,18 +90,48 @@ public sealed class TssPhysicalConnectionPanel : MonoBehaviour
 
     public static string FormatConnectionRow(TssPhysicalConnectionRecord connection)
     {
-        return $"{connection.CableType}: {EndpointLabel(connection.EndpointAId)} <-> {EndpointLabel(connection.EndpointBId)}";
+        return FormatConnectionRow(connection, null);
     }
 
-    private static string EndpointLabel(string endpointId)
+    public static string FormatConnectionRow(TssPhysicalConnectionRecord connection, TssTrainingSession session)
     {
+        return $"{connection.CableType}: {EndpointLabel(connection.EndpointAId, session)} <-> {EndpointLabel(connection.EndpointBId, session)}";
+    }
+
+    private static string EndpointLabel(string endpointId, TssTrainingSession session)
+    {
+        var label = endpointId;
         foreach (var endpoint in Object.FindObjectsByType<TssPortEndpoint>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
             if (endpoint.EndpointId == endpointId)
-                return endpoint.DisplayLabel;
+            {
+                label = endpoint.DisplayLabel;
+                break;
+            }
         }
 
-        return endpointId;
+        var deviceName = DeviceName(endpointId, session);
+        return string.IsNullOrWhiteSpace(deviceName) ? label : $"{deviceName.Trim()} {label}";
+    }
+
+    private static string DeviceName(string endpointId, TssTrainingSession session)
+    {
+        if (!session)
+            return string.Empty;
+
+        foreach (var record in session.Installed)
+        {
+            if (endpointId.StartsWith(TssTrainingSession.GetRackOwnerPrefix(record.RackId, record.StartingU) + ":", System.StringComparison.Ordinal))
+                return record.DeviceName;
+        }
+
+        foreach (var record in session.EndpointPlacements)
+        {
+            if (endpointId.StartsWith(TssTrainingSession.GetEndpointOwnerPrefix(record.PlacementId) + ":", System.StringComparison.Ordinal))
+                return record.DeviceName;
+        }
+
+        return string.Empty;
     }
 
     private void ClearRows()
