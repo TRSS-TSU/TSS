@@ -1,0 +1,32 @@
+
+
+
+	Reception desktop Eth01 interface		->		Reception Wallport Ethernet Port 1 (WallPort:Reception:Port01)				-> 	Patch1 Port 1 (PatchPanel:Rack01:Port01)		-> 	AN-1 Port 3
+
+	Reception printer Eth01 interface		->		Reception Wallport Ethernet Port 2 (WallPort:Reception:Port02)				-> 	Patch1 Port 2 (PatchPanel:Rack01:Port02)		-> 	AN-1 Port 4
+
+									Reception Wallport Ethernet Port 3 (WallPort:Reception:Port03)				-> 	Patch1 Port 3 (PatchPanel:Rack01:Port03)
+
+									Reception Wallport Ethernet Port 4 (WallPort:Reception:Port04)				-> 	Patch1 Port 4 (PatchPanel:Rack01:Port04)
+
+	Office 1 desktop  Eth01 interface		->		Office 1 Wallport Ethernet Port 1 (WallPort:SecondFloor:Office01:Port01)		-> 	Patch2 Port 1 (PatchPanel:Rack02:Port01)		-> 	AN-2 Port 2
+
+									Office 1 Wallport Ethernet Port 2 (WallPort:SecondFloor:Office01:Port02)		-> 	Patch2 Port 2 (PatchPanel:Rack02:Port02)
+
+									Office 1 Wallport Ethernet Port 3 (WallPort:SecondFloor:Office01:Port03)		-> 	Patch2 Port 3 (PatchPanel:Rack02:Port03)
+
+									Office 1 Wallport Ethernet Port 4 (WallPort:SecondFloor:Office01:Port04)		-> 	Patch2 Port 4 (PatchPanel:Rack02:Port04)
+
+	Office 2 desktop Eth01 interface		->		Office 2 Wallport Ethernet Port 1 (WallPort:SecondFloor:Office02:Port01)		-> 	Patch2 Port 5 (PatchPanel:Rack02:Port05)		-> 	AN-2 Port 3
+
+	Office 2 printer Eth01 interface		->		Office 2 Wallport Ethernet Port 2 (WallPort:SecondFloor:Office02:Port02)		-> 	Patch2 Port 6 (PatchPanel:Rack02:Port06)		-> 	AN-2 Port 4
+
+									Office 2 Wallport Ethernet Port 3 (WallPort:SecondFloor:Office02:Port03)		-> 	Patch2 Port 7 (PatchPanel:Rack02:Port07)
+
+									Office 2 Wallport Ethernet Port 4 (WallPort:SecondFloor:Office02:Port04)		-> 	Patch2 Port 8 (PatchPanel:Rack02:Port08)
+
+	AN-1 Port 1					->		Patch1 Port 48 (PatchPanel:Rack01:Port48)						->	Patch2 Port 48 (PatchPanel:Rack02:Port48)		->	AN-2 Port 1 
+
+	IT1 desktop Eth01 interface			->		AN-1 Port 2
+
+	IT2 Server GE0/1 interface			->		AN-1 Port 5

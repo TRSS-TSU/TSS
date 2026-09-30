@@ -7,6 +7,7 @@ public sealed class TssPhysicalConnectionPanel : MonoBehaviour
     [SerializeField] private TssTrainingSession session;
     [SerializeField] private Text titleText;
     [SerializeField] private Transform rowsContainer;
+    [SerializeField] private ScrollRect scrollRect;
     [SerializeField] private Color idleColor = Color.white;
     [SerializeField] private Color activeColor = new(0.35f, 1f, 0.8f, 1f);
     [SerializeField] private Color heldColor = new(1f, 0.82f, 0.2f, 1f);
@@ -14,6 +15,8 @@ public sealed class TssPhysicalConnectionPanel : MonoBehaviour
     [SerializeField] private float rowGap = 3f;
 
     private readonly List<GameObject> _spawned = new();
+    private RectTransform _rowsContent;
+    private int _rowCount;
 
     private void Awake()
     {
@@ -23,6 +26,7 @@ public sealed class TssPhysicalConnectionPanel : MonoBehaviour
             titleText = transform.Find("Title")?.GetComponent<Text>();
         if (!rowsContainer)
             rowsContainer = transform.Find("Rows");
+        EnsureScrollableRows();
     }
 
     private void OnEnable()
@@ -50,12 +54,11 @@ public sealed class TssPhysicalConnectionPanel : MonoBehaviour
         var y = 0f;
         if (session.PhysicalConnections.Count > 0)
         {
-            foreach (var connection in session.PhysicalConnections)
-            {
-                AddRow(FormatConnectionRow(connection, session), activeColor, y);
-                y -= rowHeight + rowGap;
-            }
-
+            y = AddConnectionGroup("Permanent Infrastructure", true, y);
+            y = AddConnectionGroup("Player Cable Connections", false, y);
+            if (Mathf.Approximately(y, 0f))
+                AddRow("No physical connections", idleColor, y);
+            UpdateContentHeight();
             return;
         }
 
@@ -65,12 +68,35 @@ public sealed class TssPhysicalConnectionPanel : MonoBehaviour
             AddRow($"{session.HeldCable.displayName}: select first port", heldColor, y);
         else
             AddRow("No physical connections", idleColor, y);
+        UpdateContentHeight();
+    }
+
+    private float AddConnectionGroup(string heading, bool permanent, float y)
+    {
+        var any = false;
+        foreach (var connection in session.PhysicalConnections)
+        {
+            if (connection.IsPermanent != permanent)
+                continue;
+
+            if (!any)
+            {
+                AddRow(heading, idleColor, y);
+                y -= rowHeight + rowGap;
+                any = true;
+            }
+
+            AddRow(FormatConnectionRow(connection, session), activeColor, y);
+            y -= rowHeight + rowGap;
+        }
+
+        return y;
     }
 
     private void AddRow(string label, Color color, float y)
     {
         var go = new GameObject("ConnectionRow", typeof(RectTransform), typeof(Text));
-        go.transform.SetParent(rowsContainer, false);
+        go.transform.SetParent(_rowsContent ? _rowsContent : rowsContainer, false);
         var text = go.GetComponent<Text>();
         text.text = label;
         text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
@@ -86,6 +112,54 @@ public sealed class TssPhysicalConnectionPanel : MonoBehaviour
         rect.anchoredPosition = new Vector2(0f, y);
         rect.sizeDelta = new Vector2(0f, rowHeight);
         _spawned.Add(go);
+        _rowCount++;
+    }
+
+    private void EnsureScrollableRows()
+    {
+        var viewport = rowsContainer as RectTransform;
+        if (!viewport)
+            return;
+
+        if (!viewport.GetComponent<RectMask2D>())
+            viewport.gameObject.AddComponent<RectMask2D>();
+
+        if (!scrollRect)
+            scrollRect = GetComponent<ScrollRect>() ? GetComponent<ScrollRect>() : gameObject.AddComponent<ScrollRect>();
+
+        var content = viewport.Find("ScrollContent") as RectTransform;
+        if (!content)
+        {
+            var go = new GameObject("ScrollContent", typeof(RectTransform));
+            go.transform.SetParent(viewport, false);
+            content = go.GetComponent<RectTransform>();
+        }
+
+        content.anchorMin = new Vector2(0f, 1f);
+        content.anchorMax = new Vector2(1f, 1f);
+        content.pivot = new Vector2(0.5f, 1f);
+        content.anchoredPosition = Vector2.zero;
+        content.sizeDelta = Vector2.zero;
+
+        scrollRect.viewport = viewport;
+        scrollRect.content = content;
+        scrollRect.horizontal = false;
+        scrollRect.vertical = true;
+        scrollRect.movementType = ScrollRect.MovementType.Clamped;
+        _rowsContent = content;
+    }
+
+    private void UpdateContentHeight()
+    {
+        if (!_rowsContent)
+            return;
+
+        var viewport = rowsContainer as RectTransform;
+        var minHeight = viewport ? viewport.rect.height : 0f;
+        var height = Mathf.Max(minHeight, Mathf.Max(0f, _rowCount * (rowHeight + rowGap) - rowGap));
+        _rowsContent.sizeDelta = new Vector2(0f, height);
+        if (scrollRect)
+            scrollRect.verticalNormalizedPosition = 1f;
     }
 
     public static string FormatConnectionRow(TssPhysicalConnectionRecord connection)
@@ -136,12 +210,18 @@ public sealed class TssPhysicalConnectionPanel : MonoBehaviour
 
     private void ClearRows()
     {
-        for (var i = 0; i < _spawned.Count; i++)
+        var parent = _rowsContent ? _rowsContent : rowsContainer;
+        for (var i = parent ? parent.childCount - 1 : -1; i >= 0; i--)
         {
-            if (_spawned[i])
-                Destroy(_spawned[i]);
+            var child = parent.GetChild(i).gameObject;
+            child.transform.SetParent(null, false);
+            if (Application.isPlaying)
+                Destroy(child);
+            else
+                DestroyImmediate(child);
         }
 
         _spawned.Clear();
+        _rowCount = 0;
     }
 }

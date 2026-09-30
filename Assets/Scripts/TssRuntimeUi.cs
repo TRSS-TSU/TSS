@@ -738,7 +738,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
         for (var i = 0; i < session.PhysicalConnections.Count; i++)
         {
             var connection = session.PhysicalConnections[i];
-            lines[i] = $"{connection.CableType} - {connection.EndpointAId} <-> {connection.EndpointBId}";
+            lines[i] = $"{(connection.IsPermanent ? "Permanent " : string.Empty)}{connection.CableType} - {connection.EndpointAId} <-> {connection.EndpointBId}";
         }
 
         return string.Join("\n", lines);

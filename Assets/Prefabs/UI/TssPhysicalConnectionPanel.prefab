@@ -37,7 +37,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 18, y: -134}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 560, y: 134}
   m_Pivot: {x: 0, y: 1}
 --- !u!222 &4703120789307924665
@@ -93,6 +93,7 @@ MonoBehaviour:
   session: {fileID: 0}
   titleText: {fileID: 6932517906703789089}
   rowsContainer: {fileID: 3881271585727075663}
+  scrollRect: {fileID: 0}
   idleColor: {r: 1, g: 1, b: 1, a: 1}
   activeColor: {r: 0.35, g: 1, b: 0.8, a: 1}
   heldColor: {r: 1, g: 0.82, b: 0.2, a: 1}

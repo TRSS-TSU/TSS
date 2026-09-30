@@ -192,6 +192,44 @@ public sealed class TssPlacementEvaluatorTests
     }
 
     [Test]
+    public void PermanentScenarioConnectionsDoNotConsumeInventoryOrDisconnect()
+    {
+        var go = new GameObject("Session");
+        var session = go.AddComponent<TssTrainingSession>();
+        var scenario = CreateScenario();
+        var cable = Cable(TssCableType.StraightThrough);
+        scenario.cableInventory = new[] { new ScenarioCableInventoryItem { cable = cable, quantity = 1 } };
+        scenario.permanentConnections = new[]
+        {
+            new ScenarioPermanentCableConnection
+            {
+                cableType = TssCableType.StraightThrough,
+                patchPanelEndpointId = "Rack:Rack01:U02:Port01",
+                wallportEndpointId = "WallPort:Office01:Port01"
+            }
+        };
+
+        var endpointA = EndpointObject("A").AddComponent<TssPortEndpoint>();
+        var endpointB = EndpointObject("B").AddComponent<TssPortEndpoint>();
+        endpointA.Configure("Rack:Rack01:U02:Port01", Port("Port01"));
+        endpointB.Configure("WallPort:Office01:Port01", Port("Port01"));
+
+        session.BeginScenario(scenario);
+
+        Assert.AreEqual(1, session.PhysicalConnections.Count);
+        Assert.IsTrue(session.PhysicalConnections[0].IsPermanent);
+        Assert.IsFalse(session.PhysicalConnections[0].Visual);
+        Assert.AreEqual(1, session.GetRemaining(cable));
+        Assert.IsFalse(session.TryUsePort(endpointA, out _));
+        Assert.AreEqual(1, session.PhysicalConnections.Count);
+        Assert.AreEqual(0, Object.FindObjectsByType<TssCableVisual>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length);
+
+        Object.DestroyImmediate(endpointA.gameObject);
+        Object.DestroyImmediate(endpointB.gameObject);
+        Object.DestroyImmediate(go);
+    }
+
+    [Test]
     public void EndpointStationUsesCategoryAnchorsBeforeFallbackAnchors()
     {
         var stationObject = new GameObject("Station");

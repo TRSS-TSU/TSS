@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.UI;
 
 public sealed class TssPhysicalConnectionPanelTests
 {
@@ -69,6 +70,47 @@ public sealed class TssPhysicalConnectionPanelTests
         }
     }
 
+    [Test]
+    public void RefreshCreatesScrollableRowsForLargePermanentMaps()
+    {
+        var session = new GameObject("Session").AddComponent<TssTrainingSession>();
+        var panelRoot = new GameObject("Panel", typeof(RectTransform));
+        var rows = new GameObject("Rows", typeof(RectTransform));
+        rows.transform.SetParent(panelRoot.transform, false);
+        rows.GetComponent<RectTransform>().sizeDelta = new Vector2(320f, 100f);
+
+        try
+        {
+            for (var i = 0; i < 17; i++)
+            {
+                PhysicalConnections(session).Add(new TssPhysicalConnectionRecord(
+                    $"Infrastructure{i + 1:000}",
+                    null,
+                    TssCableType.StraightThrough,
+                    $"PatchPanel:Rack01:Port{i + 1:00}",
+                    $"WallPort:Room:Port{i + 1:00}",
+                    null,
+                    true));
+            }
+
+            var panel = panelRoot.AddComponent<TssPhysicalConnectionPanel>();
+            typeof(TssPhysicalConnectionPanel)
+                .GetField("session", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(panel, session);
+
+            panel.Refresh();
+
+            var content = rows.transform.Find("ScrollContent").GetComponent<RectTransform>();
+            Assert.Greater(content.childCount, 17);
+            Assert.Greater(content.sizeDelta.y, rows.GetComponent<RectTransform>().rect.height);
+        }
+        finally
+        {
+            Object.DestroyImmediate(panelRoot);
+            Object.DestroyImmediate(session.gameObject);
+        }
+    }
+
     private static List<InstalledEquipmentRecord> Installed(TssTrainingSession session)
     {
         return (List<InstalledEquipmentRecord>)typeof(TssTrainingSession)
@@ -80,6 +122,13 @@ public sealed class TssPhysicalConnectionPanelTests
     {
         return (List<EndpointPlacementRecord>)typeof(TssTrainingSession)
             .GetField("_endpointPlacements", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(session);
+    }
+
+    private static List<TssPhysicalConnectionRecord> PhysicalConnections(TssTrainingSession session)
+    {
+        return (List<TssPhysicalConnectionRecord>)typeof(TssTrainingSession)
+            .GetField("_physicalConnections", BindingFlags.Instance | BindingFlags.NonPublic)
             .GetValue(session);
     }
 }

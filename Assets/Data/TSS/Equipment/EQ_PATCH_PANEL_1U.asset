@@ -1,0 +1,272 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c16d82249036fba4799da2ff07af2de1, type: 3}
+  m_Name: EQ_PATCH_PANEL_1U
+  m_EditorClassIdentifier: Assembly-CSharp::EquipmentDefinition
+  equipmentId: PATCH_PANEL_1U
+  displayName: Patch Panel 1U
+  category: 5
+  rackUnits: 1
+  rackPrefab: {fileID: 127240255801683963, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+  carryPrefab: {fileID: 127240255801683963, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+  useRearRackPlacement: 0
+  rackLocalOffset: {x: 0, y: 0, z: 0}
+  rackLocalEuler: {x: 0, y: 0, z: 0}
+  rackLocalScale: {x: 1, y: 1, z: 1}
+  carryLocalOffset: {x: 0, y: 0, z: 0}
+  carryLocalEuler: {x: 0, y: 0, z: 0}
+  carryLocalScale: {x: 1, y: 1, z: 1}
+  placementPrefab: {fileID: 0}
+  placementLocalOffset: {x: 0, y: 0, z: 0}
+  placementLocalEuler: {x: 0, y: 0, z: 0}
+  placementLocalScale: {x: 1, y: 1, z: 1}
+  interfaces:
+  - name: Port01
+    connectorType: RJ45
+    label: Port01
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_01.001
+  - name: Port02
+    connectorType: RJ45
+    label: Port02
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_02.001
+  - name: Port03
+    connectorType: RJ45
+    label: Port03
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_03.001
+  - name: Port04
+    connectorType: RJ45
+    label: Port04
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_04.001
+  - name: Port05
+    connectorType: RJ45
+    label: Port05
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_05.001
+  - name: Port06
+    connectorType: RJ45
+    label: Port06
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_06.001
+  - name: Port07
+    connectorType: RJ45
+    label: Port07
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_07.001
+  - name: Port08
+    connectorType: RJ45
+    label: Port08
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_08.001
+  - name: Port09
+    connectorType: RJ45
+    label: Port09
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_09.001
+  - name: Port10
+    connectorType: RJ45
+    label: Port10
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_10.001
+  - name: Port11
+    connectorType: RJ45
+    label: Port11
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_11.001
+  - name: Port12
+    connectorType: RJ45
+    label: Port12
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_12.001
+  - name: Port13
+    connectorType: RJ45
+    label: Port13
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_13.001
+  - name: Port14
+    connectorType: RJ45
+    label: Port14
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_14.001
+  - name: Port15
+    connectorType: RJ45
+    label: Port15
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_15.001
+  - name: Port16
+    connectorType: RJ45
+    label: Port16
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_16.001
+  - name: Port17
+    connectorType: RJ45
+    label: Port17
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_17.001
+  - name: Port18
+    connectorType: RJ45
+    label: Port18
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_18.001
+  - name: Port19
+    connectorType: RJ45
+    label: Port19
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_19.001
+  - name: Port20
+    connectorType: RJ45
+    label: Port20
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_20.001
+  - name: Port21
+    connectorType: RJ45
+    label: Port21
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_21.001
+  - name: Port22
+    connectorType: RJ45
+    label: Port22
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_22.001
+  - name: Port23
+    connectorType: RJ45
+    label: Port23
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_23.001
+  - name: Port24
+    connectorType: RJ45
+    label: Port24
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_24.001
+  - name: Port25
+    connectorType: RJ45
+    label: Port25
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_25.001
+  - name: Port26
+    connectorType: RJ45
+    label: Port26
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_26.001
+  - name: Port27
+    connectorType: RJ45
+    label: Port27
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_27.001
+  - name: Port28
+    connectorType: RJ45
+    label: Port28
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_28.001
+  - name: Port29
+    connectorType: RJ45
+    label: Port29
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_29.001
+  - name: Port30
+    connectorType: RJ45
+    label: Port30
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_30.001
+  - name: Port31
+    connectorType: RJ45
+    label: Port31
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_31.001
+  - name: Port32
+    connectorType: RJ45
+    label: Port32
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_32.001
+  - name: Port33
+    connectorType: RJ45
+    label: Port33
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_33.001
+  - name: Port34
+    connectorType: RJ45
+    label: Port34
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_34.001
+  - name: Port35
+    connectorType: RJ45
+    label: Port35
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_35.001
+  - name: Port36
+    connectorType: RJ45
+    label: Port36
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_36.001
+  - name: Port37
+    connectorType: RJ45
+    label: Port37
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_37.001
+  - name: Port38
+    connectorType: RJ45
+    label: Port38
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_38.001
+  - name: Port39
+    connectorType: RJ45
+    label: Port39
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_39.001
+  - name: Port40
+    connectorType: RJ45
+    label: Port40
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_40.001
+  - name: Port41
+    connectorType: RJ45
+    label: Port41
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_41.001
+  - name: Port42
+    connectorType: RJ45
+    label: Port42
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_42.001
+  - name: Port43
+    connectorType: RJ45
+    label: Port43
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_43.001
+  - name: Port44
+    connectorType: RJ45
+    label: Port44
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_44.001
+  - name: Port45
+    connectorType: RJ45
+    label: Port45
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_45.001
+  - name: Port46
+    connectorType: RJ45
+    label: Port46
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_46.001
+  - name: Port47
+    connectorType: RJ45
+    label: Port47
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_47.001
+  - name: Port48
+    connectorType: RJ45
+    label: Port48
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: PatchPanel48/PP48_Front_Port_48.001

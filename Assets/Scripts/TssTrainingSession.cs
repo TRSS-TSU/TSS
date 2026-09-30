@@ -85,6 +85,7 @@ public sealed class TssTrainingSession : MonoBehaviour
             }
         }
 
+        ApplyPermanentConnections();
         StateChanged?.Invoke();
     }
 
@@ -213,6 +214,7 @@ public sealed class TssTrainingSession : MonoBehaviour
         _installed.Add(new InstalledEquipmentRecord(rack.RackId, equipment, startingU, equipment.rackUnits, CleanDeviceName(deviceName)));
         HeldItem = null;
         ClearCarryVisual();
+        ApplyPermanentConnections();
         StateChanged?.Invoke();
         return true;
     }
@@ -522,6 +524,12 @@ public sealed class TssTrainingSession : MonoBehaviour
             if (connection.EndpointAId != endpointId && connection.EndpointBId != endpointId)
                 continue;
 
+            if (connection.IsPermanent)
+            {
+                message = "Permanent infrastructure links cannot be disconnected.";
+                return false;
+            }
+
             if (connection.Visual)
                 DestroyUnityObject(connection.Visual);
 
@@ -567,6 +575,79 @@ public sealed class TssTrainingSession : MonoBehaviour
         return true;
     }
 
+    private void ApplyPermanentConnections()
+    {
+        if (!Scenario || Scenario.permanentConnections == null)
+            return;
+
+        for (var i = 0; i < Scenario.permanentConnections.Length; i++)
+        {
+            var link = Scenario.permanentConnections[i];
+            if (link == null
+                || string.IsNullOrWhiteSpace(link.patchPanelEndpointId)
+                || string.IsNullOrWhiteSpace(link.wallportEndpointId))
+                continue;
+
+            var patchPanelId = link.patchPanelEndpointId.Trim();
+            var wallportId = link.wallportEndpointId.Trim();
+            if (HasConnection(patchPanelId, wallportId) || IsEndpointConnected(patchPanelId) || IsEndpointConnected(wallportId))
+                continue;
+
+            var patchPanel = FindEndpoint(patchPanelId);
+            var wallport = FindEndpoint(wallportId);
+            if (!patchPanel || !wallport)
+                continue;
+
+            var cable = link.cable ? link.cable : FindCable(link.cableType);
+            _physicalConnections.Add(new TssPhysicalConnectionRecord(
+                string.IsNullOrWhiteSpace(link.connectionId) ? $"Infrastructure{i + 1:000}" : link.connectionId.Trim(),
+                cable,
+                cable ? cable.cableType : link.cableType,
+                patchPanelId,
+                wallportId,
+                null,
+                true));
+        }
+    }
+
+    private bool HasConnection(string endpointAId, string endpointBId)
+    {
+        foreach (var connection in _physicalConnections)
+        {
+            var sameDirection = connection.EndpointAId == endpointAId && connection.EndpointBId == endpointBId;
+            var reverseDirection = connection.EndpointAId == endpointBId && connection.EndpointBId == endpointAId;
+            if (sameDirection || reverseDirection)
+                return true;
+        }
+
+        return false;
+    }
+
+    private TssCableDefinition FindCable(TssCableType cableType)
+    {
+        if (!Scenario || Scenario.cableInventory == null)
+            return null;
+
+        foreach (var item in Scenario.cableInventory)
+        {
+            if (item != null && item.cable && item.cable.cableType == cableType)
+                return item.cable;
+        }
+
+        return null;
+    }
+
+    private static TssPortEndpoint FindEndpoint(string endpointId)
+    {
+        foreach (var endpoint in FindObjectsByType<TssPortEndpoint>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        {
+            if (endpoint.EndpointId == endpointId)
+                return endpoint;
+        }
+
+        return null;
+    }
+
     private static void DestroyUnityObject(UnityEngine.Object target)
     {
         if (!target)
@@ -587,8 +668,9 @@ public readonly struct TssPhysicalConnectionRecord
     public readonly string EndpointAId;
     public readonly string EndpointBId;
     public readonly GameObject Visual;
+    public readonly bool IsPermanent;
 
-    public TssPhysicalConnectionRecord(string connectionId, TssCableDefinition cable, TssCableType cableType, string endpointAId, string endpointBId, GameObject visual)
+    public TssPhysicalConnectionRecord(string connectionId, TssCableDefinition cable, TssCableType cableType, string endpointAId, string endpointBId, GameObject visual, bool isPermanent = false)
     {
         ConnectionId = connectionId;
         Cable = cable;
@@ -596,6 +678,7 @@ public readonly struct TssPhysicalConnectionRecord
         EndpointAId = endpointAId;
         EndpointBId = endpointBId;
         Visual = visual;
+        IsPermanent = isPermanent;
     }
 }
 

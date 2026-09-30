@@ -217,6 +217,9 @@ public sealed class RackMountController : MonoBehaviour
         if (!TssTrainingSession.Instance || !_installedItems.TryGetValue(startingU, out var item))
             return;
 
+        if (TssTrainingSession.Instance.HeldCable && TryEnterInstalledCableView(item))
+            return;
+
         if (TssRuntimeUi.Instance)
         {
             TssRuntimeUi.Instance.ShowPlacementCorrection(
@@ -228,6 +231,19 @@ public sealed class RackMountController : MonoBehaviour
         }
 
         PickupInstalled(startingU, item);
+    }
+
+    private static bool TryEnterInstalledCableView(InstalledRackItem item)
+    {
+        if (!item.Visual)
+            return false;
+
+        var interactable = item.Visual.GetComponentInChildren<TssObjectInteractable>(true);
+        if (!interactable)
+            return false;
+
+        interactable.EnterFirstPerson();
+        return true;
     }
 
     private void PickupInstalled(int startingU, InstalledRackItem item)

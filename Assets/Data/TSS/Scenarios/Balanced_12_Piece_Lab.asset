@@ -18,6 +18,8 @@ MonoBehaviour:
   inventory:
   - equipment: {fileID: 11400000, guid: fc6fc05c6c9a74e45b9af3472abf428e, type: 2}
     quantity: 2
+  - equipment: {fileID: 11400000, guid: fcb40dc2e4fb0684f85ec8204128f9fd, type: 2}
+    quantity: 2
   - equipment: {fileID: 11400000, guid: 9f73692d4caf61749a4b7bf4e3e4f26e, type: 2}
     quantity: 2
   - equipment: {fileID: 11400000, guid: 20bfae7a5c31d384b979d1fd86cdea22, type: 2}
@@ -35,6 +37,212 @@ MonoBehaviour:
     quantity: 5
   - cable: {fileID: 11400000, guid: 7a8091403b6214e47a1c50a3939bd562, type: 2}
     quantity: 5
+  permanentConnections:
+  - connectionId: Infrastructure001
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port01
+    wallportEndpointId: WallPort:Reception:Port01
+  - connectionId: Infrastructure002
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port02
+    wallportEndpointId: WallPort:Reception:Port02
+  - connectionId: Infrastructure003
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port03
+    wallportEndpointId: WallPort:Reception:Port03
+  - connectionId: Infrastructure004
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port04
+    wallportEndpointId: WallPort:Reception:Port04
+  - connectionId: Infrastructure005
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port01
+    wallportEndpointId: WallPort:Floor02:Office01:Wallport01:Port01
+  - connectionId: Infrastructure006
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port02
+    wallportEndpointId: WallPort:Floor02:Office01:Wallport01:Port02
+  - connectionId: Infrastructure007
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port03
+    wallportEndpointId: WallPort:Floor02:Office01:Wallport01:Port03
+  - connectionId: Infrastructure008
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port04
+    wallportEndpointId: WallPort:Floor02:Office01:Wallport01:Port04
+  - connectionId: Infrastructure009
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port05
+    wallportEndpointId: WallPort:Floor02:Office02:Wallport01:Port01
+  - connectionId: Infrastructure010
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port06
+    wallportEndpointId: WallPort:Floor02:Office02:Wallport01:Port02
+  - connectionId: Infrastructure011
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port07
+    wallportEndpointId: WallPort:Floor02:Office02:Wallport01:Port03
+  - connectionId: Infrastructure012
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port08
+    wallportEndpointId: WallPort:Floor02:Office02:Wallport01:Port04
+  - connectionId: Infrastructure013
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port48
+    wallportEndpointId: PatchPanel:Rack02:Port48
+  - connectionId: Infrastructure014
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port05
+    wallportEndpointId: WallPort:Floor01:Office01:Wallport01:Port01
+  - connectionId: Infrastructure015
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port06
+    wallportEndpointId: WallPort:Floor01:Office01:Wallport01:Port02
+  - connectionId: Infrastructure016
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port07
+    wallportEndpointId: WallPort:Floor01:Office01:Wallport01:Port03
+  - connectionId: Infrastructure017
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port08
+    wallportEndpointId: WallPort:Floor01:Office01:Wallport01:Port04
+  - connectionId: Infrastructure018
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port09
+    wallportEndpointId: WallPort:Floor01:Office02:Wallport01:Port01
+  - connectionId: Infrastructure019
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port10
+    wallportEndpointId: WallPort:Floor01:Office02:Wallport01:Port02
+  - connectionId: Infrastructure020
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port11
+    wallportEndpointId: WallPort:Floor01:Office02:Wallport01:Port03
+  - connectionId: Infrastructure021
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port12
+    wallportEndpointId: WallPort:Floor01:Office02:Wallport01:Port04
+  - connectionId: Infrastructure022
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port13
+    wallportEndpointId: WallPort:Floor01:Office03:Wallport01:Port01
+  - connectionId: Infrastructure023
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port14
+    wallportEndpointId: WallPort:Floor01:Office03:Wallport01:Port02
+  - connectionId: Infrastructure024
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port15
+    wallportEndpointId: WallPort:Floor01:Office03:Wallport01:Port03
+  - connectionId: Infrastructure025
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port16
+    wallportEndpointId: WallPort:Floor01:Office03:Wallport01:Port04
+  - connectionId: Infrastructure026
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port09
+    wallportEndpointId: WallPort:Floor02:Office03:Wallport01:Port01
+  - connectionId: Infrastructure027
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port10
+    wallportEndpointId: WallPort:Floor02:Office03:Wallport01:Port02
+  - connectionId: Infrastructure028
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port11
+    wallportEndpointId: WallPort:Floor02:Office03:Wallport01:Port03
+  - connectionId: Infrastructure029
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port12
+    wallportEndpointId: WallPort:Floor02:Office03:Wallport01:Port04
+  - connectionId: Infrastructure030
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port13
+    wallportEndpointId: WallPort:Floor02:Office03:Wallport02:Port01
+  - connectionId: Infrastructure031
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port14
+    wallportEndpointId: WallPort:Floor02:Office03:Wallport02:Port02
+  - connectionId: Infrastructure032
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port15
+    wallportEndpointId: WallPort:Floor02:Office03:Wallport02:Port03
+  - connectionId: Infrastructure033
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port16
+    wallportEndpointId: WallPort:Floor02:Office03:Wallport02:Port04
+  - connectionId: Infrastructure034
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port17
+    wallportEndpointId: WallPort:Floor02:Office04:Wallport01:Port01
+  - connectionId: Infrastructure035
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port18
+    wallportEndpointId: WallPort:Floor02:Office04:Wallport01:Port02
+  - connectionId: Infrastructure036
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port19
+    wallportEndpointId: WallPort:Floor02:Office04:Wallport01:Port03
+  - connectionId: Infrastructure037
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port20
+    wallportEndpointId: WallPort:Floor02:Office04:Wallport01:Port04
+  - connectionId: Infrastructure038
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port21
+    wallportEndpointId: WallPort:Floor02:Office05:Wallport01:Port01
+  - connectionId: Infrastructure039
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port22
+    wallportEndpointId: WallPort:Floor02:Office05:Wallport01:Port02
+  - connectionId: Infrastructure040
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port23
+    wallportEndpointId: WallPort:Floor02:Office05:Wallport01:Port03
+  - connectionId: Infrastructure041
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack02:Port24
+    wallportEndpointId: WallPort:Floor02:Office05:Wallport01:Port04
   racks:
   - rackId: Rack01
     lowestU: 3

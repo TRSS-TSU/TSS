@@ -16,7 +16,7 @@ MonoBehaviour:
   displayName: Router
   category: 0
   rackUnits: 1
-  rackPrefab: {fileID: 919132149155446097, guid: 47676e7773992df48b4977c8cbdad1a3, type: 3}
+  rackPrefab: {fileID: 2141176143751956238, guid: deb098b16bd21874b99deafbac121d72, type: 3}
   carryPrefab: {fileID: 919132149155446097, guid: 47676e7773992df48b4977c8cbdad1a3, type: 3}
   useRearRackPlacement: 0
   rackLocalOffset: {x: 0, y: 0, z: 0}
@@ -49,4 +49,4 @@ MonoBehaviour:
     connectorType: RJ45
     label: GE0/1
     supportedCableTypes: 0000000001000000
-    portAnchorPath: Model/RackRouter_1U_RearFourLED_19in/RearPorts/Ports/Router_rear_GE01_port_cavity/GE01
+    portAnchorPath: Model/RackRouter_1U_RearFourLED_19in/RearPorts/Ports/Router_rear_GE01_port_cavity/GE00
