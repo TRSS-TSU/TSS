@@ -4,7 +4,15 @@ using UnityEngine.UI;
 
 public sealed class TssPhysicalConnectionPanel : MonoBehaviour
 {
+    private enum PanelContent
+    {
+        PlayerCableConnections,
+        PermanentInfrastructure,
+        EffectiveDevicePaths
+    }
+
     [SerializeField] private TssTrainingSession session;
+    [SerializeField] private PanelContent content = PanelContent.PlayerCableConnections;
     [SerializeField] private Text titleText;
     [SerializeField] private Transform rowsContainer;
     [SerializeField] private ScrollRect scrollRect;
@@ -20,13 +28,18 @@ public sealed class TssPhysicalConnectionPanel : MonoBehaviour
 
     private void Awake()
     {
+        ResolveReferences();
+        EnsureScrollableRows();
+    }
+
+    private void ResolveReferences()
+    {
         if (!session)
             session = FindFirstObjectByType<TssTrainingSession>();
         if (!titleText)
             titleText = transform.Find("Title")?.GetComponent<Text>();
         if (!rowsContainer)
             rowsContainer = transform.Find("Rows");
-        EnsureScrollableRows();
     }
 
     private void OnEnable()
@@ -44,31 +57,56 @@ public sealed class TssPhysicalConnectionPanel : MonoBehaviour
 
     public void Refresh()
     {
+        ResolveReferences();
+        EnsureScrollableRows();
         ClearRows();
         if (!rowsContainer || !session)
             return;
 
-        if (titleText)
-            titleText.text = "Cable Connections";
-
         var y = 0f;
-        if (session.PhysicalConnections.Count > 0)
+        if (titleText)
+            titleText.text = TitleForContent();
+
+        switch (content)
         {
-            y = AddConnectionGroup("Permanent Infrastructure", true, y);
-            y = AddConnectionGroup("Player Cable Connections", false, y);
-            if (Mathf.Approximately(y, 0f))
-                AddRow("No physical connections", idleColor, y);
-            UpdateContentHeight();
-            return;
+            case PanelContent.PermanentInfrastructure:
+                y = AddConnectionGroup("Permanent Infrastructure", true, y);
+                if (Mathf.Approximately(y, 0f))
+                    AddRow("No permanent infrastructure", idleColor, y);
+                break;
+            case PanelContent.EffectiveDevicePaths:
+                y = AddEffectivePathGroup(y);
+                if (Mathf.Approximately(y, 0f))
+                    AddRow("No effective device paths", idleColor, y);
+                break;
+            default:
+                y = AddConnectionGroup("Player Cable Connections", false, y);
+                if (Mathf.Approximately(y, 0f))
+                    AddPlayerCableEmptyRow(y);
+                break;
         }
 
+        UpdateContentHeight();
+    }
+
+    private void AddPlayerCableEmptyRow(float y)
+    {
         if (session.HeldCable && session.SelectedCableEndpoint)
             AddRow($"{session.HeldCable.displayName}: first port {EndpointLabel(session.SelectedCableEndpoint.EndpointId, session)}", heldColor, y);
         else if (session.HeldCable)
             AddRow($"{session.HeldCable.displayName}: select first port", heldColor, y);
         else
-            AddRow("No physical connections", idleColor, y);
-        UpdateContentHeight();
+            AddRow("No player cable connections", idleColor, y);
+    }
+
+    private string TitleForContent()
+    {
+        return content switch
+        {
+            PanelContent.PermanentInfrastructure => "Permanent Infrastructure",
+            PanelContent.EffectiveDevicePaths => "Effective Device Paths",
+            _ => "Player Cable Connections"
+        };
     }
 
     private float AddConnectionGroup(string heading, bool permanent, float y)
@@ -87,6 +125,23 @@ public sealed class TssPhysicalConnectionPanel : MonoBehaviour
             }
 
             AddRow(FormatConnectionRow(connection, session), activeColor, y);
+            y -= rowHeight + rowGap;
+        }
+
+        return y;
+    }
+
+    private float AddEffectivePathGroup(float y)
+    {
+        var paths = session.GetEffectivePhysicalPaths();
+        if (paths.Count == 0)
+            return y;
+
+        AddRow("Effective Device Paths", idleColor, y);
+        y -= rowHeight + rowGap;
+        foreach (var path in paths)
+        {
+            AddRow($"{EndpointLabel(path.EndpointAId, session)} <-> {EndpointLabel(path.EndpointBId, session)}", activeColor, y);
             y -= rowHeight + rowGap;
         }
 

@@ -8,16 +8,30 @@ public sealed class TssRuntimeUi : MonoBehaviour
     public static TssRuntimeUi Instance { get; private set; }
 
     [Header("Dependencies")]
-    [SerializeField] private TssTrainingSession session;
-    [SerializeField] private StarterAssetsInputs playerInput;
-    [SerializeField] private ThirdPersonController playerController;
-    [SerializeField] private Animator playerAnimator;
-    [SerializeField] private bool enableDebugValidationPanel;
+    [SerializeField]
+    private TssTrainingSession session;
+
+    [SerializeField]
+    private StarterAssetsInputs playerInput;
+
+    [SerializeField]
+    private ThirdPersonController playerController;
+
+    [SerializeField]
+    private Animator playerAnimator;
+
+    [SerializeField]
+    private bool enableDebugValidationPanel;
 
     [Header("UI Prefabs")]
-    [SerializeField] private GameObject runtimeCanvasPrefab;
-    [SerializeField] private GameObject inventoryRowPrefab;
-    [SerializeField] private GameObject sopSectionRowPrefab;
+    [SerializeField]
+    private GameObject runtimeCanvasPrefab;
+
+    [SerializeField]
+    private GameObject inventoryRowPrefab;
+
+    [SerializeField]
+    private GameObject sopSectionRowPrefab;
 
     private Canvas _canvas;
     private Text _heldText;
@@ -163,10 +177,14 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (owner != null && _activeMenuOwner != owner)
             return;
 
-        if (_casePanel) _casePanel.SetActive(false);
-        if (_namePromptPanel) _namePromptPanel.SetActive(false);
-        if (_correctionPanel) _correctionPanel.SetActive(false);
-        if (_computerPanel) _computerPanel.SetActive(false);
+        if (_casePanel)
+            _casePanel.SetActive(false);
+        if (_namePromptPanel)
+            _namePromptPanel.SetActive(false);
+        if (_correctionPanel)
+            _correctionPanel.SetActive(false);
+        if (_computerPanel)
+            _computerPanel.SetActive(false);
 
         _openCase = null;
         _activeMenuOwner = null;
@@ -197,21 +215,24 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
         // Wire HUD
         var heldTextTransform = rootInstance.transform.Find("HUD/HeldText");
-        if (heldTextTransform) _heldText = heldTextTransform.GetComponent<Text>();
+        if (heldTextTransform)
+            _heldText = heldTextTransform.GetComponent<Text>();
 
         var cancelBtnTransform = rootInstance.transform.Find("HUD/CancelHeldButton");
         if (cancelBtnTransform)
         {
             _cancelHeldButton = cancelBtnTransform.gameObject;
             var btn = cancelBtnTransform.GetComponent<Button>();
-            if (btn) btn.onClick.AddListener(CancelHeld);
+            if (btn)
+                btn.onClick.AddListener(CancelHeld);
         }
 
         var sopBtnTransform = rootInstance.transform.Find("HUD/SopButton");
         if (sopBtnTransform)
         {
             _sopButton = sopBtnTransform.GetComponent<Button>();
-            if (_sopButton) _sopButton.onClick.AddListener(ToggleSop);
+            if (_sopButton)
+                _sopButton.onClick.AddListener(ToggleSop);
         }
 
         var debugBtnTransform = rootInstance.transform.Find("HUD/DebugButton");
@@ -233,17 +254,21 @@ public sealed class TssRuntimeUi : MonoBehaviour
         {
             _casePanel = casePanelTransform.gameObject;
             var titleTransform = casePanelTransform.Find("StationTitle");
-            if (titleTransform) _caseTitleText = titleTransform.GetComponent<Text>();
+            if (titleTransform)
+                _caseTitleText = titleTransform.GetComponent<Text>();
             _caseItemsContainer = casePanelTransform.Find("ItemsContainer");
 
             var retBtn = casePanelTransform.Find("ReturnHeldButton")?.GetComponent<Button>();
-            if (retBtn) retBtn.onClick.AddListener(() => _openCase?.ReturnHeld());
+            if (retBtn)
+                retBtn.onClick.AddListener(() => _openCase?.ReturnHeld());
 
             var cancelBtn = casePanelTransform.Find("CancelButton")?.GetComponent<Button>();
-            if (cancelBtn) cancelBtn.onClick.AddListener(() => _openCase?.CancelSelection());
+            if (cancelBtn)
+                cancelBtn.onClick.AddListener(() => _openCase?.CancelSelection());
 
             var closeBtn = casePanelTransform.Find("CloseButton")?.GetComponent<Button>();
-            if (closeBtn) closeBtn.onClick.AddListener(() => _openCase?.ClosePanel());
+            if (closeBtn)
+                closeBtn.onClick.AddListener(() => _openCase?.ClosePanel());
         }
 
         // Wire SopPanel
@@ -263,9 +288,11 @@ public sealed class TssRuntimeUi : MonoBehaviour
             _namePromptTitle = namePanelTransform.Find("Title")?.GetComponent<Text>();
             _namePromptInput = namePanelTransform.Find("DeviceInput")?.GetComponent<InputField>();
             var confirmBtn = namePanelTransform.Find("ConfirmButton")?.GetComponent<Button>();
-            if (confirmBtn) confirmBtn.onClick.AddListener(ConfirmNamePrompt);
+            if (confirmBtn)
+                confirmBtn.onClick.AddListener(ConfirmNamePrompt);
             var cancelBtn = namePanelTransform.Find("CancelButton")?.GetComponent<Button>();
-            if (cancelBtn) cancelBtn.onClick.AddListener(HideNamePrompt);
+            if (cancelBtn)
+                cancelBtn.onClick.AddListener(HideNamePrompt);
         }
 
         // Wire CorrectionPanel
@@ -277,19 +304,24 @@ public sealed class TssRuntimeUi : MonoBehaviour
             _correctionInput = corrPanelTransform.Find("DeviceInput")?.GetComponent<InputField>();
 
             var renameBtn = corrPanelTransform.Find("RenameButton")?.GetComponent<Button>();
-            if (renameBtn) renameBtn.onClick.AddListener(ConfirmRename);
+            if (renameBtn)
+                renameBtn.onClick.AddListener(ConfirmRename);
             _corrRenameButton = renameBtn;
             var pickupBtn = corrPanelTransform.Find("PickupButton")?.GetComponent<Button>();
-            if (pickupBtn) pickupBtn.onClick.AddListener(ConfirmPickup);
+            if (pickupBtn)
+                pickupBtn.onClick.AddListener(ConfirmPickup);
             _corrPickupButton = pickupBtn;
-            _corrAccessComputerButton = corrPanelTransform.Find("AccessComputerButton")?.GetComponent<Button>();
+            _corrAccessComputerButton = corrPanelTransform
+                .Find("AccessComputerButton")
+                ?.GetComponent<Button>();
             if (_corrAccessComputerButton)
                 _corrAccessComputerButton.onClick.AddListener(ConfirmAccessComputer);
             else
                 Debug.LogWarning("CorrectionPanel is missing AccessComputerButton.");
 
             var closeBtn = corrPanelTransform.Find("CloseButton")?.GetComponent<Button>();
-            if (closeBtn) closeBtn.onClick.AddListener(HideCorrectionPanel);
+            if (closeBtn)
+                closeBtn.onClick.AddListener(HideCorrectionPanel);
         }
 
         var computerPanelTransform = rootInstance.transform.Find("ComputerPanel");
@@ -313,11 +345,10 @@ public sealed class TssRuntimeUi : MonoBehaviour
             return;
 
         if (_heldText)
-            _heldText.text = session.HeldItem
-                ? $"Held: {session.HeldItem.displayName}"
-                : session.HeldCable
-                    ? $"Held cable: {session.HeldCable.displayName}"
-                    : "Held: none";
+            _heldText.text =
+                session.HeldItem ? $"Held: {session.HeldItem.displayName}"
+                : session.HeldCable ? $"Held cable: {session.HeldCable.displayName}"
+                : "Held: none";
 
         if (_cancelHeldButton)
             _cancelHeldButton.SetActive(session.HeldItem != null || session.HeldCable != null);
@@ -327,24 +358,39 @@ public sealed class TssRuntimeUi : MonoBehaviour
         RefreshDebugPanel();
     }
 
-    public void ShowNamePrompt(string title, string initialValue, Action<string> onConfirm, object owner = null)
+    public void ShowNamePrompt(
+        string title,
+        string initialValue,
+        Action<string> onConfirm,
+        object owner = null
+    )
     {
         CloseActiveMenu();
         _activeMenuOwner = owner;
         _namePromptConfirmed = onConfirm;
-        if (_namePromptTitle) _namePromptTitle.text = title;
+        if (_namePromptTitle)
+            _namePromptTitle.text = title;
         if (_namePromptInput)
         {
             _namePromptInput.text = initialValue ?? string.Empty;
         }
-        if (_namePromptPanel) _namePromptPanel.SetActive(true);
-        if (_correctionPanel) _correctionPanel.SetActive(false);
-        if (_computerPanel) _computerPanel.SetActive(false);
-        if (_namePromptInput) _namePromptInput.ActivateInputField();
+        if (_namePromptPanel)
+            _namePromptPanel.SetActive(true);
+        if (_correctionPanel)
+            _correctionPanel.SetActive(false);
+        if (_computerPanel)
+            _computerPanel.SetActive(false);
+        if (_namePromptInput)
+            _namePromptInput.ActivateInputField();
         ApplyGameplayInputLock(true);
     }
 
-    public void ShowPlacementCorrection(string title, string currentName, Action<string> onRename, Action onPickup)
+    public void ShowPlacementCorrection(
+        string title,
+        string currentName,
+        Action<string> onRename,
+        Action onPickup
+    )
     {
         ShowEndpointMenu(title, true, true, false, onRename, onPickup, null, null, currentName);
     }
@@ -358,25 +404,34 @@ public sealed class TssRuntimeUi : MonoBehaviour
         Action onPickup,
         Action onAccessComputer,
         object owner = null,
-        string currentName = "")
+        string currentName = ""
+    )
     {
         CloseActiveMenu();
         _activeMenuOwner = owner;
         _renameConfirmed = onRename;
         _pickupConfirmed = onPickup;
         _accessComputerConfirmed = onAccessComputer;
-        if (_correctionTitle) _correctionTitle.text = title;
+        if (_correctionTitle)
+            _correctionTitle.text = title;
         if (_correctionInput)
         {
             _correctionInput.text = currentName ?? string.Empty;
         }
-        if (_corrRenameButton) _corrRenameButton.gameObject.SetActive(canRename);
-        if (_corrPickupButton) _corrPickupButton.gameObject.SetActive(canPickup);
-        if (_corrAccessComputerButton) _corrAccessComputerButton.gameObject.SetActive(canAccessComputer);
-        if (_correctionPanel) _correctionPanel.SetActive(true);
-        if (_namePromptPanel) _namePromptPanel.SetActive(false);
-        if (_computerPanel) _computerPanel.SetActive(false);
-        if (_correctionInput && canRename) _correctionInput.ActivateInputField();
+        if (_corrRenameButton)
+            _corrRenameButton.gameObject.SetActive(canRename);
+        if (_corrPickupButton)
+            _corrPickupButton.gameObject.SetActive(canPickup);
+        if (_corrAccessComputerButton)
+            _corrAccessComputerButton.gameObject.SetActive(canAccessComputer);
+        if (_correctionPanel)
+            _correctionPanel.SetActive(true);
+        if (_namePromptPanel)
+            _namePromptPanel.SetActive(false);
+        if (_computerPanel)
+            _computerPanel.SetActive(false);
+        if (_correctionInput && canRename)
+            _correctionInput.ActivateInputField();
         ApplyGameplayInputLock(true);
     }
 
@@ -384,12 +439,18 @@ public sealed class TssRuntimeUi : MonoBehaviour
     {
         CloseActiveMenu();
         _activeMenuOwner = owner;
-        if (_computerTitle) _computerTitle.text = title;
-        if (_computerInput) _computerInput.text = string.Empty;
-        if (_computerPanel) _computerPanel.SetActive(true);
-        if (_namePromptPanel) _namePromptPanel.SetActive(false);
-        if (_correctionPanel) _correctionPanel.SetActive(false);
-        if (_computerInput) _computerInput.ActivateInputField();
+        if (_computerTitle)
+            _computerTitle.text = title;
+        if (_computerInput)
+            _computerInput.text = string.Empty;
+        if (_computerPanel)
+            _computerPanel.SetActive(true);
+        if (_namePromptPanel)
+            _namePromptPanel.SetActive(false);
+        if (_correctionPanel)
+            _correctionPanel.SetActive(false);
+        if (_computerInput)
+            _computerInput.ActivateInputField();
         ApplyGameplayInputLock(true);
     }
 
@@ -427,6 +488,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 rt.anchorMin = new Vector2(0, 1);
                 rt.anchorMax = new Vector2(1, 1);
                 rt.pivot = new Vector2(0.5f, 1);
+                rt.sizeDelta = new Vector2(0, rt.sizeDelta.y);
                 rt.anchoredPosition = new Vector2(0, y);
             }
 
@@ -467,6 +529,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 rt.anchorMin = new Vector2(0, 1);
                 rt.anchorMax = new Vector2(1, 1);
                 rt.pivot = new Vector2(0.5f, 1);
+                rt.sizeDelta = new Vector2(0, rt.sizeDelta.y);
                 rt.anchoredPosition = new Vector2(0, y);
             }
 
@@ -487,7 +550,13 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
     private void RefreshSopPanel()
     {
-        if (!_sopPanel || !_sopPanel.activeSelf || !session || !session.Scenario || !_sopContentContainer)
+        if (
+            !_sopPanel
+            || !_sopPanel.activeSelf
+            || !session
+            || !session.Scenario
+            || !_sopContentContainer
+        )
             return;
 
         var sections = session.Scenario.sopSections;
@@ -495,7 +564,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (sectionCount == 0)
         {
             SetSopChildrenActive(_sopContentContainer, 0);
-            if (_sopTabsContainer) SetSopChildrenActive(_sopTabsContainer, 0);
+            if (_sopTabsContainer)
+                SetSopChildrenActive(_sopTabsContainer, 0);
             return;
         }
 
@@ -517,10 +587,12 @@ public sealed class TssRuntimeUi : MonoBehaviour
         var row = _sopContentContainer.GetChild(0);
 
         var titleText = row.Find("SectionTitle")?.GetComponent<Text>();
-        if (titleText) titleText.text = section.title;
+        if (titleText)
+            titleText.text = section.title;
 
         var bodyText = row.Find("SectionBody")?.GetComponent<Text>();
-        if (bodyText) bodyText.text = section.body;
+        if (bodyText)
+            bodyText.text = section.body;
     }
 
     private void RefreshSopTabs(SopSection[] sections, int sectionCount)
@@ -537,7 +609,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 continue;
 
             var label = tab.GetComponentInChildren<Text>();
-            if (label) label.text = sections[i].title;
+            if (label)
+                label.text = sections[i].title;
 
             var button = tab.GetComponent<Button>();
             if (!button)
@@ -553,7 +626,9 @@ public sealed class TssRuntimeUi : MonoBehaviour
         }
 
         if (sectionCount > _sopTabsContainer.childCount)
-            Debug.LogWarning("TssRuntimeUi SOP panel has fewer prefab tabs than scenario SOP sections.");
+            Debug.LogWarning(
+                "TssRuntimeUi SOP panel has fewer prefab tabs than scenario SOP sections."
+            );
     }
 
     private static void SetSopChildrenActive(Transform parent, int activeCount)
@@ -567,10 +642,18 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (!_debugPanel || !_debugPanel.activeSelf || !session || !_debugText)
             return;
 
-        var result = TssPlacementEvaluator.Evaluate(session.Scenario, session.Installed, session.EndpointPlacements);
-        var placementText = result.IsComplete ? "WP1 equipment placement complete." : string.Join("\n", result.Messages);
+        var result = TssPlacementEvaluator.Evaluate(
+            session.Scenario,
+            session.Installed,
+            session.EndpointPlacements
+        );
+        var placementText = result.IsComplete
+            ? "WP1 equipment placement complete."
+            : string.Join("\n", result.Messages);
         var cableText = PhysicalConnectionText(session);
-        _debugText.text = string.IsNullOrWhiteSpace(cableText) ? placementText : $"{placementText}\n\nPhysical connections:\n{cableText}";
+        _debugText.text = string.IsNullOrWhiteSpace(cableText)
+            ? placementText
+            : $"{placementText}\n\nPhysical connections:\n{cableText}";
     }
 
     private void ToggleSop()
@@ -600,7 +683,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
     private void HideNamePrompt()
     {
-        if (_namePromptPanel) _namePromptPanel.SetActive(false);
+        if (_namePromptPanel)
+            _namePromptPanel.SetActive(false);
         _namePromptConfirmed = null;
         ClearOwner(_activeMenuOwner);
         ApplyGameplayInputLock(IsAnyGameplayMenuOpen());
@@ -621,7 +705,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
     private void HideCorrectionPanel()
     {
-        if (_correctionPanel) _correctionPanel.SetActive(false);
+        if (_correctionPanel)
+            _correctionPanel.SetActive(false);
         _renameConfirmed = null;
         _pickupConfirmed = null;
         _accessComputerConfirmed = null;
@@ -698,7 +783,10 @@ public sealed class TssRuntimeUi : MonoBehaviour
     {
         foreach (var parameter in playerAnimator.parameters)
         {
-            if (parameter.nameHash == parameterHash && parameter.type == AnimatorControllerParameterType.Float)
+            if (
+                parameter.nameHash == parameterHash
+                && parameter.type == AnimatorControllerParameterType.Float
+            )
             {
                 playerAnimator.SetFloat(parameterHash, value);
                 return;
@@ -738,7 +826,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
         for (var i = 0; i < session.PhysicalConnections.Count; i++)
         {
             var connection = session.PhysicalConnections[i];
-            lines[i] = $"{(connection.IsPermanent ? "Permanent " : string.Empty)}{connection.CableType} - {connection.EndpointAId} <-> {connection.EndpointBId}";
+            lines[i] =
+                $"{(connection.IsPermanent ? "Permanent " : string.Empty)}{connection.CableType} - {connection.EndpointAId} <-> {connection.EndpointBId}";
         }
 
         return string.Join("\n", lines);
@@ -749,7 +838,10 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>())
             return;
 
-        var eventSystem = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem));
+        var eventSystem = new GameObject(
+            "EventSystem",
+            typeof(UnityEngine.EventSystems.EventSystem)
+        );
 #if ENABLE_INPUT_SYSTEM
         eventSystem.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
 #else
@@ -757,4 +849,3 @@ public sealed class TssRuntimeUi : MonoBehaviour
 #endif
     }
 }
-

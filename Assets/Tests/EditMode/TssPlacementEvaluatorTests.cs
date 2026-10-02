@@ -184,6 +184,9 @@ public sealed class TssPlacementEvaluatorTests
 
         Assert.IsTrue(session.TryUsePort(endpointA, out _));
         Assert.AreEqual(0, session.PhysicalConnections.Count);
+        Assert.AreSame(cable, session.HeldCable);
+        Assert.AreEqual(0, session.GetRemaining(cable));
+        Assert.IsTrue(session.ReturnHeldCable(out _));
         Assert.AreEqual(1, session.GetRemaining(cable));
 
         Object.DestroyImmediate(endpointA.gameObject);
@@ -198,7 +201,7 @@ public sealed class TssPlacementEvaluatorTests
         var session = go.AddComponent<TssTrainingSession>();
         var scenario = CreateScenario();
         var cable = Cable(TssCableType.StraightThrough);
-        scenario.cableInventory = new[] { new ScenarioCableInventoryItem { cable = cable, quantity = 1 } };
+        scenario.cableInventory = new[] { new ScenarioCableInventoryItem { cable = cable, quantity = 2 } };
         scenario.permanentConnections = new[]
         {
             new ScenarioPermanentCableConnection
@@ -211,21 +214,42 @@ public sealed class TssPlacementEvaluatorTests
 
         var endpointA = EndpointObject("A").AddComponent<TssPortEndpoint>();
         var endpointB = EndpointObject("B").AddComponent<TssPortEndpoint>();
+        var endpointC = EndpointObject("C").AddComponent<TssPortEndpoint>();
+        var endpointD = EndpointObject("D").AddComponent<TssPortEndpoint>();
         endpointA.Configure("Rack:Rack01:U02:Port01", Port("Port01"));
         endpointB.Configure("WallPort:Office01:Port01", Port("Port01"));
+        endpointC.Configure("Rack:Rack01:U03:Port01", Port("Switch01"));
+        endpointD.Configure("Endpoint:OfficePc:Eth01", Port("Eth01"));
+        var visualCountBeforePermanent = Object.FindObjectsByType<TssCableVisual>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length;
 
         session.BeginScenario(scenario);
 
         Assert.AreEqual(1, session.PhysicalConnections.Count);
         Assert.IsTrue(session.PhysicalConnections[0].IsPermanent);
         Assert.IsFalse(session.PhysicalConnections[0].Visual);
-        Assert.AreEqual(1, session.GetRemaining(cable));
+        Assert.AreEqual(2, session.GetRemaining(cable));
+        Assert.IsFalse(session.IsEndpointConnected(endpointA.EndpointId));
         Assert.IsFalse(session.TryUsePort(endpointA, out _));
         Assert.AreEqual(1, session.PhysicalConnections.Count);
-        Assert.AreEqual(0, Object.FindObjectsByType<TssCableVisual>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length);
+        Assert.AreEqual(visualCountBeforePermanent, Object.FindObjectsByType<TssCableVisual>(FindObjectsInactive.Include, FindObjectsSortMode.None).Length);
+        Assert.IsTrue(session.TryCheckoutCable(cable, out _));
+        Assert.IsTrue(session.TryUsePort(endpointA, out _));
+        Assert.IsTrue(session.TryUsePort(endpointC, out _));
+        Assert.AreEqual(2, session.PhysicalConnections.Count);
+        Assert.IsTrue(session.IsEndpointConnected(endpointA.EndpointId));
+        Assert.IsFalse(session.IsEndpointConnected(endpointB.EndpointId));
+        Assert.IsFalse(session.HasPhysicalPath(endpointC.EndpointId, endpointD.EndpointId));
+        Assert.IsTrue(session.TryCheckoutCable(cable, out _));
+        Assert.IsTrue(session.TryUsePort(endpointB, out _));
+        Assert.IsTrue(session.TryUsePort(endpointD, out _));
+        Assert.AreEqual(3, session.PhysicalConnections.Count);
+        Assert.IsTrue(session.HasPhysicalPath(endpointC.EndpointId, endpointD.EndpointId));
+        Assert.AreEqual(1, session.GetEffectivePhysicalPaths().Count);
 
         Object.DestroyImmediate(endpointA.gameObject);
         Object.DestroyImmediate(endpointB.gameObject);
+        Object.DestroyImmediate(endpointC.gameObject);
+        Object.DestroyImmediate(endpointD.gameObject);
         Object.DestroyImmediate(go);
     }
 

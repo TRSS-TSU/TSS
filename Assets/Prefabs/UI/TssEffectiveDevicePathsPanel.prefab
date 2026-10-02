@@ -13,7 +13,7 @@ GameObject:
   - component: {fileID: 5365396448184213411}
   - component: {fileID: 1887351436274020918}
   m_Layer: 0
-  m_Name: TssPhysicalConnectionPanel
+  m_Name: TssEffectiveDevicePathsPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -37,8 +37,8 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0.5}
   m_AnchorMax: {x: 0.5, y: 0.5}
-  m_AnchoredPosition: {x: 490, y: -300}
-  m_SizeDelta: {x: 980, y: 600}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 960, y: 600}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &4703120789307924665
 CanvasRenderer:
@@ -91,7 +91,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TSS.Runtime::TssPhysicalConnectionPanel
   session: {fileID: 0}
-  content: 0
+  content: 2
   titleText: {fileID: 6932517906703789089}
   rowsContainer: {fileID: 3881271585727075663}
   scrollRect: {fileID: 0}
@@ -178,7 +178,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: Cable Connections
+  m_Text: Effective Device Paths
 --- !u!1 &8098982925554418555
 GameObject:
   m_ObjectHideFlags: 0

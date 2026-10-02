@@ -97,6 +97,7 @@ public sealed class TssPhysicalConnectionPanelTests
             typeof(TssPhysicalConnectionPanel)
                 .GetField("session", BindingFlags.Instance | BindingFlags.NonPublic)
                 .SetValue(panel, session);
+            SetPanelContent(panel, "PermanentInfrastructure");
 
             panel.Refresh();
 
@@ -107,6 +108,51 @@ public sealed class TssPhysicalConnectionPanelTests
         finally
         {
             Object.DestroyImmediate(panelRoot);
+            Object.DestroyImmediate(session.gameObject);
+        }
+    }
+
+    [Test]
+    public void RefreshShowsEffectiveDevicePathsThroughPermanentInfrastructure()
+    {
+        var session = new GameObject("Session").AddComponent<TssTrainingSession>();
+        var patch = new GameObject("Patch").AddComponent<TssPortEndpoint>();
+        var wall = new GameObject("Wall").AddComponent<TssPortEndpoint>();
+        var switchPort = new GameObject("Switch").AddComponent<TssPortEndpoint>();
+        var printer = new GameObject("Printer").AddComponent<TssPortEndpoint>();
+        var panelRoot = new GameObject("Panel", typeof(RectTransform));
+        var rows = new GameObject("Rows", typeof(RectTransform));
+        rows.transform.SetParent(panelRoot.transform, false);
+
+        try
+        {
+            patch.Configure("PatchPanel:Rack02:Port06", new EquipmentInterface { label = "Patch2 Port 6" });
+            wall.Configure("WallPort:SecondFloor:Office02:Port02", new EquipmentInterface { label = "Office 2 Wallport Port 2" });
+            switchPort.Configure("Rack:Rack02:U35:Port04", new EquipmentInterface { label = "AN-2 Port 4" });
+            printer.Configure("Endpoint:Office2Printer:Eth01", new EquipmentInterface { label = "Office 2 Printer Eth01" });
+            PhysicalConnections(session).Add(new TssPhysicalConnectionRecord("Infrastructure001", null, TssCableType.StraightThrough, patch.EndpointId, wall.EndpointId, null, true));
+            PhysicalConnections(session).Add(new TssPhysicalConnectionRecord("Cable001", null, TssCableType.StraightThrough, patch.EndpointId, switchPort.EndpointId, null));
+            PhysicalConnections(session).Add(new TssPhysicalConnectionRecord("Cable002", null, TssCableType.StraightThrough, wall.EndpointId, printer.EndpointId, null));
+
+            var panel = panelRoot.AddComponent<TssPhysicalConnectionPanel>();
+            typeof(TssPhysicalConnectionPanel)
+                .GetField("session", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(panel, session);
+            SetPanelContent(panel, "EffectiveDevicePaths");
+
+            panel.Refresh();
+
+            var content = rows.transform.Find("ScrollContent");
+            Assert.IsTrue(HasRow(content, "Effective Device Paths"));
+            Assert.IsTrue(HasRowContaining(content, "AN-2 Port 4", "Office 2 Printer Eth01"));
+        }
+        finally
+        {
+            Object.DestroyImmediate(panelRoot);
+            Object.DestroyImmediate(patch.gameObject);
+            Object.DestroyImmediate(wall.gameObject);
+            Object.DestroyImmediate(switchPort.gameObject);
+            Object.DestroyImmediate(printer.gameObject);
             Object.DestroyImmediate(session.gameObject);
         }
     }
@@ -130,5 +176,35 @@ public sealed class TssPhysicalConnectionPanelTests
         return (List<TssPhysicalConnectionRecord>)typeof(TssTrainingSession)
             .GetField("_physicalConnections", BindingFlags.Instance | BindingFlags.NonPublic)
             .GetValue(session);
+    }
+
+    private static void SetPanelContent(TssPhysicalConnectionPanel panel, string value)
+    {
+        var field = typeof(TssPhysicalConnectionPanel)
+            .GetField("content", BindingFlags.Instance | BindingFlags.NonPublic);
+        field.SetValue(panel, System.Enum.Parse(field.FieldType, value));
+    }
+
+    private static bool HasRow(Transform content, string text)
+    {
+        for (var i = 0; i < content.childCount; i++)
+        {
+            if (content.GetChild(i).GetComponent<Text>().text == text)
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool HasRowContaining(Transform content, string first, string second)
+    {
+        for (var i = 0; i < content.childCount; i++)
+        {
+            var text = content.GetChild(i).GetComponent<Text>().text;
+            if (text.Contains(first) && text.Contains(second))
+                return true;
+        }
+
+        return false;
     }
 }

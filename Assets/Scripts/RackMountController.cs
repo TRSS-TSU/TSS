@@ -141,7 +141,7 @@ public sealed class RackMountController : MonoBehaviour
             return false;
 
         return equipment.useRearRackPlacement
-            ? RackSpanValidator.CanPlace(startingU, equipment.rackUnits, lowestU, highestU, null, _rearOccupied)
+            ? RackSpanValidator.CanPlace(startingU, equipment.rackUnits, lowestU, highestU, _reserved, _rearOccupied)
             : RackSpanValidator.CanPlace(startingU, equipment.rackUnits, firstInstallableU, lastInstallableU, _reserved, _occupied);
     }
 

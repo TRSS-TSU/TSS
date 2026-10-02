@@ -1,0 +1,52 @@
+Speculation summary one:
+
+Short-term action:
+• Temporarily enlarge the patch panel trigger collider downward and outward so it definitely overlaps the player collider while standing at the rack.
+• Test entering first-person while holding a cable and clicking the patch panel.
+• Add a temporary Debug.Log in TssObjectInteractable.OnTriggerEnter to verify the player actually enters the trigger.
+• If the enlarged trigger fixes the behavior, range detection is the confirmed cause.
+• Then verify the patch panel firstPersonView reference and TssPortSelectionAdapter setup.
+
+Long-term action:
+• Separate physical/click colliders from proximity detection.
+• Give each rack a dedicated invisible interaction trigger covering the usable working area in front of the whole rack.
+• Use that rack-wide zone to determine whether the player is close enough, regardless of device U height.
+• Keep normal device colliders for raycast/click targeting and TssPortEndpoint colliders for individual ports.
+• When the player is in the rack zone, holding a cable, and clicks a valid device, call TssObjectInteractable.EnterFirstPerson().
+• Unify pre-placed infrastructure equipment and student-installed rack equipment so both use the same first-person entry path.
+
+Relevant scripts:
+Assets/Scripts/TssObjectInteractable.cs
+Assets/Scripts/RackMountController.cs
+Assets/Scripts/TssPortSelectionAdapter.cs
+
+Current diagnosis: the patch panel is mounted high enough that its trigger may never overlap the player’s collider, leaving _playerInRange false.
+
+
+Speculation summary two:
+
+For this idea, I checked and found that TssInteractionZone.cs is not currently used.
+
+The earlier diagnosis focused too much on the patch panel's own collider. After reviewing the code, the more appropriate fix is to verify the rack's TssInteractionZone configuration.
+
+Fix action:
+1. Select the GameObject that contains the rack's trigger collider and TssInteractionZone component.
+2. In the Inspector, locate the TssInteractionZone Targets array.
+3. Set the array size as needed.
+4. Drag the patch panel GameObject that contains TssObjectInteractable into an element of the Targets array.
+5. Enter Play mode and walk into the rack's trigger zone.
+6. While holding a cable, point at and click the patch panel and verify that it transitions into first-person interaction mode.
+
+Why this matters:
+TssInteractionZone.OnTriggerEnter() calls SetPlayerInRange(true) on every TssObjectInteractable in its Targets array. If the patch panel is not in that array at runtime, the rack can know the player is nearby while the patch panel's TssObjectInteractable still considers the player out of range and ignores normal hover/click interaction.
+
+Expected flow:
+Player enters rack trigger -> TssInteractionZone marks patch panel in range -> player clicks patch panel -> TssObjectInteractable.EnterFirstPerson() -> TssPortSelectionAdapter enables port selection.
+
+If this does not resolve the issue, the next diagnostic should be the patch panel's clickable/raycast collider and its hierarchy relative to TssObjectInteractable.
+
+Relevant scripts:
+Assets/Scripts/TssInteractionZone.cs
+Assets/Scripts/TssObjectInteractable.cs
+Assets/Scripts/TssPortSelectionAdapter.cs
+Assets/Scripts/RackMountController.cs

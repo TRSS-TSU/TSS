@@ -10,6 +10,7 @@ public sealed class TssPortSelectionAdapter : MonoBehaviour
     [SerializeField] private Camera selectionCamera;
 
     private TssPortEndpoint[] _endpoints;
+    private TssPortEndpoint _hoveredEndpoint;
     private bool _selecting;
 
     private void Awake()
@@ -44,10 +45,15 @@ public sealed class TssPortSelectionAdapter : MonoBehaviour
 
     private void Update()
     {
-        if (!_selecting || !WasPrimaryClickPressed())
+        if (!_selecting)
             return;
 
-        var endpoint = FindClickedEndpoint();
+        UpdateHoveredEndpoint();
+
+        if (!WasPrimaryClickPressed())
+            return;
+
+        var endpoint = _hoveredEndpoint;
         if (!endpoint || !TssTrainingSession.Instance)
             return;
 
@@ -74,9 +80,12 @@ public sealed class TssPortSelectionAdapter : MonoBehaviour
             if (!endpoint)
                 continue;
 
+            endpoint.SetHovered(false);
             endpoint.SetSelectable(false);
             endpoint.SetSelected(false);
         }
+
+        _hoveredEndpoint = null;
     }
 
     private void RefreshHighlights()
@@ -94,7 +103,26 @@ public sealed class TssPortSelectionAdapter : MonoBehaviour
         }
     }
 
-    private TssPortEndpoint FindClickedEndpoint()
+    private void UpdateHoveredEndpoint()
+    {
+        var session = TssTrainingSession.Instance;
+        var hoveredEndpoint = FindPointedEndpoint();
+        if (hoveredEndpoint && (!session || !session.CanSelectEndpoint(hoveredEndpoint)))
+            hoveredEndpoint = null;
+
+        if (_hoveredEndpoint == hoveredEndpoint)
+            return;
+
+        if (_hoveredEndpoint)
+            _hoveredEndpoint.SetHovered(false);
+
+        _hoveredEndpoint = hoveredEndpoint;
+
+        if (_hoveredEndpoint)
+            _hoveredEndpoint.SetHovered(true);
+    }
+
+    private TssPortEndpoint FindPointedEndpoint()
     {
         RefreshEndpointCache();
 

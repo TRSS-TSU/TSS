@@ -6,7 +6,7 @@ public sealed class RackSpanValidatorTests
     [Test]
     public void ValidatesRackInstallSpans()
     {
-        var reserved = new HashSet<int> { 40 };
+        var reserved = new HashSet<int> { 30, 31, 40 };
         var occupied = new HashSet<int>();
 
         Assert.IsTrue(CanPlace(3, 1, 3, 39, reserved, occupied));
@@ -18,6 +18,9 @@ public sealed class RackSpanValidatorTests
 
         Assert.IsFalse(CanPlace(1, 1, 3, 39, reserved, occupied));
         Assert.IsFalse(CanPlace(2, 1, 3, 39, reserved, occupied));
+        Assert.IsFalse(CanPlace(29, 2, 3, 39, reserved, occupied));
+        Assert.IsFalse(CanPlace(30, 1, 3, 39, reserved, occupied));
+        Assert.IsFalse(CanPlace(31, 1, 3, 39, reserved, occupied));
         Assert.IsFalse(CanPlace(40, 1, 3, 39, reserved, occupied));
         Assert.IsFalse(CanPlace(39, 2, 3, 39, reserved, occupied));
     }

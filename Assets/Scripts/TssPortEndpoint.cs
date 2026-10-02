@@ -7,14 +7,18 @@ public sealed class TssPortEndpoint : MonoBehaviour
     [SerializeField] private string connectorType = "RJ45";
     [SerializeField] private TssCableType[] supportedCableTypes;
     [SerializeField] private Color selectableTint = new(0.1f, 0.9f, 0.45f, 1f);
+    [SerializeField] private Color hoverTint = new(0.2f, 0.65f, 1f, 1f);
     [SerializeField] private Color selectedTint = new(1f, 0.85f, 0.15f, 1f);
     [SerializeField, Range(0f, 1f)] private float highlightBlend = 0.55f;
+    [SerializeField, Min(0f)] private float highlightTransitionSpeed = 12f;
 
     private Renderer[] _renderers;
     private Material[][] _materials;
     private Color[][] _baseColors;
+    private Color[][] _targetColors;
     private bool _selected;
     private bool _selectable;
+    private bool _hovered;
 
     public string EndpointId => string.IsNullOrWhiteSpace(endpointId) ? name : endpointId;
     public string DisplayLabel => string.IsNullOrWhiteSpace(displayLabel) ? EndpointId : displayLabel;
@@ -24,6 +28,27 @@ public sealed class TssPortEndpoint : MonoBehaviour
     private void Awake()
     {
         CacheMaterials();
+    }
+
+    private void Update()
+    {
+        if (_materials == null || _targetColors == null)
+            return;
+
+        var blend = highlightTransitionSpeed <= 0f ? 1f : 1f - Mathf.Exp(-highlightTransitionSpeed * Time.deltaTime);
+        for (var rendererIndex = 0; rendererIndex < _materials.Length; rendererIndex++)
+        {
+            var materials = _materials[rendererIndex];
+            for (var materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+            {
+                var material = materials[materialIndex];
+                if (!material)
+                    continue;
+
+                var current = GetMaterialColor(material);
+                SetMaterialColor(material, Color.Lerp(current, _targetColors[rendererIndex][materialIndex], blend));
+            }
+        }
     }
 
     public void Configure(string id, EquipmentInterface definition)
@@ -64,20 +89,31 @@ public sealed class TssPortEndpoint : MonoBehaviour
         ApplyHighlight();
     }
 
+    public void SetHovered(bool hovered)
+    {
+        _hovered = hovered;
+        ApplyHighlight();
+    }
+
     private void CacheMaterials()
     {
         _renderers = GetComponentsInChildren<Renderer>(true);
         _materials = new Material[_renderers.Length][];
         _baseColors = new Color[_renderers.Length][];
+        _targetColors = new Color[_renderers.Length][];
 
         for (var rendererIndex = 0; rendererIndex < _renderers.Length; rendererIndex++)
         {
             var materials = _renderers[rendererIndex].materials;
             _materials[rendererIndex] = materials;
             _baseColors[rendererIndex] = new Color[materials.Length];
+            _targetColors[rendererIndex] = new Color[materials.Length];
 
             for (var materialIndex = 0; materialIndex < materials.Length; materialIndex++)
+            {
                 _baseColors[rendererIndex][materialIndex] = GetMaterialColor(materials[materialIndex]);
+                _targetColors[rendererIndex][materialIndex] = _baseColors[rendererIndex][materialIndex];
+            }
         }
     }
 
@@ -86,8 +122,8 @@ public sealed class TssPortEndpoint : MonoBehaviour
         if (_materials == null)
             CacheMaterials();
 
-        var color = _selected ? selectedTint : selectableTint;
-        var highlighted = _selected || _selectable;
+        var color = _selected ? selectedTint : _hovered ? hoverTint : selectableTint;
+        var highlighted = _selected || _hovered || _selectable;
 
         for (var rendererIndex = 0; rendererIndex < _materials.Length; rendererIndex++)
         {
@@ -99,7 +135,7 @@ public sealed class TssPortEndpoint : MonoBehaviour
                     continue;
 
                 var baseColor = _baseColors[rendererIndex][materialIndex];
-                SetMaterialColor(material, highlighted ? Color.Lerp(baseColor, color, highlightBlend) : baseColor);
+                _targetColors[rendererIndex][materialIndex] = highlighted ? Color.Lerp(baseColor, color, highlightBlend) : baseColor;
             }
         }
     }

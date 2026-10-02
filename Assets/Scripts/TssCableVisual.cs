@@ -10,7 +10,7 @@ public sealed class TssCableVisual : MonoBehaviour
         var root = new GameObject($"Cable {endpointA.DisplayLabel} to {endpointB.DisplayLabel}");
         var visual = root.AddComponent<TssCableVisual>();
         var provider = FindFirstObjectByType<TssCableRouteProvider>();
-        var points = provider ? provider.GetRoute(endpointA.CableAnchorPosition, endpointB.CableAnchorPosition) : new[] { endpointA.CableAnchorPosition, endpointB.CableAnchorPosition };
+        var points = provider ? provider.GetRoute(endpointA, endpointB) : new[] { endpointA.CableAnchorPosition, endpointB.CableAnchorPosition };
         visual.Build(cable, points);
         return visual;
     }

@@ -249,13 +249,13 @@ MonoBehaviour:
     highestU: 38
     firstInstallableU: 3
     lastInstallableU: 38
-    reservedUPositions: 27000000
+    reservedUPositions: 1e0000001f00000028000000
   - rackId: Rack02
     lowestU: 3
     highestU: 38
     firstInstallableU: 3
     lastInstallableU: 38
-    reservedUPositions: 27000000
+    reservedUPositions: 1e0000001f00000028000000
   expectedRackPlacements:
   - phaseLabel: Phase 1
     rackId: Rack01

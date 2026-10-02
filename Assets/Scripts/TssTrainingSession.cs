@@ -367,6 +367,12 @@ public sealed class TssTrainingSession : MonoBehaviour
 
         if (!HeldCable)
         {
+            if (HeldItem)
+            {
+                message = "Return the carried item first.";
+                return false;
+            }
+
             if (TryDisconnectEndpoint(endpoint.EndpointId, out message))
                 return true;
 
@@ -426,11 +432,57 @@ public sealed class TssTrainingSession : MonoBehaviour
     {
         foreach (var connection in _physicalConnections)
         {
+            if (connection.IsPermanent)
+                continue;
+
             if (connection.EndpointAId == endpointId || connection.EndpointBId == endpointId)
                 return true;
         }
 
         return false;
+    }
+
+    public bool HasPhysicalPath(string endpointAId, string endpointBId)
+    {
+        return HasPhysicalPath(endpointAId, endpointBId, false);
+    }
+
+    public List<TssPhysicalPathRecord> GetEffectivePhysicalPaths()
+    {
+        var permanentEndpoints = new HashSet<string>();
+        var playerEndpoints = new HashSet<string>();
+        foreach (var connection in _physicalConnections)
+        {
+            if (connection.IsPermanent)
+            {
+                permanentEndpoints.Add(connection.EndpointAId);
+                permanentEndpoints.Add(connection.EndpointBId);
+            }
+            else
+            {
+                playerEndpoints.Add(connection.EndpointAId);
+                playerEndpoints.Add(connection.EndpointBId);
+            }
+        }
+
+        var leaves = new List<string>();
+        foreach (var endpointId in playerEndpoints)
+        {
+            if (!permanentEndpoints.Contains(endpointId))
+                leaves.Add(endpointId);
+        }
+
+        var paths = new List<TssPhysicalPathRecord>();
+        for (var i = 0; i < leaves.Count; i++)
+        {
+            for (var j = i + 1; j < leaves.Count; j++)
+            {
+                if (HasPhysicalPath(leaves[i], leaves[j], true))
+                    paths.Add(new TssPhysicalPathRecord(leaves[i], leaves[j]));
+            }
+        }
+
+        return paths;
     }
 
     public bool IsFirstSelectedEndpoint(TssPortEndpoint endpoint)
@@ -450,6 +502,9 @@ public sealed class TssTrainingSession : MonoBehaviour
 
         foreach (var connection in _physicalConnections)
         {
+            if (connection.IsPermanent)
+                continue;
+
             if (connection.EndpointAId.StartsWith(ownerPrefix, StringComparison.Ordinal)
                 || connection.EndpointBId.StartsWith(ownerPrefix, StringComparison.Ordinal))
                 return true;
@@ -521,20 +576,21 @@ public sealed class TssTrainingSession : MonoBehaviour
         for (var i = _physicalConnections.Count - 1; i >= 0; i--)
         {
             var connection = _physicalConnections[i];
-            if (connection.EndpointAId != endpointId && connection.EndpointBId != endpointId)
+            if (connection.IsPermanent)
                 continue;
 
-            if (connection.IsPermanent)
-            {
-                message = "Permanent infrastructure links cannot be disconnected.";
-                return false;
-            }
+            if (connection.EndpointAId != endpointId && connection.EndpointBId != endpointId)
+                continue;
 
             if (connection.Visual)
                 DestroyUnityObject(connection.Visual);
 
             if (connection.Cable)
-                _remainingCables[connection.Cable] = GetRemaining(connection.Cable) + 1;
+            {
+                HeldCable = connection.Cable;
+                _selectedCableEndpoint = null;
+                CreateCableCarryVisual(connection.Cable);
+            }
 
             _physicalConnections.RemoveAt(i);
             message = $"Disconnected {endpointId}";
@@ -590,7 +646,7 @@ public sealed class TssTrainingSession : MonoBehaviour
 
             var patchPanelId = link.patchPanelEndpointId.Trim();
             var wallportId = link.wallportEndpointId.Trim();
-            if (HasConnection(patchPanelId, wallportId) || IsEndpointConnected(patchPanelId) || IsEndpointConnected(wallportId))
+            if (HasConnection(patchPanelId, wallportId))
                 continue;
 
             var patchPanel = FindEndpoint(patchPanelId);
@@ -621,6 +677,50 @@ public sealed class TssTrainingSession : MonoBehaviour
         }
 
         return false;
+    }
+
+    private bool HasPhysicalPath(string endpointAId, string endpointBId, bool requirePermanent)
+    {
+        if (string.IsNullOrWhiteSpace(endpointAId) || string.IsNullOrWhiteSpace(endpointBId))
+            return false;
+
+        if (endpointAId == endpointBId)
+            return !requirePermanent;
+
+        var seen = new HashSet<string>();
+        var queue = new Queue<TssPhysicalPathSearchNode>();
+        queue.Enqueue(new TssPhysicalPathSearchNode(endpointAId, false));
+        seen.Add($"{endpointAId}|False");
+
+        while (queue.Count > 0)
+        {
+            var node = queue.Dequeue();
+            foreach (var connection in _physicalConnections)
+            {
+                var other = ConnectedOtherEndpoint(connection, node.EndpointId);
+                if (string.IsNullOrEmpty(other))
+                    continue;
+
+                var usedPermanent = node.UsedPermanent || connection.IsPermanent;
+                if (other == endpointBId && (!requirePermanent || usedPermanent))
+                    return true;
+
+                var key = $"{other}|{usedPermanent}";
+                if (seen.Add(key))
+                    queue.Enqueue(new TssPhysicalPathSearchNode(other, usedPermanent));
+            }
+        }
+
+        return false;
+    }
+
+    private static string ConnectedOtherEndpoint(TssPhysicalConnectionRecord connection, string endpointId)
+    {
+        if (connection.EndpointAId == endpointId)
+            return connection.EndpointBId;
+        if (connection.EndpointBId == endpointId)
+            return connection.EndpointAId;
+        return string.Empty;
     }
 
     private TssCableDefinition FindCable(TssCableType cableType)
@@ -657,6 +757,30 @@ public sealed class TssTrainingSession : MonoBehaviour
             Destroy(target);
         else
             DestroyImmediate(target);
+    }
+
+    private readonly struct TssPhysicalPathSearchNode
+    {
+        public readonly string EndpointId;
+        public readonly bool UsedPermanent;
+
+        public TssPhysicalPathSearchNode(string endpointId, bool usedPermanent)
+        {
+            EndpointId = endpointId;
+            UsedPermanent = usedPermanent;
+        }
+    }
+}
+
+public readonly struct TssPhysicalPathRecord
+{
+    public readonly string EndpointAId;
+    public readonly string EndpointBId;
+
+    public TssPhysicalPathRecord(string endpointAId, string endpointBId)
+    {
+        EndpointAId = endpointAId;
+        EndpointBId = endpointBId;
     }
 }
 

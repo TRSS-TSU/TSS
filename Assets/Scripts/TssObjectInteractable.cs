@@ -17,8 +17,6 @@ public sealed class TssObjectInteractable : MonoBehaviour
 
     [Header("View")]
     [SerializeField] private Transform firstPersonView;
-    [SerializeField] private Vector3 firstPersonLocalPositionOffset;
-    [SerializeField] private Vector3 firstPersonLocalEulerOffset;
     [SerializeField] private Camera mainCamera;
     [SerializeField] private float transitionSeconds = 0.75f;
     [SerializeField] private float firstPersonFieldOfView = 50f;
@@ -26,6 +24,7 @@ public sealed class TssObjectInteractable : MonoBehaviour
     [Header("Player")]
     [SerializeField] private ThirdPersonController playerController;
     [SerializeField] private StarterAssetsInputs playerInput;
+    [SerializeField, Min(0f)] private float fallbackInteractionRange = 2.75f;
 
     [Header("Avatar")]
     [SerializeField] private bool hideAvatarInFirstPerson = true;
@@ -87,19 +86,19 @@ public sealed class TssObjectInteractable : MonoBehaviour
             return;
         }
 
-        if (_playerInRange && _isHovered && WasPrimaryClickPressed())
+        if (IsPlayerInInteractionRange() && _isHovered && WasPrimaryClickPressed())
             EnterFirstPerson();
     }
 
     private void OnMouseDown()
     {
-        if (_playerInRange && !_isFirstPerson && _transition == null && !IsGameplayInputBlocked())
+        if (IsPlayerInInteractionRange() && !_isFirstPerson && _transition == null && !IsGameplayInputBlocked())
             EnterFirstPerson();
     }
 
     private void OnMouseEnter()
     {
-        if (_playerInRange)
+        if (IsPlayerInInteractionRange())
             SetHovered(true);
     }
 
@@ -167,9 +166,7 @@ public sealed class TssObjectInteractable : MonoBehaviour
         SetCinemachine(false);
         SetHovered(false);
         ShowCanvas();
-        var targetPosition = target.TransformPoint(firstPersonLocalPositionOffset);
-        var targetRotation = target.rotation * Quaternion.Euler(firstPersonLocalEulerOffset);
-        StartMove(targetPosition, targetRotation, firstPersonFieldOfView, () => EnteredFirstPerson?.Invoke());
+        StartMove(target.position, target.rotation, firstPersonFieldOfView, () => EnteredFirstPerson?.Invoke());
     }
 
     public void ReturnToThirdPerson()
@@ -349,7 +346,7 @@ public sealed class TssObjectInteractable : MonoBehaviour
 
     private void UpdateMouseHover()
     {
-        if (!_playerInRange || !mainCamera || _isFirstPerson)
+        if (!IsPlayerInInteractionRange() || !mainCamera || _isFirstPerson)
         {
             SetHovered(false);
             return;
@@ -378,6 +375,39 @@ public sealed class TssObjectInteractable : MonoBehaviour
 
         _isHovered = hovered;
         SetHighlight(hovered);
+    }
+
+    private bool IsPlayerInInteractionRange()
+    {
+        if (_playerInRange)
+            return true;
+
+        if (fallbackInteractionRange <= 0f)
+            return false;
+
+        var player = GetPlayerTransform();
+        if (player && Vector3.Distance(player.position, transform.position) <= fallbackInteractionRange)
+            return true;
+
+        foreach (var taggedPlayer in GameObject.FindGameObjectsWithTag("Player"))
+        {
+            if (taggedPlayer && Vector3.Distance(taggedPlayer.transform.position, transform.position) <= fallbackInteractionRange)
+                return true;
+        }
+
+        return false;
+    }
+
+    private Transform GetPlayerTransform()
+    {
+        if (playerController)
+            return playerController.transform;
+
+        if (avatarRoot)
+            return avatarRoot.transform;
+
+        var player = GameObject.FindGameObjectWithTag("Player");
+        return player ? player.transform : null;
     }
 
     private static Vector3 GetMousePosition()

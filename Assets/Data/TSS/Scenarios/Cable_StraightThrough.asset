@@ -17,4 +17,4 @@ MonoBehaviour:
   cableType: 0
   carryPrefab: {fileID: 0}
   visualMaterial: {fileID: 2202073336491403462, guid: 47ef83918e2e0c243ba388c579faa39e, type: 3}
-  radiusMeters: 0.012
+  radiusMeters: 0.004

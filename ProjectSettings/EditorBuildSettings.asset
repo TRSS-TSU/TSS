@@ -12,6 +12,9 @@ EditorBuildSettings:
     path: Assets/Scenes/TSS.unity
     guid: 99c9720ab356a0642a771bea13969a05
   m_configObjects:
+    com.unity.adaptivePerformance.basic.provider_settings: {fileID: 11400000, guid: 8a53bdee31f3f6b419c3d0bbbac70ec7, type: 2}
+    com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: 9bdd1802e4ef3bf41ba51a3a769bf55b, type: 2}
+    com.unity.adaptiveperformance.simulator.provider_settings: {fileID: 11400000, guid: c22b36104e1be114ab9cbefe642f79bc, type: 2}
     com.unity.dt.app-ui: {fileID: 11400000, guid: 1b1c20d82303e4b5781c3ef50ac1449f, type: 2}
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 052faaac586de48259a63d0c4782560b, type: 3}
   m_UseUCBPForAssetBundles: 0
