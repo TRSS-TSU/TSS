@@ -532,29 +532,36 @@ public static class TssDeviceSessionPrefabBuilder
         pcTitle.rectTransform.offsetMin = new Vector2(12f, 0f);
         pcTitle.color = AccentAmber;
 
-        var pingInput = MakeInputField(pcCard.transform, "PingInput", "Enter IP to ping...");
-        var piRt = pingInput.GetComponent<RectTransform>();
-        piRt.anchorMin = new Vector2(0f, 1f);
-        piRt.anchorMax = new Vector2(0.55f, 1f);
-        piRt.anchoredPosition = new Vector2(12f, -54f);
-        piRt.sizeDelta = new Vector2(0f, 32f);
+        var commandInput = MakeInputField(pcCard.transform, "CommandInput", "Enter command: ipconfig, ping <address>, tracert <address>, cls");
+        var ciRt = commandInput.GetComponent<RectTransform>();
+        ciRt.anchorMin = new Vector2(0f, 1f);
+        ciRt.anchorMax = new Vector2(0.68f, 1f);
+        ciRt.anchoredPosition = new Vector2(12f, -54f);
+        ciRt.sizeDelta = new Vector2(0f, 32f);
 
-        var pingBtn = MakeButton(pcCard.transform, "PingButton", "Ping", new Vector2(0.58f, -54f), new Vector2(80f, 32f), BtnNormal);
-        PositionAnchor(pingBtn.GetComponent<RectTransform>(), 0.58f, 1f, new Vector2(0f, -54f), new Vector2(80f, 32f));
+        var submitBtn = MakeButton(pcCard.transform, "SubmitCommandButton", "Enter", Vector2.zero, new Vector2(70f, 32f), BtnNormal);
+        PositionAnchor(submitBtn.GetComponent<RectTransform>(), 0.70f, 1f, new Vector2(0f, -54f), new Vector2(70f, 32f));
+        var historyUpBtn = MakeButton(pcCard.transform, "HistoryUpButton", "Up", Vector2.zero, new Vector2(50f, 32f), BtnNormal);
+        PositionAnchor(historyUpBtn.GetComponent<RectTransform>(), 0.81f, 1f, new Vector2(0f, -54f), new Vector2(50f, 32f));
+        var historyDownBtn = MakeButton(pcCard.transform, "HistoryDownButton", "Down", Vector2.zero, new Vector2(58f, 32f), BtnNormal);
+        PositionAnchor(historyDownBtn.GetComponent<RectTransform>(), 0.90f, 1f, new Vector2(0f, -54f), new Vector2(58f, 32f));
 
-        var pingGwBtn = MakeButton(pcCard.transform, "PingGwButton", "Gateway", new Vector2(0.78f, -54f), new Vector2(90f, 32f), BtnNormal);
-        PositionAnchor(pingGwBtn.GetComponent<RectTransform>(), 0.78f, 1f, new Vector2(0f, -54f), new Vector2(90f, 32f));
-
-        var ipconfigBtn = MakeButton(pcCard.transform, "IpconfigButton", "ipconfig /all", new Vector2(12f, -94f), new Vector2(130f, 30f), BtnNormal);
-        PositionAnchor(ipconfigBtn.GetComponent<RectTransform>(), 0f, 1f, new Vector2(12f, -94f), new Vector2(130f, 30f));
-
-        var pcDiagText = MakeText(pcCard.transform, "PcDiagnosticsOutputText", "Network diagnostics ready.", 11, TextAnchor.UpperLeft);
+        var outputViewport = MakeImage(pcCard.transform, "CommandOutputViewport", InputBg);
+        Stretch(outputViewport.rectTransform, 0f, 0f, 1f, 1f, 12f, 12f, -12f, -96f);
+        var pcDiagText = MakeText(outputViewport.transform, "CommandOutputText", "Endpoint command prompt ready.\n", 11, TextAnchor.UpperLeft);
         var pcdRt = pcDiagText.rectTransform;
-        pcdRt.anchorMin = Vector2.zero;
-        pcdRt.anchorMax = Vector2.one;
-        pcdRt.offsetMin = new Vector2(14f, 14f);
-        pcdRt.offsetMax = new Vector2(-14f, -132f);
+        pcdRt.anchorMin = new Vector2(0f, 1f);
+        pcdRt.anchorMax = new Vector2(1f, 1f);
+        pcdRt.pivot = new Vector2(0.5f, 1f);
+        pcdRt.offsetMin = new Vector2(8f, -2000f);
+        pcdRt.offsetMax = new Vector2(-8f, -8f);
         pcDiagText.color = TextSecondary;
+        var outputScroll = pcCard.AddComponent<ScrollRect>();
+        outputScroll.viewport = outputViewport.rectTransform;
+        outputScroll.content = pcDiagText.rectTransform;
+        outputScroll.horizontal = false;
+        outputScroll.vertical = true;
+        outputScroll.movementType = ScrollRect.MovementType.Clamped;
 
         // 2. Server Roles Card
         var srvCard = new GameObject("ServerRolesCard", typeof(RectTransform));
@@ -670,11 +677,11 @@ public static class TssDeviceSessionPrefabBuilder
         dSer.FindProperty("serverRolesCard").objectReferenceValue = srvCard;
         dSer.FindProperty("printerConsoleCard").objectReferenceValue = prnCard;
 
-        dSer.FindProperty("pingTargetInput").objectReferenceValue = pingInput;
-        dSer.FindProperty("pingButton").objectReferenceValue = pingBtn;
-        dSer.FindProperty("pingGatewayButton").objectReferenceValue = pingGwBtn;
-        dSer.FindProperty("ipconfigButton").objectReferenceValue = ipconfigBtn;
-        dSer.FindProperty("pcDiagnosticsOutputText").objectReferenceValue = pcDiagText;
+        dSer.FindProperty("commandInput").objectReferenceValue = commandInput;
+        dSer.FindProperty("submitCommandButton").objectReferenceValue = submitBtn;
+        dSer.FindProperty("historyUpButton").objectReferenceValue = historyUpBtn;
+        dSer.FindProperty("historyDownButton").objectReferenceValue = historyDownBtn;
+        dSer.FindProperty("commandOutputText").objectReferenceValue = pcDiagText;
 
         dSer.FindProperty("serverRolesStatusText").objectReferenceValue = srvStatus;
         dSer.FindProperty("serverClientsText").objectReferenceValue = srvClients;

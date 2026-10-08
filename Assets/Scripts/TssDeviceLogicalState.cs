@@ -43,6 +43,35 @@ public sealed class TssDeviceLogicalState
         AssignDefaults();
     }
 
+    public static TssDeviceLogicalState FromNetwork(NetworkDeviceState network, TssTrainingSession session)
+    {
+        if (network == null) return null;
+        var state = new TssDeviceLogicalState(network.Key, network.Category, network.Hostname)
+        {
+            MacAddress = network.MacAddress, IpAddress = network.ManagementAddress,
+            SubnetMask = network.ManagementMask, DefaultGateway = network.DefaultGateway,
+            DnsServer = network.DnsAddress, UseDhcp = network.UseDhcp
+        };
+        state.Interfaces.Clear();
+        foreach (var iface in network.Interfaces.Values)
+            state.Interfaces.Add(new InterfaceLogicalRecord
+            {
+                InterfaceName = iface.Name, EndpointId = iface.EndpointId, IsPhysicalLinkUp = iface.CarrierUp,
+                VlanId = iface.AccessVlan, PortMode = iface.IsTrunk ? "Trunk" : "Access",
+                IpAddress = string.IsNullOrEmpty(iface.Address) ? string.Empty : iface.Address + "/24",
+                MacAddress = TssNetworkRunProfile.MacFor(session?.NetworkProfile?.Seed ?? 0, network.Key + ":" + iface.Name)
+            });
+        return state;
+    }
+
+    public void SyncFromNetwork(NetworkDeviceState network)
+    {
+        if (network == null) return;
+        DeviceName = network.Hostname; MacAddress = network.MacAddress; IpAddress = network.ManagementAddress;
+        SubnetMask = network.ManagementMask; DefaultGateway = network.DefaultGateway; DnsServer = network.DnsAddress;
+        UseDhcp = network.UseDhcp;
+    }
+
     private void AssignDefaults()
     {
         SubnetMask = "255.255.255.0";

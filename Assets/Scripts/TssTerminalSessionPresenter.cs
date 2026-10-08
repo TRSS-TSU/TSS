@@ -92,7 +92,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         _state = state;
         _onClose = onClose;
         _cliMode = CiscoCliMode.UserExec;
-        _processor = new TssCliCommandProcessor(TssTrainingSession.Instance, deviceKey ?? state.Key, state.Category, state.DeviceName);
+        _processor = new TssCliCommandProcessor(TssTrainingSession.Instance, deviceKey ?? state.DeviceKey, state.Category, state.DeviceName);
 
         var isRouter = state.Category == EquipmentCategory.Router;
         if (titleText)
@@ -275,6 +275,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             else
             {
                 var result = _processor.Execute(cmd);
+                _state.SyncFromNetwork(_processor.Device);
                 _cliMode = result.Mode switch
                 {
                     TssNetworkCliMode.PrivilegedExec => CiscoCliMode.PrivilegedExec,

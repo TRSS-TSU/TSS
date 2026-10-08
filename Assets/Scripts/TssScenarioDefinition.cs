@@ -93,4 +93,35 @@ public sealed class NetworkScenarioConfig
     public string dataVlanName = "Data";
     public string nativeVlanName = "Native";
     public string deadVlanName = "Dead_Vlan";
+    public int vlanMinimum = 10;
+    public int vlanMaximum = 399;
+    public string[] endpointAliases;
+    public NetworkRoleBinding[] roleBindings;
+    public NetworkRequiredPort[] requiredPorts;
+    public NetworkEvidenceRequirement[] evidenceRequirements;
+}
+
+[Serializable]
+public sealed class NetworkRoleBinding
+{
+    public string role;
+    public string deviceKey;
+    public EquipmentCategory category;
+    public string displayName;
+}
+
+[Serializable]
+public sealed class NetworkRequiredPort
+{
+    public string deviceRole;
+    public string interfaceName;
+    public string endpointId;
+}
+
+[Serializable]
+public sealed class NetworkEvidenceRequirement
+{
+    public string evidenceId;
+    public string command;
+    public string description;
 }

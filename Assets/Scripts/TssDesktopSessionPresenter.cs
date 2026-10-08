@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -33,11 +34,11 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
     [SerializeField] private GameObject printerConsoleCard;
 
     [Header("PC Tools")]
-    [SerializeField] private InputField pingTargetInput;
-    [SerializeField] private Button pingButton;
-    [SerializeField] private Button pingGatewayButton;
-    [SerializeField] private Button ipconfigButton;
-    [SerializeField] private Text pcDiagnosticsOutputText;
+    [SerializeField] private InputField commandInput;
+    [SerializeField] private Button submitCommandButton;
+    [SerializeField] private Button historyUpButton;
+    [SerializeField] private Button historyDownButton;
+    [SerializeField] private Text commandOutputText;
 
     [Header("Server Roles")]
     [SerializeField] private Text serverRolesStatusText;
@@ -54,10 +55,12 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
     private TssDeviceLogicalState _state;
     private Action _onClose;
     private float _feedbackTimer;
-    private int _testPrintCount;
     private string _deviceKey;
+    private string _initiatingSourceKey;
     private bool _useDhcp;
     private TssEndpointCommandProcessor _commands;
+    private readonly List<string> _commandHistory = new();
+    private int _historyIndex = -1;
 
     private void Awake()
     {
@@ -70,17 +73,14 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         if (staticToggle)
             staticToggle.onValueChanged.AddListener(OnStaticToggled);
 
-        if (pingButton)
-            pingButton.onClick.AddListener(ExecutePing);
-        if (pingGatewayButton)
-            pingGatewayButton.onClick.AddListener(() =>
-            {
-                if (pingTargetInput && _state != null)
-                    pingTargetInput.text = _state.DefaultGateway;
-                ExecutePing();
-            });
-        if (ipconfigButton)
-            ipconfigButton.onClick.AddListener(ExecuteIpconfig);
+        if (submitCommandButton)
+            submitCommandButton.onClick.AddListener(SubmitCommand);
+        if (historyUpButton)
+            historyUpButton.onClick.AddListener(() => BrowseHistory(-1));
+        if (historyDownButton)
+            historyDownButton.onClick.AddListener(() => BrowseHistory(1));
+        if (commandInput)
+            commandInput.onEndEdit.AddListener(_ => SubmitCommand());
         if (printTestPageButton)
             printTestPageButton.onClick.AddListener(PrintTestPage);
     }
@@ -104,11 +104,12 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         }
     }
 
-    public void Initialize(TssDeviceLogicalState state, GameObject deviceObject, Action onClose, string deviceKey = null)
+    public void Initialize(TssDeviceLogicalState state, GameObject deviceObject, Action onClose, string deviceKey = null, string initiatingSourceKey = null)
     {
         _state = state;
         _onClose = onClose;
         _deviceKey = deviceKey ?? state.DeviceKey;
+        _initiatingSourceKey = initiatingSourceKey;
         var network = TssTrainingSession.Instance ? TssTrainingSession.Instance.NetworkState : null;
         _commands = network != null ? new TssEndpointCommandProcessor(network) : null;
         if (network != null && network.TryGetEndpoint(_deviceKey, out var endpoint))
@@ -191,6 +192,12 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         RefreshDeviceSpecificCard(isPhysicalLinkUp);
         RefreshPhysicalPathCard(deviceObject);
 
+        _commandHistory.Clear();
+        _historyIndex = -1;
+        if (commandInput)
+            commandInput.text = string.Empty;
+        if (commandOutputText)
+            commandOutputText.text = string.Empty;
         if (applyFeedbackText)
             applyFeedbackText.text = string.Empty;
     }
@@ -228,13 +235,22 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         var mask = subnetMaskInput ? subnetMaskInput.text.Trim() : string.Empty;
         var gateway = defaultGatewayInput ? defaultGatewayInput.text.Trim() : string.Empty;
         var dns = dnsServerInput ? dnsServerInput.text.Trim() : string.Empty;
-        if (_commands != null && !_commands.TryApply(_deviceKey, _useDhcp, ip, mask, gateway, dns, out var error))
+        if (_commands == null)
+        {
+            if (applyFeedbackText) applyFeedbackText.text = "Network settings are unavailable.";
+            return;
+        }
+        if (!_commands.TryApply(_deviceKey, _useDhcp, ip, mask, gateway, dns, out var error))
         {
             if (applyFeedbackText) { applyFeedbackText.text = error; applyFeedbackText.color = new Color(1f, 0.45f, 0.45f, 1f); }
             return;
         }
-        _state.UseDhcp = _useDhcp;
-        _state.IpAddress = ip; _state.SubnetMask = mask; _state.DefaultGateway = gateway; _state.DnsServer = dns;
+        if (networkStateForPresenter() is { } network && network.TryGetEndpoint(_deviceKey, out var endpoint))
+        {
+            _state.UseDhcp = endpoint.UseDhcp;
+            _state.IpAddress = endpoint.Address; _state.SubnetMask = endpoint.Mask;
+            _state.DefaultGateway = endpoint.Gateway; _state.DnsServer = endpoint.Dns;
+        }
         TssTrainingSession.Instance?.NotifyNetworkStateChanged();
 
         if (applyFeedbackText)
@@ -252,18 +268,14 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
 
         if (_state.Category == EquipmentCategory.DesktopPc)
         {
-            if (pingTargetInput && string.IsNullOrEmpty(pingTargetInput.text))
-                pingTargetInput.text = _state.DefaultGateway;
-            if (pcDiagnosticsOutputText)
-                pcDiagnosticsOutputText.text = "Network diagnostics ready. Select a tool or enter IP to ping.";
+            if (commandOutputText)
+                commandOutputText.text = "Endpoint command prompt ready.\n";
         }
         else if (_state.Category == EquipmentCategory.Server)
         {
             if (serverRolesStatusText)
             {
-                serverRolesStatusText.text = isPhysicalLinkUp
-                    ? "<b>Adapter:</b> available\nServices are not simulated in this work package."
-                    : "<b>Adapter:</b> offline";
+                serverRolesStatusText.text = BuildEndpointStatus(isPhysicalLinkUp);
             }
 
             if (serverClientsText)
@@ -275,13 +287,11 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         {
             if (printerStatusText)
             {
-                printerStatusText.text = isPhysicalLinkUp
-                    ? "<b>Printer Status:</b> network adapter available"
-                    : "<b>Printer Status:</b> offline";
+                printerStatusText.text = BuildEndpointStatus(isPhysicalLinkUp);
             }
 
             if (printerQueueText)
-                printerQueueText.text = $"Print Queue: {_testPrintCount} job(s) processed.";
+                printerQueueText.text = BuildPrintStatus();
         }
     }
 
@@ -293,39 +303,65 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         physicalPathDetailsText.text = "Use endpoint diagnostics to isolate connectivity faults.";
     }
 
-    private void ExecutePing()
+    private string BuildEndpointStatus(bool isPhysicalLinkUp)
     {
-        if (!pcDiagnosticsOutputText)
-            return;
-
-        var target = pingTargetInput && !string.IsNullOrWhiteSpace(pingTargetInput.text)
-            ? pingTargetInput.text.Trim()
-            : (_state?.DefaultGateway ?? "192.168.1.1");
-
-        pcDiagnosticsOutputText.text = _commands != null
-            ? _commands.Execute(_deviceKey, "ping " + target).Output
-            : "Network diagnostics are unavailable.";
+        if (!isPhysicalLinkUp)
+            return "<b>Adapter:</b> offline";
+        var network = networkStateForPresenter();
+        if (network == null || !network.TryGetEndpoint(_deviceKey, out var endpoint))
+            return "<b>Adapter:</b> unavailable";
+        var result = new TssNetworkReachabilityEvaluator(network).Evaluate(_deviceKey, endpoint.Address);
+        return result.Success ? "<b>Adapter:</b> online\nReachability: available" : "<b>Adapter:</b> online\nReachability: " + result.Diagnostic;
     }
 
-    private void ExecuteIpconfig()
+    private string BuildPrintStatus()
     {
-        if (!pcDiagnosticsOutputText || _state == null)
-            return;
+        var network = networkStateForPresenter();
+        if (network == null || !network.TryGetEndpoint(_deviceKey, out var printer) || printer.PrintAttemptCount == 0)
+            return "Print Queue: 0 jobs processed.";
+        return $"Last job: {(printer.LastPrintSucceeded ? "completed" : "failed")}\n" + printer.LastPrintDiagnostic;
+    }
 
-        pcDiagnosticsOutputText.text = _commands != null ? _commands.Execute(_deviceKey, "ipconfig").Output : "Network diagnostics are unavailable.";
+    private void SubmitCommand()
+    {
+        if (!commandInput || _commands == null)
+            return;
+        var input = commandInput.text.Trim();
+        if (string.IsNullOrEmpty(input))
+            return;
+        _commandHistory.Add(input);
+        _historyIndex = _commandHistory.Count;
+        var result = _commands.Execute(_deviceKey, input);
+        if (input.Equals("cls", StringComparison.OrdinalIgnoreCase))
+            if (commandOutputText) commandOutputText.text = string.Empty;
+        else if (commandOutputText)
+            commandOutputText.text += "> " + input + "\n" + result.Output;
+        commandInput.text = string.Empty;
+    }
+
+    private void BrowseHistory(int direction)
+    {
+        if (!commandInput || _commandHistory.Count == 0)
+            return;
+        _historyIndex = Mathf.Clamp(_historyIndex + direction, 0, _commandHistory.Count);
+        commandInput.text = _historyIndex < _commandHistory.Count ? _commandHistory[_historyIndex] : string.Empty;
+        commandInput.ActivateInputField();
     }
 
     private void PrintTestPage()
     {
-        if (_commands == null || !_commands.Execute(_deviceKey, "ping " + (_state?.IpAddress ?? string.Empty)).Accepted)
-            return;
-        _testPrintCount++;
-        if (printerQueueText)
+        var network = networkStateForPresenter();
+        if (network == null || !network.TryPrintTestPage(_deviceKey, _initiatingSourceKey, out _))
         {
-            printerQueueText.text = $"[JOB #{_testPrintCount:D3}] Network Test Page - Printing completed successfully.\n" +
-                                   $"Total pages: {_testPrintCount}";
+            if (printerQueueText) printerQueueText.text = BuildPrintStatus();
+            TssTrainingSession.Instance?.NotifyNetworkStateChanged();
+            return;
         }
+        if (printerQueueText) printerQueueText.text = BuildPrintStatus();
+        TssTrainingSession.Instance?.NotifyNetworkStateChanged();
     }
+
+    private static TssNetworkSessionState networkStateForPresenter() => TssTrainingSession.Instance ? TssTrainingSession.Instance.NetworkState : null;
 
     public void Close()
     {

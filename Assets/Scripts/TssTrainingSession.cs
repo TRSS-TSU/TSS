@@ -147,7 +147,6 @@ public sealed class TssTrainingSession : MonoBehaviour
         _remaining[equipment]--;
         HeldItem = equipment;
         CreateCarryVisual(equipment);
-        NetworkState?.RemoveDevice(GetRackOwnerPrefix(rack.RackId, startingU));
         message = $"Carrying {equipment.displayName}";
         StateChanged?.Invoke();
         return true;
@@ -268,6 +267,8 @@ public sealed class TssTrainingSession : MonoBehaviour
             }
         }
 
+        NetworkState?.RemoveDevice(GetRackOwnerPrefix(rack.RackId, startingU));
+
         message = $"Picked up {equipment.displayName}";
         StateChanged?.Invoke();
         return true;
@@ -325,7 +326,8 @@ public sealed class TssTrainingSession : MonoBehaviour
                 continue;
 
             _endpointPlacements.RemoveAt(i);
-            NetworkState?.RemoveDevice(placementId);
+            NetworkState?.RemoveDevice(GetEndpointOwnerPrefix(placementId));
+            NetworkState?.RemoveEndpoint(GetEndpointOwnerPrefix(placementId));
             HeldItem = equipment;
             CreateCarryVisual(equipment);
             message = $"Picked up {equipment.displayName}";
@@ -346,6 +348,8 @@ public sealed class TssTrainingSession : MonoBehaviour
                 continue;
 
             _installed[i] = record.WithDeviceName(CleanDeviceName(deviceName));
+            if (NetworkState != null && NetworkState.TryGetDevice(GetRackOwnerPrefix(rackId, startingU), out var device))
+                device.Hostname = _installed[i].DeviceName;
             StateChanged?.Invoke();
             return true;
         }
@@ -362,6 +366,8 @@ public sealed class TssTrainingSession : MonoBehaviour
                 continue;
 
             _endpointPlacements[i] = record.WithDeviceName(CleanDeviceName(deviceName));
+            if (NetworkState != null && NetworkState.TryGetDevice(GetEndpointOwnerPrefix(placementId), out var device))
+                device.Hostname = _endpointPlacements[i].DeviceName;
             StateChanged?.Invoke();
             return true;
         }

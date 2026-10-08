@@ -46,17 +46,108 @@ public sealed class TssDeviceSessionTests
     }
 
     [Test]
+    public void ReachabilityReturnsLowestBrokenLayerAndNeutralFaults()
+    {
+        var profile = TssNetworkRunProfile.Create(7, new NetworkScenarioConfig());
+        var state = new TssNetworkSessionState(profile);
+        var endpoint = state.GetOrCreateEndpoint("Endpoint:IT1", "IT1");
+        var evaluator = new TssNetworkReachabilityEvaluator(state);
+
+        var physical = evaluator.Evaluate(endpoint.Key, profile.ManagementNetwork + ".1");
+        Assert.AreEqual(1, physical.FailedLayer);
+        Assert.AreEqual(TssReachabilityFaultCategory.PhysicalPathUnavailable, physical.FaultCategory);
+
+        endpoint.Layer1Connected = true;
+        var switching = evaluator.Evaluate(endpoint.Key, profile.ManagementNetwork + ".1");
+        Assert.AreEqual(2, switching.FailedLayer);
+        Assert.AreEqual(TssReachabilityFaultCategory.VlanNotCarried, switching.FaultCategory);
+
+        endpoint.Layer2Connected = true;
+        endpoint.Gateway = "10.255.255.1";
+        var routing = evaluator.Evaluate(endpoint.Key, profile.ManagementNetwork + ".1");
+        Assert.AreEqual(3, routing.FailedLayer);
+        Assert.AreEqual(TssReachabilityFaultCategory.GatewayUnavailable, routing.FaultCategory);
+        StringAssert.DoesNotContain(profile.ManagementNetwork, routing.Diagnostic);
+    }
+
+    [Test]
+    public void UnknownValidDestinationTimesOutAtLayer3()
+    {
+        var profile = TssNetworkRunProfile.Create(7, new NetworkScenarioConfig());
+        var state = new TssNetworkSessionState(profile);
+        var endpoint = state.GetOrCreateEndpoint("Endpoint:IT1", "IT1");
+        endpoint.Layer1Connected = true;
+        endpoint.Layer2Connected = true;
+
+        var result = new TssNetworkReachabilityEvaluator(state).Evaluate(endpoint.Key, "192.0.2.10");
+
+        Assert.AreEqual(3, result.FailedLayer);
+        Assert.AreEqual(TssReachabilityFaultCategory.DestinationUnavailable, result.FaultCategory);
+        Assert.IsFalse(result.Success);
+    }
+
+    [Test]
     public void EndpointApplyRejectsInvalidCandidateAtomically()
     {
         var profile = TssNetworkRunProfile.Create(8, new NetworkScenarioConfig());
         var state = new TssNetworkSessionState(profile);
         var endpoint = state.GetOrCreateEndpoint("Endpoint:IT1", "IT1");
         var originalAddress = endpoint.Address;
+        var originalMask = endpoint.Mask;
+        var originalGateway = endpoint.Gateway;
+        var originalDns = endpoint.Dns;
 
         var applied = new TssEndpointCommandProcessor(state).TryApply("Endpoint:IT1", false, "999.1.1.1", "255.255.255.0", endpoint.Gateway, "8.8.8.8", out _);
 
         Assert.IsFalse(applied);
         Assert.AreEqual(originalAddress, endpoint.Address);
+        Assert.AreEqual(originalMask, endpoint.Mask);
+        Assert.AreEqual(originalGateway, endpoint.Gateway);
+        Assert.AreEqual(originalDns, endpoint.Dns);
+        Assert.IsFalse(state.Evidence.Contains("Endpoint:IT1:apply"));
+    }
+
+    [Test]
+    public void EndpointApplyCommitsValidButWrongGatewayAndReachabilityReportsLayer3()
+    {
+        var profile = TssNetworkRunProfile.Create(8, new NetworkScenarioConfig());
+        var state = new TssNetworkSessionState(profile);
+        var endpoint = state.GetOrCreateEndpoint("Endpoint:IT1", "IT1");
+        endpoint.Layer1Connected = true;
+        endpoint.Layer2Connected = true;
+
+        Assert.IsTrue(new TssEndpointCommandProcessor(state).TryApply(endpoint.Key, false, endpoint.Address, endpoint.Mask, "10.255.255.1", endpoint.Dns, out _));
+        Assert.AreEqual("10.255.255.1", endpoint.Gateway);
+        Assert.AreEqual(3, new TssNetworkReachabilityEvaluator(state).Evaluate(endpoint.Key, profile.ManagementNetwork + ".1").FailedLayer);
+    }
+
+    [Test]
+    public void EndpointCommandsNormalizeWhitespaceAndDoNotMutateOnUnsupportedInput()
+    {
+        var state = new TssNetworkSessionState(TssNetworkRunProfile.Create(9, new NetworkScenarioConfig()));
+        var endpoint = state.GetOrCreateEndpoint("Endpoint:IT1", "IT1");
+        var address = endpoint.Address;
+
+        var result = new TssEndpointCommandProcessor(state).Execute(endpoint.Key, "  unsupported   command ");
+
+        Assert.IsFalse(result.Accepted);
+        Assert.AreEqual(address, endpoint.Address);
+    }
+
+    [Test]
+    public void PrinterTestPageRequiresRecordedWorkstationReachability()
+    {
+        var state = new TssNetworkSessionState(TssNetworkRunProfile.Create(10, new NetworkScenarioConfig()));
+        var workstation = state.GetOrCreateEndpoint("Endpoint:IT1", "IT1");
+        var printer = state.GetOrCreateEndpoint("Endpoint:Printer", "Reception2");
+        workstation.Layer1Connected = workstation.Layer2Connected = true;
+        printer.Layer1Connected = printer.Layer2Connected = true;
+
+        Assert.IsFalse(state.TryPrintTestPage(printer.Key, "Endpoint:Unknown", out _));
+        Assert.IsFalse(printer.LastPrintSucceeded);
+        Assert.IsTrue(state.TryPrintTestPage(printer.Key, workstation.Key, out _));
+        Assert.IsTrue(printer.LastPrintSucceeded);
+        Assert.AreEqual(workstation.Key, printer.LastPrintSourceKey);
     }
 
     [Test]

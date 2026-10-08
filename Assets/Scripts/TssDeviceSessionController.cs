@@ -19,6 +19,7 @@ public sealed class TssDeviceSessionController : MonoBehaviour
     [SerializeField] private TssDesktopSessionPresenter desktopPresenter;
 
     public bool IsSessionOpen { get; private set; }
+    private string _lastWorkstationSourceKey;
 
     public sealed class DeviceContext
     {
@@ -245,20 +246,26 @@ public sealed class TssDeviceSessionController : MonoBehaviour
         if (ctx == null)
             ctx = ResolveContext(deviceObject);
 
-        var state = new TssDeviceLogicalState(ctx.Key, ctx.Category, ctx.DeviceName);
         var endpoints = deviceObject ? deviceObject.GetComponentsInChildren<TssPortEndpoint>(true) : Array.Empty<TssPortEndpoint>();
-        state.RefreshPhysicalConnectivity(endpoints, TssTrainingSession.Instance);
         var network = TssTrainingSession.Instance ? TssTrainingSession.Instance.NetworkState : null;
+        TssDeviceLogicalState state;
         if (network != null)
         {
             var device = network.GetOrCreateDevice(ctx.Key, ctx.Category, ctx.DeviceName);
-            foreach (var legacy in state.Interfaces)
+            foreach (var endpoint in endpoints)
             {
-                if (!device.Interfaces.TryGetValue(legacy.InterfaceName, out var iface))
-                    device.Interfaces[legacy.InterfaceName] = iface = new NetworkInterfaceState { Name = legacy.InterfaceName, AdminUp = ctx.Category == EquipmentCategory.Switch };
-                iface.EndpointId = legacy.EndpointId;
-                iface.CarrierUp = legacy.IsPhysicalLinkUp;
+                var name = string.IsNullOrWhiteSpace(endpoint.DisplayLabel) ? endpoint.name : endpoint.DisplayLabel;
+                if (!device.Interfaces.TryGetValue(name, out var iface))
+                    device.Interfaces[name] = iface = new NetworkInterfaceState { Name = name, AdminUp = ctx.Category == EquipmentCategory.Switch };
+                iface.EndpointId = endpoint.EndpointId;
+                iface.CarrierUp = TssTrainingSession.Instance.IsEndpointConnected(endpoint.EndpointId);
             }
+            state = TssDeviceLogicalState.FromNetwork(device, TssTrainingSession.Instance);
+        }
+        else
+        {
+            state = new TssDeviceLogicalState(ctx.Key, ctx.Category, ctx.DeviceName);
+            state.RefreshPhysicalConnectivity(endpoints, TssTrainingSession.Instance);
         }
 
         terminalPresenter.gameObject.SetActive(true);
@@ -287,20 +294,33 @@ public sealed class TssDeviceSessionController : MonoBehaviour
         if (ctx == null)
             ctx = ResolveContext(deviceObject);
 
-        var state = new TssDeviceLogicalState(ctx.Key, ctx.Category, ctx.DeviceName);
         var endpoints = deviceObject ? deviceObject.GetComponentsInChildren<TssPortEndpoint>(true) : Array.Empty<TssPortEndpoint>();
-        state.RefreshPhysicalConnectivity(endpoints, TssTrainingSession.Instance);
-
         var network = TssTrainingSession.Instance ? TssTrainingSession.Instance.NetworkState : null;
+        TssDeviceLogicalState state;
         if (network != null)
         {
             var endpoint = network.GetOrCreateEndpoint(ctx.Key, ctx.DeviceName);
-            endpoint.Layer1Connected = state.Interfaces.Count > 0 && state.Interfaces[0].IsPhysicalLinkUp;
+            endpoint.DeviceKey = ctx.Key;
+            endpoint.Layer1Connected = endpoints.Length > 0 && TssTrainingSession.Instance.IsEndpointConnected(endpoints[0].EndpointId);
             endpoint.Layer2Connected = endpoint.Layer1Connected;
+            state = new TssDeviceLogicalState(ctx.Key, ctx.Category, ctx.DeviceName)
+            {
+                MacAddress = endpoint.MacAddress, IpAddress = endpoint.Address, SubnetMask = endpoint.Mask,
+                DefaultGateway = endpoint.Gateway, DnsServer = endpoint.Dns, UseDhcp = endpoint.UseDhcp
+            };
+            state.RefreshPhysicalConnectivity(endpoints, TssTrainingSession.Instance);
+        }
+        else
+        {
+            state = new TssDeviceLogicalState(ctx.Key, ctx.Category, ctx.DeviceName);
+            state.RefreshPhysicalConnectivity(endpoints, TssTrainingSession.Instance);
         }
 
         desktopPresenter.gameObject.SetActive(true);
-        desktopPresenter.Initialize(state, deviceObject, CloseCurrentSession, ctx.Key);
+        var initiatingSourceKey = ctx.Category == EquipmentCategory.Printer ? _lastWorkstationSourceKey : null;
+        if (ctx.Category == EquipmentCategory.DesktopPc)
+            _lastWorkstationSourceKey = ctx.Key;
+        desktopPresenter.Initialize(state, deviceObject, CloseCurrentSession, ctx.Key, initiatingSourceKey);
         IsSessionOpen = true;
 
         if (TssRuntimeUi.Instance)

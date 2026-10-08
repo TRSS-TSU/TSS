@@ -45,9 +45,12 @@ public sealed class TssComputerConnectivityPresenter : MonoBehaviour, ITssEndpoi
             if (session.NetworkState.TryGetEndpoint(key, out var state))
             {
                 state.Layer1Connected = connected;
-                state.Layer2Connected = connected;
-                var layer3 = connected && new TssNetworkReachabilityEvaluator(session.NetworkState).Evaluate(key, state.Gateway).Success;
-                monitor.SetLayerStates(connected, state.Layer2Connected, layer3);
+                var result = new TssNetworkReachabilityEvaluator(session.NetworkState).Evaluate(key, state.Gateway);
+                var layer1 = result.FailedLayer != 1;
+                var layer2 = result.FailedLayer == 0 || result.FailedLayer == 3;
+                var layer3 = result.Success;
+                state.Layer2Connected = layer2;
+                monitor.SetLayerStates(layer1, layer1 && layer2, layer1 && layer2 && layer3);
                 return;
             }
         }
