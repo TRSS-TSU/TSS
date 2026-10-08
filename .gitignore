@@ -17,6 +17,9 @@ graphify-out/
 ExportedObj/
 .consulo/
 
+plans/
+sites/
+
 *.csproj
 *.unityproj
 *.sln
