@@ -54,8 +54,8 @@ public sealed class TssNetworkRunProfile
         NativeVlanName = config?.nativeVlanName ?? "Native";
         DeadVlanName = config?.deadVlanName ?? "Dead_Vlan";
         RoleBindings = config?.roleBindings ?? Array.Empty<NetworkRoleBinding>();
-        RequiredPorts = config?.requiredPorts ?? Array.Empty<NetworkRequiredPort>();
-        EvidenceRequirements = config?.evidenceRequirements ?? Array.Empty<NetworkEvidenceRequirement>();
+        RequiredPorts = config?.requiredPorts is { Length: > 0 } ? config.requiredPorts : DefaultPorts();
+        EvidenceRequirements = config?.evidenceRequirements is { Length: > 0 } ? config.evidenceRequirements : DefaultEvidence();
         Add("IT1", ManagementNetwork, 11); Add("IT2", ManagementNetwork, 12);
         Add("Reception1", ReceptionNetwork, 21); Add("Reception2", ReceptionNetwork, 22);
         Add("Data1", DataNetwork, 31); Add("Data2", DataNetwork, 32); Add("Data3", DataNetwork, 33);
@@ -68,6 +68,20 @@ public sealed class TssNetworkRunProfile
                     EndpointAliases[binding.role] = binding.deviceKey;
     }
     public static TssNetworkRunProfile Create(int seed, NetworkScenarioConfig config) => new(seed, config);
+    private static NetworkRequiredPort[] DefaultPorts() => new[]
+    {
+        new NetworkRequiredPort { deviceRole = "AN-1", interfaceName = "Fa0/2", endpointId = "IT1" },
+        new NetworkRequiredPort { deviceRole = "AN-1", interfaceName = "Fa0/3", endpointId = "Reception1" },
+        new NetworkRequiredPort { deviceRole = "AN-1", interfaceName = "Fa0/4", endpointId = "Reception2" },
+        new NetworkRequiredPort { deviceRole = "AN-1", interfaceName = "Fa0/5", endpointId = "IT2" },
+        new NetworkRequiredPort { deviceRole = "AN-2", interfaceName = "Fa0/2", endpointId = "Data1" },
+        new NetworkRequiredPort { deviceRole = "AN-2", interfaceName = "Fa0/3", endpointId = "Data2" },
+        new NetworkRequiredPort { deviceRole = "AN-2", interfaceName = "Fa0/4", endpointId = "Data3" }
+    };
+    private NetworkEvidenceRequirement[] DefaultEvidence() => new[]
+    {
+        new NetworkEvidenceRequirement { evidenceId = "IT1-provider", command = "ping " + WanProviderAddress, description = "Endpoint-originated provider diagnostic" }
+    };
     private void Add(string role, string network, int host) => EndpointAddresses[role] = network + "." + host;
     private static int[] Unique(System.Random random, int count, int min, int max)
     {
@@ -89,11 +103,14 @@ public sealed class TssNetworkSessionState
     private readonly Dictionary<string, NetworkDeviceState> _devices = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, EndpointNetworkState> _endpoints = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, TssNetworkSessionSnapshot> _checkpoints = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, TssNetworkCompletionSnapshot> _completionSnapshots = new(StringComparer.OrdinalIgnoreCase);
+    private int _completionOrder;
     public readonly HashSet<string> Evidence = new(StringComparer.OrdinalIgnoreCase);
     public TssNetworkRunProfile Profile { get; }
     public IEnumerable<NetworkDeviceState> Devices => _devices.Values;
     public IEnumerable<EndpointNetworkState> Endpoints => _endpoints.Values;
     public IReadOnlyDictionary<string, TssNetworkSessionSnapshot> Checkpoints => _checkpoints;
+    public IReadOnlyDictionary<string, TssNetworkCompletionSnapshot> CompletionSnapshots => _completionSnapshots;
     public TssNetworkSessionState(TssNetworkRunProfile profile) { Profile = profile; }
     public NetworkDeviceState GetOrCreateDevice(string key, EquipmentCategory category, string displayName)
     {
@@ -102,10 +119,20 @@ public sealed class TssNetworkSessionState
         foreach (var binding in Profile?.RoleBindings ?? Array.Empty<NetworkRoleBinding>())
             if (binding != null && string.Equals(binding.deviceKey, key, StringComparison.OrdinalIgnoreCase))
             { state.ExpectedRole = binding.role; break; }
+        if (string.IsNullOrWhiteSpace(state.ExpectedRole)) state.ExpectedRole = displayName;
         _devices.Add(key, state); return state;
     }
     public bool TryGetDevice(string key, out NetworkDeviceState state) => _devices.TryGetValue(key, out state);
     public bool TryGetEndpoint(string key, out EndpointNetworkState state) => _endpoints.TryGetValue(key, out state);
+    public bool IsEndpointLayer1Available(string endpointId)
+    {
+        if (string.IsNullOrWhiteSpace(endpointId)) return false;
+        foreach (var device in _devices.Values)
+            foreach (var iface in device.Interfaces.Values)
+                if (string.Equals(iface.EndpointId, endpointId, StringComparison.OrdinalIgnoreCase))
+                    return iface.AdminUp && iface.CarrierUp;
+        return false;
+    }
     public EndpointNetworkState GetOrCreateEndpoint(string key, string role)
     {
         if (_endpoints.TryGetValue(key, out var state))
@@ -117,7 +144,7 @@ public sealed class TssNetworkSessionState
     }
     public void RemoveDevice(string key) { if (!string.IsNullOrWhiteSpace(key)) _devices.Remove(key); }
     public void RemoveEndpoint(string key) { if (!string.IsNullOrWhiteSpace(key)) _endpoints.Remove(key); }
-    public void Clear() { _devices.Clear(); _endpoints.Clear(); Evidence.Clear(); _checkpoints.Clear(); }
+    public void Clear() { _devices.Clear(); _endpoints.Clear(); Evidence.Clear(); _checkpoints.Clear(); _completionSnapshots.Clear(); _completionOrder = 0; }
     public bool TryPrintTestPage(string printerKey, string sourceKey, out TssReachabilityResult result)
     {
         if (!TryGetEndpoint(printerKey, out var printer))
@@ -141,6 +168,27 @@ public sealed class TssNetworkSessionState
     {
         if (string.IsNullOrWhiteSpace(name)) return;
         _checkpoints[name] = new TssNetworkSessionSnapshot(this);
+    }
+
+    public TssNetworkCompletionSnapshot SaveCompletionSnapshot(string workPackage)
+    {
+        if (string.IsNullOrWhiteSpace(workPackage)) return null;
+        if (_completionSnapshots.TryGetValue(workPackage, out var existing)) return existing;
+        var snapshot = new TssNetworkCompletionSnapshot(workPackage, Profile?.Seed ?? 0, ++_completionOrder, this);
+        _completionSnapshots[workPackage] = snapshot;
+        return snapshot;
+    }
+}
+
+public sealed class TssNetworkCompletionSnapshot
+{
+    public readonly string WorkPackage;
+    public readonly int ProfileSeed;
+    public readonly int CompletionOrder;
+    public readonly TssNetworkSessionSnapshot State;
+    public TssNetworkCompletionSnapshot(string workPackage, int profileSeed, int completionOrder, TssNetworkSessionState state)
+    {
+        WorkPackage = workPackage; ProfileSeed = profileSeed; CompletionOrder = completionOrder; State = new TssNetworkSessionSnapshot(state);
     }
 }
 

@@ -547,6 +547,12 @@ MonoBehaviour:
   screens: []
   secondsPerScreen: 8
   randomStart: 0
+  layer1Connected: {fileID: 2800000, guid: d7fe94eaf99e0534c9675f7074f608e1, type: 3}
+  layer1Disconnected: {fileID: 2800000, guid: 3b4ad37edf7c6574887d819893e36ad8, type: 3}
+  layer2Connected: {fileID: 2800000, guid: 64b3ac0538dd1f74a9623c6e978f0993, type: 3}
+  layer2Disconnected: {fileID: 2800000, guid: 3f5146e29572ad54f8c7dd32564730b1, type: 3}
+  layer3Connected: {fileID: 2800000, guid: 6742fec1903bca24ab3bbb50795df191, type: 3}
+  layer3Disconnected: {fileID: 2800000, guid: 3b44c40c907a36a48b879106ab51388e, type: 3}
 --- !u!23 &6542344571033633096 stripped
 MeshRenderer:
   m_CorrespondingSourceObject: {fileID: 3787435439158627018, guid: 1091ee0a141f2ba429668a6cc5a0f03e, type: 3}

@@ -1,10 +1,22 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 public sealed class TssWorkPackageResult
 {
-    public readonly List<string> UnmetConditions = new();
-    public bool Complete => UnmetConditions.Count == 0;
+    public readonly List<TssWorkPackageCondition> UnmetCategories = new();
+    public readonly TssNetworkCompletionSnapshot CompletionSnapshot;
+    public IReadOnlyList<string> UnmetConditions => UnmetCategories.ConvertAll(x => x.Label);
+    public bool Complete => UnmetCategories.Count == 0;
+    public TssWorkPackageResult(TssNetworkCompletionSnapshot snapshot = null) { CompletionSnapshot = snapshot; }
+    public void Add(string id, string label) => UnmetCategories.Add(new TssWorkPackageCondition(id, label));
+}
+
+public sealed class TssWorkPackageCondition
+{
+    public readonly string Id;
+    public readonly string Label;
+    public TssWorkPackageCondition(string id, string label) { Id = id; Label = label; }
 }
 
 public sealed class TssNetworkWorkPackageEvaluator
@@ -14,38 +26,127 @@ public sealed class TssNetworkWorkPackageEvaluator
 
     public TssWorkPackageResult EvaluateLayer2()
     {
+        if (_state == null) return new TssWorkPackageResult();
+        if (_state.CompletionSnapshots.TryGetValue("WP2", out var snapshot)) return new TssWorkPackageResult(snapshot);
         var result = new TssWorkPackageResult();
         var an1 = Find("AN-1"); var an2 = Find("AN-2");
         CheckSwitch(an1, "AN-1", result); CheckSwitch(an2, "AN-2", result);
+        CheckVlans(an1, "AN-1", result); CheckVlans(an2, "AN-2", result);
+        CheckAccessPorts(an1, an2, result);
+        CheckTrunks(an1, an2, result);
+        if (result.Complete) result = new TssWorkPackageResult(_state.SaveCompletionSnapshot("WP2"));
         return result;
     }
 
     public TssWorkPackageResult EvaluateLayer3()
     {
+        if (_state == null) return new TssWorkPackageResult();
+        if (_state.CompletionSnapshots.TryGetValue("WP3", out var snapshot)) return new TssWorkPackageResult(snapshot);
         var result = new TssWorkPackageResult();
         var router = Find("CN-1");
-        if (router == null) { result.UnmetConditions.Add("Router configuration is unavailable."); return result; }
-        if (!router.Evidence.Contains("show ip route")) result.UnmetConditions.Add("Required router verification was not typed.");
-        if (!router.Evidence.Contains("save") || router.StartupSnapshot == null) result.UnmetConditions.Add("Router configuration has not been saved.");
+        if (router == null) { result.Add("WP3.Router", "Router configuration is unavailable."); return result; }
+        CheckHardening(router, "WP3.Hardening", result);
+        CheckRouterInterfaces(router, result);
+        if (!router.Evidence.Contains("show ip route")) result.Add("WP3.RouteEvidence", "Required router verification was not typed.");
         var hasDefault = false;
         foreach (var route in router.Routes)
             if (route.Network == "0.0.0.0" && route.Mask == "0.0.0.0" && route.NextHop == _state.Profile.WanProviderAddress) { hasDefault = true; break; }
-        if (!hasDefault) result.UnmetConditions.Add("Provider routing is incomplete.");
+        if (!hasDefault) result.Add("WP3.DefaultRoute", "Provider routing is incomplete.");
+        CheckEndpointEvidence(result);
+        CheckSaved(router, "WP3.Save", result);
+        if (result.Complete) result = new TssWorkPackageResult(_state.SaveCompletionSnapshot("WP3"));
         return result;
     }
 
     private void CheckSwitch(NetworkDeviceState device, string name, TssWorkPackageResult result)
     {
-        if (device == null) { result.UnmetConditions.Add(name + " configuration is unavailable."); return; }
-        if (!device.Evidence.Contains("show vlan brief") || !device.Evidence.Contains("show interfaces trunk")) result.UnmetConditions.Add(name + " verification was not typed.");
-        if (!device.Evidence.Contains("save") || device.StartupSnapshot == null) result.UnmetConditions.Add(name + " configuration has not been saved.");
-        if (device.Vlans.Count < 6) result.UnmetConditions.Add(name + " VLAN database is incomplete.");
+        if (device == null) { result.Add("WP2." + name + ".Device", name + " configuration is unavailable."); return; }
+        CheckHardening(device, "WP2." + name + ".Hardening", result);
+        if (!device.Evidence.Contains("show vlan brief") || !device.Evidence.Contains("show interfaces trunk")) result.Add("WP2." + name + ".Evidence", name + " verification was not typed.");
+        CheckSaved(device, "WP2." + name + ".Save", result);
+    }
+
+    private void CheckHardening(NetworkDeviceState device, string id, TssWorkPackageResult result)
+    {
+        var p = _state.Profile;
+        if (p == null || !device.PasswordEncryption || !device.DomainLookupDisabled || device.EnableSecret != p.EnableSecret || device.ConsolePassword != p.ConsolePassword || device.VtyPassword != p.VtyPassword || device.Motd != p.Motd)
+            result.Add(id, "Required device hardening is incomplete.");
+    }
+
+    private void CheckVlans(NetworkDeviceState device, string name, TssWorkPackageResult result)
+    {
+        if (device == null || !ActiveVlan(device, _state.Profile.ManagementVlan, _state.Profile.ManagementVlanName) || !ActiveVlan(device, _state.Profile.ReceptionVlan, _state.Profile.ReceptionVlanName) || !ActiveVlan(device, _state.Profile.DataVlan, _state.Profile.DataVlanName) || !ActiveVlan(device, _state.Profile.NativeVlan, _state.Profile.NativeVlanName) || !ActiveVlan(device, _state.Profile.DeadVlan, _state.Profile.DeadVlanName))
+            result.Add("WP2." + name + ".Vlans", name + " VLAN database is incomplete.");
+    }
+
+    private void CheckAccessPorts(NetworkDeviceState an1, NetworkDeviceState an2, TssWorkPackageResult result)
+    {
+        foreach (var required in _state.Profile?.RequiredPorts ?? Array.Empty<NetworkRequiredPort>())
+        {
+            var device = required.deviceRole.Equals("AN-2", StringComparison.OrdinalIgnoreCase) ? an2 : an1;
+            if (device == null || !device.Interfaces.TryGetValue(required.interfaceName, out var port) || port.IsTrunk || !port.AdminUp || !port.CarrierUp || port.AccessVlan != VlanFor(required.endpointId))
+                result.Add("WP2.Access." + required.interfaceName, "Required endpoint-facing access ports are incomplete.");
+        }
+    }
+
+    private void CheckTrunks(NetworkDeviceState an1, NetworkDeviceState an2, TssWorkPackageResult result)
+    {
+        foreach (var pair in new[] { (an1, "Fa0/1"), (an1, "Fa0/6"), (an2, "Fa0/1") })
+        {
+            if (pair.Item1 == null || !pair.Item1.Interfaces.TryGetValue(pair.Item2, out var port) || !port.IsTrunk || !port.AdminUp || !port.CarrierUp || port.NativeVlan != _state.Profile.NativeVlan || !port.AllowedVlans.Contains(_state.Profile.ManagementVlan) || !port.AllowedVlans.Contains(_state.Profile.ReceptionVlan) || !port.AllowedVlans.Contains(_state.Profile.DataVlan))
+                result.Add("WP2.Trunks", "Required trunks are incomplete.");
+        }
+    }
+
+    private void CheckRouterInterfaces(NetworkDeviceState router, TssWorkPackageResult result)
+    {
+        if (!HasInterface(router, "GE00", true, null, null)) result.Add("WP3.ParentInterface", "Router parent interface is incomplete.");
+        foreach (var pair in new[] { (_state.Profile.ManagementVlan, _state.Profile.ManagementNetwork + ".1"), (_state.Profile.ReceptionVlan, _state.Profile.ReceptionNetwork + ".1"), (_state.Profile.DataVlan, _state.Profile.DataNetwork + ".1") })
+        {
+            var found = false;
+            foreach (var iface in router.Interfaces.Values) if (iface.Dot1qVlan == pair.Item1 && iface.Address == pair.Item2 && iface.Mask == "255.255.255.0" && iface.AdminUp && iface.CarrierUp) { found = true; break; }
+            if (!found) result.Add("WP3.Subinterfaces", "Router subinterfaces are incomplete.");
+        }
+        if (!HasInterface(router, "GE01", false, _state.Profile.WanCustomerAddress, "255.255.255.252")) result.Add("WP3.Wan", "Provider-facing WAN configuration is incomplete.");
+    }
+
+    private bool HasInterface(NetworkDeviceState device, string name, bool trunk, string address, string mask)
+    {
+        if (!device.Interfaces.TryGetValue(name, out var iface) || !iface.AdminUp || !iface.CarrierUp || iface.IsTrunk != trunk) return false;
+        return address == null || (iface.Address == address && iface.Mask == mask);
+    }
+
+    private void CheckEndpointEvidence(TssWorkPackageResult result)
+    {
+        foreach (var requirement in _state.Profile?.EvidenceRequirements ?? Array.Empty<NetworkEvidenceRequirement>())
+        {
+            var found = false;
+            foreach (var endpoint in _state.Endpoints) if (endpoint.Evidence.Contains(requirement.evidenceId) && _state.Evidence.Contains(endpoint.Key + ":" + requirement.evidenceId)) { found = true; break; }
+            if (!found) result.Add("WP3.EndpointEvidence." + requirement.evidenceId, "Required endpoint diagnostics are incomplete.");
+        }
+    }
+
+    private void CheckSaved(NetworkDeviceState device, string id, TssWorkPackageResult result)
+    {
+        if (!device.Evidence.Contains("save") || device.StartupSnapshot == null || !Equivalent(device, device.StartupSnapshot)) result.Add(id, device.Hostname + " configuration has not been saved.");
+    }
+
+    private bool ActiveVlan(NetworkDeviceState device, int vlan, string name) => device != null && device.Vlans.TryGetValue(vlan, out var value) && value == name;
+    private int VlanFor(string role) => role.IndexOf("Reception", StringComparison.OrdinalIgnoreCase) >= 0 ? _state.Profile.ReceptionVlan : role.IndexOf("Data", StringComparison.OrdinalIgnoreCase) >= 0 ? _state.Profile.DataVlan : _state.Profile.ManagementVlan;
+
+    private static bool Equivalent(NetworkDeviceState a, NetworkDeviceState b)
+    {
+        if (a == null || b == null || a.Hostname != b.Hostname || a.EnableSecret != b.EnableSecret || a.ConsolePassword != b.ConsolePassword || a.VtyPassword != b.VtyPassword || a.Motd != b.Motd || a.PasswordEncryption != b.PasswordEncryption || a.DomainLookupDisabled != b.DomainLookupDisabled || a.ManagementAddress != b.ManagementAddress || a.ManagementMask != b.ManagementMask || a.DefaultGateway != b.DefaultGateway || a.Routes.Count != b.Routes.Count || a.Vlans.Count != b.Vlans.Count || a.Interfaces.Count != b.Interfaces.Count) return false;
+        foreach (var vlan in a.Vlans) if (!b.Vlans.TryGetValue(vlan.Key, out var name) || name != vlan.Value) return false;
+        foreach (var route in a.Routes) if (!b.Routes.Any(x => x.Network == route.Network && x.Mask == route.Mask && x.NextHop == route.NextHop)) return false;
+        foreach (var pair in a.Interfaces) if (!b.Interfaces.TryGetValue(pair.Key, out var other) || pair.Value.Name != other.Name || pair.Value.AdminUp != other.AdminUp || pair.Value.CarrierUp != other.CarrierUp || pair.Value.IsTrunk != other.IsTrunk || pair.Value.AccessVlan != other.AccessVlan || pair.Value.NativeVlan != other.NativeVlan || pair.Value.Dot1qVlan != other.Dot1qVlan || pair.Value.Address != other.Address || pair.Value.Mask != other.Mask || !pair.Value.AllowedVlans.SetEquals(other.AllowedVlans)) return false;
+        return true;
     }
 
     private NetworkDeviceState Find(string hostname)
     {
         foreach (var device in _state.Devices)
-            if (device.Hostname.Equals(hostname, StringComparison.OrdinalIgnoreCase)) return device;
+            if (string.Equals(device.Hostname, hostname, StringComparison.OrdinalIgnoreCase) || string.Equals(device.ExpectedRole, hostname, StringComparison.OrdinalIgnoreCase)) return device;
         return null;
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using StarterAssets;
 using UnityEngine;
@@ -1069,7 +1070,22 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
         var bodyText = row.Find("SectionBody")?.GetComponent<Text>();
         if (bodyText)
-            bodyText.text = section.body;
+            bodyText.text = SopBody(section);
+    }
+
+    private string SopBody(SopSection section)
+    {
+        var profile = session.NetworkProfile;
+        if (profile == null || section == null)
+            return section?.body ?? string.Empty;
+
+        if (section.title == "Phases 9 - 15")
+            return $"Configure and verify AN-1 and AN-2 using the terminal.\nVLANs: {profile.ManagementVlanName} {profile.ManagementVlan}, {profile.ReceptionVlanName} {profile.ReceptionVlan}, {profile.DataVlanName} {profile.DataVlan}, {profile.NativeVlanName} {profile.NativeVlan}, and {profile.DeadVlanName} {profile.DeadVlan}.\nManagement network: {profile.ManagementNetwork}.0/24\nReception network: {profile.ReceptionNetwork}.0/24\nData network: {profile.DataNetwork}.0/24\nRequired endpoint values: {string.Join(", ", profile.EndpointAddresses.Select(x => x.Key + " " + x.Value))}\nComplete the required switch verification and save each switch configuration.";
+
+        if (section.title == "Phases 16 - 19")
+            return $"Configure CN-1 router-on-a-stick and the provider handoff.\nGateway networks: {profile.ManagementNetwork}.0/24, {profile.ReceptionNetwork}.0/24, and {profile.DataNetwork}.0/24\nWAN customer address: {profile.WanCustomerAddress} / 255.255.255.252\nWAN provider target: {profile.WanProviderAddress}\nUse endpoint-originated diagnostics for the required verification, then save CN-1.";
+
+        return section.body;
     }
 
     private void RefreshSopTabs(SopSection[] sections, int sectionCount)

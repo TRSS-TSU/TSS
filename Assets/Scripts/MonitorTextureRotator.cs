@@ -31,7 +31,7 @@ public sealed class MonitorTextureRotator : MonoBehaviour
         if (!targetRenderer)
             targetRenderer = GetComponent<Renderer>();
 
-        if (randomStart && screens.Length > 0)
+        if (randomStart && screens != null && screens.Length > 0)
             _index = Random.Range(0, screens.Length);
 
         Apply();
@@ -42,7 +42,7 @@ public sealed class MonitorTextureRotator : MonoBehaviour
         if (!targetRenderer)
             targetRenderer = GetComponent<Renderer>();
 
-        _index = Mathf.Clamp(_index, 0, Mathf.Max(0, screens.Length - 1));
+        _index = Mathf.Clamp(_index, 0, Mathf.Max(0, (screens?.Length ?? 0) - 1));
         Apply();
     }
 
@@ -54,7 +54,7 @@ public sealed class MonitorTextureRotator : MonoBehaviour
             return;
         }
 
-        if (_connectivityOverride || screens.Length < 2 || secondsPerScreen <= 0f)
+        if (_connectivityOverride || screens == null || screens.Length < 2 || secondsPerScreen <= 0f)
             return;
 
         _timer += Time.deltaTime;
@@ -96,6 +96,12 @@ public sealed class MonitorTextureRotator : MonoBehaviour
 
     public void SetLayerStates(bool layer1, bool layer2, bool layer3)
     {
+        if (!HasCompleteLayerTextureSet())
+        {
+            ClearConnectivityOverride();
+            return;
+        }
+
         screens = new[]
         {
             layer1 ? layer1Connected : layer1Disconnected,
@@ -105,6 +111,11 @@ public sealed class MonitorTextureRotator : MonoBehaviour
         _index = 0;
         _timer = 0f;
         ClearConnectivityOverride();
+    }
+
+    private bool HasCompleteLayerTextureSet()
+    {
+        return layer1Connected && layer1Disconnected && layer2Connected && layer2Disconnected && layer3Connected && layer3Disconnected;
     }
 
     private Texture2D GetCurrentScreen()

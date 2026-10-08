@@ -29,6 +29,28 @@ public static class TssPortEndpointBinder
             consumer.OnEndpointsBound(configured, ownerPrefix);
     }
 
+    public static TssPortEndpoint FindMatchingEndpoint(System.Collections.Generic.IReadOnlyList<TssPortEndpoint> endpoints, TssPortEndpoint serialized, string endpointId)
+    {
+        if (serialized)
+        {
+            if (endpoints == null)
+                return serialized;
+            foreach (var endpoint in endpoints)
+                if (endpoint == serialized)
+                    return serialized;
+        }
+
+        if (string.IsNullOrWhiteSpace(endpointId) || endpoints == null)
+            return null;
+
+        var suffix = endpointId.Trim();
+        foreach (var endpoint in endpoints)
+            if (endpoint && (endpoint.EndpointId == suffix || endpoint.EndpointId.EndsWith(":" + suffix, System.StringComparison.Ordinal)))
+                return endpoint;
+
+        return null;
+    }
+
     private static Transform FindAnchor(Transform root, EquipmentInterface port)
     {
         if (!root)

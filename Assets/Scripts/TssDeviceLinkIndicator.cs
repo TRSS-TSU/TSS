@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 public sealed class TssDeviceLinkIndicator : MonoBehaviour, ITssEndpointBindingConsumer
@@ -6,6 +7,7 @@ public sealed class TssDeviceLinkIndicator : MonoBehaviour, ITssEndpointBindingC
     [SerializeField] private LinkIndicatorBinding[] bindings;
 
     private TssTrainingSession _session;
+    private readonly HashSet<string> _warnedBindings = new(StringComparer.Ordinal);
 
     private void OnEnable()
     {
@@ -34,7 +36,8 @@ public sealed class TssDeviceLinkIndicator : MonoBehaviour, ITssEndpointBindingC
                 continue;
 
             var endpoint = ResolveEndpoint(binding);
-            var connected = endpoint && session && session.IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId);
+            var connected = endpoint && session && session.IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId)
+                && session.NetworkState != null && session.NetworkState.IsEndpointLayer1Available(endpoint.EndpointId);
             var material = connected && binding.connectedMaterial
                 ? binding.connectedMaterial
                 : binding.disconnectedMaterial;
@@ -45,19 +48,11 @@ public sealed class TssDeviceLinkIndicator : MonoBehaviour, ITssEndpointBindingC
 
     private TssPortEndpoint ResolveEndpoint(LinkIndicatorBinding binding)
     {
-        if (binding.endpoint)
-            return binding.endpoint;
-
-        if (string.IsNullOrWhiteSpace(binding.endpointId))
-            return null;
-
-        foreach (var endpoint in GetComponentsInChildren<TssPortEndpoint>(true))
-        {
-            if (endpoint.EndpointId == binding.endpointId.Trim() || endpoint.EndpointId.EndsWith(":" + binding.endpointId.Trim(), StringComparison.Ordinal))
-                return endpoint;
-        }
-
-        return null;
+        var endpoints = new List<TssPortEndpoint>(GetComponentsInChildren<TssPortEndpoint>(true));
+        var endpoint = TssPortEndpointBinder.FindMatchingEndpoint(endpoints, binding.endpoint, binding.endpointId);
+        if (!endpoint && !string.IsNullOrWhiteSpace(binding.endpointId) && _warnedBindings.Add(binding.endpointId.Trim()))
+            Debug.LogWarning($"{name}: unresolved LED endpoint binding '{binding.endpointId}'.", this);
+        return endpoint;
     }
 
     public void OnEndpointsBound(System.Collections.Generic.IReadOnlyList<TssPortEndpoint> endpoints, string ownerPrefix) => Refresh();

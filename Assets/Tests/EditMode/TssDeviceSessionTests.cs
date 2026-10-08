@@ -5,6 +5,51 @@ using UnityEngine.UI;
 public sealed class TssDeviceSessionTests
 {
     [Test]
+    public void EndpointBindingUsesExactSuffixOnly()
+    {
+        var root = new GameObject("Root");
+        var exact = new GameObject("Exact").AddComponent<TssPortEndpoint>();
+        exact.Configure("Device:GE01", new EquipmentInterface { name = "GE01", label = "GE0/1" });
+        var partial = new GameObject("Partial").AddComponent<TssPortEndpoint>();
+        partial.Configure("Device:GE010", new EquipmentInterface { name = "GE010", label = "GE0/10" });
+        exact.transform.SetParent(root.transform);
+        partial.transform.SetParent(root.transform);
+
+        try
+        {
+            var endpoints = root.GetComponentsInChildren<TssPortEndpoint>(true);
+            Assert.AreSame(exact, TssPortEndpointBinder.FindMatchingEndpoint(endpoints, null, "GE01"));
+            Assert.IsNull(TssPortEndpointBinder.FindMatchingEndpoint(endpoints, null, "E01"));
+        }
+        finally
+        {
+            Object.DestroyImmediate(root);
+        }
+    }
+
+    [Test]
+    public void MonitorLayerStatesKeepIncompleteTextureSetsOnLegacyScreens()
+    {
+        var go = new GameObject("Monitor");
+        var renderer = go.AddComponent<MeshRenderer>();
+        var rotator = go.AddComponent<MonitorTextureRotator>();
+        var serialized = new UnityEditor.SerializedObject(rotator);
+        serialized.FindProperty("targetRenderer").objectReferenceValue = renderer;
+        serialized.FindProperty("screens").arraySize = 1;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+
+        try
+        {
+            rotator.SetLayerStates(true, true, true);
+            var screens = serialized.FindProperty("screens");
+            Assert.AreEqual(1, screens.arraySize);
+        }
+        finally
+        {
+            Object.DestroyImmediate(go);
+        }
+    }
+    [Test]
     public void NetworkProfileIsDeterministicAndUsesUniqueVlans()
     {
         var config = new NetworkScenarioConfig();
@@ -28,6 +73,52 @@ public sealed class TssDeviceSessionTests
         state.RemoveDevice("Rack:Rack01:U35");
 
         Assert.IsFalse(state.TryGetDevice("Rack:Rack01:U35", out _));
+    }
+
+    [Test]
+    public void NetworkResetClearsEvidenceAndCompletionSnapshots()
+    {
+        var state = new TssNetworkSessionState(TssNetworkRunProfile.Create(2, new NetworkScenarioConfig()));
+        state.Evidence.Add("show vlan brief");
+        state.SaveCheckpoint("before");
+        state.SaveCompletionSnapshot("WP2");
+
+        state.Clear();
+
+        Assert.IsEmpty(state.Evidence);
+        Assert.IsEmpty(state.Checkpoints);
+        Assert.IsEmpty(state.CompletionSnapshots);
+    }
+
+    [Test]
+    public void WorkPackageReportsNeutralStructuredCategoryWithoutAnswerData()
+    {
+        var profile = TssNetworkRunProfile.Create(3, new NetworkScenarioConfig());
+        var state = new TssNetworkSessionState(profile);
+        state.GetOrCreateDevice("AN1", EquipmentCategory.Switch, "AN-1");
+        state.GetOrCreateDevice("AN2", EquipmentCategory.Switch, "AN-2");
+
+        var result = new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2();
+
+        Assert.IsFalse(result.Complete);
+        Assert.IsTrue(result.UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Hardening"));
+        StringAssert.DoesNotContain(profile.ManagementVlan.ToString(), string.Join(" ", result.UnmetConditions));
+        StringAssert.DoesNotContain(profile.EnableSecret, string.Join(" ", result.UnmetConditions));
+    }
+
+    [Test]
+    public void CompletionSnapshotIsStickyAfterLaterStateChanges()
+    {
+        var state = new TssNetworkSessionState(TssNetworkRunProfile.Create(4, new NetworkScenarioConfig()));
+        var snapshot = state.SaveCompletionSnapshot("WP2");
+        var device = state.GetOrCreateDevice("AN1", EquipmentCategory.Switch, "AN-1");
+        device.Hostname = "AN-1-reused";
+
+        var evaluator = new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2();
+
+        Assert.IsTrue(evaluator.Complete);
+        Assert.AreSame(snapshot, evaluator.CompletionSnapshot);
+        Assert.AreEqual(4, evaluator.CompletionSnapshot.ProfileSeed);
     }
 
     [Test]
