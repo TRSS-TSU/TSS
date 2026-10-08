@@ -14,6 +14,7 @@ public sealed class TssScenarioDefinition : ScriptableObject
     public ExpectedRackPlacement[] expectedRackPlacements;
     public ExpectedEndpointPlacement[] expectedEndpointPlacements;
     public SopSection[] sopSections;
+    public NetworkScenarioConfig networkScenario;
 }
 
 [Serializable]
@@ -38,6 +39,9 @@ public sealed class ScenarioPermanentCableConnection
     public TssCableType cableType = TssCableType.StraightThrough;
     public string patchPanelEndpointId;
     public string wallportEndpointId;
+    public bool requiresPunchDownTermination;
+    public string endpointATerminationModuleId;
+    public string endpointBTerminationModuleId;
 }
 
 [Serializable]
@@ -77,4 +81,16 @@ public sealed class SopSection
 {
     public string title;
     [TextArea(2, 8)] public string body;
+}
+
+[Serializable]
+public sealed class NetworkScenarioConfig
+{
+    public bool enableLayer23Simulation;
+    [Min(1)] public int profileSeed = 20261008;
+    public string managementVlanName = "Management";
+    public string receptionVlanName = "Reception";
+    public string dataVlanName = "Data";
+    public string nativeVlanName = "Native";
+    public string deadVlanName = "Dead_Vlan";
 }

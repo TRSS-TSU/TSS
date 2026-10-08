@@ -2642,6 +2642,7 @@ GameObject:
   - component: {fileID: 5379577542406081318}
   - component: {fileID: 6029795736500399992}
   - component: {fileID: 4425260982484413817}
+  - component: {fileID: 8396113681825752137}
   m_Layer: 0
   m_Name: RackRouter_1U_RearFourLED_19in
   m_TagString: Untagged
@@ -2687,7 +2688,7 @@ MonoBehaviour:
   fallbackInteractionRange: 2.75
   hideAvatarInFirstPerson: 1
   avatarRoot: {fileID: 0}
-  canvasPrefab: {fileID: 0}
+  canvasPrefab: {fileID: 268473962152923943, guid: 24d66e300b124c44c971c7e01c7b9b99, type: 3}
   highlightOnHover: 1
   highlightTint: {r: 0.2, g: 0.75, b: 1, a: 1}
   highlightBlend: 0.45
@@ -2705,6 +2706,39 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortSelectionAdapter
   interactable: {fileID: 6029795736500399992}
   selectionCamera: {fileID: 0}
+--- !u!114 &8396113681825752137
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2141176143751956238}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb2fae613e437a84faacc2d56bc9e493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssDeviceLinkIndicator
+  bindings:
+  - endpoint: {fileID: 0}
+    endpointId: GE00
+    renderer: {fileID: 6967664978837139856}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: GE00
+    renderer: {fileID: 1562753089356894353}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: GE01
+    renderer: {fileID: 5931969028416713568}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: GE01
+    renderer: {fileID: 4246525709805890820}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
 --- !u!1 &2195591841185489730
 GameObject:
   m_ObjectHideFlags: 0

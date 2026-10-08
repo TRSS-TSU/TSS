@@ -220,9 +220,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &81746469878606793
 GameObject:
   m_ObjectHideFlags: 0
@@ -473,13 +476,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TSS.Runtime::TssObjectInteractable
   firstPersonView: {fileID: 2546526941337809071}
-  firstPersonLocalPositionOffset: {x: 0, y: 0, z: 0}
-  firstPersonLocalEulerOffset: {x: 0, y: 0, z: 0}
   mainCamera: {fileID: 0}
   transitionSeconds: 0.75
   firstPersonFieldOfView: 50
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
+  fallbackInteractionRange: 2.75
   hideAvatarInFirstPerson: 1
   avatarRoot: {fileID: 0}
   canvasPrefab: {fileID: 0}
@@ -1080,9 +1082,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &519659867423840287
 GameObject:
   m_ObjectHideFlags: 0
@@ -1933,9 +1938,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &831390616427797564
 GameObject:
   m_ObjectHideFlags: 0
@@ -2156,9 +2164,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &873350634692739955
 GameObject:
   m_ObjectHideFlags: 0
@@ -2379,9 +2390,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &952491837248965285
 GameObject:
   m_ObjectHideFlags: 0
@@ -3142,9 +3156,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &1234028418369112629
 GameObject:
   m_ObjectHideFlags: 0
@@ -3635,9 +3652,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &1344794175864672510
 GameObject:
   m_ObjectHideFlags: 0
@@ -4398,9 +4418,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &1660868445334980008
 GameObject:
   m_ObjectHideFlags: 0
@@ -4621,9 +4644,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &1710117467782199105
 GameObject:
   m_ObjectHideFlags: 0
@@ -5204,9 +5230,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &1960255117511718316
 GameObject:
   m_ObjectHideFlags: 0
@@ -5517,9 +5546,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &1985688151176995317
 GameObject:
   m_ObjectHideFlags: 0
@@ -6569,9 +6601,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &2374969754566604675
 GameObject:
   m_ObjectHideFlags: 0
@@ -6702,9 +6737,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &2405701133299960320
 GameObject:
   m_ObjectHideFlags: 0
@@ -7015,9 +7053,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &2497874722672698206
 GameObject:
   m_ObjectHideFlags: 0
@@ -7508,9 +7549,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &2646602406251121408
 GameObject:
   m_ObjectHideFlags: 0
@@ -7798,7 +7842,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!4 &8549748315243312617
 Transform:
   m_ObjectHideFlags: 0
@@ -8182,9 +8226,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &2719909457047177824
 GameObject:
   m_ObjectHideFlags: 0
@@ -8405,9 +8452,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &2753116217522377908
 GameObject:
   m_ObjectHideFlags: 0
@@ -8988,9 +9038,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &2947689196881983765
 GameObject:
   m_ObjectHideFlags: 0
@@ -9121,9 +9174,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &2995739414607846039
 GameObject:
   m_ObjectHideFlags: 0
@@ -10605,9 +10661,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &3570991499885313053
 GameObject:
   m_ObjectHideFlags: 0
@@ -11189,9 +11248,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &3789605813211533726
 GameObject:
   m_ObjectHideFlags: 0
@@ -11322,9 +11384,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &3795987861183057732
 GameObject:
   m_ObjectHideFlags: 0
@@ -11635,9 +11700,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &3853126189681183300
 GameObject:
   m_ObjectHideFlags: 0
@@ -11858,9 +11926,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &3964554867859431227
 GameObject:
   m_ObjectHideFlags: 0
@@ -12891,9 +12962,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &4319217061621214973
 GameObject:
   m_ObjectHideFlags: 0
@@ -13294,9 +13368,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &4488426100381035297
 GameObject:
   m_ObjectHideFlags: 0
@@ -13517,9 +13594,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &4671248613794908039
 GameObject:
   m_ObjectHideFlags: 0
@@ -13920,9 +14000,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &4750902770285812065
 GameObject:
   m_ObjectHideFlags: 0
@@ -14143,9 +14226,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &4760462172167662444
 GameObject:
   m_ObjectHideFlags: 0
@@ -14906,9 +14992,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &4950607618070222436
 GameObject:
   m_ObjectHideFlags: 0
@@ -15489,9 +15578,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &5182456918082766636
 GameObject:
   m_ObjectHideFlags: 0
@@ -15802,9 +15894,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &5256022053976213188
 GameObject:
   m_ObjectHideFlags: 0
@@ -17290,9 +17385,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &5755332116224493014
 GameObject:
   m_ObjectHideFlags: 0
@@ -17513,9 +17611,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &5765550116951870635
 GameObject:
   m_ObjectHideFlags: 0
@@ -18186,9 +18287,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &6017757250661843501
 GameObject:
   m_ObjectHideFlags: 0
@@ -18409,9 +18513,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &6068402055258507334
 GameObject:
   m_ObjectHideFlags: 0
@@ -18902,9 +19009,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &6271523270752009352
 GameObject:
   m_ObjectHideFlags: 0
@@ -19485,9 +19595,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &6425915984503618725
 GameObject:
   m_ObjectHideFlags: 0
@@ -20556,9 +20669,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &6842383073995533134
 GameObject:
   m_ObjectHideFlags: 0
@@ -20689,9 +20805,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &6903152447381788786
 GameObject:
   m_ObjectHideFlags: 0
@@ -20912,9 +21031,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &6958821486266180163
 GameObject:
   m_ObjectHideFlags: 0
@@ -21045,9 +21167,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &6966037032564179461
 GameObject:
   m_ObjectHideFlags: 0
@@ -21268,9 +21393,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &7005640580934971322
 GameObject:
   m_ObjectHideFlags: 0
@@ -21581,9 +21709,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &7060033428836224577
 GameObject:
   m_ObjectHideFlags: 0
@@ -22614,9 +22745,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &7621946494795082399
 GameObject:
   m_ObjectHideFlags: 0
@@ -22837,9 +22971,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &7676693385726915469
 GameObject:
   m_ObjectHideFlags: 0
@@ -23600,9 +23737,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &8069630325351020357
 GameObject:
   m_ObjectHideFlags: 0
@@ -24633,9 +24773,12 @@ MonoBehaviour:
   displayLabel: PP 01 Port 01
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
+  interfaceFace: 0
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
   highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &8869361585395378929
 GameObject:
   m_ObjectHideFlags: 0

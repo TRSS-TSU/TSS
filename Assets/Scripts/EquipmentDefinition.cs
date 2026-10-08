@@ -13,6 +13,12 @@ public enum EquipmentCategory
     Printer
 }
 
+public enum EquipmentInterfaceFace
+{
+    Front,
+    Rear
+}
+
 [CreateAssetMenu(menuName = "TSS/Equipment Definition")]
 public sealed class EquipmentDefinition : ScriptableObject
 {
@@ -52,6 +58,7 @@ public sealed class EquipmentInterface
     public string label;
     public TssCableType[] supportedCableTypes;
     public string portAnchorPath;
+    public EquipmentInterfaceFace interfaceFace;
 
     public bool Supports(TssCableType cableType)
     {

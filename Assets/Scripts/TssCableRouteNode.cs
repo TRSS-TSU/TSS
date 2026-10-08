@@ -6,7 +6,14 @@ public enum TssCableRouteNodeRole
     RackFront,
     RackRear,
     StationDrop,
-    Tray
+    Tray,
+}
+
+public enum TssCableRouteSide
+{
+    Any,
+    Left,
+    Right,
 }
 
 public sealed class TssCableRouteNode : MonoBehaviour
@@ -15,6 +22,7 @@ public sealed class TssCableRouteNode : MonoBehaviour
     public string rackId;
     public string stationId;
     public TssCableRouteNodeRole role;
+    public TssCableRouteSide side;
 
     private void OnDrawGizmos()
     {
@@ -35,6 +43,6 @@ public sealed class TssCableRouteNode : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, 0.14f);
+        Gizmos.DrawWireSphere(transform.position, 0.1f);
     }
 }

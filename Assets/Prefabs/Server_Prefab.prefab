@@ -7112,6 +7112,7 @@ GameObject:
   - component: {fileID: 6848296200989939369}
   - component: {fileID: 8266326939863686631}
   - component: {fileID: 7331990527715973550}
+  - component: {fileID: 9090662266528268859}
   m_Layer: 0
   m_Name: Server_Prefab
   m_TagString: Untagged
@@ -7157,7 +7158,7 @@ MonoBehaviour:
   fallbackInteractionRange: 2.75
   hideAvatarInFirstPerson: 1
   avatarRoot: {fileID: 0}
-  canvasPrefab: {fileID: 0}
+  canvasPrefab: {fileID: 7076554143623876229, guid: 18121cdfee0055443ac7a7458f72d838, type: 3}
   highlightOnHover: 1
   highlightTint: {r: 0.2, g: 0.75, b: 1, a: 1}
   highlightBlend: 0.45
@@ -7175,6 +7176,79 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortSelectionAdapter
   interactable: {fileID: 8266326939863686631}
   selectionCamera: {fileID: 0}
+--- !u!114 &9090662266528268859
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6430748568416650616}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb2fae613e437a84faacc2d56bc9e493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssDeviceLinkIndicator
+  bindings:
+  - endpoint: {fileID: 0}
+    endpointId: GE01
+    renderer: {fileID: 3597652410337443275}
+    connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: GE01
+    renderer: {fileID: 6898303205856911447}
+    connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: GE01
+    renderer: {fileID: 2730989652667169864}
+    connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: GE01
+    renderer: {fileID: 5640935873663128429}
+    connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: GE01
+    renderer: {fileID: 2884440325794949458}
+    connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: GE01
+    renderer: {fileID: 6216544205655899282}
+    connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: GE01
+    renderer: {fileID: 5312944497244542342}
+    connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: GE01
+    renderer: {fileID: 3472661536538253334}
+    connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: GE01
+    renderer: {fileID: 6394944088687507018}
+    connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: GE01
+    renderer: {fileID: 9083642660433572251}
+    connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: GE01
+    renderer: {fileID: 682412884635178660}
+    connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: GE01
+    renderer: {fileID: 1580290732015233565}
+    connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
 --- !u!1 &6466711026114624882
 GameObject:
   m_ObjectHideFlags: 0

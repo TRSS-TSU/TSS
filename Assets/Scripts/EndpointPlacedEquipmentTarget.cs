@@ -18,6 +18,10 @@ public sealed class EndpointPlacedEquipmentTarget : MonoBehaviour
     private bool _isHovered;
     private TssObjectInteractable _interactable;
 
+    public EndpointPlacementStation Station => _station;
+    public string PlacementId => _placementId;
+    public EquipmentDefinition Equipment => _equipment;
+
     public void Initialize(EndpointPlacementStation station, string placementId, EquipmentDefinition equipment)
     {
         _station = station;

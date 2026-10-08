@@ -11,6 +11,7 @@ using Unity.Cinemachine;
 public sealed class TssObjectInteractable : MonoBehaviour
 {
     private static TssObjectInteractable _activeInteractable;
+    public static TssObjectInteractable ActiveInteractable => _activeInteractable;
     public event Action EnteredFirstPerson;
     public event Action ReturnedToThirdPerson;
     public bool IsFirstPerson => _isFirstPerson;
@@ -80,7 +81,7 @@ public sealed class TssObjectInteractable : MonoBehaviour
 
         if (_isFirstPerson)
         {
-            if (WasExitPressed())
+            if (!IsGameplayInputBlocked() && WasExitPressed())
                 ReturnToThirdPerson();
 
             return;
@@ -138,7 +139,10 @@ public sealed class TssObjectInteractable : MonoBehaviour
 
     private void OnGUI()
     {
-        if (!_isFirstPerson || _canvasInstance)
+        if (!_isFirstPerson || _canvasInstance || IsGameplayInputBlocked())
+            return;
+
+        if (TssDeviceSessionController.Instance && TssDeviceSessionController.Instance.IsSessionOpen)
             return;
 
         // ponytail: OnGUI is enough for the temporary return button until the real canvas prefab exists.
@@ -148,6 +152,9 @@ public sealed class TssObjectInteractable : MonoBehaviour
 
     public void EnterFirstPerson()
     {
+        if (!mainCamera)
+            mainCamera = Camera.main ? Camera.main : FindFirstObjectByType<Camera>();
+
         if (_isFirstPerson || _transition != null || !mainCamera)
             return;
 
@@ -171,8 +178,14 @@ public sealed class TssObjectInteractable : MonoBehaviour
 
     public void ReturnToThirdPerson()
     {
+        if (!mainCamera)
+            mainCamera = Camera.main ? Camera.main : FindFirstObjectByType<Camera>();
+
         if (!_isFirstPerson || _transition != null || !mainCamera)
             return;
+
+        if (TssDeviceSessionController.Instance && TssDeviceSessionController.Instance.IsSessionOpen)
+            TssDeviceSessionController.Instance.CloseCurrentSession();
 
         if (_activeInteractable == this)
             _activeInteractable = null;
@@ -273,6 +286,9 @@ public sealed class TssObjectInteractable : MonoBehaviour
 
     private void ShowCanvas()
     {
+        if (!canvasPrefab && TssDeviceSessionController.Instance)
+            canvasPrefab = TssDeviceSessionController.Instance.GetControlsPrefabFor(gameObject);
+
         if (!canvasPrefab)
             return;
 

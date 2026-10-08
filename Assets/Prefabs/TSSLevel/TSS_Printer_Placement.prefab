@@ -2138,6 +2138,7 @@ GameObject:
   - component: {fileID: 3912131421921244579}
   - component: {fileID: 6292135500422742146}
   - component: {fileID: 2600105404897287366}
+  - component: {fileID: 5620829509485739453}
   m_Layer: 0
   m_Name: TSS_Printer_Placement
   m_TagString: Untagged
@@ -2175,16 +2176,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TSS.Runtime::TssObjectInteractable
   firstPersonView: {fileID: 3026717777983361756}
-  firstPersonLocalPositionOffset: {x: 0, y: 0, z: 0}
-  firstPersonLocalEulerOffset: {x: 0, y: 0, z: 0}
   mainCamera: {fileID: 0}
   transitionSeconds: 0.75
   firstPersonFieldOfView: 50
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
+  fallbackInteractionRange: 2.75
   hideAvatarInFirstPerson: 1
   avatarRoot: {fileID: 0}
-  canvasPrefab: {fileID: 0}
+  canvasPrefab: {fileID: 7076554143623876229, guid: 18121cdfee0055443ac7a7458f72d838, type: 3}
   highlightOnHover: 1
   highlightTint: {r: 0.2, g: 0.75, b: 1, a: 1}
   highlightBlend: 0.45
@@ -2202,6 +2202,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortSelectionAdapter
   interactable: {fileID: 6292135500422742146}
   selectionCamera: {fileID: 0}
+--- !u!114 &5620829509485739453
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4549912767345446184}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb2fae613e437a84faacc2d56bc9e493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssDeviceLinkIndicator
+  bindings:
+  - endpoint: {fileID: 0}
+    endpointId: Eth01
+    renderer: {fileID: 330842341688511768}
+    connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
 --- !u!1 &4986410176026322580
 GameObject:
   m_ObjectHideFlags: 0

@@ -48,6 +48,14 @@ public sealed class TssPortSelectionAdapter : MonoBehaviour
         if (!_selecting)
             return;
 
+        if (TssRuntimeUi.Instance && TssRuntimeUi.Instance.IsGameplayInputBlocked)
+        {
+            if (_hoveredEndpoint)
+                _hoveredEndpoint.SetHovered(false);
+            _hoveredEndpoint = null;
+            return;
+        }
+
         UpdateHoveredEndpoint();
 
         if (!WasPrimaryClickPressed())
@@ -57,7 +65,8 @@ public sealed class TssPortSelectionAdapter : MonoBehaviour
         if (!endpoint || !TssTrainingSession.Instance)
             return;
 
-        TssTrainingSession.Instance.TryUsePort(endpoint, out _);
+        TssTrainingSession.Instance.TryUsePort(endpoint, out var message);
+        TssRuntimeUi.Instance?.ShowHudMessage(message);
         RefreshHighlights();
     }
 

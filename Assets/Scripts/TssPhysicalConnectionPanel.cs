@@ -227,37 +227,81 @@ public sealed class TssPhysicalConnectionPanel : MonoBehaviour
         return $"{connection.CableType}: {EndpointLabel(connection.EndpointAId, session)} <-> {EndpointLabel(connection.EndpointBId, session)}";
     }
 
-    private static string EndpointLabel(string endpointId, TssTrainingSession session)
+    public static string EndpointLabel(string endpointId, TssTrainingSession session)
     {
+        if (string.IsNullOrWhiteSpace(endpointId))
+            return string.Empty;
+
+        if (!session)
+            session = TssTrainingSession.Instance ?? Object.FindFirstObjectByType<TssTrainingSession>();
+
         var label = endpointId;
+        TssPortEndpoint matchedEndpoint = null;
         foreach (var endpoint in Object.FindObjectsByType<TssPortEndpoint>(FindObjectsInactive.Include, FindObjectsSortMode.None))
         {
             if (endpoint.EndpointId == endpointId)
             {
+                matchedEndpoint = endpoint;
                 label = endpoint.DisplayLabel;
                 break;
             }
         }
 
         var deviceName = DeviceName(endpointId, session);
-        return string.IsNullOrWhiteSpace(deviceName) ? label : $"{deviceName.Trim()} {label}";
-    }
+        if (string.IsNullOrWhiteSpace(deviceName) && matchedEndpoint != null && !string.IsNullOrWhiteSpace(matchedEndpoint.DeviceName))
+            deviceName = matchedEndpoint.DeviceName;
 
-    private static string DeviceName(string endpointId, TssTrainingSession session)
-    {
-        if (!session)
-            return string.Empty;
-
-        foreach (var record in session.Installed)
+        // If endpoint wasn't found in scene, extract the last port segment from endpointId
+        if (label == endpointId && endpointId.Contains(":"))
         {
-            if (endpointId.StartsWith(TssTrainingSession.GetRackOwnerPrefix(record.RackId, record.StartingU) + ":", System.StringComparison.Ordinal))
-                return record.DeviceName;
+            var lastColon = endpointId.LastIndexOf(':');
+            if (lastColon >= 0 && lastColon < endpointId.Length - 1)
+                label = endpointId.Substring(lastColon + 1);
         }
 
-        foreach (var record in session.EndpointPlacements)
+        if (string.IsNullOrWhiteSpace(deviceName))
+            return label.Trim();
+
+        deviceName = deviceName.Trim();
+        label = label.Trim();
+
+        if (label.StartsWith(deviceName, System.StringComparison.OrdinalIgnoreCase))
+            return label;
+
+        return $"{deviceName} {label}";
+    }
+
+    public static string DeviceName(string endpointId, TssTrainingSession session)
+    {
+        if (string.IsNullOrWhiteSpace(endpointId))
+            return string.Empty;
+
+        if (!session)
+            session = TssTrainingSession.Instance ?? Object.FindFirstObjectByType<TssTrainingSession>();
+
+        if (session != null)
         {
-            if (endpointId.StartsWith(TssTrainingSession.GetEndpointOwnerPrefix(record.PlacementId) + ":", System.StringComparison.Ordinal))
-                return record.DeviceName;
+            foreach (var record in session.Installed)
+            {
+                if (endpointId.StartsWith(TssTrainingSession.GetRackOwnerPrefix(record.RackId, record.StartingU) + ":", System.StringComparison.Ordinal))
+                {
+                    if (!string.IsNullOrWhiteSpace(record.DeviceName))
+                        return record.DeviceName.Trim();
+
+                    return string.Empty;
+                }
+            }
+
+            foreach (var record in session.EndpointPlacements)
+            {
+                if (endpointId.StartsWith(TssTrainingSession.GetEndpointOwnerPrefix(record.PlacementId) + ":", System.StringComparison.Ordinal))
+                {
+                    if (!string.IsNullOrWhiteSpace(record.DeviceName))
+                        return record.DeviceName.Trim();
+
+                    return string.Empty;
+                }
+            }
         }
 
         return string.Empty;

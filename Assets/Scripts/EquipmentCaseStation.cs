@@ -71,8 +71,15 @@ public sealed class EquipmentCaseStation : MonoBehaviour
         else if (session.HeldCable)
             session.ReturnHeldCable(out _);
 
-        if (session.TryCheckout(equipment, out _))
+        if (session.TryCheckout(equipment, out var message))
+        {
+            TssRuntimeUi.Instance?.ShowHudMessage(message);
             ClosePanel();
+        }
+        else
+        {
+            TssRuntimeUi.Instance?.ShowHudMessage(message);
+        }
     }
 
     public void CheckoutCable(TssCableDefinition cable)
@@ -86,8 +93,15 @@ public sealed class EquipmentCaseStation : MonoBehaviour
         else if (session.HeldCable)
             session.ReturnHeldCable(out _);
 
-        if (session.TryCheckoutCable(cable, out _))
+        if (session.TryCheckoutCable(cable, out var message))
+        {
+            TssRuntimeUi.Instance?.ShowHudMessage(message);
             ClosePanel();
+        }
+        else
+        {
+            TssRuntimeUi.Instance?.ShowHudMessage(message);
+        }
     }
 
     public void ReturnHeld()
@@ -97,9 +111,15 @@ public sealed class EquipmentCaseStation : MonoBehaviour
             return;
 
         if (session.HeldItem)
-            session.ReturnHeldItem(out _);
+        {
+            session.ReturnHeldItem(out var message);
+            TssRuntimeUi.Instance?.ShowHudMessage(message);
+        }
         else if (session.HeldCable)
-            session.ReturnHeldCable(out _);
+        {
+            session.ReturnHeldCable(out var message);
+            TssRuntimeUi.Instance?.ShowHudMessage(message);
+        }
     }
 
     public void ClosePanel()

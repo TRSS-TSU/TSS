@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System;
 using StarterAssets;
 using TMPro;
 using UnityEngine;
@@ -119,11 +120,14 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         var equipment = session.HeldItem;
         if (TssRuntimeUi.Instance)
         {
-            TssRuntimeUi.Instance.ShowNamePrompt($"Name {equipment.displayName}", string.Empty, deviceName => PlaceHeld(deviceName), this);
+            TssRuntimeUi.Instance.ShowNamePrompt($"Name {equipment.displayName}", string.Empty, deviceName =>
+            {
+                PlaceHeld(deviceName);
+            }, this);
             return;
         }
 
-        PlaceHeld(equipment.displayName);
+        PlaceHeld(string.Empty);
     }
 
     private void PlaceHeld(string deviceName)
@@ -133,10 +137,14 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         if (!anchor || !TssTrainingSession.Instance)
             return;
 
-        if (!TssTrainingSession.Instance.TryPlaceHeldEndpoint(this, deviceName, out var record, out _))
+        if (!TssTrainingSession.Instance.TryPlaceHeldEndpoint(this, deviceName, out var record, out var message))
+        {
+            TssRuntimeUi.Instance?.ShowHudMessage(message);
             return;
+        }
 
         CreatePlacedVisual(anchor, record);
+        TssRuntimeUi.Instance?.ShowHudMessage(message);
     }
 
     private void CreatePlacedVisual(Transform anchor, EndpointPlacementRecord record)
@@ -152,7 +160,7 @@ public sealed class EndpointPlacementStation : MonoBehaviour
             visual.transform.localPosition = record.Equipment.placementLocalOffset;
             visual.transform.localRotation = Quaternion.Euler(record.Equipment.placementLocalEuler);
             visual.transform.localScale = record.Equipment.placementLocalScale;
-            TssPortEndpointBinder.ConfigureEndpoints(visual, TssTrainingSession.GetEndpointOwnerPrefix(record.PlacementId), record.Equipment);
+            TssPortEndpointBinder.ConfigureEndpoints(visual, TssTrainingSession.GetEndpointOwnerPrefix(record.PlacementId), record.Equipment, record.DeviceName);
 
             foreach (var collider in visual.GetComponentsInChildren<Collider>(true))
             {
@@ -181,31 +189,55 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         if (!CanInspectPlacedEndpoint(session))
             return;
 
-        if (session.HeldCable && TryEnterPlacedCableView(placementId))
+        if (TryEnterPlacedCableView(placementId))
             return;
 
         var currentName = GetDeviceName(placementId);
         var computerTitle = string.IsNullOrWhiteSpace(currentName) ? equipment.displayName : currentName.Trim();
+        Action accessComputer = () =>
+        {
+            if (!TryEnterPlacedCableView(placementId))
+                ShowComputerForPlacement(placementId, computerTitle, owner);
+        };
         if (TssRuntimeUi.Instance)
         {
             TssRuntimeUi.Instance.ShowEndpointMenu(
                 $"{StationId} {equipment.displayName}",
                 true,
                 true,
-                equipment.category == EquipmentCategory.DesktopPc,
+                true,
                 deviceName =>
                 {
                     if (TssTrainingSession.Instance.RenameEndpoint(placementId, deviceName))
+                    {
                         UpdateNameSign(placementId, deviceName);
+                        if (_placedVisuals.TryGetValue(placementId, out var visual) && visual)
+                        {
+                            foreach (var ep in visual.GetComponentsInChildren<TssPortEndpoint>(true))
+                                ep.SetDeviceName(deviceName);
+                        }
+                    }
                 },
                 () => PickupPlaced(placementId, equipment),
-                () => TssRuntimeUi.Instance.ShowComputerMenu(computerTitle, owner),
+                accessComputer,
                 owner,
                 currentName);
             return;
         }
 
         PickupPlaced(placementId, equipment);
+    }
+
+    public bool TryGetPlacedEndpoint(string placementId, out TssPortEndpoint endpoint)
+    {
+        endpoint = null;
+        if (string.IsNullOrWhiteSpace(placementId)
+            || !_placedVisuals.TryGetValue(placementId, out var visual)
+            || !visual)
+            return false;
+
+        endpoint = visual.GetComponentInChildren<TssPortEndpoint>(true);
+        return endpoint;
     }
 
     internal static bool CanInspectPlacedEndpoint(TssTrainingSession session)
@@ -226,15 +258,31 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         return true;
     }
 
-    private void PickupPlaced(string placementId, EquipmentDefinition equipment)
+    public void PickupPlaced(string placementId, EquipmentDefinition equipment)
     {
-        if (!TssTrainingSession.Instance.TryPickupEndpoint(placementId, equipment, out _))
+        if (!TssTrainingSession.Instance.TryPickupEndpoint(placementId, equipment, out var message))
+        {
+            TssRuntimeUi.Instance?.ShowHudMessage(message);
             return;
+        }
 
         if (_placedVisuals.TryGetValue(placementId, out var visual) && visual)
             Destroy(visual);
 
         _placedVisuals.Remove(placementId);
+        TssRuntimeUi.Instance?.ShowHudMessage(message);
+    }
+
+    private void ShowComputerForPlacement(string placementId, string title, object owner)
+    {
+        var session = TssTrainingSession.Instance;
+        if (!session || !TryGetPlacedEndpoint(placementId, out var endpoint) || !session.IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId))
+        {
+            TssRuntimeUi.Instance?.ShowComputerMenu(title, owner, "Network unavailable.");
+            return;
+        }
+
+        TssRuntimeUi.Instance?.ShowComputerMenu(title, owner);
     }
 
     private void CreateNameSign(Transform root, EndpointPlacementRecord record)

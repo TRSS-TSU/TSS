@@ -15,6 +15,8 @@ public sealed class TssTrainingSession : MonoBehaviour
     private readonly List<InstalledEquipmentRecord> _installed = new();
     private readonly List<EndpointPlacementRecord> _endpointPlacements = new();
     private readonly List<TssPhysicalConnectionRecord> _physicalConnections = new();
+    private readonly Dictionary<string, TssTerminationModuleState> _terminationStates = new();
+    private readonly Dictionary<string, bool> _terminationResults = new();
     private GameObject _carryVisual;
     private TssPortEndpoint _selectedCableEndpoint;
     private int _nextConnectionNumber = 1;
@@ -28,6 +30,8 @@ public sealed class TssTrainingSession : MonoBehaviour
     public IReadOnlyList<InstalledEquipmentRecord> Installed => _installed;
     public IReadOnlyList<EndpointPlacementRecord> EndpointPlacements => _endpointPlacements;
     public IReadOnlyList<TssPhysicalConnectionRecord> PhysicalConnections => _physicalConnections;
+    public TssNetworkRunProfile NetworkProfile { get; private set; }
+    public TssNetworkSessionState NetworkState { get; private set; }
 
     private void Awake()
     {
@@ -64,8 +68,14 @@ public sealed class TssTrainingSession : MonoBehaviour
         _remainingCables.Clear();
         _installed.Clear();
         _endpointPlacements.Clear();
+        _terminationStates.Clear();
+        _terminationResults.Clear();
         ClearPhysicalConnections();
         ClearCarryVisual();
+        NetworkProfile = scenario && scenario.networkScenario != null && scenario.networkScenario.enableLayer23Simulation
+            ? TssNetworkRunProfile.Create(scenario.networkScenario.profileSeed, scenario.networkScenario)
+            : null;
+        NetworkState = NetworkProfile != null ? new TssNetworkSessionState(NetworkProfile) : null;
 
         if (scenario && scenario.inventory != null)
         {
@@ -86,6 +96,11 @@ public sealed class TssTrainingSession : MonoBehaviour
         }
 
         ApplyPermanentConnections();
+        StateChanged?.Invoke();
+    }
+
+    public void NotifyNetworkStateChanged()
+    {
         StateChanged?.Invoke();
     }
 
@@ -132,6 +147,7 @@ public sealed class TssTrainingSession : MonoBehaviour
         _remaining[equipment]--;
         HeldItem = equipment;
         CreateCarryVisual(equipment);
+        NetworkState?.RemoveDevice(GetRackOwnerPrefix(rack.RackId, startingU));
         message = $"Carrying {equipment.displayName}";
         StateChanged?.Invoke();
         return true;
@@ -309,6 +325,7 @@ public sealed class TssTrainingSession : MonoBehaviour
                 continue;
 
             _endpointPlacements.RemoveAt(i);
+            NetworkState?.RemoveDevice(placementId);
             HeldItem = equipment;
             CreateCarryVisual(equipment);
             message = $"Picked up {equipment.displayName}";
@@ -485,6 +502,95 @@ public sealed class TssTrainingSession : MonoBehaviour
         return paths;
     }
 
+    public bool IsEndpointOnEffectivePhysicalPath(string endpointId)
+    {
+        if (string.IsNullOrWhiteSpace(endpointId))
+            return false;
+
+        foreach (var path in GetEffectivePhysicalPaths())
+        {
+            if (path.EndpointAId == endpointId || path.EndpointBId == endpointId)
+                return true;
+        }
+
+        return false;
+    }
+
+    public bool TryGetTerminationLinks(string endpointId, out IReadOnlyList<ScenarioPermanentCableConnection> links)
+    {
+        var results = new List<ScenarioPermanentCableConnection>();
+        if (!string.IsNullOrWhiteSpace(endpointId) && Scenario && Scenario.permanentConnections != null)
+        {
+            var cleanedEndpoint = endpointId.Trim();
+            foreach (var link in Scenario.permanentConnections)
+            {
+                if (link == null || !link.requiresPunchDownTermination)
+                    continue;
+
+                if (EndpointMatches(link.patchPanelEndpointId, cleanedEndpoint)
+                    || EndpointMatches(link.wallportEndpointId, cleanedEndpoint))
+                    results.Add(link);
+            }
+        }
+
+        links = results;
+        return results.Count > 0;
+    }
+
+    public bool SetTerminationModuleState(TssTerminationModuleState state, bool isElectricallyCorrect, out string message)
+    {
+        if (!TryGetTerminationLink(state, out var link, out message))
+            return false;
+
+        if (!TssT568BValidator.HasExactEightPins(state))
+        {
+            message = "Termination module must include exactly eight pins.";
+            return false;
+        }
+
+        var role = GetEndpointRole(link, state.endpointId);
+        var expectedModuleId = GetTerminationModuleId(link, role);
+        if (!string.Equals(Clean(state.moduleId), expectedModuleId, StringComparison.Ordinal))
+        {
+            message = "Termination module ID does not match the permanent run.";
+            return false;
+        }
+
+        state = state.Clone();
+        state.connectionId = Clean(link.connectionId);
+        state.endpointId = Clean(state.endpointId);
+        state.moduleId = expectedModuleId;
+        state.endpointRole = role;
+
+        var key = TerminationKey(state.connectionId, state.endpointId);
+        _terminationStates[key] = state;
+        _terminationResults[key] = isElectricallyCorrect && TssT568BValidator.IsElectricallyCorrect(state);
+        ReconcilePermanentConnection(state.connectionId);
+        message = "Termination state saved.";
+        StateChanged?.Invoke();
+        return true;
+    }
+
+    public bool TryGetTerminationModuleState(string connectionId, string endpointId, out TssTerminationModuleState state)
+    {
+        if (_terminationStates.TryGetValue(TerminationKey(connectionId, endpointId), out var saved))
+        {
+            state = saved.Clone();
+            return true;
+        }
+
+        state = null;
+        return false;
+    }
+
+    public IReadOnlyList<TssTerminationModuleState> GetTerminationModuleStates()
+    {
+        var states = new List<TssTerminationModuleState>(_terminationStates.Count);
+        foreach (var state in _terminationStates.Values)
+            states.Add(state.Clone());
+        return states;
+    }
+
     public bool IsFirstSelectedEndpoint(TssPortEndpoint endpoint)
     {
         return endpoint && _selectedCableEndpoint == endpoint;
@@ -644,26 +750,153 @@ public sealed class TssTrainingSession : MonoBehaviour
                 || string.IsNullOrWhiteSpace(link.wallportEndpointId))
                 continue;
 
-            var patchPanelId = link.patchPanelEndpointId.Trim();
-            var wallportId = link.wallportEndpointId.Trim();
-            if (HasConnection(patchPanelId, wallportId))
+            if (link.requiresPunchDownTermination && !IsPermanentLinkTerminated(link))
                 continue;
 
-            var patchPanel = FindEndpoint(patchPanelId);
-            var wallport = FindEndpoint(wallportId);
-            if (!patchPanel || !wallport)
-                continue;
-
-            var cable = link.cable ? link.cable : FindCable(link.cableType);
-            _physicalConnections.Add(new TssPhysicalConnectionRecord(
-                string.IsNullOrWhiteSpace(link.connectionId) ? $"Infrastructure{i + 1:000}" : link.connectionId.Trim(),
-                cable,
-                cable ? cable.cableType : link.cableType,
-                patchPanelId,
-                wallportId,
-                null,
-                true));
+            AddPermanentConnection(link, i);
         }
+    }
+
+    private void ReconcilePermanentConnection(string connectionId)
+    {
+        var link = FindPermanentConnection(connectionId, out var index);
+        if (link == null)
+            return;
+
+        for (var i = _physicalConnections.Count - 1; i >= 0; i--)
+        {
+            var connection = _physicalConnections[i];
+            if (connection.IsPermanent && Clean(connection.ConnectionId) == Clean(connectionId))
+                _physicalConnections.RemoveAt(i);
+        }
+
+        if (!link.requiresPunchDownTermination || IsPermanentLinkTerminated(link))
+            AddPermanentConnection(link, index);
+    }
+
+    private void AddPermanentConnection(ScenarioPermanentCableConnection link, int index)
+    {
+        var patchPanelId = link.patchPanelEndpointId.Trim();
+        var wallportId = link.wallportEndpointId.Trim();
+        if (HasConnection(patchPanelId, wallportId))
+            return;
+
+        var patchPanel = FindEndpoint(patchPanelId);
+        var wallport = FindEndpoint(wallportId);
+        if (!patchPanel || !wallport)
+            return;
+
+        var cable = link.cable ? link.cable : FindCable(link.cableType);
+        _physicalConnections.Add(new TssPhysicalConnectionRecord(
+            string.IsNullOrWhiteSpace(link.connectionId) ? $"Infrastructure{index + 1:000}" : link.connectionId.Trim(),
+            cable,
+            cable ? cable.cableType : link.cableType,
+            patchPanelId,
+            wallportId,
+            null,
+            true));
+    }
+
+    private bool IsPermanentLinkTerminated(ScenarioPermanentCableConnection link)
+    {
+        var connectionId = Clean(link.connectionId);
+        if (string.IsNullOrEmpty(connectionId))
+            return false;
+
+        return IsTerminationCorrect(connectionId, link.patchPanelEndpointId)
+            && IsTerminationCorrect(connectionId, link.wallportEndpointId);
+    }
+
+    private bool IsTerminationCorrect(string connectionId, string endpointId)
+    {
+        return _terminationResults.TryGetValue(TerminationKey(connectionId, endpointId), out var correct) && correct;
+    }
+
+    private bool TryGetTerminationLink(TssTerminationModuleState state, out ScenarioPermanentCableConnection link, out string message)
+    {
+        link = null;
+        if (state == null)
+        {
+            message = "Termination state is missing.";
+            return false;
+        }
+
+        var connectionId = Clean(state.connectionId);
+        var endpointId = Clean(state.endpointId);
+        if (string.IsNullOrEmpty(connectionId) || string.IsNullOrEmpty(endpointId))
+        {
+            message = "Termination state needs a connection ID and endpoint ID.";
+            return false;
+        }
+
+        link = FindPermanentConnection(connectionId, out _);
+        if (link == null || !link.requiresPunchDownTermination)
+        {
+            message = "Permanent run is not configured for punch-down termination.";
+            return false;
+        }
+
+        if (GetEndpointRole(link, endpointId) == null)
+        {
+            message = "Endpoint is not part of the permanent run.";
+            return false;
+        }
+
+        message = string.Empty;
+        return true;
+    }
+
+    private ScenarioPermanentCableConnection FindPermanentConnection(string connectionId, out int index)
+    {
+        index = -1;
+        if (!Scenario || Scenario.permanentConnections == null)
+            return null;
+
+        var cleaned = Clean(connectionId);
+        for (var i = 0; i < Scenario.permanentConnections.Length; i++)
+        {
+            var link = Scenario.permanentConnections[i];
+            if (link != null && Clean(link.connectionId) == cleaned)
+            {
+                index = i;
+                return link;
+            }
+        }
+
+        return null;
+    }
+
+    private static string GetEndpointRole(ScenarioPermanentCableConnection link, string endpointId)
+    {
+        if (EndpointMatches(link.patchPanelEndpointId, endpointId))
+            return "A";
+        if (EndpointMatches(link.wallportEndpointId, endpointId))
+            return "B";
+        return null;
+    }
+
+    private static string GetTerminationModuleId(ScenarioPermanentCableConnection link, string role)
+    {
+        var configured = role == "A" ? link.endpointATerminationModuleId : link.endpointBTerminationModuleId;
+        if (!string.IsNullOrWhiteSpace(configured))
+            return configured.Trim();
+
+        return $"{Clean(link.connectionId)}:{role}";
+    }
+
+    private static string TerminationKey(string connectionId, string endpointId)
+    {
+        return $"{Clean(connectionId)}|{Clean(endpointId)}";
+    }
+
+    private static bool EndpointMatches(string left, string right)
+    {
+        return string.Equals(Clean(left), Clean(right), StringComparison.Ordinal);
+    }
+
+    private static string Clean(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? string.Empty : value.Trim();
     }
 
     private bool HasConnection(string endpointAId, string endpointBId)

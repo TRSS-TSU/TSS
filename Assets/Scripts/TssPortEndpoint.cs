@@ -4,8 +4,10 @@ public sealed class TssPortEndpoint : MonoBehaviour
 {
     [SerializeField] private string endpointId;
     [SerializeField] private string displayLabel;
+    [SerializeField] private string deviceName;
     [SerializeField] private string connectorType = "RJ45";
     [SerializeField] private TssCableType[] supportedCableTypes;
+    [SerializeField] private EquipmentInterfaceFace interfaceFace;
     [SerializeField] private Color selectableTint = new(0.1f, 0.9f, 0.45f, 1f);
     [SerializeField] private Color hoverTint = new(0.2f, 0.65f, 1f, 1f);
     [SerializeField] private Color selectedTint = new(1f, 0.85f, 0.15f, 1f);
@@ -22,8 +24,16 @@ public sealed class TssPortEndpoint : MonoBehaviour
 
     public string EndpointId => string.IsNullOrWhiteSpace(endpointId) ? name : endpointId;
     public string DisplayLabel => string.IsNullOrWhiteSpace(displayLabel) ? EndpointId : displayLabel;
+    public string DeviceName => string.IsNullOrWhiteSpace(deviceName) ? string.Empty : deviceName.Trim();
+    public string FullLabel => string.IsNullOrWhiteSpace(DeviceName) ? DisplayLabel : $"{DeviceName} {DisplayLabel}".Trim();
     public string ConnectorType => string.IsNullOrWhiteSpace(connectorType) ? "RJ45" : connectorType.Trim();
+    public EquipmentInterfaceFace InterfaceFace => interfaceFace;
     public Vector3 CableAnchorPosition => GetCableAnchorPosition();
+
+    public void SetDeviceName(string name)
+    {
+        deviceName = string.IsNullOrWhiteSpace(name) ? string.Empty : name.Trim();
+    }
 
     private void Awake()
     {
@@ -51,9 +61,11 @@ public sealed class TssPortEndpoint : MonoBehaviour
         }
     }
 
-    public void Configure(string id, EquipmentInterface definition)
+    public void Configure(string id, EquipmentInterface definition, string device = null)
     {
         endpointId = id;
+        if (!string.IsNullOrWhiteSpace(device))
+            deviceName = device.Trim();
 
         if (definition == null)
             return;
@@ -61,6 +73,7 @@ public sealed class TssPortEndpoint : MonoBehaviour
         displayLabel = string.IsNullOrWhiteSpace(definition.label) ? definition.name : definition.label;
         connectorType = string.IsNullOrWhiteSpace(definition.connectorType) || definition.connectorType == "TBD" ? "RJ45" : definition.connectorType.Trim();
         supportedCableTypes = definition.supportedCableTypes;
+        interfaceFace = definition.interfaceFace;
     }
 
     public bool Supports(TssCableType cableType)

@@ -10,6 +10,7 @@ public static class TssUiPrefabBuilder
     private static readonly Color Surface2 = new(0.1f, 0.13f, 0.1f, 0.96f);
     private static readonly Color Amber = new(0.9f, 0.55f, 0.16f, 1f);
     private static readonly Color TextColor = new(0.92f, 0.96f, 0.9f, 1f);
+    private static readonly Color InputDarkTextColor = new(0.07f, 0.07f, 0.07f, 1f);
 
     [MenuItem("TSS/Rebuild WP1 UI Prefabs")]
     public static void RebuildWp1UiPrefabs()
@@ -187,6 +188,18 @@ public static class TssUiPrefabBuilder
         {
             if (input.GetComponent<Image>())
                 input.GetComponent<Image>().color = new Color(0.86f, 0.88f, 0.8f, 1f);
+
+            if (input.textComponent != null)
+            {
+                input.textComponent.supportRichText = false;
+                input.textComponent.color = InputDarkTextColor;
+            }
+
+            if (input.placeholder is Text placeholderText)
+            {
+                placeholderText.supportRichText = false;
+                placeholderText.color = InputDarkTextColor;
+            }
         }
 
         foreach (var text in root.GetComponentsInChildren<Text>(true))

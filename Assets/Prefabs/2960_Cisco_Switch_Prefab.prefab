@@ -1057,6 +1057,7 @@ GameObject:
   - component: {fileID: 7225522913594126767}
   - component: {fileID: 9178251895820056651}
   - component: {fileID: 7528870822113275767}
+  - component: {fileID: 5515823636369078623}
   m_Layer: 0
   m_Name: 2960_Cisco_Switch_Prefab
   m_TagString: Untagged
@@ -1102,7 +1103,7 @@ MonoBehaviour:
   fallbackInteractionRange: 2.75
   hideAvatarInFirstPerson: 1
   avatarRoot: {fileID: 0}
-  canvasPrefab: {fileID: 0}
+  canvasPrefab: {fileID: 268473962152923943, guid: 24d66e300b124c44c971c7e01c7b9b99, type: 3}
   highlightOnHover: 1
   highlightTint: {r: 0.2, g: 0.75, b: 1, a: 1}
   highlightBlend: 0.45
@@ -1120,6 +1121,139 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortSelectionAdapter
   interactable: {fileID: 9178251895820056651}
   selectionCamera: {fileID: 0}
+--- !u!114 &5515823636369078623
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 767095251575115444}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: eb2fae613e437a84faacc2d56bc9e493, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssDeviceLinkIndicator
+  bindings:
+  - endpoint: {fileID: 0}
+    endpointId: Fa01
+    renderer: {fileID: 3298300087223165108}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa02
+    renderer: {fileID: 3824181655303086543}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa03
+    renderer: {fileID: 3644929541372097274}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa04
+    renderer: {fileID: 7731300528759390839}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa05
+    renderer: {fileID: 8228061744877564573}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa06
+    renderer: {fileID: 3039086900486552156}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa07
+    renderer: {fileID: 3695347679986158917}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa08
+    renderer: {fileID: 7966297816246884187}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa09
+    renderer: {fileID: 3347193838860061785}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa10
+    renderer: {fileID: 8436065309935411663}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa11
+    renderer: {fileID: 271486679770201500}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa12
+    renderer: {fileID: 1818434623224847325}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa13
+    renderer: {fileID: 8094759611184423214}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa14
+    renderer: {fileID: 5687202351230678178}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa15
+    renderer: {fileID: 1503898788683290742}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa16
+    renderer: {fileID: 5110816818003351464}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa17
+    renderer: {fileID: 8834349288282702467}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa18
+    renderer: {fileID: 3731083403554232176}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa19
+    renderer: {fileID: 3228470241068870734}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa20
+    renderer: {fileID: 210711603111686871}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa21
+    renderer: {fileID: 8194402489315821239}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa22
+    renderer: {fileID: 5294969347385072059}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa23
+    renderer: {fileID: 6593007915044949900}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  - endpoint: {fileID: 0}
+    endpointId: Fa24
+    renderer: {fileID: 1572325347831539819}
+    connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
 --- !u!1 &804107767044412359
 GameObject:
   m_ObjectHideFlags: 0

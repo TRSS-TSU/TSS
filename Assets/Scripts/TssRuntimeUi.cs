@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Text;
 using StarterAssets;
 using UnityEngine;
 using UnityEngine.UI;
@@ -34,10 +36,25 @@ public sealed class TssRuntimeUi : MonoBehaviour
     private GameObject sopSectionRowPrefab;
 
     private Canvas _canvas;
+    private Transform _hudRoot;
     private Text _heldText;
+    private Text _objectiveText;
+    private Text _contextText;
+    private Text _progressText;
     private GameObject _cancelHeldButton;
     private Button _sopButton;
+    private Button _connectionsButton;
     private Button _debugButton;
+    private readonly List<Button> _hudInfoButtons = new();
+    private readonly List<GameObject> _hudSlidePanels = new();
+    private readonly List<Text> _hudSlideTitleTexts = new();
+    private readonly List<Text> _hudSlideBodyTexts = new();
+    private int _activeHudSlidePanel = -1;
+    private GameObject _sopSlidePanel;
+    private GameObject _wp1SlidePanel;
+    private Text _wp1SlideTitleText;
+    private Text _wp1SlideBodyText;
+    private int _activeRightSlidePanel = -1;
 
     private GameObject _casePanel;
     private Text _caseTitleText;
@@ -79,11 +96,20 @@ public sealed class TssRuntimeUi : MonoBehaviour
     private Action<string> _renameConfirmed;
     private Action _pickupConfirmed;
     private Action _accessComputerConfirmed;
+    private string _statusMessage;
+    private float _statusUntil;
     private bool _controlsLocked;
     private CursorLockMode _previousCursorLockMode;
     private bool _previousCursorVisible;
+    private bool _previousPlayerControllerEnabled;
+    private readonly HashSet<object> _externalGameplayLocks = new();
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
     private static readonly int MotionSpeedHash = Animator.StringToHash("MotionSpeed");
+    private static readonly string[] HudInfoNames = { "Placement", "Cables", "Permanent", "Effective" };
+    private static readonly Vector2 HudSlidePanelHiddenPosition = new(-1150f, 0f);
+    private static readonly Vector2 HudSlidePanelShownPosition = new(20f, 0f);
+    private static readonly Vector2 HudRightSlidePanelHiddenPosition = new(1150f, 0f);
+    private static readonly Vector2 HudRightSlidePanelShownPosition = new(-20f, 0f);
 
     public bool IsGameplayInputBlocked => IsAnyGameplayMenuOpen();
 
@@ -121,6 +147,12 @@ public sealed class TssRuntimeUi : MonoBehaviour
     private void Update()
     {
         ApplyGameplayInputLock(IsAnyGameplayMenuOpen());
+        if (_contextText && !string.IsNullOrEmpty(_statusMessage) && Time.time >= _statusUntil)
+        {
+            _statusMessage = null;
+            RefreshHudAdditions();
+        }
+        AnimateHudSlidePanels();
 
         if (!IsGameplayInputBlocked)
             return;
@@ -192,7 +224,25 @@ public sealed class TssRuntimeUi : MonoBehaviour
         _renameConfirmed = null;
         _pickupConfirmed = null;
         _accessComputerConfirmed = null;
-        ApplyGameplayInputLock(false);
+        ApplyGameplayInputLock(IsAnyGameplayMenuOpen());
+    }
+
+    public void PushExternalGameplayLock(object owner)
+    {
+        if (owner == null)
+            return;
+
+        _externalGameplayLocks.Add(owner);
+        ApplyGameplayInputLock(true);
+    }
+
+    public void PopExternalGameplayLock(object owner)
+    {
+        if (owner == null)
+            return;
+
+        _externalGameplayLocks.Remove(owner);
+        ApplyGameplayInputLock(IsAnyGameplayMenuOpen());
     }
 
     private void BuildUi()
@@ -214,9 +264,25 @@ public sealed class TssRuntimeUi : MonoBehaviour
         _canvas = rootInstance.GetComponent<Canvas>();
 
         // Wire HUD
+        _hudRoot = rootInstance.transform.Find("HUD");
+        if (_hudRoot)
+        {
+            _hudRoot.gameObject.SetActive(true);
+            var hudRect = _hudRoot as RectTransform;
+            if (hudRect)
+            {
+                hudRect.anchorMin = Vector2.zero;
+                hudRect.anchorMax = Vector2.one;
+                hudRect.offsetMin = Vector2.zero;
+                hudRect.offsetMax = Vector2.zero;
+                hudRect.pivot = new Vector2(0.5f, 0.5f);
+            }
+        }
         var heldTextTransform = rootInstance.transform.Find("HUD/HeldText");
         if (heldTextTransform)
+        {
             _heldText = heldTextTransform.GetComponent<Text>();
+        }
 
         var cancelBtnTransform = rootInstance.transform.Find("HUD/CancelHeldButton");
         if (cancelBtnTransform)
@@ -232,8 +298,10 @@ public sealed class TssRuntimeUi : MonoBehaviour
         {
             _sopButton = sopBtnTransform.GetComponent<Button>();
             if (_sopButton)
-                _sopButton.onClick.AddListener(ToggleSop);
+                _sopButton.onClick.AddListener(() => ToggleRightSlidePanel(0));
         }
+
+        BuildHudAdditions();
 
         var debugBtnTransform = rootInstance.transform.Find("HUD/DebugButton");
         if (debugBtnTransform)
@@ -242,7 +310,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
             if (_debugButton)
             {
                 if (enableDebugValidationPanel)
-                    _debugButton.onClick.AddListener(ToggleDebug);
+                    _debugButton.onClick.AddListener(() => ToggleRightSlidePanel(1));
                 else
                     _debugButton.gameObject.SetActive(false);
             }
@@ -258,15 +326,18 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 _caseTitleText = titleTransform.GetComponent<Text>();
             _caseItemsContainer = casePanelTransform.Find("ItemsContainer");
 
-            var retBtn = casePanelTransform.Find("ReturnHeldButton")?.GetComponent<Button>();
-            if (retBtn)
-                retBtn.onClick.AddListener(() => _openCase?.ReturnHeld());
+            var retBtnTransform = casePanelTransform.Find("Buttons/ReturnHeldButton") ?? casePanelTransform.Find("ReturnHeldButton");
+            _caseReturnHeldButton = retBtnTransform?.GetComponent<Button>();
+            if (_caseReturnHeldButton)
+                _caseReturnHeldButton.onClick.AddListener(CancelHeld);
 
-            var cancelBtn = casePanelTransform.Find("CancelButton")?.GetComponent<Button>();
+            var caseCancelBtnTransform = casePanelTransform.Find("Buttons/CancelButton") ?? casePanelTransform.Find("CancelButton");
+            var cancelBtn = caseCancelBtnTransform?.GetComponent<Button>();
             if (cancelBtn)
                 cancelBtn.onClick.AddListener(() => _openCase?.CancelSelection());
 
-            var closeBtn = casePanelTransform.Find("CloseButton")?.GetComponent<Button>();
+            var closeBtnTransform = casePanelTransform.Find("Buttons/CloseButton") ?? casePanelTransform.Find("CloseButton");
+            var closeBtn = closeBtnTransform?.GetComponent<Button>();
             if (closeBtn)
                 closeBtn.onClick.AddListener(() => _openCase?.ClosePanel());
         }
@@ -276,9 +347,11 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (sopPanelTransform)
         {
             _sopPanel = sopPanelTransform.gameObject;
+            _sopPanel.SetActive(true);
             _sopTabsContainer = sopPanelTransform.Find("SopTabs");
             _sopContentContainer = sopPanelTransform.Find("SopContent");
         }
+        BuildRightSlidePanels();
 
         // Wire NamePromptPanel
         var namePanelTransform = rootInstance.transform.Find("NamePromptPanel");
@@ -353,9 +426,20 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (_cancelHeldButton)
             _cancelHeldButton.SetActive(session.HeldItem != null || session.HeldCable != null);
 
+        RefreshHudAdditions();
         RefreshCasePanel();
         RefreshSopPanel();
         RefreshDebugPanel();
+    }
+
+    public void ShowHudMessage(string message)
+    {
+        if (string.IsNullOrWhiteSpace(message))
+            return;
+
+        _statusMessage = message.Trim();
+        _statusUntil = Time.time + 3f;
+        RefreshHudAdditions();
     }
 
     public void ShowNamePrompt(
@@ -389,10 +473,11 @@ public sealed class TssRuntimeUi : MonoBehaviour
         string title,
         string currentName,
         Action<string> onRename,
-        Action onPickup
+        Action onPickup,
+        Action onInspect = null
     )
     {
-        ShowEndpointMenu(title, true, true, false, onRename, onPickup, null, null, currentName);
+        ShowEndpointMenu(title, true, true, onInspect != null, onRename, onPickup, onInspect, null, currentName);
     }
 
     public void ShowEndpointMenu(
@@ -423,7 +508,12 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (_corrPickupButton)
             _corrPickupButton.gameObject.SetActive(canPickup);
         if (_corrAccessComputerButton)
+        {
             _corrAccessComputerButton.gameObject.SetActive(canAccessComputer);
+            var btnText = _corrAccessComputerButton.GetComponentInChildren<Text>(true);
+            if (btnText)
+                btnText.text = "Inspect Device";
+        }
         if (_correctionPanel)
             _correctionPanel.SetActive(true);
         if (_namePromptPanel)
@@ -435,14 +525,14 @@ public sealed class TssRuntimeUi : MonoBehaviour
         ApplyGameplayInputLock(true);
     }
 
-    public void ShowComputerMenu(string title, object owner = null)
+    public void ShowComputerMenu(string title, object owner = null, string message = "")
     {
         CloseActiveMenu();
         _activeMenuOwner = owner;
         if (_computerTitle)
             _computerTitle.text = title;
         if (_computerInput)
-            _computerInput.text = string.Empty;
+            _computerInput.text = message ?? string.Empty;
         if (_computerPanel)
             _computerPanel.SetActive(true);
         if (_namePromptPanel)
@@ -461,6 +551,15 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
         if (_caseTitleText)
             _caseTitleText.text = _openCase ? _openCase.StationName : "Equipment Case";
+
+        if (_caseReturnHeldButton)
+        {
+            var hasHeld = session.HeldItem != null || session.HeldCable != null;
+            _caseReturnHeldButton.interactable = hasHeld;
+            var retText = _caseReturnHeldButton.GetComponentInChildren<Text>();
+            if (retText)
+                retText.color = hasHeld ? Color.white : new Color(0.55f, 0.58f, 0.60f, 0.75f);
+        }
 
         ClearChildren(_caseItemsContainer);
 
@@ -492,18 +591,27 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 rt.anchoredPosition = new Vector2(0, y);
             }
 
+            var remaining = session.GetRemaining(equipment);
             var label = rowInstance.transform.Find("ItemLabel")?.GetComponent<Text>();
             if (label)
-                label.text = $"{equipment.displayName}  x{session.GetRemaining(equipment)}";
+                label.text = $"{equipment.displayName}  x{remaining}";
 
             var btn = rowInstance.transform.Find("TakeButton")?.GetComponent<Button>();
             if (btn)
             {
                 btn.onClick.RemoveAllListeners();
-                btn.onClick.AddListener(() => _openCase?.Checkout(equipment));
+                var hasStock = remaining > 0;
+                btn.interactable = hasStock;
+
+                var btnText = btn.GetComponentInChildren<Text>();
+                if (btnText)
+                    btnText.color = hasStock ? Color.white : new Color(0.55f, 0.58f, 0.60f, 0.75f);
+
+                if (hasStock)
+                    btn.onClick.AddListener(() => _openCase?.Checkout(equipment));
             }
 
-            y -= 42f;
+            y -= 52f;
         }
 
         foreach (var item in session.GetScenarioCableInventory())
@@ -533,26 +641,395 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 rt.anchoredPosition = new Vector2(0, y);
             }
 
+            var remainingCables = session.GetRemaining(cable);
             var label = rowInstance.transform.Find("ItemLabel")?.GetComponent<Text>();
             if (label)
-                label.text = $"{cable.displayName} cable  x{session.GetRemaining(cable)}";
+                label.text = $"{cable.displayName} cable  x{remainingCables}";
 
             var btn = rowInstance.transform.Find("TakeButton")?.GetComponent<Button>();
             if (btn)
             {
                 btn.onClick.RemoveAllListeners();
-                btn.onClick.AddListener(() => _openCase?.CheckoutCable(cable));
+                var hasStock = remainingCables > 0;
+                btn.interactable = hasStock;
+
+                var btnText = btn.GetComponentInChildren<Text>();
+                if (btnText)
+                    btnText.color = hasStock ? Color.white : new Color(0.55f, 0.58f, 0.60f, 0.75f);
+
+                if (hasStock)
+                    btn.onClick.AddListener(() => _openCase?.CheckoutCable(cable));
             }
 
-            y -= 42f;
+            y -= 52f;
         }
+    }
+
+    private void BuildHudAdditions()
+    {
+        if (!_hudRoot)
+            return;
+
+        _objectiveText = _hudRoot.Find("ObjectiveText")?.GetComponent<Text>();
+        _contextText = _hudRoot.Find("ContextText")?.GetComponent<Text>();
+
+        var oldProgressText = _hudRoot.Find("ProgressText");
+        if (oldProgressText)
+            oldProgressText.gameObject.SetActive(false);
+
+        BuildHudInfoButtons();
+        BuildHudSlidePanels();
+
+        var oldConnectionsButton = _hudRoot.Find("ConnectionsButton");
+        if (oldConnectionsButton)
+        {
+            _connectionsButton = oldConnectionsButton.GetComponent<Button>();
+            oldConnectionsButton.gameObject.SetActive(false);
+        }
+    }
+
+    private void BuildHudInfoButtons()
+    {
+        _hudInfoButtons.Clear();
+
+        for (var i = 0; i < HudInfoNames.Length; i++)
+        {
+            var index = i;
+            var button = _hudRoot.Find($"HudInfo{HudInfoNames[i]}Button")?.GetComponent<Button>();
+            if (!button)
+                continue;
+
+            button.onClick.RemoveAllListeners();
+            button.onClick.AddListener(() => ToggleHudSlidePanel(index));
+            _hudInfoButtons.Add(button);
+        }
+    }
+
+    private void BuildHudSlidePanels()
+    {
+        _hudSlidePanels.Clear();
+        _hudSlideTitleTexts.Clear();
+        _hudSlideBodyTexts.Clear();
+
+        for (var i = 0; i < HudInfoNames.Length; i++)
+        {
+            var panelTransform = _hudRoot.Find($"Hud{HudInfoNames[i]}SlidePanel");
+            if (!panelTransform)
+                continue;
+
+            var panel = panelTransform.gameObject;
+            var title = panelTransform.Find("Title")?.GetComponent<Text>();
+            var body = panelTransform.Find("Body")?.GetComponent<Text>();
+            _hudSlidePanels.Add(panel);
+            _hudSlideTitleTexts.Add(title);
+            _hudSlideBodyTexts.Add(body);
+        }
+    }
+
+    private void BuildRightSlidePanels()
+    {
+        _sopSlidePanel = _sopPanel;
+
+        var wp1 = _hudRoot.Find("HudWp1SlidePanel");
+        _wp1SlidePanel = wp1 ? wp1.gameObject : null;
+        _wp1SlideTitleText = wp1 ? wp1.Find("Title")?.GetComponent<Text>() : null;
+        _wp1SlideBodyText = wp1 ? wp1.Find("Body")?.GetComponent<Text>() : null;
+    }
+
+    private void RefreshHudAdditions()
+    {
+        if (!session)
+            return;
+
+        if (_objectiveText)
+            _objectiveText.text = HudObjectiveText();
+        if (_contextText)
+            _contextText.text = Time.time < _statusUntil ? _statusMessage : HudContextText();
+        if (_progressText)
+            _progressText.text = HudProgressText();
+        RefreshHudInfoButtons();
+        RefreshHudSlidePanels();
+        RefreshRightSlidePanels();
+    }
+
+    private string HudObjectiveText()
+    {
+        var scenarioName = session.Scenario && !string.IsNullOrWhiteSpace(session.Scenario.displayName)
+            ? session.Scenario.displayName
+            : "No scenario";
+
+        foreach (var status in TssPlacementEvaluator.EvaluateRequirements(
+                     session.Scenario,
+                     session.Installed,
+                     session.EndpointPlacements))
+        {
+            if (status.IsComplete)
+                continue;
+
+            var phase = string.IsNullOrWhiteSpace(status.PhaseLabel) ? "Placement" : status.PhaseLabel;
+            return $"{scenarioName} | {phase}: {status.RequiredName} at {status.Location}";
+        }
+
+        return $"{scenarioName} | Connect, terminate, and verify physical paths";
+    }
+
+    private string HudContextText()
+    {
+        if (IsAnyGameplayMenuOpen())
+            return "Menu open - close it to resume walking";
+
+        if (session.HeldCable && session.SelectedCableEndpoint)
+            return $"First port: {TssPhysicalConnectionPanel.EndpointLabel(session.SelectedCableEndpoint.EndpointId, session)} -> select second port";
+
+        if (session.HeldCable)
+            return $"Carrying {session.HeldCable.displayName} cable - select first port";
+
+        if (session.HeldItem)
+            return $"Carrying {session.HeldItem.displayName} - click a valid rack U or placement station";
+
+        return "Walk near highlighted equipment and click to interact";
+    }
+
+    private string HudProgressText()
+    {
+        var completePlacements = 0;
+        var totalPlacements = 0;
+        foreach (var status in TssPlacementEvaluator.EvaluateRequirements(
+                     session.Scenario,
+                     session.Installed,
+                     session.EndpointPlacements))
+        {
+            totalPlacements++;
+            if (status.IsComplete)
+                completePlacements++;
+        }
+
+        var playerCables = 0;
+        var permanent = 0;
+        foreach (var connection in session.PhysicalConnections)
+        {
+            if (connection.IsPermanent)
+                permanent++;
+            else
+                playerCables++;
+        }
+
+        var requiredTerminations = RequiredTerminationCount();
+        var savedTerminations = session.GetTerminationModuleStates().Count;
+        var terminations = requiredTerminations > 0
+            ? $"Terminations {savedTerminations}/{requiredTerminations}"
+            : "Terminations n/a";
+
+        return $"Placement {completePlacements}/{totalPlacements}   Cables {playerCables}   Permanent {permanent}   Effective paths {session.GetEffectivePhysicalPaths().Count}   {terminations}";
+    }
+
+    private void RefreshHudInfoButtons()
+    {
+        for (var i = 0; i < _hudInfoButtons.Count; i++)
+        {
+            var text = _hudInfoButtons[i].GetComponentInChildren<Text>(true);
+            if (text)
+                text.text = HudInfoButtonText(i);
+        }
+    }
+
+    private void RefreshHudSlidePanels()
+    {
+        for (var i = 0; i < _hudSlideTitleTexts.Count; i++)
+        {
+            if (_hudSlideTitleTexts[i])
+                _hudSlideTitleTexts[i].text = HudInfoNames[i];
+            if (_hudSlideBodyTexts[i])
+                _hudSlideBodyTexts[i].text = HudInfoPanelText(i);
+        }
+    }
+
+    private void RefreshRightSlidePanels()
+    {
+        if (_wp1SlideTitleText)
+            _wp1SlideTitleText.text = "WP1";
+        if (_wp1SlideBodyText)
+            _wp1SlideBodyText.text = Wp1SlideText();
+    }
+
+    private string HudInfoButtonText(int index)
+    {
+        PlacementCounts(out var completePlacements, out var totalPlacements);
+        ConnectionCounts(out var playerCables, out var permanent);
+        var effectivePaths = session.GetEffectivePhysicalPaths().Count;
+
+        return index switch
+        {
+            0 => $"Placement {completePlacements}/{totalPlacements}",
+            1 => $"Cables {playerCables}",
+            2 => $"Permanent {permanent}",
+            3 => $"Effective {effectivePaths}",
+            _ => string.Empty
+        };
+    }
+
+    private string HudInfoPanelText(int index)
+    {
+        return index switch
+        {
+            0 => PlacementPanelText(),
+            1 => CablePanelText(false),
+            2 => PermanentPanelText(),
+            3 => EffectivePathPanelText(),
+            _ => string.Empty
+        };
+    }
+
+    private void PlacementCounts(out int completePlacements, out int totalPlacements)
+    {
+        completePlacements = 0;
+        totalPlacements = 0;
+        foreach (var status in TssPlacementEvaluator.EvaluateRequirements(
+                     session.Scenario,
+                     session.Installed,
+                     session.EndpointPlacements))
+        {
+            totalPlacements++;
+            if (status.IsComplete)
+                completePlacements++;
+        }
+    }
+
+    private void ConnectionCounts(out int playerCables, out int permanent)
+    {
+        playerCables = 0;
+        permanent = 0;
+        foreach (var connection in session.PhysicalConnections)
+        {
+            if (connection.IsPermanent)
+                permanent++;
+            else
+                playerCables++;
+        }
+    }
+
+    private string PlacementPanelText()
+    {
+        var builder = new StringBuilder();
+        PlacementCounts(out var complete, out var total);
+        builder.AppendLine($"Complete: {complete}/{total}");
+        builder.AppendLine();
+
+        foreach (var status in TssPlacementEvaluator.EvaluateRequirements(
+                     session.Scenario,
+                     session.Installed,
+                     session.EndpointPlacements))
+        {
+            var phase = string.IsNullOrWhiteSpace(status.PhaseLabel) ? "Placement" : status.PhaseLabel;
+            builder.Append(status.IsComplete ? "[x] " : "[ ] ");
+            builder.Append(phase);
+            builder.Append(": ");
+            builder.Append(status.RequiredName);
+            builder.Append(" at ");
+            builder.AppendLine(status.Location);
+        }
+
+        return builder.Length > 0 ? builder.ToString() : "No placement requirements.";
+    }
+
+    private string CablePanelText(bool permanent)
+    {
+        var builder = new StringBuilder();
+        foreach (var connection in session.PhysicalConnections)
+        {
+            if (connection.IsPermanent != permanent)
+                continue;
+
+            builder.AppendLine(TssPhysicalConnectionPanel.FormatConnectionRow(connection, session));
+        }
+
+        if (builder.Length == 0)
+            return permanent ? "No permanent infrastructure connections." : "No player cable connections.";
+
+        return builder.ToString();
+    }
+
+    private string PermanentPanelText()
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("Permanent infrastructure");
+        builder.AppendLine(CablePanelText(true));
+        builder.AppendLine();
+        builder.AppendLine("Terminations");
+
+        var requiredTerminations = RequiredTerminationCount();
+        var states = session.GetTerminationModuleStates();
+        builder.AppendLine(requiredTerminations > 0
+            ? $"{states.Count}/{requiredTerminations} saved"
+            : "No required terminations");
+
+        foreach (var state in states)
+            builder.AppendLine($"{TssPhysicalConnectionPanel.EndpointLabel(state.endpointId, session)} - {state.moduleId}");
+
+        return builder.ToString();
+    }
+
+    private string EffectivePathPanelText()
+    {
+        var paths = session.GetEffectivePhysicalPaths();
+        if (paths.Count == 0)
+            return "No effective device paths.";
+
+        var builder = new StringBuilder();
+        foreach (var path in paths)
+        {
+            builder.Append(TssPhysicalConnectionPanel.EndpointLabel(path.EndpointAId, session));
+            builder.Append(" <-> ");
+            builder.AppendLine(TssPhysicalConnectionPanel.EndpointLabel(path.EndpointBId, session));
+        }
+
+        return builder.ToString();
+    }
+
+    private string Wp1SlideText()
+    {
+        if (!session)
+            return "No training session.";
+
+        var result = TssPlacementEvaluator.Evaluate(
+            session.Scenario,
+            session.Installed,
+            session.EndpointPlacements);
+        var builder = new StringBuilder();
+        builder.AppendLine(result.IsComplete ? "WP1 equipment placement complete." : "WP1 needs attention:");
+        foreach (var message in result.Messages)
+            builder.AppendLine(message);
+
+        var cableText = PhysicalConnectionText(session);
+        if (!string.IsNullOrWhiteSpace(cableText))
+        {
+            builder.AppendLine();
+            builder.AppendLine("Physical connections");
+            builder.AppendLine(cableText);
+        }
+
+        return builder.ToString();
+    }
+
+    private int RequiredTerminationCount()
+    {
+        if (!session.Scenario || session.Scenario.permanentConnections == null)
+            return 0;
+
+        var count = 0;
+        foreach (var connection in session.Scenario.permanentConnections)
+        {
+            if (connection != null && connection.requiresPunchDownTermination)
+                count += 2;
+        }
+
+        return count;
     }
 
     private void RefreshSopPanel()
     {
         if (
             !_sopPanel
-            || !_sopPanel.activeSelf
             || !session
             || !session.Scenario
             || !_sopContentContainer
@@ -658,20 +1135,55 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
     private void ToggleSop()
     {
-        if (_sopPanel)
-        {
-            _sopPanel.SetActive(!_sopPanel.activeSelf);
-            Refresh();
-        }
+        ToggleRightSlidePanel(0);
+    }
+
+    private void ToggleConnections()
+    {
+        ToggleHudSlidePanel(1);
     }
 
     private void ToggleDebug()
     {
-        if (_debugPanel)
+        ToggleRightSlidePanel(1);
+    }
+
+    private void ToggleHudSlidePanel(int index)
+    {
+        _activeHudSlidePanel = _activeHudSlidePanel == index ? -1 : index;
+        RefreshHudAdditions();
+    }
+
+    private void ToggleRightSlidePanel(int index)
+    {
+        _activeRightSlidePanel = _activeRightSlidePanel == index ? -1 : index;
+        RefreshHudAdditions();
+    }
+
+    private void AnimateHudSlidePanels()
+    {
+        for (var i = 0; i < _hudSlidePanels.Count; i++)
         {
-            _debugPanel.SetActive(!_debugPanel.activeSelf);
-            Refresh();
+            var rect = _hudSlidePanels[i] ? _hudSlidePanels[i].GetComponent<RectTransform>() : null;
+            if (!rect)
+                continue;
+
+            var target = i == _activeHudSlidePanel ? HudSlidePanelShownPosition : HudSlidePanelHiddenPosition;
+            rect.anchoredPosition = Vector2.Lerp(rect.anchoredPosition, target, Time.unscaledDeltaTime * 12f);
         }
+
+        AnimateRightSlidePanel(_sopSlidePanel, _activeRightSlidePanel == 0);
+        AnimateRightSlidePanel(_wp1SlidePanel, _activeRightSlidePanel == 1);
+    }
+
+    private static void AnimateRightSlidePanel(GameObject panel, bool shown)
+    {
+        var rect = panel ? panel.GetComponent<RectTransform>() : null;
+        if (!rect)
+            return;
+
+        var target = shown ? HudRightSlidePanelShownPosition : HudRightSlidePanelHiddenPosition;
+        rect.anchoredPosition = Vector2.Lerp(rect.anchoredPosition, target, Time.unscaledDeltaTime * 12f);
     }
 
     private void ConfirmNamePrompt()
@@ -726,7 +1238,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
         return (_casePanel && _casePanel.activeSelf)
             || (_namePromptPanel && _namePromptPanel.activeSelf)
             || (_correctionPanel && _correctionPanel.activeSelf)
-            || (_computerPanel && _computerPanel.activeSelf);
+            || (_computerPanel && _computerPanel.activeSelf)
+            || _externalGameplayLocks.Count > 0;
     }
 
     private void CancelHeld()
@@ -735,9 +1248,15 @@ public sealed class TssRuntimeUi : MonoBehaviour
             return;
 
         if (session.HeldItem)
-            session.ReturnHeldItem(out _);
+        {
+            if (session.ReturnHeldItem(out var message))
+                ShowHudMessage(message);
+        }
         else if (session.HeldCable)
-            session.ReturnHeldCable(out _);
+        {
+            if (session.ReturnHeldCable(out var message))
+                ShowHudMessage(message);
+        }
     }
 
     private void ApplyGameplayInputLock(bool locked)
@@ -754,6 +1273,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
         {
             _previousCursorLockMode = Cursor.lockState;
             _previousCursorVisible = Cursor.visible;
+            _previousPlayerControllerEnabled = !playerController || playerController.enabled;
             Cursor.lockState = CursorLockMode.None;
             Cursor.visible = true;
             ForcePlayerIdle();
@@ -765,7 +1285,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
         }
 
         if (playerController)
-            playerController.enabled = !locked;
+            playerController.enabled = locked ? false : _previousPlayerControllerEnabled;
 
         _controlsLocked = locked;
     }
@@ -827,7 +1347,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
         {
             var connection = session.PhysicalConnections[i];
             lines[i] =
-                $"{(connection.IsPermanent ? "Permanent " : string.Empty)}{connection.CableType} - {connection.EndpointAId} <-> {connection.EndpointBId}";
+                $"{(connection.IsPermanent ? "Permanent " : string.Empty)}{TssPhysicalConnectionPanel.FormatConnectionRow(connection, session)}";
         }
 
         return string.Join("\n", lines);

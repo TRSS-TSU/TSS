@@ -2,11 +2,12 @@ using UnityEngine;
 
 public static class TssPortEndpointBinder
 {
-    public static void ConfigureEndpoints(GameObject root, string ownerPrefix, EquipmentDefinition equipment)
+    public static void ConfigureEndpoints(GameObject root, string ownerPrefix, EquipmentDefinition equipment, string deviceName = null)
     {
         if (!root || string.IsNullOrWhiteSpace(ownerPrefix) || !equipment || equipment.interfaces == null)
             return;
 
+        var configured = new System.Collections.Generic.List<TssPortEndpoint>();
         foreach (var port in equipment.interfaces)
         {
             if (port == null || string.IsNullOrWhiteSpace(port.name))
@@ -20,8 +21,12 @@ public static class TssPortEndpointBinder
             if (!endpoint)
                 endpoint = anchor.gameObject.AddComponent<TssPortEndpoint>();
 
-            endpoint.Configure($"{ownerPrefix}:{port.name.Trim()}", port);
+            endpoint.Configure($"{ownerPrefix}:{port.name.Trim()}", port, deviceName);
+            configured.Add(endpoint);
         }
+
+        foreach (var consumer in root.GetComponentsInChildren<ITssEndpointBindingConsumer>(true))
+            consumer.OnEndpointsBound(configured, ownerPrefix);
     }
 
     private static Transform FindAnchor(Transform root, EquipmentInterface port)
@@ -44,4 +49,9 @@ public static class TssPortEndpointBinder
 
         return null;
     }
+}
+
+public interface ITssEndpointBindingConsumer
+{
+    void OnEndpointsBound(System.Collections.Generic.IReadOnlyList<TssPortEndpoint> endpoints, string ownerPrefix);
 }

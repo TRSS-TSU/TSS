@@ -72,7 +72,7 @@ public sealed class RackMountController : MonoBehaviour
 
     private void Update()
     {
-        if (!_playerInRange || !TssTrainingSession.Instance)
+        if (!IsPlayerInRange() || !TssTrainingSession.Instance)
             return;
 
         if (!WasPrimaryPressed(out var screenPosition))
@@ -115,6 +115,18 @@ public sealed class RackMountController : MonoBehaviour
             clickedSlot.Click();
         else if (clickedInstalled)
             clickedInstalled.Click();
+    }
+
+    private bool IsPlayerInRange()
+    {
+        if (_playerInRange)
+            return true;
+
+        var player = GameObject.FindGameObjectWithTag("Player");
+        if (player && Vector3.Distance(player.transform.position, transform.position) <= 3.25f)
+            return true;
+
+        return false;
     }
 
     private void OnTriggerEnter(Collider other)
@@ -175,7 +187,7 @@ public sealed class RackMountController : MonoBehaviour
             collider.enabled = false;
         }
 
-        var grabTarget = CreateInstalledGrabTarget(equipment, startingU);
+        var grabTarget = CreateInstalledGrabTarget(equipment, startingU, instance);
         _installedItems[startingU] = new InstalledRackItem(equipment, instance, grabTarget, equipment.rackUnits);
 
         SetOccupied(equipment, startingU, equipment.rackUnits, true);
@@ -201,12 +213,37 @@ public sealed class RackMountController : MonoBehaviour
         {
             TssRuntimeUi.Instance.ShowNamePrompt($"Name {held.displayName}", string.Empty, deviceName =>
             {
-                TssTrainingSession.Instance.TryInstallHeld(this, startingU, deviceName, out _);
+                if (TssTrainingSession.Instance.TryInstallHeld(this, startingU, deviceName, out var message))
+                {
+                    SetInstalledDeviceName(startingU, deviceName);
+                    TssRuntimeUi.Instance.ShowHudMessage(message);
+                }
+                else
+                {
+                    TssRuntimeUi.Instance.ShowHudMessage(message);
+                }
             });
             return;
         }
 
-        TssTrainingSession.Instance.TryInstallHeld(this, startingU, held.displayName, out _);
+        if (TssTrainingSession.Instance.TryInstallHeld(this, startingU, string.Empty, out var fallbackMessage))
+        {
+            SetInstalledDeviceName(startingU, string.Empty);
+            TssRuntimeUi.Instance?.ShowHudMessage(fallbackMessage);
+        }
+        else
+        {
+            TssRuntimeUi.Instance?.ShowHudMessage(fallbackMessage);
+        }
+    }
+
+    public void SetInstalledDeviceName(int startingU, string name)
+    {
+        if (_installedItems.TryGetValue(startingU, out var item) && item.Visual)
+        {
+            foreach (var ep in item.Visual.GetComponentsInChildren<TssPortEndpoint>(true))
+                ep.SetDeviceName(name);
+        }
     }
 
     public void ClickInstalled(int startingU)
@@ -214,10 +251,10 @@ public sealed class RackMountController : MonoBehaviour
         if (TssRuntimeUi.Instance && TssRuntimeUi.Instance.IsGameplayInputBlocked)
             return;
 
-        if (!TssTrainingSession.Instance || !_installedItems.TryGetValue(startingU, out var item))
+        if (!_installedItems.TryGetValue(startingU, out var item))
             return;
 
-        if (TssTrainingSession.Instance.HeldCable && TryEnterInstalledCableView(item))
+        if (TryEnterInstalledCableView(item))
             return;
 
         if (TssRuntimeUi.Instance)
@@ -225,12 +262,39 @@ public sealed class RackMountController : MonoBehaviour
             TssRuntimeUi.Instance.ShowPlacementCorrection(
                 $"{RackId} U{startingU}",
                 GetInstalledDeviceName(startingU),
-                deviceName => TssTrainingSession.Instance.RenameRackInstalled(RackId, startingU, deviceName),
-                () => PickupInstalled(startingU, item));
+                deviceName =>
+                {
+                    if (TssTrainingSession.Instance.RenameRackInstalled(RackId, startingU, deviceName))
+                        SetInstalledDeviceName(startingU, deviceName);
+                },
+                () => PickupInstalled(startingU, item),
+                () => TryEnterInstalledCableView(item));
             return;
         }
 
         PickupInstalled(startingU, item);
+    }
+
+    public void PickupInstalled(int startingU)
+    {
+        if (_installedItems.TryGetValue(startingU, out var item))
+            PickupInstalled(startingU, item);
+    }
+
+    public bool TryGetInstalledAtVisual(GameObject visual, out int startingU, out EquipmentDefinition equipment)
+    {
+        foreach (var pair in _installedItems)
+        {
+            if (pair.Value.Visual == visual || (visual != null && pair.Value.Visual != null && visual.transform.IsChildOf(pair.Value.Visual.transform)))
+            {
+                startingU = pair.Key;
+                equipment = pair.Value.Equipment;
+                return true;
+            }
+        }
+        startingU = 0;
+        equipment = null;
+        return false;
     }
 
     private static bool TryEnterInstalledCableView(InstalledRackItem item)
@@ -248,8 +312,11 @@ public sealed class RackMountController : MonoBehaviour
 
     private void PickupInstalled(int startingU, InstalledRackItem item)
     {
-        if (!TssTrainingSession.Instance.TryPickupInstalled(this, item.Equipment, startingU, item.RackUnits, out _))
+        if (!TssTrainingSession.Instance.TryPickupInstalled(this, item.Equipment, startingU, item.RackUnits, out var message))
+        {
+            TssRuntimeUi.Instance?.ShowHudMessage(message);
             return;
+        }
 
         SetOccupied(item.Equipment, startingU, item.RackUnits, false);
 
@@ -261,9 +328,10 @@ public sealed class RackMountController : MonoBehaviour
 
         _installedItems.Remove(startingU);
         RefreshHighlights();
+        TssRuntimeUi.Instance?.ShowHudMessage(message);
     }
 
-    private string GetInstalledDeviceName(int startingU)
+    public string GetInstalledDeviceName(int startingU)
     {
         var session = TssTrainingSession.Instance;
         if (!session)
@@ -344,15 +412,38 @@ public sealed class RackMountController : MonoBehaviour
         }
     }
 
-    private GameObject CreateInstalledGrabTarget(EquipmentDefinition equipment, int startingU)
+    private GameObject CreateInstalledGrabTarget(EquipmentDefinition equipment, int startingU, GameObject visualInstance)
     {
         var grabTarget = new GameObject($"Grab Target U{startingU:00}");
         grabTarget.transform.SetParent(mountRoot, false);
-        grabTarget.transform.localPosition = GetInstalledLocalPosition(equipment, startingU);
-        grabTarget.transform.localRotation = Quaternion.identity;
 
+        var rends = visualInstance != null ? visualInstance.GetComponentsInChildren<Renderer>(true) : null;
+        Vector3 colliderSize;
+        if (rends != null && rends.Length > 0)
+        {
+            var bounds = rends[0].bounds;
+            for (var i = 1; i < rends.Length; i++)
+                bounds.Encapsulate(rends[i].bounds);
+
+            grabTarget.transform.position = bounds.center;
+            grabTarget.transform.rotation = Quaternion.identity;
+
+            var extents = bounds.extents;
+            colliderSize = new Vector3(
+                Mathf.Max(slotLocalSize.x, extents.x * 2f),
+                Mathf.Max(slotLocalSize.y, Mathf.Max(uSpacingMeters * equipment.rackUnits, extents.y * 2f)),
+                Mathf.Max(slotLocalSize.z, Mathf.Max(0.16f, extents.z * 2f)));
+        }
+        else
+        {
+            grabTarget.transform.localPosition = GetInstalledLocalPosition(equipment, startingU);
+            grabTarget.transform.localRotation = Quaternion.identity;
+            colliderSize = new Vector3(slotLocalSize.x, Mathf.Max(slotLocalSize.y, uSpacingMeters * equipment.rackUnits), Mathf.Max(slotLocalSize.z, 0.08f));
+        }
+
+        Physics.SyncTransforms();
         var collider = grabTarget.AddComponent<BoxCollider>();
-        collider.size = new Vector3(slotLocalSize.x, Mathf.Max(slotLocalSize.y, uSpacingMeters * equipment.rackUnits), Mathf.Max(slotLocalSize.z, 0.08f));
+        collider.size = colliderSize;
         grabTarget.AddComponent<RackInstalledEquipmentTarget>().Initialize(this, startingU);
         return grabTarget;
     }
@@ -363,7 +454,7 @@ public sealed class RackMountController : MonoBehaviour
         foreach (var pair in _slots)
         {
             pair.Value.transform.localPosition = GetSlotLocalPosition(held, pair.Key);
-            pair.Value.SetActive(_playerInRange && CanInstall(held, pair.Key));
+            pair.Value.SetActive(IsPlayerInRange() && CanInstall(held, pair.Key));
         }
     }
 

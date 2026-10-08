@@ -21,7 +21,12 @@ public sealed class TssCableVisual : MonoBehaviour
             return;
 
         for (var i = 0; i < points.Length - 1; i++)
+        {
+            if (!IsRenderable(points[i]) || !IsRenderable(points[i + 1]))
+                continue;
+
             CreateSegment(cable, points[i], points[i + 1], i);
+        }
     }
 
     private void CreateSegment(TssCableDefinition cable, Vector3 start, Vector3 end, int index)
@@ -54,5 +59,10 @@ public sealed class TssCableVisual : MonoBehaviour
             Destroy(target);
         else
             DestroyImmediate(target);
+    }
+
+    private static bool IsRenderable(Vector3 point)
+    {
+        return !(float.IsNaN(point.x) || float.IsNaN(point.y) || float.IsNaN(point.z));
     }
 }

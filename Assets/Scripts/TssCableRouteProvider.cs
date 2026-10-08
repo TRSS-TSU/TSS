@@ -3,6 +3,8 @@ using UnityEngine;
 
 public sealed class TssCableRouteProvider : MonoBehaviour
 {
+    public static readonly Vector3 VisualBreak = new(float.NaN, float.NaN, float.NaN);
+
     [SerializeField] private TssCableRouteNode[] routeNodes;
 
     private void Awake()
@@ -16,51 +18,103 @@ public sealed class TssCableRouteProvider : MonoBehaviour
             return new[] { startEndpoint ? startEndpoint.CableAnchorPosition : Vector3.zero, endEndpoint ? endEndpoint.CableAnchorPosition : Vector3.zero };
 
         EnsureRouteNodes();
-        var startContext = EntryContext(startEndpoint);
-        var endContext = EntryContext(endEndpoint);
-        return GetRoute(
-            startEndpoint.CableAnchorPosition,
-            endEndpoint.CableAnchorPosition,
-            startContext,
-            endContext);
+        if (TryRackId(startEndpoint.EndpointId, out var startRackId)
+            && TryRackId(endEndpoint.EndpointId, out var endRackId))
+        {
+            if (startRackId != endRackId)
+                return GetRackBackboneStubRoute(startEndpoint, endEndpoint, startRackId, endRackId);
+
+            return GetSameRackTrayRoute(startEndpoint, endEndpoint, startRackId);
+        }
+
+        return GetRoute(startEndpoint.CableAnchorPosition, endEndpoint.CableAnchorPosition, EntryCandidates(startEndpoint), EntryCandidates(endEndpoint));
     }
 
     public Vector3[] GetRoute(Vector3 start, Vector3 end)
     {
-        return GetRoute(start, end, default, default);
+        return GetRoute(start, end, new RouteEntryContext(), new RouteEntryContext());
     }
 
     private Vector3[] GetRoute(Vector3 start, Vector3 end, RouteEntryContext preferredStart, RouteEntryContext preferredEnd)
+    {
+        return GetRoute(start, end, new[] { preferredStart }, new[] { preferredEnd });
+    }
+
+    private Vector3[] GetRoute(Vector3 start, Vector3 end, RouteEntryContext[] startCandidates, RouteEntryContext[] endCandidates)
     {
         EnsureRouteNodes();
         if (routeNodes == null || routeNodes.Length == 0)
             return new[] { start, end };
 
-        var startNode = preferredStart.Node ? preferredStart.Node : preferredStart.HasFallback ? null : Nearest(start);
-        var endNode = preferredEnd.Node ? preferredEnd.Node : preferredEnd.HasFallback ? null : Nearest(end);
-        var startRoutePoint = startNode ? startNode.transform.position : preferredStart.FallbackPoint;
-        var endRoutePoint = endNode ? endNode.transform.position : preferredEnd.FallbackPoint;
-        if ((!startNode && !preferredStart.HasFallback) || (!endNode && !preferredEnd.HasFallback))
+        var route = SelectRoute(start, end, startCandidates, endCandidates);
+        if (!route.IsValid)
             return new[] { start, end };
 
-        var middle = startNode && endNode ? ShortestPath(startNode, endNode) : new List<TssCableRouteNode>();
-        if (startNode && endNode && middle.Count == 0)
-            return new[] { start, end };
-
-        var points = new List<Vector3>(middle.Count + 8) { start };
-        AddEntryDress(points, start, startRoutePoint, preferredStart.IsRear);
-        if (middle.Count > 0)
+        var points = new List<Vector3>(route.Middle.Count + 8) { start };
+        AddOrthogonal(points, start, route.StartPoint);
+        if (route.Middle.Count > 0)
         {
-            foreach (var node in middle)
+            foreach (var node in route.Middle)
                 AddIfUseful(points, node.transform.position);
         }
         else
         {
-            AddBridge(points, startRoutePoint, endRoutePoint);
+            AddOrthogonal(points, route.StartPoint, route.EndPoint);
         }
 
-        AddExitDress(points, end, endRoutePoint, preferredEnd.IsRear);
-        points.Add(end);
+        AddOrthogonal(points, route.EndPoint, end);
+        AddIfUseful(points, end);
+        return points.ToArray();
+    }
+
+    private Vector3[] GetRackBackboneStubRoute(TssPortEndpoint startEndpoint, TssPortEndpoint endEndpoint, string startRackId, string endRackId)
+    {
+        var startEntries = EntryCandidates(startEndpoint);
+        var endEntries = EntryCandidates(endEndpoint);
+        var startStub = GetStubRoute(startEndpoint.CableAnchorPosition, startEntries, TrayCandidates(startRackId, PreferredSide(startEntries)));
+        var endStub = GetStubRoute(endEndpoint.CableAnchorPosition, endEntries, TrayCandidates(endRackId, PreferredSide(endEntries)));
+        if (startStub.Length == 0 || endStub.Length == 0)
+            return GetRoute(startEndpoint.CableAnchorPosition, endEndpoint.CableAnchorPosition, EntryCandidates(startEndpoint), EntryCandidates(endEndpoint));
+
+        var points = new List<Vector3>(startStub.Length + endStub.Length + 1);
+        points.AddRange(startStub);
+        points.Add(VisualBreak);
+        points.AddRange(endStub);
+        return points.ToArray();
+    }
+
+    private Vector3[] GetSameRackTrayRoute(TssPortEndpoint startEndpoint, TssPortEndpoint endEndpoint, string rackId)
+    {
+        var startEntries = EntryCandidates(startEndpoint);
+        var endEntries = EntryCandidates(endEndpoint);
+        var startStub = GetStubRoute(startEndpoint.CableAnchorPosition, startEntries, TrayCandidates(rackId, PreferredSide(startEntries)));
+        var endStub = GetStubRoute(endEndpoint.CableAnchorPosition, endEntries, TrayCandidates(rackId, PreferredSide(endEntries)));
+        if (startStub.Length == 0 || endStub.Length == 0)
+            return GetRoute(startEndpoint.CableAnchorPosition, endEndpoint.CableAnchorPosition, EntryCandidates(startEndpoint), EntryCandidates(endEndpoint));
+
+        var points = new List<Vector3>(startStub.Length + endStub.Length + 1);
+        points.AddRange(startStub);
+        points.Add(VisualBreak);
+        points.AddRange(endStub);
+        return points.ToArray();
+    }
+
+    private Vector3[] GetStubRoute(Vector3 endpoint, RouteEntryContext[] entryCandidates, RouteEntryContext[] trayCandidates)
+    {
+        var route = SelectRoute(endpoint, endpoint, entryCandidates, trayCandidates);
+        if (!route.IsValid)
+            return System.Array.Empty<Vector3>();
+
+        var points = new List<Vector3>(route.Middle.Count + 4) { endpoint };
+        var trayPoint = route.EndPoint;
+        var sideDrop = new Vector3(route.StartPoint.x, trayPoint.y, endpoint.z);
+        AddOrthogonal(points, endpoint, sideDrop);
+        foreach (var node in route.Middle)
+        {
+            if (node && node.role == TssCableRouteNodeRole.Tray)
+                AddIfUseful(points, node.transform.position);
+        }
+        AddIfUseful(points, route.EndPoint);
         return points.ToArray();
     }
 
@@ -70,38 +124,62 @@ public sealed class TssCableRouteProvider : MonoBehaviour
             routeNodes = GetComponentsInChildren<TssCableRouteNode>(true);
     }
 
-    private static void AddEntryDress(List<Vector3> points, Vector3 endpoint, Vector3 routeNode, bool isRear)
+    private RouteSelection SelectRoute(Vector3 start, Vector3 end, RouteEntryContext[] startCandidates, RouteEntryContext[] endCandidates)
     {
-        if (isRear)
+        RouteSelection best = default;
+        var starts = NormalizeCandidates(startCandidates, start);
+        var ends = NormalizeCandidates(endCandidates, end);
+
+        foreach (var startContext in starts)
         {
-            AddIfUseful(points, new Vector3(routeNode.x, endpoint.y, endpoint.z));
-            AddIfUseful(points, new Vector3(routeNode.x, routeNode.y, endpoint.z));
-            return;
+            foreach (var endContext in ends)
+            {
+                var middle = startContext.Node && endContext.Node ? ShortestPath(startContext.Node, endContext.Node) : new List<TssCableRouteNode>();
+                if (startContext.Node && endContext.Node && middle.Count == 0)
+                    continue;
+
+                var startPoint = startContext.Point;
+                var endPoint = endContext.Point;
+                var cost = OrthogonalDistance(start, startPoint) + OrthogonalDistance(endPoint, end) + PathDistance(middle, startPoint, endPoint);
+                if (!best.IsValid || cost < best.Cost)
+                    best = new RouteSelection(startPoint, endPoint, middle, cost);
+            }
         }
 
-        AddIfUseful(points, new Vector3(routeNode.x, endpoint.y, routeNode.z));
-        AddIfUseful(points, routeNode);
+        return best;
     }
 
-    private static void AddExitDress(List<Vector3> points, Vector3 endpoint, Vector3 routeNode, bool isRear)
+    private RouteEntryContext[] NormalizeCandidates(RouteEntryContext[] candidates, Vector3 point)
     {
-        if (isRear)
-        {
-            AddIfUseful(points, new Vector3(routeNode.x, routeNode.y, endpoint.z));
-            AddIfUseful(points, new Vector3(routeNode.x, endpoint.y, endpoint.z));
-            return;
-        }
+        if (candidates != null && candidates.Length > 0 && (candidates[0].Node || candidates[0].HasFallback))
+            return candidates;
 
-        AddIfUseful(points, routeNode);
-        AddIfUseful(points, new Vector3(routeNode.x, endpoint.y, routeNode.z));
+        var node = Nearest(point);
+        return node ? new[] { new RouteEntryContext(node) } : System.Array.Empty<RouteEntryContext>();
     }
 
-    private static void AddBridge(List<Vector3> points, Vector3 startRoutePoint, Vector3 endRoutePoint)
+    private static float PathDistance(List<TssCableRouteNode> middle, Vector3 startPoint, Vector3 endPoint)
     {
-        AddIfUseful(points, startRoutePoint);
-        AddIfUseful(points, new Vector3(startRoutePoint.x, endRoutePoint.y, startRoutePoint.z));
-        AddIfUseful(points, new Vector3(endRoutePoint.x, endRoutePoint.y, startRoutePoint.z));
-        AddIfUseful(points, endRoutePoint);
+        if (middle.Count == 0)
+            return OrthogonalDistance(startPoint, endPoint);
+
+        var total = OrthogonalDistance(startPoint, middle[0].transform.position);
+        for (var i = 1; i < middle.Count; i++)
+            total += OrthogonalDistance(middle[i - 1].transform.position, middle[i].transform.position);
+        return total + OrthogonalDistance(middle[^1].transform.position, endPoint);
+    }
+
+    private static float OrthogonalDistance(Vector3 a, Vector3 b)
+    {
+        var delta = a - b;
+        return Mathf.Abs(delta.x) + Mathf.Abs(delta.y) + Mathf.Abs(delta.z);
+    }
+
+    private static void AddOrthogonal(List<Vector3> points, Vector3 start, Vector3 end)
+    {
+        AddIfUseful(points, new Vector3(end.x, start.y, start.z));
+        AddIfUseful(points, new Vector3(end.x, end.y, start.z));
+        AddIfUseful(points, end);
     }
 
     private static void AddIfUseful(List<Vector3> points, Vector3 point)
@@ -110,32 +188,61 @@ public sealed class TssCableRouteProvider : MonoBehaviour
             points.Add(point);
     }
 
-    private RouteEntryContext EntryContext(TssPortEndpoint endpoint)
+    private RouteEntryContext[] EntryCandidates(TssPortEndpoint endpoint)
     {
         var endpointId = endpoint.EndpointId;
         if (TryRackId(endpointId, out var rackId))
         {
-            var isRear = IsRearRackEndpoint(endpoint);
-            var role = isRear ? TssCableRouteNodeRole.RackRear : TssCableRouteNodeRole.RackFront;
+            var role = endpoint.InterfaceFace == EquipmentInterfaceFace.Rear ? TssCableRouteNodeRole.RackRear : TssCableRouteNodeRole.RackFront;
+            var candidates = new List<RouteEntryContext>();
+            AddRackSideCandidate(candidates, endpoint.CableAnchorPosition, rackId, role, TssCableRouteSide.Left);
+            AddRackSideCandidate(candidates, endpoint.CableAnchorPosition, rackId, role, TssCableRouteSide.Right);
+            if (candidates.Count > 0)
+                return candidates.ToArray();
+
             var node = Nearest(endpoint.CableAnchorPosition, candidate => MatchesRack(candidate, rackId) && MatchesRole(candidate, role))
                 ?? Nearest(endpoint.CableAnchorPosition, candidate => MatchesRack(candidate, rackId));
             if (!node)
-                return new RouteEntryContext(RackFallbackPoint(endpoint, rackId, isRear), isRear);
+                return new[] { new RouteEntryContext(RackFallbackPoint(endpoint, rackId)) };
 
-            return new RouteEntryContext(node, isRear);
+            return new[] { new RouteEntryContext(node) };
         }
 
         if (TryStationId(endpointId, out var stationId))
         {
             var node = Nearest(endpoint.CableAnchorPosition, candidate => MatchesStation(candidate, stationId) && MatchesRole(candidate, TssCableRouteNodeRole.StationDrop))
                 ?? Nearest(endpoint.CableAnchorPosition, candidate => MatchesStation(candidate, stationId));
-            return new RouteEntryContext(node, false);
+            return node ? new[] { new RouteEntryContext(node) } : System.Array.Empty<RouteEntryContext>();
         }
 
-        return default;
+        return System.Array.Empty<RouteEntryContext>();
     }
 
-    private static Vector3 RackFallbackPoint(TssPortEndpoint endpoint, string rackId, bool isRear)
+    private static TssCableRouteSide PreferredSide(RouteEntryContext[] candidates)
+    {
+        return candidates != null && candidates.Length > 0 ? candidates[0].Side : TssCableRouteSide.Any;
+    }
+
+    private RouteEntryContext[] TrayCandidates(string rackId, TssCableRouteSide side)
+    {
+        var candidates = new List<RouteEntryContext>();
+        foreach (var node in routeNodes)
+        {
+            if (node && MatchesRack(node, rackId) && MatchesRole(node, TssCableRouteNodeRole.Tray) && MatchesSide(node, side))
+                candidates.Add(new RouteEntryContext(node));
+        }
+
+        return candidates.ToArray();
+    }
+
+    private void AddRackSideCandidate(List<RouteEntryContext> candidates, Vector3 point, string rackId, TssCableRouteNodeRole role, TssCableRouteSide side)
+    {
+        var node = Nearest(point, candidate => MatchesRack(candidate, rackId) && MatchesRole(candidate, role) && MatchesSide(candidate, side));
+        if (node)
+            candidates.Add(new RouteEntryContext(node));
+    }
+
+    private static Vector3 RackFallbackPoint(TssPortEndpoint endpoint, string rackId)
     {
         var anchor = endpoint.CableAnchorPosition;
         var minX = anchor.x;
@@ -151,8 +258,7 @@ public sealed class TssCableRouteProvider : MonoBehaviour
         }
 
         var sideX = Mathf.Abs(anchor.x - minX) <= Mathf.Abs(anchor.x - maxX) ? minX : maxX;
-        var frontOffset = isRear ? 0f : 0.12f;
-        return new Vector3(sideX, anchor.y, anchor.z + frontOffset);
+        return new Vector3(sideX, anchor.y, anchor.z);
     }
 
     private TssCableRouteNode Nearest(Vector3 point)
@@ -214,23 +320,6 @@ public sealed class TssCableRouteProvider : MonoBehaviour
         return !string.IsNullOrWhiteSpace(segment);
     }
 
-    private static bool IsRearRackEndpoint(TssPortEndpoint endpoint)
-    {
-        if (endpoint.EndpointId.StartsWith("PatchPanel:", System.StringComparison.Ordinal))
-            return false;
-
-        for (var current = endpoint.transform; current; current = current.parent)
-        {
-            var name = current.name;
-            if (Contains(name, "Router") || Contains(name, "Server") || Contains(name, "PDU"))
-                return true;
-            if (Contains(name, "Switch") || Contains(name, "Cisco") || Contains(name, "PatchPanel"))
-                return false;
-        }
-
-        return false;
-    }
-
     private static bool MatchesRack(TssCableRouteNode node, string rackId)
     {
         if (!string.IsNullOrWhiteSpace(node.rackId) && node.rackId == rackId)
@@ -261,6 +350,11 @@ public sealed class TssCableRouteProvider : MonoBehaviour
             TssCableRouteNodeRole.Tray => Contains(path, "Tray"),
             _ => true
         };
+    }
+
+    private static bool MatchesSide(TssCableRouteNode node, TssCableRouteSide side)
+    {
+        return side == TssCableRouteSide.Any || node.side == side;
     }
 
     private static string NodePath(Transform transform)
@@ -323,24 +417,42 @@ public sealed class TssCableRouteProvider : MonoBehaviour
     private readonly struct RouteEntryContext
     {
         public readonly TssCableRouteNode Node;
-        public readonly bool IsRear;
         public readonly bool HasFallback;
         public readonly Vector3 FallbackPoint;
+        public readonly TssCableRouteSide Side;
+        public Vector3 Point => Node ? Node.transform.position : FallbackPoint;
 
-        public RouteEntryContext(TssCableRouteNode node, bool isRear)
+        public RouteEntryContext(TssCableRouteNode node)
         {
             Node = node;
-            IsRear = isRear;
             HasFallback = false;
             FallbackPoint = default;
+            Side = node ? node.side : TssCableRouteSide.Any;
         }
 
-        public RouteEntryContext(Vector3 fallbackPoint, bool isRear)
+        public RouteEntryContext(Vector3 fallbackPoint)
         {
             Node = null;
-            IsRear = isRear;
             HasFallback = true;
             FallbackPoint = fallbackPoint;
+            Side = TssCableRouteSide.Any;
+        }
+    }
+
+    private readonly struct RouteSelection
+    {
+        public readonly Vector3 StartPoint;
+        public readonly Vector3 EndPoint;
+        public readonly List<TssCableRouteNode> Middle;
+        public readonly float Cost;
+        public bool IsValid => Middle != null;
+
+        public RouteSelection(Vector3 startPoint, Vector3 endPoint, List<TssCableRouteNode> middle, float cost)
+        {
+            StartPoint = startPoint;
+            EndPoint = endPoint;
+            Middle = middle;
+            Cost = cost;
         }
     }
 }
