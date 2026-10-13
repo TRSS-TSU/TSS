@@ -31,11 +31,14 @@ public static class TssDeviceSessionPrefabBuilder
 
         var terminalControlsPrefab = BuildFirstPersonControlsPrefab("TssTerminalFirstPersonControls", true);
         var desktopControlsPrefab = BuildFirstPersonControlsPrefab("TssDesktopFirstPersonControls", false);
+        var laptopControlsPrefab = BuildFirstPersonControlsPrefab("TssLaptopFirstPersonControls", false);
         var terminalCanvasPrefab = BuildTerminalSessionCanvasPrefab();
-        var desktopCanvasPrefab = BuildDesktopSessionCanvasPrefab();
+        var desktopCanvasPrefab = BuildDesktopSessionCanvasPrefab("TssDesktopSessionCanvas");
+        var laptopCanvasPrefab = BuildDesktopSessionCanvasPrefab("TssLaptopSessionCanvas");
 
         AssignControlsToDevicePrefabs(terminalControlsPrefab, desktopControlsPrefab);
-        InstallCanvasesIntoTssScene(terminalCanvasPrefab, desktopCanvasPrefab, terminalControlsPrefab, desktopControlsPrefab);
+        AssignCanvasPrefab("Assets/Laptop/prefab/Laptop 1.prefab", laptopControlsPrefab);
+        InstallCanvasesIntoTssScene(terminalCanvasPrefab, desktopCanvasPrefab, laptopCanvasPrefab, terminalControlsPrefab, desktopControlsPrefab, laptopControlsPrefab);
 
         AssetDatabase.SaveAssets();
         AssetDatabase.Refresh();
@@ -391,9 +394,9 @@ public static class TssDeviceSessionPrefabBuilder
         return prefab;
     }
 
-    private static GameObject BuildDesktopSessionCanvasPrefab()
+    private static GameObject BuildDesktopSessionCanvasPrefab(string canvasName)
     {
-        var root = new GameObject("TssDesktopSessionCanvas", typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(TssDesktopSessionPresenter));
+        var root = new GameObject(canvasName, typeof(RectTransform), typeof(Canvas), typeof(CanvasScaler), typeof(GraphicRaycaster), typeof(TssDesktopSessionPresenter));
         var canvas = root.GetComponent<Canvas>();
         canvas.renderMode = RenderMode.ScreenSpaceOverlay;
         canvas.overrideSorting = true;
@@ -508,7 +511,8 @@ public static class TssDeviceSessionPrefabBuilder
         var gwIn = MakeLabeledInputField(ncBody.transform, "GatewayInput", "Default Gateway:", "192.168.1.1", -242f);
         var dnsIn = MakeLabeledInputField(ncBody.transform, "DnsInput", "DNS Server:", "8.8.8.8", -288f);
 
-        var applyBtn = MakeButton(ncBody.transform, "ApplyButton", "Save / Apply Settings", new Vector2(0f, -344f), new Vector2(200f, 38f), BtnNormal);
+        var applyBtn = MakeButton(ncBody.transform, "ApplyButton", "Save / Apply Settings", new Vector2(0f, -344f), new Vector2(190f, 38f), BtnNormal);
+        var checkServerBtn = MakeButton(ncBody.transform, "CheckServerConnectionButton", "Verify Server", new Vector2(200f, -344f), new Vector2(170f, 38f), BtnNormal);
         var applyFeedback = MakeText(ncBody.transform, "ApplyFeedback", "", 12, TextAnchor.MiddleLeft);
         PlaceElement(applyFeedback.rectTransform, -390f, 24f);
 
@@ -531,6 +535,12 @@ public static class TssDeviceSessionPrefabBuilder
         pcTitle.rectTransform.anchorMax = Vector2.one;
         pcTitle.rectTransform.offsetMin = new Vector2(12f, 0f);
         pcTitle.color = AccentAmber;
+
+        var openApBrowserBtn = MakeButton(pcHeader.transform, "OpenAccessPointBrowserButton", "AP Browser", Vector2.zero, new Vector2(92f, 26f), BtnNormal);
+        var apButtonRt = openApBrowserBtn.GetComponent<RectTransform>();
+        apButtonRt.anchorMin = apButtonRt.anchorMax = new Vector2(1f, 0.5f);
+        apButtonRt.pivot = new Vector2(1f, 0.5f);
+        apButtonRt.anchoredPosition = new Vector2(-10f, 0f);
 
         var commandInput = MakeInputField(pcCard.transform, "CommandInput", "Enter command: ipconfig, ping <address>, tracert <address>, cls");
         var ciRt = commandInput.GetComponent<RectTransform>();
@@ -562,6 +572,50 @@ public static class TssDeviceSessionPrefabBuilder
         outputScroll.horizontal = false;
         outputScroll.vertical = true;
         outputScroll.movementType = ScrollRect.MovementType.Clamped;
+
+        // Browser-only AP configuration page. It stays within the endpoint session so the
+        // browser cannot bypass the same L1/L2/L3 state used by diagnostics.
+        var apBrowserCard = new GameObject("AccessPointBrowserCard", typeof(RectTransform), typeof(Image));
+        apBrowserCard.transform.SetParent(rightTop.transform, false);
+        Stretch(apBrowserCard.GetComponent<RectTransform>(), 0f, 0f, 1f, 1f);
+        apBrowserCard.GetComponent<Image>().color = CardDark;
+        apBrowserCard.SetActive(false);
+
+        var apHeader = MakeImage(apBrowserCard.transform, "Header", CardInner);
+        AnchorTop(apHeader.rectTransform, 36f);
+        var apTitle = MakeText(apHeader.transform, "Title", "ACCESS POINT MANAGEMENT", 13, TextAnchor.MiddleLeft);
+        apTitle.rectTransform.anchorMin = Vector2.zero;
+        apTitle.rectTransform.anchorMax = Vector2.one;
+        apTitle.rectTransform.offsetMin = new Vector2(12f, 0f);
+        apTitle.color = AccentAmber;
+        var closeApBrowserBtn = MakeButton(apHeader.transform, "CloseButton", "Back", Vector2.zero, new Vector2(60f, 26f), BtnNormal);
+        var closeApRt = closeApBrowserBtn.GetComponent<RectTransform>();
+        closeApRt.anchorMin = closeApRt.anchorMax = new Vector2(1f, 0.5f);
+        closeApRt.pivot = new Vector2(1f, 0.5f);
+        closeApRt.anchoredPosition = new Vector2(-10f, 0f);
+
+        var apStatus = MakeText(apBrowserCard.transform, "BrowserStatusText", "https://AP-1 | Waiting for connection", 11, TextAnchor.MiddleLeft);
+        PlaceElement(apStatus.rectTransform, -56f, 22f);
+        apStatus.color = TextSecondary;
+        var apSsid = MakeLabeledInputField(apBrowserCard.transform, "SsidInput", "Guest SSID:", "Enter SOP SSID", -98f);
+        var apAdmin = MakeLabeledInputField(apBrowserCard.transform, "AdminPasswordInput", "Admin Password:", "Enter SOP administrator password", -144f);
+        var apPassphrase = MakeLabeledInputField(apBrowserCard.transform, "PassphraseInput", "WPA2 Passphrase:", "Enter SOP passphrase", -190f);
+        var apChannel = MakeLabeledInputField(apBrowserCard.transform, "ChannelInput", "Channel:", "1, 6, or 11", -236f);
+        var apWps = MakeToggle(apBrowserCard.transform, "DisableWpsToggle", "Disable WPS");
+        apWps.GetComponent<RectTransform>().anchorMin = apWps.GetComponent<RectTransform>().anchorMax = new Vector2(0f, 1f);
+        apWps.GetComponent<RectTransform>().pivot = new Vector2(0f, 1f);
+        apWps.GetComponent<RectTransform>().anchoredPosition = new Vector2(14f, -284f);
+        var saveApBtn = MakeButton(apBrowserCard.transform, "SaveAccessPointButton", "Save AP Settings", new Vector2(14f, 14f), new Vector2(160f, 34f), BtnNormal);
+        var saveApRt = saveApBtn.GetComponent<RectTransform>();
+        saveApRt.anchorMin = saveApRt.anchorMax = saveApRt.pivot = Vector2.zero;
+        saveApRt.anchoredPosition = new Vector2(14f, 14f);
+        var apFeedback = MakeText(apBrowserCard.transform, "BrowserFeedbackText", "", 11, TextAnchor.UpperLeft);
+        var apFeedbackRt = apFeedback.rectTransform;
+        apFeedbackRt.anchorMin = new Vector2(0f, 0f);
+        apFeedbackRt.anchorMax = new Vector2(1f, 0f);
+        apFeedbackRt.offsetMin = new Vector2(184f, 8f);
+        apFeedbackRt.offsetMax = new Vector2(-12f, 46f);
+        apFeedback.color = TextSecondary;
 
         // 2. Server Roles Card
         var srvCard = new GameObject("ServerRolesCard", typeof(RectTransform));
@@ -671,7 +725,20 @@ public static class TssDeviceSessionPrefabBuilder
         dSer.FindProperty("defaultGatewayInput").objectReferenceValue = gwIn;
         dSer.FindProperty("dnsServerInput").objectReferenceValue = dnsIn;
         dSer.FindProperty("applySettingsButton").objectReferenceValue = applyBtn;
+        dSer.FindProperty("checkServerConnectionButton").objectReferenceValue = checkServerBtn;
         dSer.FindProperty("applyFeedbackText").objectReferenceValue = applyFeedback;
+
+        dSer.FindProperty("openAccessPointBrowserButton").objectReferenceValue = openApBrowserBtn;
+        dSer.FindProperty("accessPointBrowserCard").objectReferenceValue = apBrowserCard;
+        dSer.FindProperty("accessPointBrowserStatusText").objectReferenceValue = apStatus;
+        dSer.FindProperty("accessPointSsidInput").objectReferenceValue = apSsid;
+        dSer.FindProperty("accessPointAdminPasswordInput").objectReferenceValue = apAdmin;
+        dSer.FindProperty("accessPointPassphraseInput").objectReferenceValue = apPassphrase;
+        dSer.FindProperty("accessPointChannelInput").objectReferenceValue = apChannel;
+        dSer.FindProperty("accessPointDisableWpsToggle").objectReferenceValue = apWps;
+        dSer.FindProperty("saveAccessPointButton").objectReferenceValue = saveApBtn;
+        dSer.FindProperty("closeAccessPointBrowserButton").objectReferenceValue = closeApBrowserBtn;
+        dSer.FindProperty("accessPointBrowserFeedbackText").objectReferenceValue = apFeedback;
 
         dSer.FindProperty("pcToolsCard").objectReferenceValue = pcCard;
         dSer.FindProperty("serverRolesCard").objectReferenceValue = srvCard;
@@ -693,7 +760,7 @@ public static class TssDeviceSessionPrefabBuilder
         dSer.FindProperty("physicalPathDetailsText").objectReferenceValue = pathDetails;
         dSer.ApplyModifiedPropertiesWithoutUndo();
 
-        var path = $"{UiDir}/TssDesktopSessionCanvas.prefab";
+        var path = $"{UiDir}/{canvasName}.prefab";
         var prefab = PrefabUtility.SaveAsPrefabAsset(root, path);
         Object.DestroyImmediate(root);
         return prefab;
@@ -729,7 +796,7 @@ public static class TssDeviceSessionPrefabBuilder
         PrefabUtility.UnloadPrefabContents(root);
     }
 
-    private static void InstallCanvasesIntoTssScene(GameObject terminalPrefab, GameObject desktopPrefab, GameObject termControls, GameObject deskControls)
+    private static void InstallCanvasesIntoTssScene(GameObject terminalPrefab, GameObject desktopPrefab, GameObject laptopPrefab, GameObject termControls, GameObject deskControls, GameObject laptopControls)
     {
         var scene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
         if (scene.name != "TSS")
@@ -745,6 +812,9 @@ public static class TssDeviceSessionPrefabBuilder
         // Check if canvases already in scene
         var existingTerm = Object.FindFirstObjectByType<TssTerminalSessionPresenter>(FindObjectsInactive.Include);
         var existingDesk = Object.FindFirstObjectByType<TssDesktopSessionPresenter>(FindObjectsInactive.Include);
+        TssDesktopSessionPresenter existingLaptop = null;
+        foreach (var presenter in Object.FindObjectsByType<TssDesktopSessionPresenter>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            if (presenter.name.Contains("Laptop")) { existingLaptop = presenter; break; }
 
         if (!existingTerm && terminalPrefab)
         {
@@ -762,15 +832,27 @@ public static class TssDeviceSessionPrefabBuilder
             existingDesk = inst.GetComponent<TssDesktopSessionPresenter>();
         }
 
+        if (!existingLaptop && laptopPrefab)
+        {
+            var inst = (GameObject)PrefabUtility.InstantiatePrefab(laptopPrefab);
+            inst.name = "TssLaptopSessionCanvas";
+            inst.SetActive(false);
+            existingLaptop = inst.GetComponent<TssDesktopSessionPresenter>();
+        }
+
         var cSer = new SerializedObject(controller);
         cSer.FindProperty("terminalCanvasPrefab").objectReferenceValue = terminalPrefab;
         cSer.FindProperty("desktopCanvasPrefab").objectReferenceValue = desktopPrefab;
+        cSer.FindProperty("laptopCanvasPrefab").objectReferenceValue = laptopPrefab;
         cSer.FindProperty("terminalControlsPrefab").objectReferenceValue = termControls;
         cSer.FindProperty("desktopControlsPrefab").objectReferenceValue = deskControls;
+        cSer.FindProperty("laptopControlsPrefab").objectReferenceValue = laptopControls;
         if (existingTerm)
             cSer.FindProperty("terminalPresenter").objectReferenceValue = existingTerm;
         if (existingDesk)
             cSer.FindProperty("desktopPresenter").objectReferenceValue = existingDesk;
+        if (existingLaptop)
+            cSer.FindProperty("laptopPresenter").objectReferenceValue = existingLaptop;
         cSer.ApplyModifiedProperties();
 
         // Ensure preinstalled cable tray on Rack 01

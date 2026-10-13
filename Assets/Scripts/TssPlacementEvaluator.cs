@@ -34,6 +34,20 @@ public static class TssPlacementEvaluator
         return statuses;
     }
 
+    public static IReadOnlyList<TssPlacementRequirementStatus> EvaluateAttemptRequirements(
+        TssScenarioDefinition scenario,
+        IReadOnlyList<InstalledEquipmentRecord> rackPlacements,
+        IReadOnlyList<EndpointPlacementRecord> endpointPlacements)
+    {
+        var statuses = new List<TssPlacementRequirementStatus>();
+        if (!scenario)
+            return statuses;
+
+        AddRackAttemptStatuses(scenario.expectedRackPlacements, rackPlacements, statuses);
+        AddEndpointAttemptStatuses(scenario.expectedEndpointPlacements, endpointPlacements, statuses);
+        return statuses;
+    }
+
     public static TssPlacementEvaluationResult EvaluateInventory(TssScenarioDefinition scenario)
     {
         var messages = new List<string>();
@@ -188,9 +202,75 @@ public static class TssPlacementEvaluator
         }
     }
 
+    private static void AddRackAttemptStatuses(
+        IReadOnlyList<ExpectedRackPlacement> expected,
+        IReadOnlyList<InstalledEquipmentRecord> actual,
+        List<TssPlacementRequirementStatus> statuses)
+    {
+        if (expected == null)
+            return;
+
+        foreach (var required in expected)
+        {
+            var firstU = required.endingU > 0 ? Mathf.Min(required.startingU, required.endingU) : required.startingU;
+            var lastU = Mathf.Max(required.startingU, required.endingU);
+            var attempted = false;
+            for (var i = 0; actual != null && i < actual.Count; i++)
+            {
+                var record = actual[i];
+                if (record.RackId == required.rackId && record.StartingU >= firstU && record.StartingU <= lastU && IsOnExpectedRackSide(required, record))
+                {
+                    attempted = true;
+                    break;
+                }
+            }
+
+            statuses.Add(new TssPlacementRequirementStatus(
+                required.phaseLabel,
+                required.requiredName,
+                firstU == lastU ? $"{required.rackId} U{firstU}" : $"{required.rackId} U{firstU}-U{lastU}",
+                required.category,
+                attempted));
+        }
+    }
+
+    private static void AddEndpointAttemptStatuses(
+        IReadOnlyList<ExpectedEndpointPlacement> expected,
+        IReadOnlyList<EndpointPlacementRecord> actual,
+        List<TssPlacementRequirementStatus> statuses)
+    {
+        if (expected == null)
+            return;
+
+        foreach (var required in expected)
+        {
+            var attempted = false;
+            for (var i = 0; actual != null && i < actual.Count; i++)
+            {
+                if (actual[i].StationId == required.stationId)
+                {
+                    attempted = true;
+                    break;
+                }
+            }
+
+            statuses.Add(new TssPlacementRequirementStatus(
+                required.phaseLabel,
+                required.requiredName,
+                required.stationId,
+                required.category,
+                attempted));
+        }
+    }
+
     private static bool IsOnExpectedRackSide(ExpectedRackPlacement required, InstalledEquipmentRecord record)
     {
-        return !record.Equipment || record.Equipment.useRearRackPlacement == (required.category == EquipmentCategory.Pdu);
+        return !record.Equipment || record.Equipment.useRearRackPlacement == IsRearRackCategory(required.category);
+    }
+
+    private static bool IsRearRackCategory(EquipmentCategory category)
+    {
+        return category == EquipmentCategory.Pdu || category == EquipmentCategory.Server;
     }
 
     private static void RequireInventory(TssScenarioDefinition scenario, EquipmentCategory category, int requiredCount, List<string> messages)

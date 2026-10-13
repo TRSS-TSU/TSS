@@ -34,7 +34,7 @@ public sealed class TssCableRouteProviderTests
     public void RearRackEndpointsUseRearNodes()
     {
         var root = new GameObject("RouteRoot");
-        var routerPort = Endpoint("Router", "Rack:Rack01:U22:GE00", new Vector3(0f, 2f, 4f), EquipmentInterfaceFace.Rear);
+        var routerPort = Endpoint("Router", "Rack:Rack01:U22:Fa00", new Vector3(0f, 2f, 4f), EquipmentInterfaceFace.Rear);
         var serverPort = Endpoint("Server", "Rack:Rack01:U05:GE01", new Vector3(3f, 1f, 4f), EquipmentInterfaceFace.Rear);
 
         try
@@ -62,7 +62,7 @@ public sealed class TssCableRouteProviderTests
     {
         var root = new GameObject("RouteRoot");
         var switchPort = Endpoint("Switch", "Rack:Rack01:U36:Fa01", new Vector3(0f, 2f, 0f), EquipmentInterfaceFace.Front);
-        var routerPort = Endpoint("Router", "Rack:Rack01:U22:GE00", new Vector3(0f, 1f, 4f), EquipmentInterfaceFace.Rear);
+        var routerPort = Endpoint("Router", "Rack:Rack01:U22:Fa00", new Vector3(0f, 1f, 4f), EquipmentInterfaceFace.Rear);
 
         try
         {

@@ -1,6 +1,8 @@
+using System;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.UI;
+using Object = UnityEngine.Object;
 
 public sealed class TssDeviceSessionTests
 {
@@ -63,6 +65,50 @@ public sealed class TssDeviceSessionTests
         {
             first.ManagementVlan, first.ReceptionVlan, first.DataVlan, first.NativeVlan, first.DeadVlan
         }.Count);
+    }
+
+    [Test]
+    public void PlayerSeedNormalizesIdentityAndProducesStableDistinctProfiles()
+    {
+        Assert.IsTrue(TssScenarioLaunchState.TryCreateStudentId("  Smith ", " 17 ", out var firstId));
+        Assert.IsTrue(TssScenarioLaunchState.TryCreateStudentId("smith", "17", out var normalizedId));
+        Assert.IsFalse(TssScenarioLaunchState.TryCreateStudentId("Smith", "0", out _));
+
+        var first = TssNetworkRunProfile.Create(TssNetworkRunProfile.DeriveSeed(firstId, "BALANCED_12_PIECE_LAB"), new NetworkScenarioConfig(), firstId);
+        var repeat = TssNetworkRunProfile.Create(TssNetworkRunProfile.DeriveSeed(normalizedId, "balanced_12_piece_lab"), new NetworkScenarioConfig(), normalizedId);
+        var different = TssNetworkRunProfile.Create(TssNetworkRunProfile.DeriveSeed("JONES-17", "BALANCED_12_PIECE_LAB"), new NetworkScenarioConfig(), "JONES-17");
+
+        Assert.AreEqual("SMITH-17", firstId);
+        Assert.AreEqual(first.Seed, repeat.Seed);
+        Assert.AreEqual(first.Ssid, repeat.Ssid);
+        Assert.AreNotEqual(first.Seed, different.Seed);
+        Assert.AreEqual(888, first.DeadVlan);
+        CollectionAssert.AllItemsAreUnique(new[] { first.ManagementVlan, first.ReceptionVlan, first.DataVlan, first.NativeVlan });
+        foreach (var vlan in new[] { first.ManagementVlan, first.ReceptionVlan, first.DataVlan, first.NativeVlan })
+            Assert.IsTrue(vlan >= 10 && vlan <= 390 && vlan % 10 == 0, "VLAN must be a ten from 10 through 390.");
+        StringAssert.StartsWith("192.168.", first.ManagementNetwork);
+        StringAssert.StartsWith("10.", first.WanNetwork);
+        Assert.AreEqual(first.ReceptionNetwork + ".50", first.ApManagementAddress);
+    }
+
+    [Test]
+    public void BalancedScenarioAuthorsEveryNetworkScenarioList()
+    {
+        var scenario = UnityEditor.AssetDatabase.LoadAssetAtPath<TssScenarioDefinition>("Assets/Data/TSS/Scenarios/Balanced_12_Piece_Lab.asset");
+
+        Assert.IsNotNull(scenario);
+        Assert.IsNotNull(scenario.networkScenario);
+        Assert.IsNotEmpty(scenario.networkScenario.endpointAliases);
+        Assert.IsNotEmpty(scenario.networkScenario.roleBindings);
+        Assert.IsNotEmpty(scenario.networkScenario.requiredPorts);
+        Assert.IsNotEmpty(scenario.networkScenario.evidenceRequirements);
+
+        var profile = TssNetworkRunProfile.Create(scenario.networkScenario.profileSeed, scenario.networkScenario);
+        Assert.IsNotEmpty(profile.EndpointAliases);
+        Assert.IsNotEmpty(profile.RoleBindings);
+        Assert.IsNotEmpty(profile.RequiredPorts);
+        Assert.IsNotEmpty(profile.EvidenceRequirements);
+        Assert.AreEqual(profile.EndpointAddresses["IT1"], new TssNetworkSessionState(profile).GetOrCreateEndpoint("Endpoint:IT1", "IT1").Address);
     }
 
     [Test]
@@ -379,6 +425,178 @@ public sealed class TssDeviceSessionTests
         Assert.IsTrue(outputText.text.Contains("default"));
 
         Object.DestroyImmediate(go);
+    }
+
+    [Test]
+    public void TerminalSessionHistorySupportsDraftAndDownToBlank()
+    {
+        var go = new GameObject("TerminalHistoryPresenter", typeof(RectTransform), typeof(TssTerminalSessionPresenter));
+        var pres = go.GetComponent<TssTerminalSessionPresenter>();
+
+        var outputGo = new GameObject("Output", typeof(RectTransform), typeof(Text));
+        outputGo.transform.SetParent(go.transform);
+        var output = outputGo.GetComponent<Text>();
+        output.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+        var promptGo = new GameObject("Prompt", typeof(RectTransform), typeof(Text));
+        promptGo.transform.SetParent(go.transform);
+        var prompt = promptGo.GetComponent<Text>();
+
+        var inputGo = new GameObject("Input", typeof(RectTransform), typeof(InputField));
+        inputGo.transform.SetParent(go.transform);
+        var input = inputGo.GetComponent<InputField>();
+
+        var serialized = new UnityEditor.SerializedObject(pres);
+        serialized.FindProperty("consoleOutputText").objectReferenceValue = output;
+        serialized.FindProperty("promptText").objectReferenceValue = prompt;
+        serialized.FindProperty("commandInput").objectReferenceValue = input;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+
+        var state = new TssDeviceLogicalState("sw1", EquipmentCategory.Switch, "TestSwitch");
+        pres.Initialize(state, null, null);
+        pres.ExecuteCommand("enable");
+        pres.ExecuteCommand("show interfaces");
+
+        input.text = "draft command";
+        pres.BrowseHistoryUp();
+        Assert.AreEqual("show interfaces", input.text);
+        pres.BrowseHistoryUp();
+        Assert.AreEqual("enable", input.text);
+        pres.BrowseHistoryDown();
+        Assert.AreEqual("show interfaces", input.text);
+        pres.BrowseHistoryDown();
+        Assert.AreEqual("draft command", input.text);
+
+        Object.DestroyImmediate(go);
+    }
+
+    [Test]
+    public void LongShowOutputStartsAtTopAndRequiresMorePages()
+    {
+        var go = new GameObject("TerminalPagingPresenter", typeof(RectTransform), typeof(TssTerminalSessionPresenter));
+        var pres = go.GetComponent<TssTerminalSessionPresenter>();
+        var outputGo = new GameObject("Output", typeof(RectTransform), typeof(Text));
+        outputGo.transform.SetParent(go.transform);
+        var output = outputGo.GetComponent<Text>();
+        output.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        var promptGo = new GameObject("Prompt", typeof(RectTransform), typeof(Text));
+        promptGo.transform.SetParent(go.transform);
+        var prompt = promptGo.GetComponent<Text>();
+        var inputGo = new GameObject("Input", typeof(RectTransform), typeof(InputField));
+        inputGo.transform.SetParent(go.transform);
+        var input = inputGo.GetComponent<InputField>();
+
+        var state = new TssDeviceLogicalState("sw1", EquipmentCategory.Switch, "TestSwitch");
+        for (var i = 1; i <= 24; i++)
+            state.Interfaces.Add(new TssDeviceLogicalState.InterfaceLogicalRecord { InterfaceName = "Fa0/" + i });
+
+        var serialized = new UnityEditor.SerializedObject(pres);
+        serialized.FindProperty("consoleOutputText").objectReferenceValue = output;
+        serialized.FindProperty("promptText").objectReferenceValue = prompt;
+        serialized.FindProperty("commandInput").objectReferenceValue = input;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+
+        pres.Initialize(state, null, null);
+        pres.ExecuteCommand("show interfaces");
+
+        Assert.IsTrue(input.readOnly);
+        Assert.IsFalse(input.gameObject.activeSelf);
+        Assert.IsFalse(prompt.gameObject.activeSelf);
+        StringAssert.Contains("Fa0/1", output.text);
+        StringAssert.Contains("--More-- Press SPACE for more --", output.text);
+        Assert.IsFalse(output.text.Contains("Fa0/24"));
+
+        pres.ShowMoreOutput();
+        Assert.IsTrue(input.readOnly);
+        Assert.IsFalse(output.text.Contains("Fa0/24"));
+
+        for (var page = 0; page < 10 && input.readOnly; page++)
+            pres.ShowMoreOutput();
+        Assert.IsFalse(input.readOnly);
+        Assert.IsTrue(input.gameObject.activeSelf);
+        Assert.IsTrue(prompt.gameObject.activeSelf);
+        StringAssert.Contains("Fa0/24", output.text);
+        StringAssert.DoesNotContain("--More-- Press SPACE for more --", output.text);
+
+        Object.DestroyImmediate(go);
+    }
+
+    [Test]
+    public void ShowCommandHistoryKeepsEachOutputBlockIndependent()
+    {
+        var go = new GameObject("TerminalShowHistoryPresenter", typeof(RectTransform), typeof(TssTerminalSessionPresenter));
+        var pres = go.GetComponent<TssTerminalSessionPresenter>();
+        var outputGo = new GameObject("Output", typeof(RectTransform), typeof(Text));
+        outputGo.transform.SetParent(go.transform);
+        var output = outputGo.GetComponent<Text>();
+        output.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        var promptGo = new GameObject("Prompt", typeof(RectTransform), typeof(Text));
+        promptGo.transform.SetParent(go.transform);
+        var prompt = promptGo.GetComponent<Text>();
+        var inputGo = new GameObject("Input", typeof(RectTransform), typeof(InputField));
+        inputGo.transform.SetParent(go.transform);
+        var input = inputGo.GetComponent<InputField>();
+
+        var serialized = new UnityEditor.SerializedObject(pres);
+        serialized.FindProperty("consoleOutputText").objectReferenceValue = output;
+        serialized.FindProperty("promptText").objectReferenceValue = prompt;
+        serialized.FindProperty("commandInput").objectReferenceValue = input;
+        serialized.ApplyModifiedPropertiesWithoutUndo();
+
+        var state = new TssDeviceLogicalState("sw1", EquipmentCategory.Switch, "TestSwitch");
+        pres.Initialize(state, null, null);
+        pres.ExecuteCommand("show running-config");
+        pres.ExecuteCommand("show vlan brief");
+
+        var history = output.text;
+        var latestCommand = history.LastIndexOf("show vlan brief", StringComparison.Ordinal);
+        Assert.GreaterOrEqual(latestCommand, 0);
+        var latestOutput = history.Substring(latestCommand);
+        StringAssert.Contains("VLAN Name", latestOutput);
+        Assert.IsFalse(latestOutput.Contains("version 15.0"));
+        StringAssert.Contains("show running-config", history);
+
+        Object.DestroyImmediate(go);
+    }
+
+    [Test]
+    public void RouterCliAcceptsDocumentedFaAliasesAndSubinterfaces()
+    {
+        var sessionObject = new GameObject("CliTestSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true, profileSeed = 42 };
+        session.BeginScenario(scenario);
+        var processor = new TssCliCommandProcessor(session, "Router", EquipmentCategory.Router, "CN-1");
+
+        processor.Execute("enable");
+        processor.Execute("configure terminal");
+        Assert.IsFalse(processor.Execute("interface GE00").Accepted);
+        Assert.IsFalse(processor.Execute("interface GE01").Accepted);
+        Assert.IsFalse(processor.Execute("interface Gi0/0").Accepted);
+        Assert.IsFalse(processor.Execute("interface Gi0/1").Accepted);
+        Assert.IsFalse(processor.Device.Interfaces.ContainsKey("GE00"));
+        Assert.IsFalse(processor.Device.Interfaces.ContainsKey("GE01"));
+        Assert.IsFalse(processor.Device.Interfaces.ContainsKey("Fa0/0"));
+        Assert.IsTrue(processor.Execute("interface Fa0/0").Accepted);
+        Assert.IsTrue(processor.Execute("no shutdown").Accepted);
+        Assert.IsTrue(processor.Execute("exit").Accepted);
+        Assert.IsTrue(processor.Execute("interface Fa0/0.123").Accepted);
+        Assert.IsTrue(processor.Execute("encapsulation dot1q 123").Accepted);
+        Assert.IsTrue(processor.Execute("ip address 10.20.30.1 255.255.255.0").Accepted);
+
+        Assert.IsTrue(processor.Device.Interfaces.ContainsKey("Fa0/0"));
+        Assert.IsTrue(processor.Device.Interfaces.ContainsKey("Fa0/0.123"));
+        Assert.AreEqual(123, processor.Device.Interfaces["Fa0/0.123"].Dot1qVlan);
+        Assert.AreEqual("10.20.30.1", processor.Device.Interfaces["Fa0/0.123"].Address);
+
+        var before = processor.Device.Interfaces["Fa0/0.123"].Address;
+        var invalid = processor.Execute("ip address 999.1.1.1 255.255.255.0");
+        Assert.IsFalse(invalid.Accepted);
+        Assert.AreEqual(before, processor.Device.Interfaces["Fa0/0.123"].Address);
+
+        Object.DestroyImmediate(scenario);
+        Object.DestroyImmediate(sessionObject);
     }
 
     [Test]

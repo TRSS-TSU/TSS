@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -50,11 +51,21 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
     private Action _onClose;
     private readonly StringBuilder _consoleHistory = new();
     private const int MaxHistoryLength = 20000;
+    private const int MaxCommandHistoryLength = 100;
 
     private CiscoCliMode _cliMode = CiscoCliMode.UserExec;
     private string _configuredInterface = "FastEthernet0/1";
     private int _lastSubmitFrame = -1;
     private TssCliCommandProcessor _processor;
+    private readonly List<string> _commandHistory = new();
+    private readonly List<string> _pendingShowLines = new();
+    private int _historyIndex;
+    private int _pendingShowLineIndex;
+    private string _historyDraft = string.Empty;
+    private bool _isPagingShowOutput;
+    private bool _morePromptVisible;
+    private const int ShowPageLineCount = 8;
+    private const string MorePrompt = "\n--More-- Press SPACE for more --\n";
 
     public CiscoCliMode CliMode => _cliMode;
 
@@ -81,9 +92,30 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             return;
         }
 
+        if (_isPagingShowOutput && WasEnterPressed())
+        {
+            ShowNextOutputPage(1);
+            return;
+        }
+
         if (commandInput && commandInput.isFocused && WasEnterPressed())
         {
             SubmitCurrentInput();
+            return;
+        }
+
+        if (_isPagingShowOutput && WasSpacePressed())
+        {
+            ShowNextOutputPage();
+            return;
+        }
+
+        if (commandInput && commandInput.isFocused && Keyboard.current != null)
+        {
+            if (Keyboard.current.upArrowKey.wasPressedThisFrame)
+                BrowseHistory(-1);
+            else if (Keyboard.current.downArrowKey.wasPressedThisFrame)
+                BrowseHistory(1);
         }
     }
 
@@ -93,6 +125,14 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         _onClose = onClose;
         _cliMode = CiscoCliMode.UserExec;
         _processor = new TssCliCommandProcessor(TssTrainingSession.Instance, deviceKey ?? state.DeviceKey, state.Category, state.DeviceName);
+        _commandHistory.Clear();
+        _pendingShowLines.Clear();
+        _historyIndex = 0;
+        _pendingShowLineIndex = 0;
+        _historyDraft = string.Empty;
+        _isPagingShowOutput = false;
+        _morePromptVisible = false;
+        SetCommandEntryVisible(true);
 
         var isRouter = state.Category == EquipmentCategory.Router;
         if (titleText)
@@ -263,12 +303,18 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             return;
         }
 
+        if (_isPagingShowOutput)
+            return;
+
+        cmd = cmd.Trim();
+        RememberCommand(cmd);
         AppendToConsole($"{GetCurrentPrompt()} {cmd}\n");
 
         if (_processor != null && _processor.IsAvailable)
         {
             if (string.Equals(cmd, "clear", StringComparison.OrdinalIgnoreCase))
             {
+                CancelShowPaging();
                 _consoleHistory.Clear();
                 if (consoleOutputText) consoleOutputText.text = string.Empty;
             }
@@ -285,7 +331,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
                     TssNetworkCliMode.VlanConfig => CiscoCliMode.VlanConfig,
                     _ => CiscoCliMode.UserExec
                 };
-                AppendToConsole(result.Output);
+                AppendCommandOutput(cmd, result.Output);
                 if (result.StateChanged) UpdateSubheader();
             }
             UpdatePrompt();
@@ -300,6 +346,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
 
         if (lower == "clear" || lower == "cls")
         {
+            CancelShowPaging();
             _consoleHistory.Clear();
             UpdatePrompt();
             return;
@@ -423,27 +470,27 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         }
         else if (lower == "show running-config" || lower == "show run" || lower == "do show run")
         {
-            AppendToConsole(BuildShowRunningConfig());
+            AppendCommandOutput(cmd, BuildShowRunningConfig());
         }
         else if (lower.StartsWith("show ip int") || lower.StartsWith("show ip interface brief") || lower.StartsWith("do show ip int"))
         {
-            AppendToConsole(BuildShowIpInterfaceBrief());
+            AppendCommandOutput(cmd, BuildShowIpInterfaceBrief());
         }
         else if (lower == "show interfaces" || lower == "show int" || lower == "do show int" || lower == "do show interfaces")
         {
-            AppendToConsole(BuildShowInterfaces());
+            AppendCommandOutput(cmd, BuildShowInterfaces());
         }
         else if (lower.StartsWith("show mac") || lower.StartsWith("show mac-address-table") || lower.StartsWith("do show mac"))
         {
-            AppendToConsole(BuildShowMacAddressTable());
+            AppendCommandOutput(cmd, BuildShowMacAddressTable());
         }
         else if (lower.StartsWith("show vlan") || lower.StartsWith("do show vlan"))
         {
-            AppendToConsole(BuildShowVlanBrief());
+            AppendCommandOutput(cmd, BuildShowVlanBrief());
         }
         else if (lower.StartsWith("show ip route") || lower == "show route" || lower.StartsWith("do show ip route"))
         {
-            AppendToConsole(BuildShowIpRoute());
+            AppendCommandOutput(cmd, BuildShowIpRoute());
         }
         else if (lower.StartsWith("ping") || lower.StartsWith("do ping"))
         {
@@ -460,8 +507,43 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         }
 
         UpdatePrompt();
-        if (commandInput)
+        if (commandInput && commandInput.gameObject.activeInHierarchy)
             commandInput.ActivateInputField();
+    }
+
+    public void BrowseHistoryUp() => BrowseHistory(-1);
+
+    public void BrowseHistoryDown() => BrowseHistory(1);
+
+    public void ShowMoreOutput() => ShowNextOutputPage();
+
+    private void RememberCommand(string command)
+    {
+        if (string.IsNullOrWhiteSpace(command))
+            return;
+
+        _commandHistory.Add(command);
+        if (_commandHistory.Count > MaxCommandHistoryLength)
+            _commandHistory.RemoveAt(0);
+
+        _historyIndex = _commandHistory.Count;
+        _historyDraft = string.Empty;
+    }
+
+    private void BrowseHistory(int direction)
+    {
+        if (!commandInput || _commandHistory.Count == 0)
+            return;
+
+        if (_historyIndex == _commandHistory.Count)
+            _historyDraft = commandInput.text;
+
+        _historyIndex = Mathf.Clamp(_historyIndex + direction, 0, _commandHistory.Count);
+        commandInput.text = _historyIndex == _commandHistory.Count
+            ? _historyDraft
+            : _commandHistory[_historyIndex];
+        commandInput.caretPosition = commandInput.text.Length;
+        commandInput.ActivateInputField();
     }
 
     private string BuildHelpText()
@@ -762,6 +844,91 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             consoleOutputText.text = _consoleHistory.ToString();
     }
 
+    private void AppendCommandOutput(string command, string output)
+    {
+        if (string.IsNullOrEmpty(output) || !IsShowCommand(command))
+        {
+            AppendToConsole(output);
+            return;
+        }
+
+        var lines = output.Replace("\r", string.Empty).Split('\n');
+        if (lines.Length <= ShowPageLineCount)
+        {
+            AppendToConsole(output);
+            return;
+        }
+
+        _pendingShowLines.Clear();
+        _pendingShowLines.AddRange(lines);
+        _pendingShowLineIndex = 0;
+        _isPagingShowOutput = true;
+        _morePromptVisible = false;
+        SetCommandEntryVisible(false);
+        ShowNextOutputPage();
+    }
+
+    private void ShowNextOutputPage(int pageLineCount = ShowPageLineCount)
+    {
+        if (!_isPagingShowOutput)
+            return;
+
+        if (_morePromptVisible)
+        {
+            var promptStart = _consoleHistory.Length - MorePrompt.Length;
+            if (promptStart >= 0 && _consoleHistory.ToString(promptStart, MorePrompt.Length) == MorePrompt)
+                _consoleHistory.Remove(promptStart, MorePrompt.Length);
+            _morePromptVisible = false;
+        }
+
+        var count = Mathf.Min(pageLineCount, _pendingShowLines.Count - _pendingShowLineIndex);
+        if (count > 0)
+        {
+            AppendToConsole(string.Join("\n", _pendingShowLines.GetRange(_pendingShowLineIndex, count)) + "\n");
+            _pendingShowLineIndex += count;
+        }
+
+        if (_pendingShowLineIndex < _pendingShowLines.Count)
+        {
+            AppendToConsole(MorePrompt);
+            _morePromptVisible = true;
+            StartCoroutine(ScrollToBottomNextFrame());
+            return;
+        }
+
+        CancelShowPaging();
+        StartCoroutine(ScrollToBottomNextFrame());
+    }
+
+    private void CancelShowPaging()
+    {
+        _pendingShowLines.Clear();
+        _pendingShowLineIndex = 0;
+        _isPagingShowOutput = false;
+        _morePromptVisible = false;
+        SetCommandEntryVisible(true);
+    }
+
+    private void SetCommandEntryVisible(bool visible)
+    {
+        if (promptText)
+            promptText.gameObject.SetActive(visible);
+        if (commandInput)
+        {
+            commandInput.readOnly = !visible;
+            commandInput.gameObject.SetActive(visible);
+        }
+    }
+
+    private static bool IsShowCommand(string command)
+    {
+        var value = (command ?? string.Empty).Trim();
+        if (value.StartsWith("do ", StringComparison.OrdinalIgnoreCase))
+            value = value.Substring(3).TrimStart();
+        return value.StartsWith("show", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("sh ", StringComparison.OrdinalIgnoreCase);
+    }
+
     private IEnumerator ScrollToBottomNextFrame()
     {
         yield return null;
@@ -770,7 +937,19 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             LayoutRebuilder.ForceRebuildLayoutImmediate(scrollContent);
         if (consoleScrollRect)
             consoleScrollRect.verticalNormalizedPosition = 0f;
-        if (commandInput)
+        if (commandInput && commandInput.gameObject.activeInHierarchy)
+            commandInput.ActivateInputField();
+    }
+
+    private IEnumerator ScrollToTopNextFrame()
+    {
+        yield return null;
+        Canvas.ForceUpdateCanvases();
+        if (scrollContent)
+            LayoutRebuilder.ForceRebuildLayoutImmediate(scrollContent);
+        if (consoleScrollRect)
+            consoleScrollRect.verticalNormalizedPosition = 1f;
+        if (commandInput && commandInput.gameObject.activeInHierarchy)
             commandInput.ActivateInputField();
     }
 
@@ -790,5 +969,10 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
     {
         return Keyboard.current != null &&
                (Keyboard.current.enterKey.wasPressedThisFrame || Keyboard.current.numpadEnterKey.wasPressedThisFrame);
+    }
+
+    private static bool WasSpacePressed()
+    {
+        return Keyboard.current != null && Keyboard.current.spaceKey.wasPressedThisFrame;
     }
 }

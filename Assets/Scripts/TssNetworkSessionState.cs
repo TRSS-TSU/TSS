@@ -7,6 +7,7 @@ using UnityEngine;
 public sealed class TssNetworkRunProfile
 {
     public readonly int Seed;
+    public readonly string StudentId;
     public readonly int ManagementVlan;
     public readonly int ReceptionVlan;
     public readonly int DataVlan;
@@ -17,10 +18,18 @@ public sealed class TssNetworkRunProfile
     public readonly string DataNetwork;
     public readonly string WanCustomerAddress;
     public readonly string WanProviderAddress;
+    public readonly string WanNetwork;
+    public readonly string CircuitId;
     public readonly string EnableSecret;
     public readonly string ConsolePassword;
     public readonly string VtyPassword;
     public readonly string Motd;
+    public readonly string Ssid;
+    public readonly string WifiPassphrase;
+    public readonly string ApAdminPassword;
+    public readonly int WirelessChannel;
+    public readonly string ApManagementAddress;
+    public readonly string TestLaptopAddress;
     public readonly Dictionary<string, string> EndpointAddresses = new(StringComparer.OrdinalIgnoreCase);
     public readonly Dictionary<string, string> EndpointAliases = new(StringComparer.OrdinalIgnoreCase);
     public readonly NetworkRoleBinding[] RoleBindings;
@@ -32,22 +41,28 @@ public sealed class TssNetworkRunProfile
     public readonly string NativeVlanName;
     public readonly string DeadVlanName;
 
-    private TssNetworkRunProfile(int seed, NetworkScenarioConfig config)
+    private TssNetworkRunProfile(int seed, NetworkScenarioConfig config, string studentId)
     {
         Seed = seed;
+        StudentId = studentId ?? string.Empty;
         var random = new System.Random(seed);
-        var minVlan = config != null ? Math.Min(4090, Math.Max(1, config.vlanMinimum)) : 10;
-        var maxVlan = config != null ? Math.Min(4095, Math.Max(minVlan + 5, config.vlanMaximum + 1)) : 400;
-        var vlans = Unique(random, 5, minVlan, maxVlan);
-        ManagementVlan = vlans[0]; ReceptionVlan = vlans[1]; DataVlan = vlans[2]; NativeVlan = vlans[3]; DeadVlan = vlans[4];
-        var nets = Unique(random, 3, 20, 220);
-        ManagementNetwork = $"10.{nets[0]}.10";
-        ReceptionNetwork = $"10.{nets[1]}.20";
-        DataNetwork = $"10.{nets[2]}.30";
-        var wan = random.Next(20, 220);
-        WanCustomerAddress = $"172.16.{wan}.1";
-        WanProviderAddress = $"172.16.{wan}.2";
+        var minVlan = config != null ? Math.Max(10, config.vlanMinimum) : 10;
+        var maxVlan = config != null ? Math.Min(390, config.vlanMaximum) : 390;
+        var vlans = UniqueTens(random, 4, minVlan, maxVlan);
+        ManagementVlan = vlans[0]; ReceptionVlan = vlans[1]; DataVlan = vlans[2]; NativeVlan = vlans[3]; DeadVlan = 888;
+        var nets = Unique(random, 3, 10, 240);
+        ManagementNetwork = $"192.168.{nets[0]}";
+        ReceptionNetwork = $"192.168.{nets[1]}";
+        DataNetwork = $"192.168.{nets[2]}";
+        WanNetwork = $"10.{random.Next(10, 240)}.{random.Next(10, 240)}";
+        WanCustomerAddress = WanNetwork + ".1";
+        WanProviderAddress = WanNetwork + ".2";
+        CircuitId = "CIR-" + random.Next(100000, 999999).ToString(CultureInfo.InvariantCulture);
         EnableSecret = Token(random); ConsolePassword = Token(random); VtyPassword = Token(random); Motd = "AUTHORIZED TRAINING ACCESS ONLY";
+        Ssid = "TSS-GUEST-" + random.Next(100, 999).ToString(CultureInfo.InvariantCulture);
+        WifiPassphrase = Token(random) + "!";
+        ApAdminPassword = Token(random) + "!";
+        WirelessChannel = new[] { 1, 6, 11 }[random.Next(3)];
         ManagementVlanName = config?.managementVlanName ?? "Management";
         ReceptionVlanName = config?.receptionVlanName ?? "Reception";
         DataVlanName = config?.dataVlanName ?? "Data";
@@ -59,15 +74,27 @@ public sealed class TssNetworkRunProfile
         Add("IT1", ManagementNetwork, 11); Add("IT2", ManagementNetwork, 12);
         Add("Reception1", ReceptionNetwork, 21); Add("Reception2", ReceptionNetwork, 22);
         Add("Data1", DataNetwork, 31); Add("Data2", DataNetwork, 32); Add("Data3", DataNetwork, 33);
+        ApManagementAddress = ReceptionNetwork + ".50";
+        TestLaptopAddress = ReceptionNetwork + ".60";
+        EndpointAddresses["AP-1"] = ApManagementAddress;
+        EndpointAddresses["TestLaptop"] = TestLaptopAddress;
         if (config?.endpointAliases != null)
             foreach (var alias in config.endpointAliases)
                 if (!string.IsNullOrWhiteSpace(alias)) EndpointAliases[alias] = alias;
-        if (config?.roleBindings != null)
-            foreach (var binding in config.roleBindings)
-                if (binding != null && !string.IsNullOrWhiteSpace(binding.role) && !string.IsNullOrWhiteSpace(binding.deviceKey))
-                    EndpointAliases[binding.role] = binding.deviceKey;
     }
-    public static TssNetworkRunProfile Create(int seed, NetworkScenarioConfig config) => new(seed, config);
+    public static TssNetworkRunProfile Create(int seed, NetworkScenarioConfig config) => new(seed, config, string.Empty);
+    public static TssNetworkRunProfile Create(int seed, NetworkScenarioConfig config, string studentId) => new(seed, config, studentId);
+    public static int DeriveSeed(string studentId, string scenarioId)
+    {
+        uint hash = 2166136261u;
+        foreach (var c in $"{studentId?.Trim().ToUpperInvariant()}:{scenarioId?.Trim().ToUpperInvariant()}")
+        {
+            hash ^= c;
+            hash *= 16777619u;
+        }
+
+        return (int)(hash % 2147483646u) + 1;
+    }
     private static NetworkRequiredPort[] DefaultPorts() => new[]
     {
         new NetworkRequiredPort { deviceRole = "AN-1", interfaceName = "Fa0/2", endpointId = "IT1" },
@@ -86,6 +113,15 @@ public sealed class TssNetworkRunProfile
     private static int[] Unique(System.Random random, int count, int min, int max)
     {
         var values = new HashSet<int>(); while (values.Count < count) values.Add(random.Next(min, max)); return values.ToArray();
+    }
+    private static int[] UniqueTens(System.Random random, int count, int min, int max)
+    {
+        min = Math.Max(10, (min / 10) * 10);
+        max = Math.Min(390, (max / 10) * 10);
+        if (max - min < (count - 1) * 10) { min = 10; max = 390; }
+        var values = new HashSet<int>();
+        while (values.Count < count) values.Add(random.Next(min / 10, max / 10 + 1) * 10);
+        return values.ToArray();
     }
     private static string Token(System.Random random) => "T" + random.Next(100000, 999999).ToString(CultureInfo.InvariantCulture);
     public static string MacFor(int seed, string key)
@@ -107,6 +143,8 @@ public sealed class TssNetworkSessionState
     private int _completionOrder;
     public readonly HashSet<string> Evidence = new(StringComparer.OrdinalIgnoreCase);
     public TssNetworkRunProfile Profile { get; }
+    public TssWirelessAccessPointState AccessPoint { get; } = new();
+    public bool ProviderDemarcConnected { get; private set; }
     public IEnumerable<NetworkDeviceState> Devices => _devices.Values;
     public IEnumerable<EndpointNetworkState> Endpoints => _endpoints.Values;
     public IReadOnlyDictionary<string, TssNetworkSessionSnapshot> Checkpoints => _checkpoints;
@@ -133,14 +171,111 @@ public sealed class TssNetworkSessionState
                     return iface.AdminUp && iface.CarrierUp;
         return false;
     }
-    public EndpointNetworkState GetOrCreateEndpoint(string key, string role)
+    public EndpointNetworkState GetOrCreateEndpoint(string key, string role, EquipmentCategory category = EquipmentCategory.DesktopPc)
     {
         if (_endpoints.TryGetValue(key, out var state))
+        {
+            state.Category = category;
             return state;
+        }
 
-        state = new EndpointNetworkState(key, role, Profile);
+        state = new EndpointNetworkState(key, role, Profile) { Category = category };
         _endpoints.Add(key, state);
         return state;
+    }
+
+    public void SetAccessPointUplink(bool connected)
+    {
+        AccessPoint.UplinkConnected = connected;
+        var endpoint = GetOrCreateEndpoint("AP-1", "AP-1", EquipmentCategory.AccessPoint);
+        endpoint.Layer1Connected = connected;
+        endpoint.Layer2Connected = connected;
+    }
+
+    public void SetProviderDemarcConnected(bool connected) => ProviderDemarcConnected = connected;
+
+    public bool IsAccessPointSwitchPortReady()
+    {
+        var accessSwitch = FindDeviceByRole("AN-1");
+        return accessSwitch != null
+            && accessSwitch.Interfaces.TryGetValue("Fa0/7", out var port)
+            && port.AdminUp && port.CarrierUp && !port.IsTrunk
+            && port.AccessVlan == Profile.ReceptionVlan;
+    }
+
+    public bool IsProviderDhcpAvailable()
+    {
+        if (!ProviderDemarcConnected)
+            return false;
+
+        var router = FindDeviceByRole("CN-1");
+        if (router == null || !router.Interfaces.TryGetValue("Fa0/1", out var wan)
+            || !wan.AdminUp || !wan.CarrierUp
+            || wan.Address != Profile.WanCustomerAddress || wan.Mask != "255.255.255.252")
+            return false;
+
+        foreach (var route in router.Routes)
+            if (route.Network == "0.0.0.0" && route.Mask == "0.0.0.0" && route.NextHop == Profile.WanProviderAddress)
+                return true;
+        return false;
+    }
+
+    public bool TryConfigureAccessPoint(string sourceKey, string ssid, string adminPassword, string passphrase, string channel, bool wpsDisabled, out string error)
+    {
+        error = string.Empty;
+        if (!AccessPoint.UplinkConnected)
+        {
+            error = "Layer 1: connect the AP uplink through the structured path first.";
+            return false;
+        }
+        if (!IsAccessPointSwitchPortReady())
+        {
+            error = "Layer 2: place AN-1 Fa0/7 in the Reception VLAN and bring it up.";
+            return false;
+        }
+
+        var reachability = new TssNetworkReachabilityEvaluator(this).Evaluate(sourceKey, Profile.ApManagementAddress);
+        if (!reachability.Success)
+        {
+            error = reachability.Diagnostic;
+            return false;
+        }
+        if (!string.Equals((ssid ?? string.Empty).Trim(), Profile.Ssid, StringComparison.Ordinal)
+            || !string.Equals((adminPassword ?? string.Empty).Trim(), Profile.ApAdminPassword, StringComparison.Ordinal)
+            || !string.Equals((passphrase ?? string.Empty).Trim(), Profile.WifiPassphrase, StringComparison.Ordinal)
+            || !int.TryParse(channel, out var parsedChannel) || parsedChannel != Profile.WirelessChannel
+            || !wpsDisabled)
+        {
+            error = "AP settings do not match the wireless SOP.";
+            return false;
+        }
+
+        AccessPoint.Configured = true;
+        AccessPoint.Ssid = Profile.Ssid;
+        return true;
+    }
+
+    public string ExpectedAddress(EndpointNetworkState endpoint)
+    {
+        if (endpoint == null || Profile == null)
+            return string.Empty;
+        if (endpoint.Category == EquipmentCategory.Laptop)
+            return Profile.TestLaptopAddress;
+        if (endpoint.Category == EquipmentCategory.Server)
+            return Profile.EndpointAddresses.TryGetValue("IT2", out var serverAddress) ? serverAddress : string.Empty;
+        var role = endpoint.Role;
+        if (Profile.EndpointAliases.TryGetValue(role, out var mappedRole))
+            role = mappedRole;
+        return Profile.EndpointAddresses.TryGetValue(role, out var address) ? address : string.Empty;
+    }
+
+    private NetworkDeviceState FindDeviceByRole(string role)
+    {
+        foreach (var device in _devices.Values)
+            if (string.Equals(device.ExpectedRole, role, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(device.Hostname, role, StringComparison.OrdinalIgnoreCase))
+                return device;
+        return null;
     }
     public void RemoveDevice(string key) { if (!string.IsNullOrWhiteSpace(key)) _devices.Remove(key); }
     public void RemoveEndpoint(string key) { if (!string.IsNullOrWhiteSpace(key)) _endpoints.Remove(key); }
@@ -277,6 +412,13 @@ public sealed class NetworkInterfaceState
 
 public sealed class NetworkRouteState { public string Network; public string Mask; public string NextHop; }
 
+public sealed class TssWirelessAccessPointState
+{
+    public bool UplinkConnected;
+    public bool Configured;
+    public string Ssid;
+}
+
 public sealed class EndpointNetworkState
 {
     public readonly string Key;
@@ -291,11 +433,13 @@ public sealed class EndpointNetworkState
     public bool Layer2Connected;
     public string DeviceKey;
     public string InterfaceName;
+    public EquipmentCategory Category;
     public readonly HashSet<string> Evidence = new(StringComparer.OrdinalIgnoreCase);
     public int PrintAttemptCount;
     public bool LastPrintSucceeded;
     public string LastPrintSourceKey;
     public string LastPrintDiagnostic;
+    public readonly HashSet<string> AttemptedEvidence = new(StringComparer.OrdinalIgnoreCase);
 
     public EndpointNetworkState(string key, string role, TssNetworkRunProfile profile)
     {
@@ -317,9 +461,10 @@ public sealed class EndpointNetworkState
             Layer1Connected = Layer1Connected, Layer2Connected = Layer2Connected, MacAddress = MacAddress
             , DeviceKey = DeviceKey, InterfaceName = InterfaceName, PrintAttemptCount = PrintAttemptCount,
             LastPrintSucceeded = LastPrintSucceeded, LastPrintSourceKey = LastPrintSourceKey,
-            LastPrintDiagnostic = LastPrintDiagnostic
+            LastPrintDiagnostic = LastPrintDiagnostic, Category = Category
         };
         foreach (var item in Evidence) copy.Evidence.Add(item);
+        foreach (var item in AttemptedEvidence) copy.AttemptedEvidence.Add(item);
         return copy;
     }
 

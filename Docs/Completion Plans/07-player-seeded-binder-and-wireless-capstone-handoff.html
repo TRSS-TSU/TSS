@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Player-Seeded Binder &amp; Wireless Capstone Handoff</title>
+  <link rel="stylesheet" href="07-player-seeded-binder-and-wireless-capstone-handoff.css">
+</head>
+<body>
+  <main>
+    <header>
+      <p class="eyebrow">TSS2 · Completion Handoff</p>
+      <h1>Player-Seeded Binder &amp; Wireless Capstone</h1>
+      <p class="lede">The seeded network profile, launch handoff, training Binder, and Balanced lab network data are implemented. WP4's physical equipment and interactive wireless workflow remain intentionally unimplemented until the required assets and scene attachment point are supplied.</p>
+    </header>
+
+    <section>
+      <h2>Implemented</h2>
+      <ul class="checklist">
+        <li><strong>Student identity at launch.</strong><p><strong>How it works:</strong> Enter a last name and a whole number greater than zero in the scenario menu. The menu trims extra spaces and normalizes letter case before constructing the student ID, so use the same name and computer number whenever the same student needs to repeat a lab.</p></li>
+        <li><strong>Repeatable seeded profile.</strong><p><strong>How it works:</strong> Select the same scenario with the same normalized student ID to regenerate the same network values. Change either value only when a new individualized profile is intended; restarting also creates a clean progress session, rather than retaining completed work.</p></li>
+        <li><strong>Constrained network addressing.</strong><p><strong>How it works:</strong> Read the assigned VLANs, LANs, and WAN circuit from the Binder before configuring devices. The generator deliberately keeps VLANs unique and valid and reserves VLAN 888 as the dead VLAN, so instructors do not need to hand-author values per student.</p></li>
+        <li><strong>Wireless and circuit credentials.</strong><p><strong>How it works:</strong> Use the Binder as the single student-facing source for the circuit ID, SSID, passphrase, AP password, channel, and AP management address. These values are generated once for the run and are also the values later checked by the evaluator.</p></li>
+        <li><strong>Seven-tab Training Binder.</strong><p><strong>How it works:</strong> Open the existing SOP panel and select the tab appropriate to the current work package. The Binder displays the active profile instead of duplicating settings in each device UI, so changes to a seeded value remain consistent across instructions and grading.</p></li>
+        <li><strong>Authored Network Scenario lists.</strong><p><strong>How it works:</strong> The Balanced scenario now contains serialized endpoint aliases, rack role bindings, required ports, and evidence requirements. Extend these lists by adding real scene endpoints and evaluator checks; do not overwrite endpoint aliases from role bindings, because aliases supply the endpoint-to-address mapping.</p></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Empty Network Scenario lists</h2>
+      <p><strong>Resolved for the current Balanced scenario.</strong> The serialized scenario now supplies all four lists, and the runtime profile consumes them. The Required Ports list intentionally contains only the existing WP2 endpoint ports; adding AN-1 Fa0/7 before the AP exists would make WP2 impossible to complete.</p>
+      <p>The planned AP port (<code>AN-1 Fa0/7 → AP-1</code>) belongs in the WP4-specific evaluator when the AP workflow below is implemented.</p>
+    </section>
+
+    <section>
+      <h2>Manual inputs still required</h2>
+      <ol class="checklist">
+        <li><strong>Provide or approve AP and laptop models.</strong><p><strong>How to complete:</strong> Supply the source models or approve placeholders, then make one placement prefab for each. Give the AP a visible Ethernet port and status LEDs; give the laptop a readable display and recognizable Wi-Fi state. Use a clean root transform, sensible colliders, and a named Ethernet-port child transform so cable attachment can target a stable object.</p></li>
+        <li><strong>Place Guest Lounge anchors.</strong><p><strong>How to complete:</strong> Add empty scene transforms such as <code>GuestLoungeApMount</code> at the selected ceiling location and <code>GuestLoungeLaptopTable</code> on the selected table. Parent the AP and laptop placement points to these anchors, then verify their location from the player camera. Do not rename or move the existing ReceptionDesk, wallports, or configured endpoints.</p></li>
+        <li><strong>Author the Rack01 Port17 structured path.</strong><p><strong>How to complete:</strong> Confirm the destination endpoint and whether the run should show a player-installed cable or retain an invisible permanent building cable. Add a permanent connection only after both endpoint transforms exist, route it from Rack01 patch-panel Port17 to the AP mount, and inspect the path in-scene for clipping or an ambiguous cable route.</p></li>
+        <li><strong>Add wireless equipment definitions and inventory.</strong><p><strong>How to complete:</strong> Append new wireless categories rather than renumbering existing ones, create assets using the approved AP and laptop prefabs, and define their interfaces from the named anchors. Add exactly one of each to the Balanced scenario inventory, then confirm the existing equipment/session binder can resolve their endpoint IDs without changing existing items.</p></li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>Deferred WP4 implementation</h2>
+      <ul class="checklist">
+        <li><strong>AP/laptop placement and cable interaction.</strong><p><strong>How to implement:</strong> Reuse the standard equipment placement and device-session flow once the approved prefabs and anchors exist. The AP placement should bind to the ceiling mount, the laptop should bind to the table anchor, and the player-facing cable interaction should resolve through the named AP Ethernet port rather than a hard-coded scene path.</p></li>
+        <li><strong>IT1 AP configuration and laptop diagnostics.</strong><p><strong>How to implement:</strong> Add AP administration to IT1's existing browser surface, then present laptop Wi-Fi join, command prompt diagnostics, and RedWolf Search through the laptop device session. Validate every submitted setting against the active run profile and show normal in-app feedback; do not use debug logs as player instructions or expose credentials outside the Binder/device UI.</p></li>
+        <li><strong>Session state and WP4 evaluator.</strong><p><strong>How to implement:</strong> Store AP association, lease, security, uplink, and page-load facts in the session authority. Make the evaluator require the correct SSID/security/passphrase, the future <code>AN-1 Fa0/7 → AP-1</code> path, valid lease and diagnostic outcomes, and successful RedWolf page load. Keep Fa0/7 out of the existing WP2 list so its snapshot remains completable before WP4 is authored.</p></li>
+        <li><strong>Binder scrolling for dense content.</strong><p><strong>How to implement:</strong> Convert only the Binder content area to a Unity <code>ScrollRect</code> with a viewport and content transform, preserving the current tab buttons and persistent slide-out panel. Reset the content to the top on a tab change, then test the Binder while terminal and desktop canvases are open to confirm the panel remains usable.</p></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>Play Mode acceptance check</h2>
+      <ol class="checklist">
+        <li><strong>Compare two students.</strong><p><strong>How to test:</strong> Launch Balanced_12_Piece_Lab twice with two distinct last-name/computer-number pairs. Open the Binder in each run and record the VLAN, LAN, circuit, and credential values; at least one generated profile value should differ.</p></li>
+        <li><strong>Repeat one student.</strong><p><strong>How to test:</strong> Relaunch using the first student’s exact normalized identity. Confirm every Binder value matches the first run, then confirm equipment/session completion starts clean rather than inheriting the previous attempt.</p></li>
+        <li><strong>Protect WP1–WP3.</strong><p><strong>How to test:</strong> Complete the existing work packages with the normal port, reachability, and evidence workflow. Treat a failure here as a regression: WP4 work must be isolated from the current required-port snapshot until its own evaluator is added.</p></li>
+        <li><strong>Check Binder coexistence and privacy.</strong><p><strong>How to test:</strong> Open every tab with terminal and desktop sessions already visible, exercising tab switches and text readability. Inspect the Console afterward and confirm that passwords and other profile credentials were not emitted to logs.</p></li>
+        <li><strong>Exercise WP4 fault cases after asset delivery.</strong><p><strong>How to test:</strong> Run one passing configuration, then change one fault at a time: uplink, VLAN, AP security, passphrase, lease, gateway/provider reachability, and RedWolf page result. Each fault should fail only its relevant requirement and report a player-understandable correction.</p></li>
+      </ol>
+    </section>
+
+    <footer>
+      <p>Rollback: revert the scoped seed, Binder, scenario-data, and test changes. No scene bindings, desk names, wallport IDs, or existing equipment categories were altered.</p>
+    </footer>
+  </main>
+</body>
+</html>

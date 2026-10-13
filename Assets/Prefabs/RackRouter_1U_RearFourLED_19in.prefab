@@ -2720,22 +2720,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssDeviceLinkIndicator
   bindings:
   - endpoint: {fileID: 0}
-    endpointId: GE00
+    endpointId: Fa00
     renderer: {fileID: 6967664978837139856}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
   - endpoint: {fileID: 0}
-    endpointId: GE00
+    endpointId: Fa00
     renderer: {fileID: 1562753089356894353}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
   - endpoint: {fileID: 0}
-    endpointId: GE01
+    endpointId: Fa01
     renderer: {fileID: 5931969028416713568}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
   - endpoint: {fileID: 0}
-    endpointId: GE01
+    endpointId: Fa01
     renderer: {fileID: 4246525709805890820}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}

@@ -22,4 +22,4 @@ None. Complete this before reachability, endpoint diagnostics, or Work Package g
 - Invalid IP/mask/VLAN/range input does not change running or startup state.
 - Valid wrong configuration persists and renders in show output.
 - Startup diverges before save and equals a deep running snapshot after save.
-- Router aliases map to GE00/GE01 without renaming protected endpoints.
+- Router runtime keys and accepted CLI names are Fa0/0 and Fa0/1; obsolete GE00/GE01 and Gi0/0/Gi0/1 are rejected.

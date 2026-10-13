@@ -10,7 +10,9 @@ public enum EquipmentCategory
     Server,
     PatchPanel,
     DesktopPc,
-    Printer
+    Printer,
+    AccessPoint,
+    Laptop
 }
 
 public enum EquipmentInterfaceFace

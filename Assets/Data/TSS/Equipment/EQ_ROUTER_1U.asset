@@ -42,15 +42,15 @@ MonoBehaviour:
     supportedCableTypes: 02000000
     portAnchorPath: Model/RackRouter_1U_RearFourLED_19in/RearPorts/Ports/Router_rear_CONSOLE_port_cavity/Con01
     interfaceFace: 1
-  - name: GE00
+  - name: Fa00
     connectorType: RJ45
-    label: GE0/0
+    label: FastEthernet 0/0
     supportedCableTypes: 0000000001000000
     portAnchorPath: Model/RackRouter_1U_RearFourLED_19in/RearPorts/Ports/Router_rear_GE00_port_cavity/GE00
     interfaceFace: 1
-  - name: GE01
+  - name: Fa01
     connectorType: RJ45
-    label: GE0/1
+    label: FastEthernet 0/1
     supportedCableTypes: 0000000001000000
     portAnchorPath: Model/RackRouter_1U_RearFourLED_19in/RearPorts/Ports/Router_rear_GE01_port_cavity/GE00
     interfaceFace: 1

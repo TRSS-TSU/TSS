@@ -4,6 +4,8 @@ using UnityEngine;
 
 public sealed class TssTrainingSession : MonoBehaviour
 {
+    private const string AccessPointPatchPanelEndpointId = "PatchPanel:Rack01:Port17";
+    private const string ProviderDemarcEndpointId = "Demarc:Provider:Port01";
     public static TssTrainingSession Instance { get; private set; }
 
     [SerializeField] private TssScenarioDefinition fallbackScenario;
@@ -32,6 +34,7 @@ public sealed class TssTrainingSession : MonoBehaviour
     public IReadOnlyList<TssPhysicalConnectionRecord> PhysicalConnections => _physicalConnections;
     public TssNetworkRunProfile NetworkProfile { get; private set; }
     public TssNetworkSessionState NetworkState { get; private set; }
+    public string StudentId { get; private set; }
 
     private void Awake()
     {
@@ -40,12 +43,12 @@ public sealed class TssTrainingSession : MonoBehaviour
 
     private void Start()
     {
-        var selected = TssScenarioLaunchState.ConsumeSelectedScenario();
+        var selected = TssScenarioLaunchState.ConsumeSelectedScenario(out var studentId);
         if (selected)
         {
             if (scenarioMenuHost)
                 scenarioMenuHost.SetActive(false);
-            BeginScenario(selected);
+            BeginScenario(selected, studentId);
         }
         else if (fallbackScenario && scenarioMenuHost)
         {
@@ -57,9 +60,10 @@ public sealed class TssTrainingSession : MonoBehaviour
         }
     }
 
-    public void BeginScenario(TssScenarioDefinition scenario)
+    public void BeginScenario(TssScenarioDefinition scenario, string studentId = null)
     {
         Scenario = scenario;
+        StudentId = studentId ?? string.Empty;
         HeldItem = null;
         HeldCable = null;
         _selectedCableEndpoint = null;
@@ -72,8 +76,11 @@ public sealed class TssTrainingSession : MonoBehaviour
         _terminationResults.Clear();
         ClearPhysicalConnections();
         ClearCarryVisual();
+        var profileSeed = string.IsNullOrWhiteSpace(StudentId)
+            ? scenario?.networkScenario?.profileSeed ?? 0
+            : TssNetworkRunProfile.DeriveSeed(StudentId, scenario?.scenarioId);
         NetworkProfile = scenario && scenario.networkScenario != null && scenario.networkScenario.enableLayer23Simulation
-            ? TssNetworkRunProfile.Create(scenario.networkScenario.profileSeed, scenario.networkScenario)
+            ? TssNetworkRunProfile.Create(profileSeed, scenario.networkScenario, StudentId)
             : null;
         NetworkState = NetworkProfile != null ? new TssNetworkSessionState(NetworkProfile) : null;
 
@@ -520,6 +527,29 @@ public sealed class TssTrainingSession : MonoBehaviour
         }
 
         return false;
+    }
+
+    public bool IsAccessPointUplinkConnected()
+    {
+        foreach (var placement in _endpointPlacements)
+        {
+            if (!placement.Equipment || placement.Equipment.category != EquipmentCategory.AccessPoint)
+                continue;
+
+            var prefix = GetEndpointOwnerPrefix(placement.PlacementId) + ":";
+            foreach (var endpoint in FindObjectsByType<TssPortEndpoint>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                if (endpoint.EndpointId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
+                    && HasPhysicalPath(endpoint.EndpointId, AccessPointPatchPanelEndpointId, true))
+                    return true;
+        }
+
+        return false;
+    }
+
+    public bool IsProviderDemarcConnected(string routerEndpointId)
+    {
+        return !string.IsNullOrWhiteSpace(routerEndpointId)
+            && HasPhysicalPath(routerEndpointId, ProviderDemarcEndpointId, true);
     }
 
     public bool TryGetTerminationLinks(string endpointId, out IReadOnlyList<ScenarioPermanentCableConnection> links)
@@ -1092,16 +1122,30 @@ public readonly struct EndpointPlacementRecord
 public static class TssScenarioLaunchState
 {
     private static TssScenarioDefinition _selectedScenario;
+    private static string _studentId;
 
-    public static void Select(TssScenarioDefinition scenario)
+    public static void Select(TssScenarioDefinition scenario, string studentId = null)
     {
         _selectedScenario = scenario;
+        _studentId = studentId ?? string.Empty;
     }
 
-    public static TssScenarioDefinition ConsumeSelectedScenario()
+    public static bool TryCreateStudentId(string lastName, string computerNumber, out string studentId)
+    {
+        studentId = string.Empty;
+        if (string.IsNullOrWhiteSpace(lastName) || !int.TryParse(computerNumber?.Trim(), out var number) || number <= 0)
+            return false;
+
+        studentId = lastName.Trim().ToUpperInvariant() + "-" + number;
+        return true;
+    }
+
+    public static TssScenarioDefinition ConsumeSelectedScenario(out string studentId)
     {
         var scenario = _selectedScenario;
         _selectedScenario = null;
+        studentId = _studentId;
+        _studentId = null;
         return scenario;
     }
 }

@@ -50,7 +50,7 @@ public sealed class TssNetworkReachabilityEvaluator
             var access = FindAccessInterface(FindAccessDevice(source, sourceDevice), source.Role);
             if (access != null && (!access.AdminUp || !access.CarrierUp))
                 return Fail(1, TssReachabilityFaultCategory.InterfaceUnavailable, "a participating interface is unavailable.", source.Role, destinationRole);
-            var parent = FindInterface(FindDevice("CN-1"), "GE00") ?? FindInterface(FindDevice("CN-1"), "Fa0/0");
+            var parent = FindInterface(FindDevice("CN-1"), "Fa0/0");
             if (parent != null && (!parent.AdminUp || !parent.CarrierUp))
                 return Fail(1, TssReachabilityFaultCategory.InterfaceUnavailable, "a participating interface is unavailable.", source.Role, destinationRole);
             foreach (var trunkName in RequiredTrunks(source.Role))
@@ -138,8 +138,10 @@ public sealed class TssNetworkReachabilityEvaluator
     {
         if (!GatewayMatches(source, profile))
             return Fail(3, TssReachabilityFaultCategory.GatewayUnavailable, "default gateway is unavailable.", source.Role, destinationRole, hops.ToArray());
+        if (structured && !_state.ProviderDemarcConnected)
+            return Fail(1, TssReachabilityFaultCategory.PhysicalPathUnavailable, "provider handoff is not connected through the DEMARC.", source.Role, destinationRole, hops.ToArray());
         var router = FindDevice("CN-1");
-        var wan = FindInterface(router, "GE01") ?? FindInterface(router, "Fa0/1");
+        var wan = FindInterface(router, "Fa0/1");
         if (structured && (router == null || wan == null || !wan.AdminUp || !wan.CarrierUp || wan.Address != profile.WanCustomerAddress || wan.Mask != "255.255.255.252"))
             return Fail(3, TssReachabilityFaultCategory.ProviderRouteUnavailable, "provider interface is unavailable.", source.Role, destinationRole, hops.ToArray());
         if (router != null && !HasProviderRoute(router, profile))
@@ -186,8 +188,10 @@ public sealed class TssNetworkReachabilityEvaluator
         var name = role switch
         {
             "IT1" => "Fa0/2", "IT2" => "Fa0/5", "Reception1" => "Fa0/3", "Reception2" => "Fa0/4",
-            "Data1" => "Fa0/2", "Data2" => "Fa0/3", "Data3" => "Fa0/4", _ => null
+            "Data1" => "Fa0/2", "Data2" => "Fa0/3", "Data3" => "Fa0/4", "AP-1" => "Fa0/7", _ => null
         };
+        if (name == null && role.IndexOf("laptop", StringComparison.OrdinalIgnoreCase) >= 0)
+            name = "Fa0/7";
         return FindInterface(device, name);
     }
 

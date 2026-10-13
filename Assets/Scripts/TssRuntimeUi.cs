@@ -55,6 +55,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
     private GameObject _wp1SlidePanel;
     private Text _wp1SlideTitleText;
     private Text _wp1SlideBodyText;
+    private readonly Text[] _workPackageTitleTexts = new Text[4];
+    private readonly Text[] _workPackageBodyTexts = new Text[4];
     private int _activeRightSlidePanel = -1;
 
     private GameObject _casePanel;
@@ -106,7 +108,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
     private readonly HashSet<object> _externalGameplayLocks = new();
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
     private static readonly int MotionSpeedHash = Animator.StringToHash("MotionSpeed");
-    private static readonly string[] HudInfoNames = { "Placement", "Cables", "Permanent", "Effective" };
+    private static readonly string[] HudInfoNames = { "Cables", "Permanent", "Effective" };
+    private static readonly string[] BinderTabTitles = { "Naming & Racks", "VLANs", "IP Plan", "Cable Schedule", "Circuit Letter", "Wireless", "Credentials" };
     private static readonly Vector2 HudSlidePanelHiddenPosition = new(-1150f, 0f);
     private static readonly Vector2 HudSlidePanelShownPosition = new(20f, 0f);
     private static readonly Vector2 HudRightSlidePanelHiddenPosition = new(1150f, 0f);
@@ -681,6 +684,13 @@ public sealed class TssRuntimeUi : MonoBehaviour
         BuildHudInfoButtons();
         BuildHudSlidePanels();
 
+        var wp1Button = _hudRoot.Find("WP1Button")?.GetComponent<Button>();
+        if (wp1Button)
+        {
+            wp1Button.onClick.RemoveAllListeners();
+            wp1Button.onClick.AddListener(() => ToggleRightSlidePanel(1));
+        }
+
         var oldConnectionsButton = _hudRoot.Find("ConnectionsButton");
         if (oldConnectionsButton)
         {
@@ -735,6 +745,13 @@ public sealed class TssRuntimeUi : MonoBehaviour
         _wp1SlidePanel = wp1 ? wp1.gameObject : null;
         _wp1SlideTitleText = wp1 ? wp1.Find("Title")?.GetComponent<Text>() : null;
         _wp1SlideBodyText = wp1 ? wp1.Find("Body")?.GetComponent<Text>() : null;
+
+        for (var i = 0; i < _workPackageBodyTexts.Length; i++)
+        {
+            var section = wp1?.Find($"WorkPackage{i + 1}");
+            _workPackageTitleTexts[i] = section?.Find("Title")?.GetComponent<Text>();
+            _workPackageBodyTexts[i] = section?.Find("Body")?.GetComponent<Text>();
+        }
     }
 
     private void RefreshHudAdditions()
@@ -795,7 +812,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
     {
         var completePlacements = 0;
         var totalPlacements = 0;
-        foreach (var status in TssPlacementEvaluator.EvaluateRequirements(
+        foreach (var status in TssPlacementEvaluator.EvaluateAttemptRequirements(
                      session.Scenario,
                      session.Installed,
                      session.EndpointPlacements))
@@ -847,10 +864,18 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
     private void RefreshRightSlidePanels()
     {
+        for (var i = 0; i < _workPackageBodyTexts.Length; i++)
+        {
+            if (_workPackageTitleTexts[i])
+                _workPackageTitleTexts[i].text = $"WP{i + 1}";
+            if (_workPackageBodyTexts[i])
+                _workPackageBodyTexts[i].text = WorkPackageChecklistText(i + 1);
+        }
+
         if (_wp1SlideTitleText)
-            _wp1SlideTitleText.text = "WP1";
+            _wp1SlideTitleText.text = "WORK PACKAGES";
         if (_wp1SlideBodyText)
-            _wp1SlideBodyText.text = Wp1SlideText();
+            _wp1SlideBodyText.text = WorkPackageChecklistText(1);
     }
 
     private string HudInfoButtonText(int index)
@@ -861,10 +886,9 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
         return index switch
         {
-            0 => $"Placement {completePlacements}/{totalPlacements}",
-            1 => $"Cables {playerCables}",
-            2 => $"Permanent {permanent}",
-            3 => $"Effective {effectivePaths}",
+            0 => $"Cables {playerCables}",
+            1 => $"Permanent {permanent}",
+            2 => $"Effective {effectivePaths}",
             _ => string.Empty
         };
     }
@@ -873,10 +897,9 @@ public sealed class TssRuntimeUi : MonoBehaviour
     {
         return index switch
         {
-            0 => PlacementPanelText(),
-            1 => CablePanelText(false),
-            2 => PermanentPanelText(),
-            3 => EffectivePathPanelText(),
+            0 => CablePanelText(false),
+            1 => PermanentPanelText(),
+            2 => EffectivePathPanelText(),
             _ => string.Empty
         };
     }
@@ -885,7 +908,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
     {
         completePlacements = 0;
         totalPlacements = 0;
-        foreach (var status in TssPlacementEvaluator.EvaluateRequirements(
+        foreach (var status in TssPlacementEvaluator.EvaluateAttemptRequirements(
                      session.Scenario,
                      session.Installed,
                      session.EndpointPlacements))
@@ -916,7 +939,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
         builder.AppendLine($"Complete: {complete}/{total}");
         builder.AppendLine();
 
-        foreach (var status in TssPlacementEvaluator.EvaluateRequirements(
+        foreach (var status in TssPlacementEvaluator.EvaluateAttemptRequirements(
                      session.Scenario,
                      session.Installed,
                      session.EndpointPlacements))
@@ -987,29 +1010,106 @@ public sealed class TssRuntimeUi : MonoBehaviour
         return builder.ToString();
     }
 
-    private string Wp1SlideText()
+    private string WorkPackageChecklistText(int workPackage)
     {
         if (!session)
             return "No training session.";
 
-        var result = TssPlacementEvaluator.Evaluate(
-            session.Scenario,
-            session.Installed,
-            session.EndpointPlacements);
-        var builder = new StringBuilder();
-        builder.AppendLine(result.IsComplete ? "WP1 equipment placement complete." : "WP1 needs attention:");
-        foreach (var message in result.Messages)
-            builder.AppendLine(message);
+        if (workPackage == 1)
+            return PlacementPanelText();
 
-        var cableText = PhysicalConnectionText(session);
-        if (!string.IsNullOrWhiteSpace(cableText))
+        if (workPackage == 4)
+            return StaticWorkPackageChecklist(
+                "Access point installed at the designated ceiling mount",
+                "AP uplink landed through the patch panel",
+                "AP switchport placed in the correct VLAN",
+                "Guest SSID secured and verified from the test laptop");
+
+        if (session.NetworkState == null)
+            return StaticWorkPackageChecklist(
+                workPackage == 2 ? "Switches hardened and configured" : "Router hardened and configured",
+                workPackage == 2 ? "VLANs, access ports, and trunks verified" : "Inter-VLAN gateways and WAN verified",
+                "Required connectivity evidence verified",
+                "Configuration saved");
+
+        var result = workPackage == 2
+            ? new TssNetworkWorkPackageEvaluator(session.NetworkState).EvaluateLayer2()
+            : new TssNetworkWorkPackageEvaluator(session.NetworkState).EvaluateLayer3();
+
+        var builder = new StringBuilder();
+        var complete = 0;
+        var total = workPackage == 2 ? 7 : 6;
+        builder.AppendLine($"Complete: {complete}/{total}");
+        builder.AppendLine();
+
+        if (workPackage == 2)
         {
-            builder.AppendLine();
-            builder.AppendLine("Physical connections");
-            builder.AppendLine(cableText);
+            AppendChecklistLine(builder, result, "AN-1 hardened", "WP2.AN-1.Hardening", ref complete);
+            AppendChecklistLine(builder, result, "AN-2 hardened", "WP2.AN-2.Hardening", ref complete);
+            AppendChecklistLine(builder, result, "VLAN database built on both switches", "WP2.AN-1.Vlans", ref complete, "WP2.AN-2.Vlans");
+            AppendChecklistLine(builder, result, "Access ports assigned to the correct VLAN", "WP2.Access.", ref complete, prefix: true);
+            AppendChecklistLine(builder, result, "Required trunks established", "WP2.Trunks", ref complete, prefix: true);
+            AppendChecklistLine(builder, result, "Both switch configurations saved", "WP2.AN-1.Save", ref complete, "WP2.AN-2.Save");
+            AppendUncheckedLine(builder, "Unused ports parked in the dead VLAN and shut");
+        }
+        else
+        {
+            AppendChecklistLine(builder, result, "Router hardened", "WP3.Hardening", ref complete);
+            AppendChecklistLine(builder, result, "Inter-VLAN gateways configured", "WP3.Subinterfaces", ref complete);
+            AppendChecklistLine(builder, result, "Carrier WAN interface configured", "WP3.Wan", ref complete);
+            AppendChecklistLine(builder, result, "Default route points to the provider", "WP3.DefaultRoute", ref complete);
+            AppendChecklistLine(builder, result, "Endpoint connectivity verified", "WP3.EndpointEvidence.", ref complete, prefix: true);
+            AppendChecklistLine(builder, result, "Router configuration saved", "WP3.Save", ref complete);
         }
 
+        var text = builder.ToString();
+        var firstLineEnd = text.IndexOf('\n');
+        return firstLineEnd < 0 ? text : $"Complete: {complete}/{total}{text.Substring(firstLineEnd)}";
+    }
+
+    private static string StaticWorkPackageChecklist(params string[] items)
+    {
+        var builder = new StringBuilder();
+        builder.AppendLine("Complete: 0/" + items.Length);
+        builder.AppendLine();
+        foreach (var item in items)
+            AppendUncheckedLine(builder, item);
         return builder.ToString();
+    }
+
+    private static void AppendChecklistLine(StringBuilder builder, TssWorkPackageResult result, string label, string id, ref int complete, params string[] additionalIds)
+    {
+        var isComplete = IsChecklistItemComplete(result, id);
+        foreach (var additionalId in additionalIds)
+            isComplete &= IsChecklistItemComplete(result, additionalId);
+
+        if (isComplete)
+            complete++;
+        builder.Append(isComplete ? "[x] " : "[ ] ");
+        builder.AppendLine(label);
+    }
+
+    private static void AppendChecklistLine(StringBuilder builder, TssWorkPackageResult result, string label, string id, ref int complete, bool prefix)
+    {
+        var isComplete = IsChecklistItemComplete(result, id, prefix);
+        if (isComplete)
+            complete++;
+        builder.Append(isComplete ? "[x] " : "[ ] ");
+        builder.AppendLine(label);
+    }
+
+    private static void AppendUncheckedLine(StringBuilder builder, string label)
+    {
+        builder.Append("[ ] ");
+        builder.AppendLine(label);
+    }
+
+    private static bool IsChecklistItemComplete(TssWorkPackageResult result, string id, bool prefix = false)
+    {
+        if (result == null)
+            return false;
+
+        return result.WasAttempted(id, prefix);
     }
 
     private int RequiredTerminationCount()
@@ -1038,7 +1138,11 @@ public sealed class TssRuntimeUi : MonoBehaviour
             return;
 
         var sections = session.Scenario.sopSections;
-        var sectionCount = sections?.Length ?? 0;
+        var hasBinder = session.NetworkProfile != null;
+        var sectionCount = hasBinder ? BinderTabTitles.Length : sections?.Length ?? 0;
+        var panelTitle = _sopPanel.transform.Find("PanelTitle")?.GetComponent<Text>();
+        if (panelTitle)
+            panelTitle.text = hasBinder ? "Training Binder" : "SOP Guide";
         if (sectionCount == 0)
         {
             SetSopChildrenActive(_sopContentContainer, 0);
@@ -1050,7 +1154,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (_selectedSopSectionIndex >= sectionCount)
             _selectedSopSectionIndex = 0;
 
-        RefreshSopTabs(sections, sectionCount);
+        EnsureSopTabCapacity(sectionCount);
+        RefreshSopTabs(sections, sectionCount, hasBinder);
 
         for (var i = 0; i < _sopContentContainer.childCount; i++)
             _sopContentContainer.GetChild(i).gameObject.SetActive(i == 0);
@@ -1061,16 +1166,54 @@ public sealed class TssRuntimeUi : MonoBehaviour
             return;
         }
 
-        var section = sections[_selectedSopSectionIndex];
         var row = _sopContentContainer.GetChild(0);
 
         var titleText = row.Find("SectionTitle")?.GetComponent<Text>();
         if (titleText)
-            titleText.text = section.title;
+            titleText.text = hasBinder ? BinderTabTitles[_selectedSopSectionIndex] : sections[_selectedSopSectionIndex].title;
 
         var bodyText = row.Find("SectionBody")?.GetComponent<Text>();
         if (bodyText)
-            bodyText.text = SopBody(section);
+            bodyText.text = hasBinder ? BinderBody(_selectedSopSectionIndex) : SopBody(sections[_selectedSopSectionIndex]);
+    }
+
+    private void EnsureSopTabCapacity(int count)
+    {
+        if (!_sopTabsContainer || _sopTabsContainer.childCount == 0)
+            return;
+
+        while (_sopTabsContainer.childCount < count)
+        {
+            var tab = Instantiate(_sopTabsContainer.GetChild(0).gameObject, _sopTabsContainer);
+            tab.name = "Tab" + _sopTabsContainer.childCount.ToString("00");
+        }
+    }
+
+    private string BinderBody(int index)
+    {
+        var profile = session.NetworkProfile;
+        var scenario = session.Scenario;
+        switch (index)
+        {
+            case 0:
+                return (scenario.sopSections != null && scenario.sopSections.Length > 0 ? scenario.sopSections[0].body + "\n\n" : string.Empty)
+                    + "Assigned names: PDU1, AN-1, CN-1, IT2, PDU2, AN-2, IT1, Reception1, Reception2, Data1, Data2, Data3.";
+            case 1:
+                return $"Create on both switches:\n{profile.ManagementVlanName}: VLAN {profile.ManagementVlan}\n{profile.ReceptionVlanName}: VLAN {profile.ReceptionVlan}\n{profile.DataVlanName}: VLAN {profile.DataVlan}\n{profile.NativeVlanName}: VLAN {profile.NativeVlan}\n{profile.DeadVlanName}: VLAN {profile.DeadVlan}";
+            case 2:
+                return $"Management: {profile.ManagementNetwork}.0/24, gateway {profile.ManagementNetwork}.1\nReception: {profile.ReceptionNetwork}.0/24, gateway {profile.ReceptionNetwork}.1\nData: {profile.DataNetwork}.0/24, gateway {profile.DataNetwork}.1\n\n{string.Join("\n", profile.EndpointAddresses.Select(x => x.Key + ": " + x.Value))}";
+            case 3:
+                return "Structured endpoint ports:\n" + string.Join("\n", profile.RequiredPorts.Select(x => x.deviceRole + " " + x.interfaceName + " -> " + x.endpointId))
+                    + "\n\nUse the scenario's permanent infrastructure and complete every required punch-down before patching to the access switch.";
+            case 4:
+                return $"Circuit ID: {profile.CircuitId}\nCustomer: {profile.WanCustomerAddress}/30\nProvider: {profile.WanProviderAddress}\n\nPatch CN-1 Fa0/1 to Rack01 patch-panel Port18. The provider handoff is permanently landed at the DEMARC. Configure the customer address and a default route through the provider.";
+            case 5:
+                return $"Guest Lounge AP\nManagement address: {profile.ApManagementAddress}\nSSID: {profile.Ssid}\nPassphrase: {profile.WifiPassphrase}\nChannel: {profile.WirelessChannel}\n\nRun the AP to Reception Wall Port05, then Rack01 patch-panel Port17 to AN-1 Fa0/7 in the Reception VLAN.";
+            case 6:
+                return $"Enable secret: {profile.EnableSecret}\nConsole password: {profile.ConsolePassword}\nVTY password: {profile.VtyPassword}\nAP administrator password: {profile.ApAdminPassword}\n\nDo not place these values in notes or debug output.";
+            default:
+                return string.Empty;
+        }
     }
 
     private string SopBody(SopSection section)
@@ -1088,7 +1231,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
         return section.body;
     }
 
-    private void RefreshSopTabs(SopSection[] sections, int sectionCount)
+    private void RefreshSopTabs(SopSection[] sections, int sectionCount, bool hasBinder)
     {
         if (!_sopTabsContainer)
             return;
@@ -1096,14 +1239,14 @@ public sealed class TssRuntimeUi : MonoBehaviour
         for (var i = 0; i < _sopTabsContainer.childCount; i++)
         {
             var tab = _sopTabsContainer.GetChild(i);
-            var hasSection = i < sectionCount && sections[i] != null;
+            var hasSection = i < sectionCount && (hasBinder || sections[i] != null);
             tab.gameObject.SetActive(hasSection);
             if (!hasSection)
                 continue;
 
             var label = tab.GetComponentInChildren<Text>();
             if (label)
-                label.text = sections[i].title;
+                label.text = hasBinder ? BinderTabTitles[i] : sections[i].title;
 
             var button = tab.GetComponent<Button>();
             if (!button)

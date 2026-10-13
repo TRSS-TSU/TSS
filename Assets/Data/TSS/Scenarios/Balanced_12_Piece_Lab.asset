@@ -23,6 +23,56 @@ MonoBehaviour:
     dataVlanName: Data
     nativeVlanName: Native
     deadVlanName: Dead_Vlan
+    vlanMinimum: 10
+    vlanMaximum: 390
+    endpointAliases:
+    - IT1
+    - IT2
+    - Reception1
+    - Reception2
+    - Data1
+    - Data2
+    - Data3
+    - AP-1
+    roleBindings:
+    - role: AN-1
+      deviceKey: Rack:Rack01:U35
+      category: 1
+      displayName: AN-1
+    - role: AN-2
+      deviceKey: Rack:Rack02:U35
+      category: 1
+      displayName: AN-2
+    - role: CN-1
+      deviceKey: Rack:Rack01:U30
+      category: 0
+      displayName: CN-1
+    requiredPorts:
+    - deviceRole: AN-1
+      interfaceName: Fa0/2
+      endpointId: IT1
+    - deviceRole: AN-1
+      interfaceName: Fa0/3
+      endpointId: Reception1
+    - deviceRole: AN-1
+      interfaceName: Fa0/4
+      endpointId: Reception2
+    - deviceRole: AN-1
+      interfaceName: Fa0/5
+      endpointId: IT2
+    - deviceRole: AN-2
+      interfaceName: Fa0/2
+      endpointId: Data1
+    - deviceRole: AN-2
+      interfaceName: Fa0/3
+      endpointId: Data2
+    - deviceRole: AN-2
+      interfaceName: Fa0/4
+      endpointId: Data3
+    evidenceRequirements:
+    - evidenceId: IT1-provider
+      command: ping provider
+      description: Endpoint-originated provider diagnostic
   inventory:
   - equipment: {fileID: 11400000, guid: fc6fc05c6c9a74e45b9af3472abf428e, type: 2}
     quantity: 2
@@ -38,6 +88,10 @@ MonoBehaviour:
     quantity: 4
   - equipment: {fileID: 11400000, guid: 80d9778a03ef5fb4496297da1a96e5d4, type: 2}
     quantity: 2
+  - equipment: {fileID: 11400000, guid: 5e7c315dbcf497f4582444351c43ff5a, type: 2}
+    quantity: 1
+  - equipment: {fileID: 11400000, guid: a09502136fbb43708255fb5e455be494, type: 2}
+    quantity: 1
   cableInventory:
   - cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
     quantity: 10
@@ -374,6 +428,22 @@ MonoBehaviour:
     requiresPunchDownTermination: 1
     endpointATerminationModuleId: Infrastructure041:A
     endpointBTerminationModuleId: Infrastructure041:B
+  - connectionId: Infrastructure042
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port17
+    wallportEndpointId: WallPort:Reception:Port05
+    requiresPunchDownTermination: 0
+    endpointATerminationModuleId: 
+    endpointBTerminationModuleId: 
+  - connectionId: Infrastructure043
+    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
+    cableType: 0
+    patchPanelEndpointId: PatchPanel:Rack01:Port18
+    wallportEndpointId: Demarc:Provider:Port01
+    requiresPunchDownTermination: 0
+    endpointATerminationModuleId: 
+    endpointBTerminationModuleId: 
   racks:
   - rackId: Rack01
     lowestU: 3
@@ -450,23 +520,36 @@ MonoBehaviour:
     category: 7
     requiredName: Data3
   sopSections:
-  - title: Phases 1 - 4
-    body: "Open the Equipment Box and carry one item at a time.  Rack01: install
-      the following:\nPDU1 (Rear - U35 - U38)\nAN-1  (Front - U35 - U38)\nCN-1 (Front
-      - U30 - U34)\nIT2 (Front - U3 - U8)\n\nRack02: install the following:\nPDU2
-      (Rear - U35 - U38)\nAN-2 (Front - U35 - U38)\n\nDesks: \nDesktop (IT1) at IT
-      Desk\nDesktop PC (Reception1) and Printer (Reception2) at Reception Desk\nDesktop
-      PC (Data1) at Office 1 Desk\nDesktop PC (Data2) and Printer (Data3) at Office
-      2 Desk."
-  - title: Phases 5 - 8
-    body: Physical cabling and carrier handoff instructions will be added after the
-      placement workflow is validated.
-  - title: Phases 9 - 15
-    body: Layer 2 switch hardening, VLAN, switchport, trunk, and verification instructions
-      will be added in a later pass.
-  - title: Phases 16 - 19
-    body: Router hardening, router-on-a-stick, WAN/default route, and end-to-end
-      verification instructions will be added in a later pass.
-  - title: Phases 20 - 22
-    body: Wireless AP installation, browser configuration, and wireless verification
-      instructions will be added in a later pass.
+  - title: WP1 - Physical Installation
+    body: "Building 1042 physical installation.\n\nDeliverables:\n- Populate both racks
+      per the SOP rack elevation and name every device.\n- Place user equipment at its
+      assigned work area.\n- Establish the inter-closet link between both switches with
+      the correct cable type.\n- Terminate every user drop through the structured path:
+      workstation to wall mount, punch-down to patch panel, patch cord to switch.\n-
+      Uplink the router to the ground-floor switch and land the carrier circuit on the
+      demarc.\n\nAcceptance: Physical only. A miswired run stays silent until connectivity
+      verification in WP3."
+  - title: WP2 - Layer 2
+    body: "Harden both switches, build the VLAN database, and assign the switched
+      infrastructure.\n\nDeliverables:\n- Harden both switches to the SOP baseline.\n-
+      Build the full VLAN database on each switch with SOP names.\n- Assign access ports
+      to the VLAN matching each device function.\n- Establish required trunks with the
+      correct allowed and native VLANs.\n- Park unused ports in the dead VLAN and shut
+      them down.\n- Save both configurations.\n\nAcceptance: Verify VLAN and trunk
+      output on both switches before sign-off."
+  - title: WP3 - Layer 3
+    body: "Harden the router, provide inter-VLAN routing, and bring up the carrier
+      circuit.\n\nDeliverables:\n- Harden the router to the same baseline as the switches.\n-
+      Configure a gateway for each user VLAN over the single 802.1Q trunk.\n- Address and
+      bring up the WAN interface from the circuit handoff letter.\n- Configure a default route
+      to the provider.\n- Verify end-to-end connectivity from workstations and confirm the
+      routing table.\n- Save the configuration.\n\nAcceptance: A workstation reaches
+      its gateway, a host in another VLAN, and the provider side of the circuit."
+  - title: WP4 - Wireless
+    body: "Install and secure the guest access point in the lounge and prove internet
+      access.\n\nDeliverables:\n- Install the AP at the designated ceiling mount and name it
+      per the SOP.\n- Run the AP uplink through the patch panel to the switch.\n- Place the
+      AP switchport in the correct VLAN.\n- Apply wireless administrative credentials, SSID,
+      encryption, WPS, and channel settings from the SOP.\n- Verify guest wireless end to
+      end from the test laptop.\n\nAcceptance: The laptop associates to the SSID, receives
+      addressing, reaches the provider, and loads a page."

@@ -31,12 +31,53 @@ public sealed class TssEndpointCommandProcessor
         error = string.Empty;
         if (!_state.TryGetEndpoint(sourceKey, out var source)) { error = "Network endpoint is unavailable."; return false; }
         address = (address ?? string.Empty).Trim(); mask = (mask ?? string.Empty).Trim(); gateway = (gateway ?? string.Empty).Trim(); dns = (dns ?? string.Empty).Trim();
+
+        if (source.Category == EquipmentCategory.Laptop)
+        {
+            if (!useDhcp)
+            {
+                error = "The test laptop must use DHCP after associating to the secured guest AP.";
+                return false;
+            }
+            if (!_state.AccessPoint.UplinkConnected || !_state.AccessPoint.Configured || !_state.IsAccessPointSwitchPortReady() || !source.Layer1Connected || !source.Layer2Connected)
+            {
+                error = "DHCP is unavailable: associate to the configured AP after its uplink and switchport are ready.";
+                return false;
+            }
+            if (!_state.IsProviderDhcpAvailable())
+            {
+                error = "DHCP is unavailable: configure CN-1's provider uplink and default route first.";
+                return false;
+            }
+
+            source.UseDhcp = true;
+            source.Address = _state.Profile.TestLaptopAddress;
+            source.Mask = "255.255.255.0";
+            source.Gateway = _state.Profile.ReceptionNetwork + ".1";
+            source.Dns = _state.Profile.WanProviderAddress;
+            return true;
+        }
+
+        if (source.Category == EquipmentCategory.Printer && useDhcp)
+        {
+            error = "Printers use the static address assigned in the SOP.";
+            return false;
+        }
+
         if ((!string.IsNullOrWhiteSpace(address) && !TssNetworkAddress.IsAddress(address))
             || (!string.IsNullOrWhiteSpace(mask) && !TssNetworkAddress.IsMask(mask))
             || (!string.IsNullOrWhiteSpace(gateway) && !TssNetworkAddress.IsAddress(gateway))
             || (!string.IsNullOrWhiteSpace(dns) && !TssNetworkAddress.IsAddress(dns))
             || (!useDhcp && (!TssNetworkAddress.IsAddress(address) || !TssNetworkAddress.IsMask(mask) || !TssNetworkAddress.IsAddress(gateway))))
         { error = "Enter valid IPv4 settings."; return false; }
+
+        var expectedAddress = _state.ExpectedAddress(source);
+        if (!useDhcp && !string.IsNullOrWhiteSpace(expectedAddress)
+            && (address != expectedAddress || mask != "255.255.255.0" || gateway != EndpointNetworkState.GatewayFor(expectedAddress, _state.Profile)))
+        {
+            error = "IPv4 settings do not match this endpoint's SOP address plan.";
+            return false;
+        }
         source.UseDhcp = useDhcp;
         if (!useDhcp) { source.Address = address; source.Mask = mask; source.Gateway = gateway; source.Dns = dns; }
         return true;
@@ -54,19 +95,22 @@ public sealed class TssEndpointCommandProcessor
             foreach (var hop in result.TraceHops) sb.AppendLine("  " + hop);
         }
         sb.AppendLine(result.Success ? "Reply from " + target + ": reachable." : result.Diagnostic);
-        if (result.Success)
-            RecordRequiredEvidence(sourceKey, source, "ping " + target);
+        RecordRequiredEvidence(sourceKey, source, "ping " + target, result.Success);
         return new TssEndpointCommandResult(sb.ToString(), false, true);
     }
 
-    private void RecordRequiredEvidence(string sourceKey, EndpointNetworkState source, string command)
+    private void RecordRequiredEvidence(string sourceKey, EndpointNetworkState source, string command, bool succeeded)
     {
         foreach (var requirement in _state.Profile?.EvidenceRequirements ?? Array.Empty<NetworkEvidenceRequirement>())
         {
             if (requirement == null || string.IsNullOrWhiteSpace(requirement.evidenceId) || !Normalize(requirement.command).Equals(command, StringComparison.OrdinalIgnoreCase))
                 continue;
-            source.Evidence.Add(requirement.evidenceId);
-            _state.Evidence.Add(sourceKey + ":" + requirement.evidenceId);
+            source.AttemptedEvidence.Add(requirement.evidenceId);
+            if (succeeded)
+            {
+                source.Evidence.Add(requirement.evidenceId);
+                _state.Evidence.Add(sourceKey + ":" + requirement.evidenceId);
+            }
         }
     }
 

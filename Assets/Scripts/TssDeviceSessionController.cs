@@ -9,14 +9,17 @@ public sealed class TssDeviceSessionController : MonoBehaviour
     [Header("Session Canvas Prefabs")]
     [SerializeField] private GameObject terminalCanvasPrefab;
     [SerializeField] private GameObject desktopCanvasPrefab;
+    [SerializeField] private GameObject laptopCanvasPrefab;
 
     [Header("First Person Controls Prefabs")]
     [SerializeField] private GameObject terminalControlsPrefab;
     [SerializeField] private GameObject desktopControlsPrefab;
+    [SerializeField] private GameObject laptopControlsPrefab;
 
     [Header("Scene Presenters (Optional, if placed in scene)")]
     [SerializeField] private TssTerminalSessionPresenter terminalPresenter;
     [SerializeField] private TssDesktopSessionPresenter desktopPresenter;
+    [SerializeField] private TssDesktopSessionPresenter laptopPresenter;
 
     public bool IsSessionOpen { get; private set; }
     private string _lastWorkstationSourceKey;
@@ -59,6 +62,16 @@ public sealed class TssDeviceSessionController : MonoBehaviour
 
         if (!desktopPresenter)
             desktopPresenter = FindFirstObjectByType<TssDesktopSessionPresenter>(FindObjectsInactive.Include);
+
+        if (!laptopPresenter)
+        {
+            foreach (var presenter in FindObjectsByType<TssDesktopSessionPresenter>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+                if (presenter.name.Contains("Laptop"))
+                {
+                    laptopPresenter = presenter;
+                    break;
+                }
+        }
     }
 
     public GameObject GetControlsPrefabFor(GameObject deviceObject)
@@ -66,6 +79,9 @@ public sealed class TssDeviceSessionController : MonoBehaviour
         var ctx = ResolveContext(deviceObject);
         if (ctx != null && (ctx.Category == EquipmentCategory.Switch || ctx.Category == EquipmentCategory.Router))
             return terminalControlsPrefab;
+
+        if (ctx != null && ctx.Category == EquipmentCategory.Laptop && laptopControlsPrefab)
+            return laptopControlsPrefab;
 
         return desktopControlsPrefab;
     }
@@ -254,12 +270,15 @@ public sealed class TssDeviceSessionController : MonoBehaviour
             var device = network.GetOrCreateDevice(ctx.Key, ctx.Category, ctx.DeviceName);
             foreach (var endpoint in endpoints)
             {
-                var name = string.IsNullOrWhiteSpace(endpoint.DisplayLabel) ? endpoint.name : endpoint.DisplayLabel;
+                var name = SessionInterfaceName(endpoint, ctx.Category);
                 if (!device.Interfaces.TryGetValue(name, out var iface))
                     device.Interfaces[name] = iface = new NetworkInterfaceState { Name = name, AdminUp = ctx.Category == EquipmentCategory.Switch };
                 iface.EndpointId = endpoint.EndpointId;
-                iface.CarrierUp = TssTrainingSession.Instance.IsEndpointConnected(endpoint.EndpointId);
+                iface.CarrierUp = ctx.Category == EquipmentCategory.Router && name == "Fa0/1"
+                    ? TssTrainingSession.Instance.IsProviderDemarcConnected(endpoint.EndpointId)
+                    : TssTrainingSession.Instance.IsEndpointConnected(endpoint.EndpointId);
             }
+            network.SetProviderDemarcConnected(ProviderDemarcConnected(network, TssTrainingSession.Instance));
             state = TssDeviceLogicalState.FromNetwork(device, TssTrainingSession.Instance);
         }
         else
@@ -276,33 +295,80 @@ public sealed class TssDeviceSessionController : MonoBehaviour
             TssRuntimeUi.Instance.PushExternalGameplayLock(this);
     }
 
+    private static string SessionInterfaceName(TssPortEndpoint endpoint, EquipmentCategory category)
+    {
+        var name = string.IsNullOrWhiteSpace(endpoint?.DisplayLabel) ? endpoint?.name : endpoint.DisplayLabel;
+        if (category != EquipmentCategory.Router)
+            return name;
+
+        var endpointId = endpoint?.EndpointId ?? string.Empty;
+        var separator = endpointId.LastIndexOf(':');
+        var suffix = separator >= 0 ? endpointId.Substring(separator + 1) : endpointId;
+        if (suffix.Equals("Fa00", System.StringComparison.OrdinalIgnoreCase) || suffix.Equals("Fa0/0", System.StringComparison.OrdinalIgnoreCase))
+            return "Fa0/0";
+        if (suffix.Equals("Fa01", System.StringComparison.OrdinalIgnoreCase) || suffix.Equals("Fa0/1", System.StringComparison.OrdinalIgnoreCase))
+            return "Fa0/1";
+        return name;
+    }
+
+    private static bool ProviderDemarcConnected(TssNetworkSessionState network, TssTrainingSession session)
+    {
+        if (network == null || !session)
+            return false;
+
+        foreach (var device in network.Devices)
+            if (device.Category == EquipmentCategory.Router
+                && device.Interfaces.TryGetValue("Fa0/1", out var wan)
+                && session.IsProviderDemarcConnected(wan.EndpointId))
+                return true;
+        return false;
+    }
+
     public void OpenDesktopSession(GameObject deviceObject, DeviceContext ctx = null)
     {
         ResolvePresenters();
-        if (!desktopPresenter && desktopCanvasPrefab)
+        if (ctx == null)
+            ctx = ResolveContext(deviceObject);
+
+        var isLaptop = ctx != null && ctx.Category == EquipmentCategory.Laptop;
+        var presenter = isLaptop ? laptopPresenter : desktopPresenter;
+        var prefab = isLaptop ? laptopCanvasPrefab : desktopCanvasPrefab;
+        if (!presenter && prefab)
         {
-            var instance = Instantiate(desktopCanvasPrefab);
-            desktopPresenter = instance.GetComponentInChildren<TssDesktopSessionPresenter>(true);
+            var instance = Instantiate(prefab);
+            presenter = instance.GetComponentInChildren<TssDesktopSessionPresenter>(true);
+            if (isLaptop) laptopPresenter = presenter;
+            else desktopPresenter = presenter;
         }
 
-        if (!desktopPresenter)
+        if (!presenter)
         {
             Debug.LogError("TssDeviceSessionController: Desktop session canvas presenter not found.");
             return;
         }
-
-        if (ctx == null)
-            ctx = ResolveContext(deviceObject);
 
         var endpoints = deviceObject ? deviceObject.GetComponentsInChildren<TssPortEndpoint>(true) : Array.Empty<TssPortEndpoint>();
         var network = TssTrainingSession.Instance ? TssTrainingSession.Instance.NetworkState : null;
         TssDeviceLogicalState state;
         if (network != null)
         {
-            var endpoint = network.GetOrCreateEndpoint(ctx.Key, ctx.DeviceName);
+            var endpoint = network.GetOrCreateEndpoint(ctx.Key, ctx.DeviceName, ctx.Category);
             endpoint.DeviceKey = ctx.Key;
-            endpoint.Layer1Connected = endpoints.Length > 0 && TssTrainingSession.Instance.IsEndpointConnected(endpoints[0].EndpointId);
-            endpoint.Layer2Connected = endpoint.Layer1Connected;
+            var session = TssTrainingSession.Instance;
+            network.SetProviderDemarcConnected(ProviderDemarcConnected(network, session));
+            network.SetAccessPointUplink(session && session.IsAccessPointUplinkConnected());
+            if (ctx.Category == EquipmentCategory.Laptop)
+            {
+                var associated = network.AccessPoint.UplinkConnected && network.AccessPoint.Configured && network.IsAccessPointSwitchPortReady();
+                endpoint.Layer1Connected = associated;
+                endpoint.Layer2Connected = associated;
+            }
+            else
+            {
+                endpoint.Layer1Connected = endpoints.Length > 0 && session
+                    && (session.IsEndpointConnected(endpoints[0].EndpointId) || session.IsEndpointOnEffectivePhysicalPath(endpoints[0].EndpointId));
+                endpoint.Layer2Connected = endpoint.Layer1Connected;
+            }
             state = new TssDeviceLogicalState(ctx.Key, ctx.Category, ctx.DeviceName)
             {
                 MacAddress = endpoint.MacAddress, IpAddress = endpoint.Address, SubnetMask = endpoint.Mask,
@@ -316,11 +382,11 @@ public sealed class TssDeviceSessionController : MonoBehaviour
             state.RefreshPhysicalConnectivity(endpoints, TssTrainingSession.Instance);
         }
 
-        desktopPresenter.gameObject.SetActive(true);
+        presenter.gameObject.SetActive(true);
         var initiatingSourceKey = ctx.Category == EquipmentCategory.Printer ? _lastWorkstationSourceKey : null;
         if (ctx.Category == EquipmentCategory.DesktopPc)
             _lastWorkstationSourceKey = ctx.Key;
-        desktopPresenter.Initialize(state, deviceObject, CloseCurrentSession, ctx.Key, initiatingSourceKey);
+        presenter.Initialize(state, deviceObject, CloseCurrentSession, ctx.Key, initiatingSourceKey);
         IsSessionOpen = true;
 
         if (TssRuntimeUi.Instance)
@@ -334,6 +400,9 @@ public sealed class TssDeviceSessionController : MonoBehaviour
 
         if (desktopPresenter && desktopPresenter.gameObject.activeSelf)
             desktopPresenter.gameObject.SetActive(false);
+
+        if (laptopPresenter && laptopPresenter.gameObject.activeSelf)
+            laptopPresenter.gameObject.SetActive(false);
 
         IsSessionOpen = false;
 

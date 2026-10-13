@@ -26,7 +26,21 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
     [SerializeField] private InputField defaultGatewayInput;
     [SerializeField] private InputField dnsServerInput;
     [SerializeField] private Button applySettingsButton;
+    [SerializeField] private Button checkServerConnectionButton;
     [SerializeField] private Text applyFeedbackText;
+
+    [Header("Access Point Browser")]
+    [SerializeField] private Button openAccessPointBrowserButton;
+    [SerializeField] private GameObject accessPointBrowserCard;
+    [SerializeField] private Text accessPointBrowserStatusText;
+    [SerializeField] private InputField accessPointSsidInput;
+    [SerializeField] private InputField accessPointAdminPasswordInput;
+    [SerializeField] private InputField accessPointPassphraseInput;
+    [SerializeField] private InputField accessPointChannelInput;
+    [SerializeField] private Toggle accessPointDisableWpsToggle;
+    [SerializeField] private Button saveAccessPointButton;
+    [SerializeField] private Button closeAccessPointBrowserButton;
+    [SerializeField] private Text accessPointBrowserFeedbackText;
 
     [Header("Device-Specific Cards")]
     [SerializeField] private GameObject pcToolsCard;
@@ -68,6 +82,14 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
             disconnectButton.onClick.AddListener(Close);
         if (applySettingsButton)
             applySettingsButton.onClick.AddListener(ApplySettings);
+        if (checkServerConnectionButton)
+            checkServerConnectionButton.onClick.AddListener(CheckServerConnection);
+        if (openAccessPointBrowserButton)
+            openAccessPointBrowserButton.onClick.AddListener(OpenAccessPointBrowser);
+        if (saveAccessPointButton)
+            saveAccessPointButton.onClick.AddListener(SaveAccessPointConfiguration);
+        if (closeAccessPointBrowserButton)
+            closeAccessPointBrowserButton.onClick.AddListener(CloseAccessPointBrowser);
         if (dhcpToggle)
             dhcpToggle.onValueChanged.AddListener(OnDhcpToggled);
         if (staticToggle)
@@ -128,6 +150,8 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         {
             EquipmentCategory.Server => "Enterprise Server OS 2024",
             EquipmentCategory.Printer => "Embedded Web Print Server",
+            EquipmentCategory.AccessPoint => "Wireless Access Point",
+            EquipmentCategory.Laptop => "Wireless Laptop OS",
             _ => "Workstation OS Enterprise"
         };
 
@@ -147,10 +171,16 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
             if (isPhysicalLinkUp)
                 peerLabel = $"{primary.ConnectedPeerDevice} ({primary.ConnectedPeerPort})";
         }
+        else if (category == EquipmentCategory.Laptop && network != null && network.TryGetEndpoint(_deviceKey, out var wirelessEndpoint))
+        {
+            portLabel = "Wi-Fi";
+            isPhysicalLinkUp = wirelessEndpoint.Layer1Connected && wirelessEndpoint.Layer2Connected;
+            peerLabel = isPhysicalLinkUp ? (network.AccessPoint.Ssid ?? "Guest AP") : "No AP association";
+        }
 
         if (topBarLinkStatusText)
         {
-            topBarLinkStatusText.text = isPhysicalLinkUp ? "Connected (1 Gbps)" : "Cable Unplugged";
+            topBarLinkStatusText.text = isPhysicalLinkUp ? (category == EquipmentCategory.Laptop ? "Associated (Wi-Fi)" : "Connected (1 Gbps)") : "Cable Unplugged";
             topBarLinkStatusText.color = isPhysicalLinkUp ? new Color(0.35f, 1f, 0.5f, 1f) : new Color(0.9f, 0.4f, 0.4f, 1f);
         }
 
@@ -158,7 +188,7 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
             netAdapterNameText.text = $"Ethernet Adapter ({portLabel})";
         if (physicalLinkStatusText)
         {
-            physicalLinkStatusText.text = isPhysicalLinkUp ? "Status: Connected / Physical Link Active" : "Status: Cable Unplugged / No Carrier";
+            physicalLinkStatusText.text = isPhysicalLinkUp ? (category == EquipmentCategory.Laptop ? "Status: Associated / Wireless Link Active" : "Status: Connected / Physical Link Active") : "Status: Cable Unplugged / No Carrier";
             physicalLinkStatusText.color = isPhysicalLinkUp ? new Color(0.35f, 1f, 0.5f, 1f) : new Color(0.9f, 0.4f, 0.4f, 1f);
         }
         if (peerDeviceText)
@@ -183,7 +213,13 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         SetInputInteractable(!state.UseDhcp);
 
         if (pcToolsCard)
-            pcToolsCard.SetActive(category == EquipmentCategory.DesktopPc);
+            pcToolsCard.SetActive(category == EquipmentCategory.DesktopPc || category == EquipmentCategory.Laptop);
+        if (openAccessPointBrowserButton)
+            openAccessPointBrowserButton.gameObject.SetActive(category == EquipmentCategory.DesktopPc || category == EquipmentCategory.Laptop);
+        if (checkServerConnectionButton)
+            checkServerConnectionButton.gameObject.SetActive(category == EquipmentCategory.DesktopPc || category == EquipmentCategory.Laptop);
+        if (accessPointBrowserCard)
+            accessPointBrowserCard.SetActive(false);
         if (serverRolesCard)
             serverRolesCard.SetActive(category == EquipmentCategory.Server);
         if (printerConsoleCard)
@@ -199,7 +235,9 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         if (commandOutputText)
             commandOutputText.text = string.Empty;
         if (applyFeedbackText)
-            applyFeedbackText.text = string.Empty;
+            applyFeedbackText.text = category == EquipmentCategory.AccessPoint
+                ? "Set the AP management address here. Configure SSID and security from a connected desktop or laptop browser."
+                : string.Empty;
     }
 
     private void OnDhcpToggled(bool isDhcp)
@@ -261,12 +299,83 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         }
     }
 
+    private void CheckServerConnection()
+    {
+        var network = networkStateForPresenter();
+        var profile = network?.Profile;
+        if (network == null || profile == null || !profile.EndpointAddresses.TryGetValue("IT2", out var serverAddress))
+            return;
+
+        var result = new TssNetworkReachabilityEvaluator(network).Evaluate(_deviceKey, serverAddress);
+        if (applyFeedbackText)
+        {
+            applyFeedbackText.text = result.Success ? "Server (IT2) connectivity confirmed." : result.Diagnostic;
+            applyFeedbackText.color = result.Success ? new Color(0.35f, 1f, 0.5f, 1f) : new Color(1f, 0.45f, 0.45f, 1f);
+        }
+    }
+
+    private void OpenAccessPointBrowser()
+    {
+        var network = networkStateForPresenter();
+        var session = TssTrainingSession.Instance;
+        if (network == null || session == null)
+            return;
+
+        network.SetAccessPointUplink(session.IsAccessPointUplinkConnected());
+        var reachable = new TssNetworkReachabilityEvaluator(network).Evaluate(_deviceKey, network.Profile.ApManagementAddress);
+        if (!network.AccessPoint.UplinkConnected || !network.IsAccessPointSwitchPortReady() || !reachable.Success)
+        {
+            if (applyFeedbackText)
+            {
+                applyFeedbackText.text = !network.AccessPoint.UplinkConnected ? "Layer 1: connect the AP uplink first." : !network.IsAccessPointSwitchPortReady() ? "Layer 2: AP switchport Fa0/7 is not ready." : reachable.Diagnostic;
+                applyFeedbackText.color = new Color(1f, 0.45f, 0.45f, 1f);
+            }
+            return;
+        }
+
+        if (accessPointBrowserCard)
+            accessPointBrowserCard.SetActive(true);
+        if (accessPointBrowserStatusText)
+            accessPointBrowserStatusText.text = "https://" + network.Profile.ApManagementAddress + "  |  Connected";
+        if (accessPointBrowserFeedbackText)
+            accessPointBrowserFeedbackText.text = string.Empty;
+    }
+
+    private void SaveAccessPointConfiguration()
+    {
+        var network = networkStateForPresenter();
+        if (network == null)
+            return;
+
+        var saved = network.TryConfigureAccessPoint(
+            _deviceKey,
+            accessPointSsidInput ? accessPointSsidInput.text : string.Empty,
+            accessPointAdminPasswordInput ? accessPointAdminPasswordInput.text : string.Empty,
+            accessPointPassphraseInput ? accessPointPassphraseInput.text : string.Empty,
+            accessPointChannelInput ? accessPointChannelInput.text : string.Empty,
+            accessPointDisableWpsToggle && accessPointDisableWpsToggle.isOn,
+            out var error);
+        if (accessPointBrowserFeedbackText)
+        {
+            accessPointBrowserFeedbackText.text = saved ? "Saved. Guest wireless is secured and ready for association." : error;
+            accessPointBrowserFeedbackText.color = saved ? new Color(0.35f, 1f, 0.5f, 1f) : new Color(1f, 0.45f, 0.45f, 1f);
+        }
+        if (saved)
+            TssTrainingSession.Instance?.NotifyNetworkStateChanged();
+    }
+
+    private void CloseAccessPointBrowser()
+    {
+        if (accessPointBrowserCard)
+            accessPointBrowserCard.SetActive(false);
+    }
+
     private void RefreshDeviceSpecificCard(bool isPhysicalLinkUp)
     {
         if (_state == null)
             return;
 
-        if (_state.Category == EquipmentCategory.DesktopPc)
+        if (_state.Category == EquipmentCategory.DesktopPc || _state.Category == EquipmentCategory.Laptop)
         {
             if (commandOutputText)
                 commandOutputText.text = "Endpoint command prompt ready.\n";

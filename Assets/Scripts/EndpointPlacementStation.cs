@@ -13,10 +13,18 @@ public sealed class EndpointPlacementStation : MonoBehaviour
     private const string NameSignTextName = "Assigned Name Text";
 
     [SerializeField] private string stationId;
-    [SerializeField] private EquipmentCategory[] acceptedCategories = { EquipmentCategory.DesktopPc, EquipmentCategory.Printer };
+    [SerializeField] private EquipmentCategory[] acceptedCategories =
+    {
+        EquipmentCategory.DesktopPc,
+        EquipmentCategory.Printer,
+        EquipmentCategory.AccessPoint,
+        EquipmentCategory.Laptop
+    };
     [SerializeField] private Transform[] placementAnchors;
     [SerializeField] private Transform[] desktopPlacementAnchors;
     [SerializeField] private Transform[] printerPlacementAnchors;
+    [SerializeField] private Transform[] accessPointPlacementAnchors;
+    [SerializeField] private Transform[] laptopPlacementAnchors;
     [SerializeField] private Transform placedParent;
     [SerializeField] private GameObject nameSignPrefab;
     [SerializeField] private Vector3 nameSignLocalOffset = new(0f, 1f, 0.76f);
@@ -282,6 +290,12 @@ public sealed class EndpointPlacementStation : MonoBehaviour
             return;
         }
 
+        if (_placedVisuals.TryGetValue(placementId, out var visual) && visual && TssDeviceSessionController.Instance)
+        {
+            TssDeviceSessionController.Instance.OpenDesktopSession(visual);
+            return;
+        }
+
         TssRuntimeUi.Instance?.ShowComputerMenu(title, owner);
     }
 
@@ -406,6 +420,8 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         {
             EquipmentCategory.DesktopPc => desktopPlacementAnchors,
             EquipmentCategory.Printer => printerPlacementAnchors,
+            EquipmentCategory.AccessPoint => accessPointPlacementAnchors,
+            EquipmentCategory.Laptop => laptopPlacementAnchors,
             _ => null
         };
     }

@@ -116,7 +116,10 @@ public sealed class EndpointPlacedEquipmentTarget : MonoBehaviour
     private bool CanHighlight()
     {
         return _equipment
-            && (_equipment.category == EquipmentCategory.DesktopPc || _equipment.category == EquipmentCategory.Printer);
+            && (_equipment.category == EquipmentCategory.DesktopPc
+                || _equipment.category == EquipmentCategory.Printer
+                || _equipment.category == EquipmentCategory.AccessPoint
+                || _equipment.category == EquipmentCategory.Laptop);
     }
 
     private static Color GetMaterialColor(Material material)
