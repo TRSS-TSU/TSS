@@ -152,6 +152,12 @@ public sealed class RackMountController : MonoBehaviour
         if (!equipment)
             return false;
 
+        if (IsDualSidedRackEquipment(equipment))
+        {
+            return RackSpanValidator.CanPlace(startingU, equipment.rackUnits, firstInstallableU, lastInstallableU, _reserved, _occupied)
+                && RackSpanValidator.CanPlace(startingU, equipment.rackUnits, lowestU, highestU, _reserved, _rearOccupied);
+        }
+
         return equipment.useRearRackPlacement
             ? RackSpanValidator.CanPlace(startingU, equipment.rackUnits, lowestU, highestU, _reserved, _rearOccupied)
             : RackSpanValidator.CanPlace(startingU, equipment.rackUnits, firstInstallableU, lastInstallableU, _reserved, _occupied);
@@ -470,23 +476,35 @@ public sealed class RackMountController : MonoBehaviour
 
     private Vector3 GetSlotLocalPosition(EquipmentDefinition equipment, int u)
     {
-        return GetULocalPosition(u) + (equipment && equipment.useRearRackPlacement ? rearSlotLocalOffset : slotLocalOffset);
+        return GetULocalPosition(u) + (equipment && equipment.useRearRackPlacement && !IsDualSidedRackEquipment(equipment) ? rearSlotLocalOffset : slotLocalOffset);
     }
 
     private Vector3 GetInstalledLocalOffset(EquipmentDefinition equipment)
     {
-        return equipment && equipment.useRearRackPlacement ? rearInstalledLocalOffset : installedLocalOffset;
+        return equipment && equipment.useRearRackPlacement && !IsDualSidedRackEquipment(equipment) ? rearInstalledLocalOffset : installedLocalOffset;
     }
 
     private void SetOccupied(EquipmentDefinition equipment, int startingU, int rackUnits, bool occupied)
     {
-        for (var u = startingU; u < startingU + rackUnits; u++)
+        if (IsDualSidedRackEquipment(equipment))
         {
-            SetOccupied(_occupied, u, occupied);
-
-            if (equipment.useRearRackPlacement || equipment.category == EquipmentCategory.Server)
+            for (var u = startingU; u < startingU + rackUnits; u++)
+            {
+                SetOccupied(_occupied, u, occupied);
                 SetOccupied(_rearOccupied, u, occupied);
+            }
+
+            return;
         }
+
+        var occupiedSet = equipment && equipment.useRearRackPlacement ? _rearOccupied : _occupied;
+        for (var u = startingU; u < startingU + rackUnits; u++)
+            SetOccupied(occupiedSet, u, occupied);
+    }
+
+    private static bool IsDualSidedRackEquipment(EquipmentDefinition equipment)
+    {
+        return equipment && equipment.category == EquipmentCategory.Server;
     }
 
     private static void SetOccupied(HashSet<int> occupiedSet, int u, bool occupied)

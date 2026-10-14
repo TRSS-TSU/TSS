@@ -94,11 +94,11 @@ MonoBehaviour:
     quantity: 1
   cableInventory:
   - cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
-    quantity: 10
+    quantity: 20
   - cable: {fileID: 11400000, guid: 18ea62672fb58f347bda2f79a48dc0a5, type: 2}
-    quantity: 5
+    quantity: 10
   - cable: {fileID: 11400000, guid: 7a8091403b6214e47a1c50a3939bd562, type: 2}
-    quantity: 5
+    quantity: 10
   permanentConnections:
   - connectionId: Infrastructure001
     cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
@@ -450,13 +450,13 @@ MonoBehaviour:
     highestU: 38
     firstInstallableU: 3
     lastInstallableU: 38
-    reservedUPositions: 1e0000001f00000028000000
+    reservedUPositions: 28000000
   - rackId: Rack02
     lowestU: 3
     highestU: 38
     firstInstallableU: 3
     lastInstallableU: 38
-    reservedUPositions: 1e0000001f00000028000000
+    reservedUPositions: 28000000
   expectedRackPlacements:
   - phaseLabel: Phase 1
     rackId: Rack01
@@ -519,6 +519,14 @@ MonoBehaviour:
     stationId: Office2Desk
     category: 7
     requiredName: Data3
+  - phaseLabel: Phase 4
+    stationId: LobbyTable01
+    category: 8
+    requiredName: AP-1
+  - phaseLabel: Phase 4
+    stationId: LobbyTable01
+    category: 9
+    requiredName: TestLaptop
   sopSections:
   - title: WP1 - Physical Installation
     body: "Building 1042 physical installation.\n\nDeliverables:\n- Populate both racks
@@ -534,13 +542,17 @@ MonoBehaviour:
       infrastructure.\n\nDeliverables:\n- Harden both switches to the SOP baseline.\n-
       Build the full VLAN database on each switch with SOP names.\n- Assign access ports
       to the VLAN matching each device function.\n- Establish required trunks with the
-      correct allowed and native VLANs.\n- Park unused ports in the dead VLAN and shut
+      correct allowed and native VLANs. Configure switchport trunk encapsulation dot1q,
+      then switchport mode trunk on the uplinks.\n- Park unused ports in the dead VLAN and shut
       them down.\n- Save both configurations.\n\nAcceptance: Verify VLAN and trunk
       output on both switches before sign-off."
   - title: WP3 - Layer 3
     body: "Harden the router, provide inter-VLAN routing, and bring up the carrier
       circuit.\n\nDeliverables:\n- Harden the router to the same baseline as the switches.\n-
-      Configure a gateway for each user VLAN over the single 802.1Q trunk.\n- Address and
+      Bring up Fa0/0 as the router-on-a-stick parent, then configure Fa0/0.<VLAN>
+      subinterfaces with encapsulation dot1q <VLAN>, no shutdown, and the matching .1/24 gateway for
+      each user VLAN. On the switch uplink, configure 802.1Q trunking and allow those
+      VLANs.\n- Address and
       bring up the WAN interface from the circuit handoff letter.\n- Configure a default route
       to the provider.\n- Verify end-to-end connectivity from workstations and confirm the
       routing table.\n- Save the configuration.\n\nAcceptance: A workstation reaches

@@ -13,6 +13,7 @@ public sealed class TssWirelessDevicePresentation : MonoBehaviour, ITssEndpointB
     [SerializeField] private bool isAccessPoint;
     [SerializeField] private Renderer statusLedRenderer;
     [SerializeField] private Renderer screenRenderer;
+    [SerializeField] private MonitorTextureRotator monitor;
     [SerializeField] private Texture onlineScreen;
     [SerializeField] private Color onlineLedColor = new(0.1f, 0.55f, 1f, 1f);
     [SerializeField] private Color offlineLedColor = new(0.03f, 0.03f, 0.03f, 1f);
@@ -59,7 +60,7 @@ public sealed class TssWirelessDevicePresentation : MonoBehaviour, ITssEndpointB
 
     public void Refresh()
     {
-        var online = isAccessPoint ? IsAccessPointConnected() : IsAnyAccessPointConnected();
+        var online = isAccessPoint ? IsAccessPointConnected() : RefreshLaptopScreen();
         State = online ? TssWirelessPresentationState.Online : TssWirelessPresentationState.Offline;
 
         if (_ledMaterial)
@@ -77,6 +78,36 @@ public sealed class TssWirelessDevicePresentation : MonoBehaviour, ITssEndpointB
         }
     }
 
+    private bool RefreshLaptopScreen()
+    {
+        var session = TssTrainingSession.Instance;
+        var network = session ? session.NetworkState : null;
+        var connected = false;
+        foreach (var endpoint in _endpoints)
+        {
+            if (!endpoint)
+                continue;
+
+            var separator = endpoint.EndpointId.LastIndexOf(':');
+            var key = separator > 0 ? endpoint.EndpointId.Substring(0, separator) : endpoint.EndpointId;
+            if (network == null || !network.TryGetEndpoint(key, out var state) || state.Category != EquipmentCategory.Laptop)
+                continue;
+
+            var result = new TssNetworkReachabilityEvaluator(network).Evaluate(key, state.Gateway);
+            var layer1 = result.FailedLayer != 1;
+            var layer2 = layer1 && result.FailedLayer != 2;
+            var layer3 = layer2 && result.Success && network.IsWirelessAssociated(key);
+            if (monitor)
+                monitor.SetLayerStates(layer1, layer2, layer3);
+            connected = layer3;
+            break;
+        }
+
+        if (!connected && monitor)
+            monitor.SetLayerStates(false, false, false);
+        return connected;
+    }
+
     private bool IsAccessPointConnected()
     {
         var session = TssTrainingSession.Instance;
@@ -85,14 +116,6 @@ public sealed class TssWirelessDevicePresentation : MonoBehaviour, ITssEndpointB
 
         foreach (var endpoint in _endpoints)
             if (endpoint && session.IsEndpointConnected(endpoint.EndpointId))
-                return true;
-        return false;
-    }
-
-    private bool IsAnyAccessPointConnected()
-    {
-        foreach (var presentation in FindObjectsByType<TssWirelessDevicePresentation>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-            if (presentation && presentation != this && presentation.isAccessPoint && presentation.IsAccessPointConnected())
                 return true;
         return false;
     }

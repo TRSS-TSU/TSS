@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -108,7 +109,66 @@ public sealed class TssTrainingSession : MonoBehaviour
 
     public void NotifyNetworkStateChanged()
     {
+        RefreshInterfaceCarriers();
+        RefreshPlacedDesktopConnectivity();
         StateChanged?.Invoke();
+    }
+
+    private void RefreshPlacedDesktopConnectivity()
+    {
+        if (NetworkState == null)
+            return;
+
+        var endpoints = FindObjectsByType<TssPortEndpoint>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        foreach (var placement in _endpointPlacements)
+        {
+            if (!placement.Equipment || placement.Equipment.category != EquipmentCategory.DesktopPc)
+                continue;
+
+            var key = GetEndpointOwnerPrefix(placement.PlacementId);
+            if (!NetworkState.TryGetEndpoint(key, out var state))
+                continue;
+
+            var prefix = key + ":";
+            foreach (var endpoint in endpoints)
+            {
+                if (!endpoint || !endpoint.EndpointId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                state.Layer1Connected = IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId);
+                state.Layer2Connected = state.Layer1Connected;
+                break;
+            }
+        }
+    }
+
+    private void RefreshInterfaceCarriers()
+    {
+        if (NetworkState == null)
+            return;
+
+        foreach (var device in NetworkState.Devices)
+        foreach (var iface in device.Interfaces.Values)
+        {
+            if (device.Category == EquipmentCategory.Router && iface.Name.Contains('.'))
+                continue;
+            if (string.IsNullOrWhiteSpace(iface.EndpointId)) continue;
+
+            iface.CarrierUp = device.Category == EquipmentCategory.Router && iface.Name == "Fa0/1"
+                ? IsProviderDemarcConnected(iface.EndpointId)
+                : IsEndpointConnected(iface.EndpointId);
+        }
+
+        foreach (var device in NetworkState.Devices)
+        {
+            if (device.Category != EquipmentCategory.Router) continue;
+            foreach (var iface in device.Interfaces.Values)
+            {
+                var separator = iface.Name.IndexOf('.');
+                if (separator > 0 && device.Interfaces.TryGetValue(iface.Name.Substring(0, separator), out var parent))
+                    iface.CarrierUp = parent.CarrierUp;
+            }
+        }
     }
 
     public IEnumerable<ScenarioInventoryItem> GetScenarioInventory()
@@ -454,7 +514,7 @@ public sealed class TssTrainingSession : MonoBehaviour
         _selectedCableEndpoint = null;
         ClearCarryVisual();
         message = $"Connected {record.EndpointAId} to {record.EndpointBId}";
-        StateChanged?.Invoke();
+        NotifyNetworkStateChanged();
         return true;
     }
 
@@ -490,8 +550,10 @@ public sealed class TssTrainingSession : MonoBehaviour
             }
             else
             {
-                playerEndpoints.Add(connection.EndpointAId);
-                playerEndpoints.Add(connection.EndpointBId);
+                if (!IsConfiguredPermanentEndpoint(connection.EndpointAId))
+                    playerEndpoints.Add(connection.EndpointAId);
+                if (!IsConfiguredPermanentEndpoint(connection.EndpointBId))
+                    playerEndpoints.Add(connection.EndpointBId);
             }
         }
 
@@ -507,8 +569,45 @@ public sealed class TssTrainingSession : MonoBehaviour
         {
             for (var j = i + 1; j < leaves.Count; j++)
             {
-                if (HasPhysicalPath(leaves[i], leaves[j], true))
+                // ponytail: direct device-to-device player cables are effective without a permanent segment.
+                if (HasPhysicalPath(leaves[i], leaves[j], true)
+                    || HasConnection(leaves[i], leaves[j]))
                     paths.Add(new TssPhysicalPathRecord(leaves[i], leaves[j]));
+            }
+        }
+
+        foreach (var connection in _physicalConnections)
+        {
+            if (connection.IsPermanent)
+                continue;
+
+            var deviceEndpoint = IsConfiguredPermanentEndpoint(connection.EndpointAId)
+                ? connection.EndpointBId
+                : IsConfiguredPermanentEndpoint(connection.EndpointBId)
+                    ? connection.EndpointAId
+                    : string.Empty;
+            var infrastructureEndpoint = deviceEndpoint == connection.EndpointAId
+                ? connection.EndpointBId
+                : deviceEndpoint == connection.EndpointBId
+                    ? connection.EndpointAId
+                    : string.Empty;
+            if (string.IsNullOrWhiteSpace(deviceEndpoint)
+                || string.IsNullOrWhiteSpace(infrastructureEndpoint))
+                continue;
+
+            foreach (var permanent in _physicalConnections)
+            {
+                if (!permanent.IsPermanent)
+                    continue;
+
+                var farEndpoint = ConnectedOtherEndpoint(permanent, infrastructureEndpoint);
+                if (string.IsNullOrWhiteSpace(farEndpoint))
+                    continue;
+
+                if (!paths.Any(path =>
+                    (path.EndpointAId == deviceEndpoint && path.EndpointBId == farEndpoint)
+                    || (path.EndpointAId == farEndpoint && path.EndpointBId == deviceEndpoint)))
+                    paths.Add(new TssPhysicalPathRecord(deviceEndpoint, farEndpoint));
             }
         }
 
@@ -523,6 +622,18 @@ public sealed class TssTrainingSession : MonoBehaviour
         foreach (var path in GetEffectivePhysicalPaths())
         {
             if (path.EndpointAId == endpointId || path.EndpointBId == endpointId)
+                return true;
+        }
+
+        foreach (var connection in _physicalConnections)
+        {
+            if (connection.IsPermanent
+                || (connection.EndpointAId != endpointId && connection.EndpointBId != endpointId))
+                continue;
+
+            var otherEndpointId = ConnectedOtherEndpoint(connection, endpointId);
+            if (IsConfiguredPermanentEndpoint(otherEndpointId)
+                && HasPhysicalPath(endpointId, otherEndpointId, false))
                 return true;
         }
 
@@ -736,7 +847,7 @@ public sealed class TssTrainingSession : MonoBehaviour
 
             _physicalConnections.RemoveAt(i);
             message = $"Disconnected {endpointId}";
-            StateChanged?.Invoke();
+            NotifyNetworkStateChanged();
             return true;
         }
 
@@ -841,6 +952,24 @@ public sealed class TssTrainingSession : MonoBehaviour
 
         return IsTerminationCorrect(connectionId, link.patchPanelEndpointId)
             && IsTerminationCorrect(connectionId, link.wallportEndpointId);
+    }
+
+    private bool IsConfiguredPermanentEndpoint(string endpointId)
+    {
+        if (!Scenario || Scenario.permanentConnections == null || string.IsNullOrWhiteSpace(endpointId))
+            return false;
+
+        foreach (var link in Scenario.permanentConnections)
+        {
+            if (link == null)
+                continue;
+
+            if (EndpointMatches(link.patchPanelEndpointId, endpointId)
+                || EndpointMatches(link.wallportEndpointId, endpointId))
+                return true;
+        }
+
+        return false;
     }
 
     private bool IsTerminationCorrect(string connectionId, string endpointId)

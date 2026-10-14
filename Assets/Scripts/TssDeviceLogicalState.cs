@@ -81,8 +81,8 @@ public sealed class TssDeviceLogicalState
         switch (Category)
         {
             case EquipmentCategory.Router:
-                IpAddress = "192.168.1.1";
-                DefaultGateway = "0.0.0.0";
+                IpAddress = string.Empty;
+                DefaultGateway = string.Empty;
                 UseDhcp = false;
                 break;
             case EquipmentCategory.Switch:

@@ -77,9 +77,6 @@ public sealed class TssNetworkReachabilityEvaluator
         if (!source.HasValidAddress || !TssNetworkAddress.IsAddress(source.Gateway) || !SameSubnet(source.Address, source.Mask, source.Gateway))
             return Fail(3, TssReachabilityFaultCategory.GatewayUnavailable, "endpoint addressing is invalid.", source.Role, destinationRole, hops.ToArray());
 
-        if (destinationAddress.Equals(profile.WanProviderAddress, StringComparison.OrdinalIgnoreCase))
-            return CheckProvider(source, profile, destinationRole, hops, HasStructuredTopology(sourceDevice));
-
         var vlan = VlanFor(source.Role, source.Address, profile);
         var routerInterface = FindRouterInterface(vlan, profile);
         if (HasStructuredTopology(sourceDevice) && routerInterface == null)
@@ -90,6 +87,9 @@ public sealed class TssNetworkReachabilityEvaluator
             if (!routerInterface.AdminUp || !routerInterface.CarrierUp || routerInterface.Dot1qVlan != vlan || routerInterface.Address != source.Gateway || routerInterface.Mask != "255.255.255.0")
                 return Fail(3, TssReachabilityFaultCategory.GatewayUnavailable, "router gateway is unavailable.", source.Role, destinationRole, hops.ToArray());
         }
+
+        if (destinationAddress.Equals(profile.WanProviderAddress, StringComparison.OrdinalIgnoreCase))
+            return CheckProvider(source, profile, destinationRole, hops, HasStructuredTopology(sourceDevice));
 
         var destination = FindEndpointByAddress(destinationAddress);
         if (destination != null && (!destination.HasValidAddress || !GatewayMatches(destination, profile)))

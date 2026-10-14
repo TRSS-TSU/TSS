@@ -50,6 +50,7 @@ public sealed class TssNetworkWorkPackageEvaluator
         CheckVlans(an1, "AN-1", result); CheckVlans(an2, "AN-2", result);
         CheckAccessPorts(an1, an2, result);
         CheckTrunks(an1, an2, result);
+        CheckUnusedPorts(an1, an2, result);
         if (result.Complete) result = new TssWorkPackageResult(_state.SaveCompletionSnapshot("WP2"));
         return result;
     }
@@ -73,6 +74,40 @@ public sealed class TssNetworkWorkPackageEvaluator
         CheckEndpointEvidence(result);
         CheckSaved(router, "WP3.Save", result);
         if (result.Complete) result = new TssWorkPackageResult(_state.SaveCompletionSnapshot("WP3"));
+        return result;
+    }
+
+    public TssWorkPackageResult EvaluateLayer4()
+    {
+        if (_state == null) return new TssWorkPackageResult();
+        if (_state.CompletionSnapshots.TryGetValue("WP4", out var snapshot)) return new TssWorkPackageResult(snapshot);
+
+        var result = new TssWorkPackageResult();
+        CheckWp4Condition(_state.AccessPoint.UplinkConnected, "WP4.APUplink", "AP uplink is not connected.", result);
+        CheckWp4Condition(_state.IsAccessPointSwitchPortReady(), "WP4.SwitchPort", "AP switchport is not ready.", result);
+        CheckWp4Condition(_state.AccessPoint.Configured, "WP4.APConfig", "AP wireless settings are incomplete.", result);
+
+        var laptop = FindLaptop();
+        if (laptop == null)
+        {
+            result.Add("WP4.LaptopAssociation", "Test laptop is unavailable.");
+            result.Add("WP4.Dhcp", "Test laptop DHCP lease is unavailable.");
+            result.Add("WP4.Diagnostics", "Test laptop diagnostics are incomplete.");
+            result.Add("WP4.RedWolf", "RedWolf page evidence is incomplete.");
+        }
+        else
+        {
+            CheckWp4Condition(_state.IsWirelessAssociated(laptop.Key) && laptop.Layer1Connected && laptop.Layer2Connected,
+                "WP4.LaptopAssociation", "Test laptop is not associated to the guest AP.", result);
+            CheckWp4Condition(laptop.UseDhcp && laptop.Address == _state.Profile.TestLaptopAddress,
+                "WP4.Dhcp", "Test laptop has not obtained the expected DHCP lease.", result);
+            CheckWp4Condition(laptop.Evidence.Contains("ipconfig") && laptop.Evidence.Contains("TestLaptop-provider"),
+                "WP4.Diagnostics", "Test laptop diagnostics are incomplete.", result);
+            CheckWp4Condition(laptop.Evidence.Contains("redwolf"),
+                "WP4.RedWolf", "RedWolf page evidence is incomplete.", result);
+        }
+
+        if (result.Complete) result = new TssWorkPackageResult(_state.SaveCompletionSnapshot("WP4"));
         return result;
     }
 
@@ -124,13 +159,37 @@ public sealed class TssNetworkWorkPackageEvaluator
         }
     }
 
+    private void CheckUnusedPorts(NetworkDeviceState an1, NetworkDeviceState an2, TssWorkPackageResult result)
+    {
+        var complete = CheckUnusedPorts(an1, 8, 24, _state.Profile.DeadVlan) && CheckUnusedPorts(an2, 5, 24, _state.Profile.DeadVlan);
+        if (complete)
+            result.Attempt("WP2.UnusedPorts");
+        else
+            result.Add("WP2.UnusedPorts", "Unused switch ports must use the dead VLAN and be shut down.");
+    }
+
+    private static bool CheckUnusedPorts(NetworkDeviceState device, int firstPort, int lastPort, int deadVlan)
+    {
+        if (device == null)
+            return false;
+
+        for (var portNumber = firstPort; portNumber <= lastPort; portNumber++)
+        {
+            if (!device.Interfaces.TryGetValue("Fa0/" + portNumber, out var port)
+                || port.IsTrunk || port.AdminUp || port.AccessVlan != deadVlan)
+                return false;
+        }
+
+        return true;
+    }
+
     private void CheckRouterInterfaces(NetworkDeviceState router, TssWorkPackageResult result)
     {
         if (router.Interfaces.ContainsKey("Fa0/0"))
             result.Attempt("WP3.Subinterfaces");
         if (router.Interfaces.ContainsKey("Fa0/1"))
             result.Attempt("WP3.Wan");
-        if (!HasInterface(router, "Fa0/0", true, null, null)) result.Add("WP3.ParentInterface", "Router parent interface is incomplete.");
+        if (!HasInterface(router, "Fa0/0", false, null, null)) result.Add("WP3.ParentInterface", "Router parent interface is incomplete.");
         foreach (var pair in new[] { (_state.Profile.ManagementVlan, _state.Profile.ManagementNetwork + ".1"), (_state.Profile.ReceptionVlan, _state.Profile.ReceptionNetwork + ".1"), (_state.Profile.DataVlan, _state.Profile.DataNetwork + ".1") })
         {
             var found = false;
@@ -164,7 +223,32 @@ public sealed class TssNetworkWorkPackageEvaluator
         if (!device.Evidence.Contains("save") || device.StartupSnapshot == null || !Equivalent(device, device.StartupSnapshot)) result.Add(id, device.Hostname + " configuration has not been saved.");
     }
 
-    private bool ActiveVlan(NetworkDeviceState device, int vlan, string name) => device != null && device.Vlans.TryGetValue(vlan, out var value) && value == name;
+    private bool ActiveVlan(NetworkDeviceState device, int vlan, string name)
+    {
+        if (device == null || !device.Vlans.TryGetValue(vlan, out var value))
+            return false;
+
+        var suspended = value.IndexOf("(suspended)", StringComparison.OrdinalIgnoreCase) >= 0;
+        var actualName = value.Replace("(suspended)", string.Empty, StringComparison.OrdinalIgnoreCase).Trim();
+        return string.Equals(actualName, name, StringComparison.OrdinalIgnoreCase)
+            && (!suspended || vlan == _state.Profile.DeadVlan);
+    }
+
+    private void CheckWp4Condition(bool condition, string id, string label, TssWorkPackageResult result)
+    {
+        if (condition)
+            result.Attempt(id);
+        else
+            result.Add(id, label);
+    }
+
+    private EndpointNetworkState FindLaptop()
+    {
+        foreach (var endpoint in _state.Endpoints)
+            if (endpoint.Category == EquipmentCategory.Laptop || endpoint.Role.IndexOf("laptop", StringComparison.OrdinalIgnoreCase) >= 0)
+                return endpoint;
+        return null;
+    }
     private int VlanFor(string role) => role.IndexOf("Reception", StringComparison.OrdinalIgnoreCase) >= 0 ? _state.Profile.ReceptionVlan : role.IndexOf("Data", StringComparison.OrdinalIgnoreCase) >= 0 ? _state.Profile.DataVlan : _state.Profile.ManagementVlan;
 
     private static bool Equivalent(NetworkDeviceState a, NetworkDeviceState b)

@@ -169,7 +169,97 @@ public sealed class TssNetworkSessionState
             foreach (var iface in device.Interfaces.Values)
                 if (string.Equals(iface.EndpointId, endpointId, StringComparison.OrdinalIgnoreCase))
                     return iface.AdminUp && iface.CarrierUp;
+        return !endpointId.StartsWith("Rack:", StringComparison.OrdinalIgnoreCase);
+    }
+    public bool IsEndpointLayer2Available(string endpointId)
+    {
+        if (!TryGetInterfaceByEndpoint(endpointId, out var device, out var iface))
+            return true;
+
+        if (!iface.AdminUp || !iface.CarrierUp)
+            return false;
+
+        if (device.Category != EquipmentCategory.Switch)
+            return true;
+
+        if (iface.IsTrunk)
+            return iface.AllowedVlans != null && iface.AllowedVlans.Any(vlan => IsActiveVlan(device, vlan));
+
+        return IsActiveVlan(device, iface.AccessVlan);
+    }
+
+    public bool IsEndpointIpRoutingAvailable(string endpointId)
+    {
+        if (!TryGetInterfaceByEndpoint(endpointId, out var device, out var iface))
+            return false;
+
+        if (device.Category == EquipmentCategory.Router && string.Equals(iface.Name, "Fa0/0", StringComparison.OrdinalIgnoreCase))
+            return device.Interfaces.Values.Any(candidate => candidate.Name.StartsWith(iface.Name + ".", StringComparison.OrdinalIgnoreCase)
+                && IsInterfaceIpRoutingAvailable(device, candidate));
+
+        return IsInterfaceIpRoutingAvailable(device, iface);
+    }
+
+    public bool IsInterfaceIpRoutingAvailable(NetworkDeviceState device, NetworkInterfaceState iface)
+    {
+        if (device == null || iface == null || !iface.AdminUp || !iface.CarrierUp
+            || !TssNetworkAddress.IsAddress(iface.Address) || !TssNetworkAddress.IsMask(iface.Mask))
+            return false;
+
+        if (device.Category == EquipmentCategory.Router && iface.Name.Contains('.'))
+        {
+            var separator = iface.Name.IndexOf('.');
+            return iface.Dot1qVlan > 0
+                && device.Interfaces.TryGetValue(iface.Name.Substring(0, separator), out var parent)
+                && parent.AdminUp && parent.CarrierUp;
+        }
+
+        return true;
+    }
+
+    public bool IsEndpointLayer3Operational(string endpointId)
+    {
+        if (!TryGetInterfaceByEndpoint(endpointId, out var device, out var iface)
+            || !IsEndpointIpRoutingAvailable(endpointId))
+            return false;
+
+        if (device.Category == EquipmentCategory.Router
+            && string.Equals(iface.Name, "Fa0/1", StringComparison.OrdinalIgnoreCase)
+            && Profile != null)
+            return string.Equals(iface.Address, Profile.WanCustomerAddress, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(iface.Mask, "255.255.255.252", StringComparison.OrdinalIgnoreCase);
+
+        if (device.Category == EquipmentCategory.Router && string.Equals(iface.Name, "Fa0/0", StringComparison.OrdinalIgnoreCase))
+            return device.Interfaces.Values.Any(candidate => candidate.Name.StartsWith(iface.Name + ".", StringComparison.OrdinalIgnoreCase)
+                && IsInterfaceIpRoutingAvailable(device, candidate));
+
+        return true;
+    }
+
+    private bool TryGetInterfaceByEndpoint(string endpointId, out NetworkDeviceState device, out NetworkInterfaceState iface)
+    {
+        device = null;
+        iface = null;
+        if (string.IsNullOrWhiteSpace(endpointId))
+            return false;
+
+        foreach (var candidate in _devices.Values)
+            foreach (var candidateInterface in candidate.Interfaces.Values)
+                if (string.Equals(candidateInterface.EndpointId, endpointId, StringComparison.OrdinalIgnoreCase))
+                {
+                    device = candidate;
+                    iface = candidateInterface;
+                    return true;
+                }
+
         return false;
+    }
+
+    private static bool IsActiveVlan(NetworkDeviceState device, int vlan)
+    {
+        return device != null
+            && device.Vlans.TryGetValue(vlan, out var name)
+            && (name ?? string.Empty).IndexOf("suspend", StringComparison.OrdinalIgnoreCase) < 0;
     }
     public EndpointNetworkState GetOrCreateEndpoint(string key, string role, EquipmentCategory category = EquipmentCategory.DesktopPc)
     {
@@ -201,6 +291,13 @@ public sealed class TssNetworkSessionState
             && accessSwitch.Interfaces.TryGetValue("Fa0/7", out var port)
             && port.AdminUp && port.CarrierUp && !port.IsTrunk
             && port.AccessVlan == Profile.ReceptionVlan;
+    }
+
+    public bool IsWirelessAssociated(string endpointKey)
+    {
+        return !string.IsNullOrWhiteSpace(endpointKey)
+            && string.Equals(AccessPoint.AssociatedEndpointKey, endpointKey, StringComparison.OrdinalIgnoreCase)
+            && AccessPoint.Configured;
     }
 
     public bool IsProviderDhcpAvailable()
@@ -255,6 +352,37 @@ public sealed class TssNetworkSessionState
         return true;
     }
 
+    public bool TryAssociateWirelessClient(string sourceKey, string ssid, string passphrase, out string error)
+    {
+        error = string.Empty;
+        if (!TryGetEndpoint(sourceKey, out var endpoint) || endpoint.Category != EquipmentCategory.Laptop)
+        {
+            error = "Wireless client is unavailable.";
+            return false;
+        }
+
+        if (!AccessPoint.Configured)
+        {
+            error = "Configure the secured guest AP before joining Wi-Fi.";
+            return false;
+        }
+
+        if (!string.Equals((ssid ?? string.Empty).Trim(), Profile.Ssid, StringComparison.Ordinal)
+            || !string.Equals((passphrase ?? string.Empty).Trim(), Profile.WifiPassphrase, StringComparison.Ordinal))
+        {
+            error = "SSID or passphrase does not match the wireless SOP.";
+            return false;
+        }
+
+        AccessPoint.AssociatedEndpointKey = sourceKey;
+        AccessPoint.AssociatedSsid = Profile.Ssid;
+        endpoint.Layer1Connected = true;
+        endpoint.Layer2Connected = true;
+        endpoint.AttemptedEvidence.Add("wifi-association");
+        endpoint.Evidence.Add("wifi-association");
+        return true;
+    }
+
     public string ExpectedAddress(EndpointNetworkState endpoint)
     {
         if (endpoint == null || Profile == null)
@@ -298,6 +426,33 @@ public sealed class TssNetworkSessionState
         printer.LastPrintSucceeded = result.Success;
         printer.LastPrintDiagnostic = result.Success ? "Print job completed." : result.Diagnostic;
         return result.Success;
+    }
+
+    public bool TryLoadRedWolfPage(string sourceKey, out string error)
+    {
+        error = string.Empty;
+        if (!TryGetEndpoint(sourceKey, out var endpoint) || endpoint.Category != EquipmentCategory.Laptop)
+        {
+            error = "The test laptop is unavailable.";
+            return false;
+        }
+
+        if (!IsWirelessAssociated(sourceKey) || !endpoint.UseDhcp || endpoint.Address != Profile.TestLaptopAddress)
+        {
+            error = "Join the secured guest Wi-Fi and obtain the DHCP lease first.";
+            return false;
+        }
+
+        var result = new TssNetworkReachabilityEvaluator(this).Evaluate(sourceKey, Profile.WanProviderAddress);
+        if (!result.Success)
+        {
+            error = result.Diagnostic;
+            return false;
+        }
+
+        endpoint.AttemptedEvidence.Add("redwolf");
+        endpoint.Evidence.Add("redwolf");
+        return true;
     }
     public void SaveCheckpoint(string name)
     {
@@ -371,8 +526,12 @@ public sealed class NetworkDeviceState
     {
         Key = key; Category = category; Hostname = string.IsNullOrWhiteSpace(name) ? category.ToString() : name.Trim();
         MacAddress = profile != null ? TssNetworkRunProfile.MacFor(profile.Seed, key) : string.Empty;
-        ManagementAddress = profile != null ? profile.ManagementNetwork + ".2" : string.Empty;
-        DefaultGateway = profile != null ? profile.ManagementNetwork + ".1" : string.Empty;
+        ManagementAddress = category == EquipmentCategory.Router || profile == null
+            ? string.Empty
+            : profile.ManagementNetwork + ".2";
+        DefaultGateway = category == EquipmentCategory.Router || profile == null
+            ? string.Empty
+            : profile.ManagementNetwork + ".1";
         if (category == EquipmentCategory.Switch) Vlans[1] = "default";
     }
     public NetworkDeviceState Clone()
@@ -417,6 +576,8 @@ public sealed class TssWirelessAccessPointState
     public bool UplinkConnected;
     public bool Configured;
     public string Ssid;
+    public string AssociatedEndpointKey;
+    public string AssociatedSsid;
 }
 
 public sealed class EndpointNetworkState
@@ -499,5 +660,30 @@ public static class TssNetworkAddress
         if (mask == 0) return false;
         var inverted = ~mask;
         return (inverted & (inverted + 1)) == 0;
+    }
+
+    public static int PrefixLength(string value)
+    {
+        if (!IsMask(value)) return 0;
+        var prefix = 0;
+        foreach (var part in value.Split('.'))
+        {
+            var octet = byte.Parse(part, CultureInfo.InvariantCulture);
+            while (octet != 0) { prefix += octet & 1; octet >>= 1; }
+        }
+        return prefix;
+    }
+
+    public static bool IsInSameSubnet(string address, string mask, string candidate)
+    {
+        if (!IsAddress(address) || !IsMask(mask) || !IsAddress(candidate)) return false;
+        return (ToUInt32(address) & ToUInt32(mask)) == (ToUInt32(candidate) & ToUInt32(mask));
+    }
+
+    private static uint ToUInt32(string value)
+    {
+        uint result = 0;
+        foreach (var part in value.Split('.')) result = (result << 8) | byte.Parse(part, CultureInfo.InvariantCulture);
+        return result;
     }
 }

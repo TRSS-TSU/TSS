@@ -117,7 +117,7 @@ Transform:
   m_GameObject: {fileID: 104862872362098774}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.0451, y: -0.002803063, z: 0.014172219}
+  m_LocalPosition: {x: 0.052004915, y: -0.002803063, z: 0.014246624}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -622,7 +622,7 @@ Transform:
   m_GameObject: {fileID: 429449173535517792}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.13120492, y: -0.002803063, z: 0.014246624}
+  m_LocalPosition: {x: 0.1129, y: -0.002803063, z: 0.014172219}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -712,7 +712,7 @@ Transform:
   m_GameObject: {fileID: 435771868962383657}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.11980492, y: -0.002803063, z: 0.014246624}
+  m_LocalPosition: {x: 0.10840491, y: -0.002803063, z: 0.014246624}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -786,6 +786,7 @@ GameObject:
   - component: {fileID: 7456699971677491175}
   - component: {fileID: 7468749670086021202}
   - component: {fileID: 4765706825778098447}
+  - component: {fileID: 913436490718179171}
   m_Layer: 0
   m_Name: Fa21
   m_TagString: Untagged
@@ -802,7 +803,7 @@ Transform:
   m_GameObject: {fileID: 600082949830689741}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.0317, y: -0.0030000014, z: -0.006800002}
+  m_LocalPosition: {x: 0.0089, y: -0.003000001, z: 0.0068000024}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -866,6 +867,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &913436490718179171
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 600082949830689741}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa21
+  displayLabel: Fa21
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &737021073567779786
 GameObject:
   m_ObjectHideFlags: 0
@@ -983,7 +1007,7 @@ Transform:
   m_GameObject: {fileID: 766688249988460412}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.00017025339, y: -0.002803063, z: 0.014172219}
+  m_LocalPosition: {x: 0.029204916, y: -0.002803063, z: 0.014246624}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1134,125 +1158,149 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TSS.Runtime::TssDeviceLinkIndicator
   bindings:
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 8849998278331423421}
     endpointId: Fa01
     renderer: {fileID: 3298300087223165108}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 4230878839806917373}
     endpointId: Fa02
     renderer: {fileID: 3824181655303086543}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 638220738803650421}
     endpointId: Fa03
     renderer: {fileID: 3644929541372097274}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 7662799461635427239}
     endpointId: Fa04
     renderer: {fileID: 7731300528759390839}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 328335466541533917}
     endpointId: Fa05
     renderer: {fileID: 8228061744877564573}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 6161745347035126555}
     endpointId: Fa06
     renderer: {fileID: 3039086900486552156}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 6436207919891357909}
     endpointId: Fa07
     renderer: {fileID: 3695347679986158917}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 8015264726423586610}
     endpointId: Fa08
     renderer: {fileID: 7966297816246884187}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 477687041574118748}
     endpointId: Fa09
     renderer: {fileID: 3347193838860061785}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 7662887220160682749}
     endpointId: Fa10
     renderer: {fileID: 8436065309935411663}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 4111643956163593180}
     endpointId: Fa11
     renderer: {fileID: 271486679770201500}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 6965884847360552070}
     endpointId: Fa12
     renderer: {fileID: 1818434623224847325}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 7173419031058233492}
     endpointId: Fa13
     renderer: {fileID: 8094759611184423214}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 977110193162989088}
     endpointId: Fa14
     renderer: {fileID: 5687202351230678178}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 4194605302903255174}
     endpointId: Fa15
     renderer: {fileID: 1503898788683290742}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 8816137814679229028}
     endpointId: Fa16
     renderer: {fileID: 5110816818003351464}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 7295752954342417417}
     endpointId: Fa17
     renderer: {fileID: 8834349288282702467}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 9172142510123551163}
     endpointId: Fa18
     renderer: {fileID: 3731083403554232176}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 5318330934763016850}
     endpointId: Fa19
     renderer: {fileID: 3228470241068870734}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 289403390529637043}
     endpointId: Fa20
     renderer: {fileID: 210711603111686871}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 913436490718179171}
     endpointId: Fa21
     renderer: {fileID: 8194402489315821239}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 4023224219228822727}
     endpointId: Fa22
     renderer: {fileID: 5294969347385072059}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 7188890285803877196}
     endpointId: Fa23
     renderer: {fileID: 6593007915044949900}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 8914945001980941162}
     endpointId: Fa24
     renderer: {fileID: 1572325347831539819}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
 --- !u!1 &804107767044412359
 GameObject:
@@ -1371,7 +1419,7 @@ Transform:
   m_GameObject: {fileID: 926624840599467243}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.0109, y: -0.002803063, z: 0.014172219}
+  m_LocalPosition: {x: 0.0337, y: -0.002803063, z: 0.014172219}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2001,7 +2049,7 @@ Transform:
   m_GameObject: {fileID: 1212822048387485122}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.14260492, y: -0.002803063, z: 0.014246624}
+  m_LocalPosition: {x: 0.11980492, y: -0.002803063, z: 0.014246624}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2091,7 +2139,7 @@ Transform:
   m_GameObject: {fileID: 1263825596268858798}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.1015, y: -0.002803063, z: 0.014172219}
+  m_LocalPosition: {x: 0.13120492, y: -0.002803063, z: 0.014246624}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -2861,6 +2909,7 @@ GameObject:
   - component: {fileID: 7074400771451474961}
   - component: {fileID: 286274235738129238}
   - component: {fileID: 1815326791900013810}
+  - component: {fileID: 638220738803650421}
   m_Layer: 0
   m_Name: Fa03
   m_TagString: Untagged
@@ -2877,7 +2926,7 @@ Transform:
   m_GameObject: {fileID: 1743394967317776447}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.1337, y: -0.003000001, z: 0.0068000024}
+  m_LocalPosition: {x: 0.1451, y: -0.003000001, z: 0.0068000024}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2941,6 +2990,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &638220738803650421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1743394967317776447}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa03
+  displayLabel: Fa03
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &1760335779921539719
 GameObject:
   m_ObjectHideFlags: 0
@@ -3132,6 +3204,7 @@ GameObject:
   - component: {fileID: 8178316347703419058}
   - component: {fileID: 390903320923192568}
   - component: {fileID: 6442766024612745855}
+  - component: {fileID: 289403390529637043}
   m_Layer: 0
   m_Name: Fa20
   m_TagString: Untagged
@@ -3148,7 +3221,7 @@ Transform:
   m_GameObject: {fileID: 1802616534153530719}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.0431, y: -0.0030000014, z: -0.006800002}
+  m_LocalPosition: {x: 0.0203, y: -0.0030000014, z: -0.006800002}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -3212,6 +3285,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &289403390529637043
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1802616534153530719}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa20
+  displayLabel: Fa20
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &1901156353397025566
 GameObject:
   m_ObjectHideFlags: 0
@@ -3313,6 +3409,7 @@ GameObject:
   - component: {fileID: 3372903536384294331}
   - component: {fileID: 6949534174194343347}
   - component: {fileID: 500526703796153058}
+  - component: {fileID: 7662887220160682749}
   m_Layer: 0
   m_Name: Fa10
   m_TagString: Untagged
@@ -3329,7 +3426,7 @@ Transform:
   m_GameObject: {fileID: 1951185442062483726}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.1223, y: -0.0030000014, z: -0.006800002}
+  m_LocalPosition: {x: 0.1109, y: -0.0030000014, z: -0.006800002}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -3393,6 +3490,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &7662887220160682749
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1951185442062483726}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa10
+  displayLabel: Fa10
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &2012627375422565680
 GameObject:
   m_ObjectHideFlags: 0
@@ -3510,7 +3630,7 @@ Transform:
   m_GameObject: {fileID: 2034305653338728265}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.15400492, y: -0.002803063, z: 0.014247004}
+  m_LocalPosition: {x: 0.1243, y: -0.002803063, z: 0.014172219}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4034,6 +4154,7 @@ GameObject:
   - component: {fileID: 500537497444708892}
   - component: {fileID: 8180231434395504210}
   - component: {fileID: 1110070002235684267}
+  - component: {fileID: 6161745347035126555}
   m_Layer: 0
   m_Name: Fa06
   m_TagString: Untagged
@@ -4050,7 +4171,7 @@ Transform:
   m_GameObject: {fileID: 2412937183322366413}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.0995, y: -0.003000001, z: 0.0068000024}
+  m_LocalPosition: {x: 0.1337, y: -0.0030000014, z: -0.006800002}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -4114,6 +4235,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &6161745347035126555
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2412937183322366413}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa06
+  displayLabel: Fa06
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &2432287564174478413
 GameObject:
   m_ObjectHideFlags: 0
@@ -4141,7 +4285,7 @@ Transform:
   m_GameObject: {fileID: 2432287564174478413}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.052004915, y: -0.002803063, z: 0.014246624}
+  m_LocalPosition: {x: 0.0223, y: -0.002803063, z: 0.014172219}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -4485,6 +4629,7 @@ GameObject:
   - component: {fileID: 5840832037662265322}
   - component: {fileID: 5602921270357107545}
   - component: {fileID: 2259198487404506835}
+  - component: {fileID: 9172142510123551163}
   m_Layer: 0
   m_Name: Fa18
   m_TagString: Untagged
@@ -4501,7 +4646,7 @@ Transform:
   m_GameObject: {fileID: 2707991848838438996}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0.0025, y: -0.003000001, z: 0.0068000024}
+  m_LocalPosition: {x: 0.0317, y: -0.0030000014, z: -0.006800002}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -4565,6 +4710,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &9172142510123551163
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2707991848838438996}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa18
+  displayLabel: Fa18
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &2710151036869486588
 GameObject:
   m_ObjectHideFlags: 0
@@ -4666,6 +4834,7 @@ GameObject:
   - component: {fileID: 6439693456782675477}
   - component: {fileID: 4154686704636026970}
   - component: {fileID: 3797368286392976947}
+  - component: {fileID: 8015264726423586610}
   m_Layer: 0
   m_Name: Fa08
   m_TagString: Untagged
@@ -4682,7 +4851,7 @@ Transform:
   m_GameObject: {fileID: 2710235212182718267}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.1451, y: -0.0030000014, z: -0.006800002}
+  m_LocalPosition: {x: 0.1223, y: -0.0030000014, z: -0.006800002}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -4746,6 +4915,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &8015264726423586610
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2710235212182718267}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa08
+  displayLabel: Fa08
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &2743024397484308346
 GameObject:
   m_ObjectHideFlags: 0
@@ -4863,7 +5055,7 @@ Transform:
   m_GameObject: {fileID: 2832195328115914060}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.0223, y: -0.002803063, z: 0.014172219}
+  m_LocalPosition: {x: 0.040604915, y: -0.002803063, z: 0.014246624}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5207,6 +5399,7 @@ GameObject:
   - component: {fileID: 6546729502549023749}
   - component: {fileID: 5408560528303968137}
   - component: {fileID: 336316165966729313}
+  - component: {fileID: 4194605302903255174}
   m_Layer: 0
   m_Name: Fa15
   m_TagString: Untagged
@@ -5223,7 +5416,7 @@ Transform:
   m_GameObject: {fileID: 2954736964793989524}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.0317, y: -0.003000001, z: 0.0068000024}
+  m_LocalPosition: {x: 0.0431, y: -0.003000001, z: 0.0068000024}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -5287,6 +5480,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4194605302903255174
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2954736964793989524}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa15
+  displayLabel: Fa15
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &2956122587152862512
 GameObject:
   m_ObjectHideFlags: 0
@@ -5674,7 +5890,7 @@ Transform:
   m_GameObject: {fileID: 3130375917214096486}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.006404916, y: -0.002803063, z: 0.014246624}
+  m_LocalPosition: {x: -0.00017025339, y: -0.002803063, z: 0.014172219}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5764,7 +5980,7 @@ Transform:
   m_GameObject: {fileID: 3192766246219627022}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.029204916, y: -0.002803063, z: 0.014246624}
+  m_LocalPosition: {x: 0.0109, y: -0.002803063, z: 0.014172219}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -5944,7 +6160,7 @@ Transform:
   m_GameObject: {fileID: 3232207966236735759}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.1357, y: -0.002803063, z: 0.014172219}
+  m_LocalPosition: {x: 0.1471, y: -0.002803063, z: 0.014172219}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -6288,6 +6504,7 @@ GameObject:
   - component: {fileID: 801410529677860740}
   - component: {fileID: 7880343110410146120}
   - component: {fileID: 7938102632163534071}
+  - component: {fileID: 7662799461635427239}
   m_Layer: 0
   m_Name: Fa04
   m_TagString: Untagged
@@ -6304,7 +6521,7 @@ Transform:
   m_GameObject: {fileID: 3289469300847223351}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.1223, y: -0.003000001, z: 0.0068000024}
+  m_LocalPosition: {x: 0.1451, y: -0.0030000014, z: -0.006800002}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -6368,6 +6585,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &7662799461635427239
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3289469300847223351}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa04
+  displayLabel: Fa04
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &3361007771157186583
 GameObject:
   m_ObjectHideFlags: 0
@@ -6559,6 +6799,7 @@ GameObject:
   - component: {fileID: 7964013177700651783}
   - component: {fileID: 6439913815110949715}
   - component: {fileID: 7298751322785644717}
+  - component: {fileID: 8849998278331423421}
   m_Layer: 0
   m_Name: Fa01
   m_TagString: Untagged
@@ -6639,6 +6880,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &8849998278331423421
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3497708077946024399}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa01
+  displayLabel: Fa01
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &3522157989365578037
 GameObject:
   m_ObjectHideFlags: 0
@@ -7730,6 +7994,7 @@ GameObject:
   - component: {fileID: 8918672335746012265}
   - component: {fileID: 8589989312538021026}
   - component: {fileID: 5640669216254654137}
+  - component: {fileID: 477687041574118748}
   m_Layer: 0
   m_Name: Fa09
   m_TagString: Untagged
@@ -7746,7 +8011,7 @@ Transform:
   m_GameObject: {fileID: 3843640245558325296}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.1337, y: -0.0030000014, z: -0.006800002}
+  m_LocalPosition: {x: 0.1109, y: -0.003000001, z: 0.0068000024}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -7810,6 +8075,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &477687041574118748
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3843640245558325296}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa09
+  displayLabel: Fa09
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &3869726525278354410
 GameObject:
   m_ObjectHideFlags: 0
@@ -7821,6 +8109,7 @@ GameObject:
   - component: {fileID: 424660556207094289}
   - component: {fileID: 3983517029194184329}
   - component: {fileID: 5298020657728861668}
+  - component: {fileID: 328335466541533917}
   m_Layer: 0
   m_Name: Fa05
   m_TagString: Untagged
@@ -7837,7 +8126,7 @@ Transform:
   m_GameObject: {fileID: 3869726525278354410}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.1109, y: -0.003000001, z: 0.0068000024}
+  m_LocalPosition: {x: 0.1337, y: -0.003000001, z: 0.0068000024}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -7901,6 +8190,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &328335466541533917
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3869726525278354410}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa05
+  displayLabel: Fa05
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &3870453743416592574
 GameObject:
   m_ObjectHideFlags: 0
@@ -8018,7 +8330,7 @@ Transform:
   m_GameObject: {fileID: 3877674385194104206}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.1471, y: -0.002803063, z: 0.014172219}
+  m_LocalPosition: {x: 0.15400492, y: -0.002803063, z: 0.014247004}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -8542,6 +8854,7 @@ GameObject:
   - component: {fileID: 3408176748781050750}
   - component: {fileID: 2680171750877405922}
   - component: {fileID: 1234291980176974773}
+  - component: {fileID: 5318330934763016850}
   m_Layer: 0
   m_Name: Fa19
   m_TagString: Untagged
@@ -8558,7 +8871,7 @@ Transform:
   m_GameObject: {fileID: 3981484463708404188}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.0545, y: -0.0030000014, z: -0.006800002}
+  m_LocalPosition: {x: 0.0203, y: -0.003000001, z: 0.0068000024}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -8622,6 +8935,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &5318330934763016850
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3981484463708404188}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa19
+  displayLabel: Fa19
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &4005659397185570261
 GameObject:
   m_ObjectHideFlags: 0
@@ -9640,7 +9976,7 @@ Transform:
   m_GameObject: {fileID: 4523716465046201655}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.1243, y: -0.002803063, z: 0.014172219}
+  m_LocalPosition: {x: 0.14260492, y: -0.002803063, z: 0.014246624}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10685,7 +11021,7 @@ Transform:
   m_GameObject: {fileID: 5030137005076331604}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.10840491, y: -0.002803063, z: 0.014246624}
+  m_LocalPosition: {x: 0.1015, y: -0.002803063, z: 0.014172219}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -10849,6 +11185,7 @@ GameObject:
   - component: {fileID: 5120224019281347149}
   - component: {fileID: 2627738187289670369}
   - component: {fileID: 3646200714469062223}
+  - component: {fileID: 7295752954342417417}
   m_Layer: 0
   m_Name: Fa17
   m_TagString: Untagged
@@ -10865,7 +11202,7 @@ Transform:
   m_GameObject: {fileID: 5070409108329096647}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.0089, y: -0.003000001, z: 0.0068000024}
+  m_LocalPosition: {x: 0.0317, y: -0.003000001, z: 0.0068000024}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -10929,6 +11266,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &7295752954342417417
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5070409108329096647}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa17
+  displayLabel: Fa17
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &5081486003114474096
 GameObject:
   m_ObjectHideFlags: 0
@@ -11570,6 +11930,7 @@ GameObject:
   - component: {fileID: 7014748035650069927}
   - component: {fileID: 573647140114420918}
   - component: {fileID: 8512422321156605950}
+  - component: {fileID: 8914945001980941162}
   m_Layer: 0
   m_Name: Fa24
   m_TagString: Untagged
@@ -11650,6 +12011,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &8914945001980941162
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5579955792152352856}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa24
+  displayLabel: Fa24
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &5581379088281461305
 GameObject:
   m_ObjectHideFlags: 0
@@ -12111,6 +12495,7 @@ GameObject:
   - component: {fileID: 2098615715202476994}
   - component: {fileID: 8813436135009971245}
   - component: {fileID: 9087825852647061836}
+  - component: {fileID: 977110193162989088}
   m_Layer: 0
   m_Name: Fa14
   m_TagString: Untagged
@@ -12127,7 +12512,7 @@ Transform:
   m_GameObject: {fileID: 6074723975599274518}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.0431, y: -0.003000001, z: 0.0068000024}
+  m_LocalPosition: {x: 0.0545, y: -0.0030000014, z: -0.006800002}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -12191,6 +12576,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &977110193162989088
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6074723975599274518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa14
+  displayLabel: Fa14
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &6118166668484821994
 GameObject:
   m_ObjectHideFlags: 0
@@ -12382,6 +12790,7 @@ GameObject:
   - component: {fileID: 7669963246912382317}
   - component: {fileID: 4606977742050541124}
   - component: {fileID: 1794950106270242593}
+  - component: {fileID: 7173419031058233492}
   m_Layer: 0
   m_Name: Fa13
   m_TagString: Untagged
@@ -12462,6 +12871,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &7173419031058233492
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6228395891547636411}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa13
+  displayLabel: Fa13
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &6273159836685573121
 GameObject:
   m_ObjectHideFlags: 0
@@ -12594,6 +13026,7 @@ GameObject:
   - component: {fileID: 31631204640112670}
   - component: {fileID: 2217941012261581823}
   - component: {fileID: 8930470582669393022}
+  - component: {fileID: 8816137814679229028}
   m_Layer: 0
   m_Name: Fa16
   m_TagString: Untagged
@@ -12610,7 +13043,7 @@ Transform:
   m_GameObject: {fileID: 6277635148815438597}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.0203, y: -0.003000001, z: 0.0068000024}
+  m_LocalPosition: {x: 0.0431, y: -0.0030000014, z: -0.006800002}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -12674,6 +13107,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &8816137814679229028
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6277635148815438597}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa16
+  displayLabel: Fa16
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &6285644265738247221
 GameObject:
   m_ObjectHideFlags: 0
@@ -13135,6 +13591,7 @@ GameObject:
   - component: {fileID: 6191620830917281435}
   - component: {fileID: 1995684638729958762}
   - component: {fileID: 5337260810141063850}
+  - component: {fileID: 7188890285803877196}
   m_Layer: 0
   m_Name: Fa23
   m_TagString: Untagged
@@ -13151,7 +13608,7 @@ Transform:
   m_GameObject: {fileID: 6476743899404680085}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.0089, y: -0.0030000014, z: -0.006800002}
+  m_LocalPosition: {x: -0.0025, y: -0.003000001, z: 0.0068000024}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -13215,6 +13672,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &7188890285803877196
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6476743899404680085}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa23
+  displayLabel: Fa23
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &6478744664094466328
 GameObject:
   m_ObjectHideFlags: 0
@@ -13586,6 +14066,7 @@ GameObject:
   - component: {fileID: 8246892105013265700}
   - component: {fileID: 5145072902715669901}
   - component: {fileID: 8181316638307428370}
+  - component: {fileID: 6436207919891357909}
   m_Layer: 0
   m_Name: Fa07
   m_TagString: Untagged
@@ -13602,7 +14083,7 @@ Transform:
   m_GameObject: {fileID: 6844816512347417481}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.1565, y: -0.0030000014, z: -0.006800002}
+  m_LocalPosition: {x: 0.1223, y: -0.003000001, z: 0.0068000024}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -13666,6 +14147,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &6436207919891357909
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6844816512347417481}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa07
+  displayLabel: Fa07
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &6993322660374323974
 GameObject:
   m_ObjectHideFlags: 0
@@ -14037,6 +14541,7 @@ GameObject:
   - component: {fileID: 1864957278003925753}
   - component: {fileID: 5069258187079053220}
   - component: {fileID: 2280344947268424562}
+  - component: {fileID: 4023224219228822727}
   m_Layer: 0
   m_Name: Fa22
   m_TagString: Untagged
@@ -14053,7 +14558,7 @@ Transform:
   m_GameObject: {fileID: 7203850508834042483}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.0203, y: -0.0030000014, z: -0.006800002}
+  m_LocalPosition: {x: 0.0089, y: -0.0030000014, z: -0.006800002}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -14117,6 +14622,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4023224219228822727
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7203850508834042483}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa22
+  displayLabel: Fa22
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &7268339077965189589
 GameObject:
   m_ObjectHideFlags: 0
@@ -14144,7 +14672,7 @@ Transform:
   m_GameObject: {fileID: 7268339077965189589}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.040604915, y: -0.002803063, z: 0.014246624}
+  m_LocalPosition: {x: 0.017804915, y: -0.002803063, z: 0.014246624}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -15134,7 +15662,7 @@ Transform:
   m_GameObject: {fileID: 7566387667475947749}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.0337, y: -0.002803063, z: 0.014172219}
+  m_LocalPosition: {x: 0.0451, y: -0.002803063, z: 0.014172219}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -15478,6 +16006,7 @@ GameObject:
   - component: {fileID: 1455731330271430324}
   - component: {fileID: 3296100908153082653}
   - component: {fileID: 8406069314295085638}
+  - component: {fileID: 6965884847360552070}
   m_Layer: 0
   m_Name: Fa12
   m_TagString: Untagged
@@ -15558,6 +16087,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &6965884847360552070
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7753919968526860106}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa12
+  displayLabel: Fa12
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &7795006834781111603
 GameObject:
   m_ObjectHideFlags: 0
@@ -16109,6 +16661,7 @@ GameObject:
   - component: {fileID: 7890078761918848355}
   - component: {fileID: 4862930045072630442}
   - component: {fileID: 7263609017518825941}
+  - component: {fileID: 4111643956163593180}
   m_Layer: 0
   m_Name: Fa11
   m_TagString: Untagged
@@ -16125,7 +16678,7 @@ Transform:
   m_GameObject: {fileID: 8207115770896397509}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.1109, y: -0.0030000014, z: -0.006800002}
+  m_LocalPosition: {x: 0.0995, y: -0.003000001, z: 0.0068000024}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -16189,6 +16742,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4111643956163593180
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8207115770896397509}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa11
+  displayLabel: Fa11
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &8229188919866232239
 GameObject:
   m_ObjectHideFlags: 0
@@ -16846,7 +17422,7 @@ Transform:
   m_GameObject: {fileID: 8625450359438080570}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.1129, y: -0.002803063, z: 0.014172219}
+  m_LocalPosition: {x: 0.1357, y: -0.002803063, z: 0.014172219}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -17370,6 +17946,7 @@ GameObject:
   - component: {fileID: 7245009335388048846}
   - component: {fileID: 7065585200122740451}
   - component: {fileID: 5776435150173744412}
+  - component: {fileID: 4230878839806917373}
   m_Layer: 0
   m_Name: Fa02
   m_TagString: Untagged
@@ -17386,7 +17963,7 @@ Transform:
   m_GameObject: {fileID: 8802800428930286412}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.1451, y: -0.003000001, z: 0.0068000024}
+  m_LocalPosition: {x: 0.1565, y: -0.0030000014, z: -0.006800002}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -17450,6 +18027,29 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!114 &4230878839806917373
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8802800428930286412}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Fa02
+  displayLabel: Fa02
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &8848331765383878340
 GameObject:
   m_ObjectHideFlags: 0
@@ -18197,7 +18797,7 @@ Transform:
   m_GameObject: {fileID: 9112521004291710255}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 0.017804915, y: -0.002803063, z: 0.014246624}
+  m_LocalPosition: {x: 0.006404916, y: -0.002803063, z: 0.014246624}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []

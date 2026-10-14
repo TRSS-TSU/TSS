@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.UI;
@@ -6,6 +7,138 @@ using Object = UnityEngine.Object;
 
 public sealed class TssDeviceSessionTests
 {
+    [Test]
+    public void LinkIndicatorResubscribesAfterBeingReenabled()
+    {
+        var sessionObject = new GameObject("Session");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        var indicatorObject = new GameObject("Indicator");
+        var indicator = indicatorObject.AddComponent<TssDeviceLinkIndicator>();
+
+        try
+        {
+            typeof(TssTrainingSession).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(session, null);
+            var onEnable = typeof(TssDeviceLinkIndicator).GetMethod("OnEnable", BindingFlags.Instance | BindingFlags.NonPublic);
+            onEnable.Invoke(indicator, null);
+            typeof(TssDeviceLinkIndicator).GetMethod("OnDisable", BindingFlags.Instance | BindingFlags.NonPublic)
+                .Invoke(indicator, null);
+            onEnable.Invoke(indicator, null);
+
+            var stateChanged = (Action)typeof(TssTrainingSession)
+                .GetField("StateChanged", BindingFlags.Instance | BindingFlags.NonPublic)
+                .GetValue(session);
+            var listeners = 0;
+            foreach (var callback in stateChanged?.GetInvocationList() ?? Array.Empty<Delegate>())
+                if (ReferenceEquals(callback.Target, indicator))
+                    listeners++;
+
+            Assert.AreEqual(1, listeners);
+        }
+        finally
+        {
+            Object.DestroyImmediate(indicatorObject);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
+    public void SwitchLayer2AvailabilityFollowsActiveVlanAndAdminState()
+    {
+        var profile = TssNetworkRunProfile.Create(42, null);
+        var network = new TssNetworkSessionState(profile);
+        var device = network.GetOrCreateDevice("SW", EquipmentCategory.Switch, "Switch");
+        var iface = new NetworkInterfaceState
+        {
+            Name = "Fa0/1",
+            EndpointId = "SW:Fa01",
+            AdminUp = true,
+            CarrierUp = true,
+            AccessVlan = profile.ReceptionVlan
+        };
+        device.Interfaces[iface.Name] = iface;
+
+        Assert.IsFalse(network.IsEndpointLayer2Available(iface.EndpointId));
+        device.Vlans[profile.ReceptionVlan] = "Reception";
+        Assert.IsTrue(network.IsEndpointLayer2Available(iface.EndpointId));
+
+        iface.AdminUp = false;
+        Assert.IsFalse(network.IsEndpointLayer2Available(iface.EndpointId));
+    }
+
+    [Test]
+    public void RouterLayer2DoesNotRequireIpAddressButRoutingDoes()
+    {
+        var network = new TssNetworkSessionState(TssNetworkRunProfile.Create(42, null));
+        var device = network.GetOrCreateDevice("R1", EquipmentCategory.Router, "Router");
+        var iface = new NetworkInterfaceState
+        {
+            Name = "Fa0/1",
+            EndpointId = "R1:Fa01",
+            AdminUp = true,
+            CarrierUp = true
+        };
+        device.Interfaces[iface.Name] = iface;
+
+        Assert.IsTrue(network.IsEndpointLayer2Available(iface.EndpointId));
+        Assert.IsFalse(network.IsEndpointIpRoutingAvailable(iface.EndpointId));
+
+        iface.Address = "192.0.2.1";
+        iface.Mask = "255.255.255.252";
+        Assert.IsTrue(network.IsEndpointIpRoutingAvailable(iface.EndpointId));
+        Assert.IsFalse(network.IsEndpointLayer3Operational(iface.EndpointId));
+
+        iface.Address = network.Profile.WanCustomerAddress;
+        Assert.IsTrue(network.IsEndpointLayer3Operational(iface.EndpointId));
+        Assert.AreEqual(30, TssNetworkAddress.PrefixLength(iface.Mask));
+    }
+
+    [Test]
+    public void UnregisteredPortDefaultsUpUntilItIsConfigured()
+    {
+        var network = new TssNetworkSessionState(TssNetworkRunProfile.Create(42, null));
+
+        Assert.IsTrue(network.IsEndpointLayer1Available("Switch:Fa02"));
+        Assert.IsTrue(network.IsEndpointLayer2Available("Switch:Fa02"));
+    }
+
+    [Test]
+    public void SwitchPortBindingUsesTheCliInterfaceName()
+    {
+        var endpoint = new GameObject("Fa02").AddComponent<TssPortEndpoint>();
+        endpoint.Configure("Rack:Rack01:U36:Fa02", new EquipmentInterface { name = "Fa02", label = "FastEthernet 0/2" });
+
+        try
+        {
+            var method = typeof(TssDeviceSessionController).GetMethod("SessionInterfaceName", BindingFlags.Static | BindingFlags.NonPublic);
+            Assert.AreEqual("Fa0/2", method.Invoke(null, new object[] { endpoint, EquipmentCategory.Switch }));
+        }
+        finally
+        {
+            Object.DestroyImmediate(endpoint.gameObject);
+        }
+    }
+
+    [Test]
+    public void SwitchCliAcceptsShortFaAlias()
+    {
+        var sessionObject = new GameObject("CliTestSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        session.BeginScenario(scenario);
+        var processor = new TssCliCommandProcessor(session, "Switch", EquipmentCategory.Switch, "Switch");
+
+        processor.Execute("enable");
+        processor.Execute("configure terminal");
+        Assert.IsTrue(processor.Execute("int f0/2").Accepted);
+        Assert.IsTrue(processor.Execute("shutdown").Accepted);
+        Assert.IsFalse(processor.Device.Interfaces["Fa0/2"].AdminUp);
+
+        Object.DestroyImmediate(scenario);
+        Object.DestroyImmediate(sessionObject);
+    }
+
     [Test]
     public void EndpointBindingUsesExactSuffixOnly()
     {
@@ -112,6 +245,17 @@ public sealed class TssDeviceSessionTests
     }
 
     [Test]
+    // Capstone placement contract.
+    public void BalancedScenarioIncludesGuestLoungePlacements()
+    {
+        var scenario = UnityEditor.AssetDatabase.LoadAssetAtPath<TssScenarioDefinition>("Assets/Data/TSS/Scenarios/Balanced_12_Piece_Lab.asset");
+
+        Assert.IsNotNull(scenario);
+        Assert.IsTrue(System.Array.Exists(scenario.expectedEndpointPlacements, x => x.stationId == "LobbyTable01" && x.category == EquipmentCategory.AccessPoint && x.requiredName == "AP-1"));
+        Assert.IsTrue(System.Array.Exists(scenario.expectedEndpointPlacements, x => x.stationId == "LobbyTable01" && x.category == EquipmentCategory.Laptop && x.requiredName == "TestLaptop"));
+    }
+
+    [Test]
     public void NetworkStateRemovesDeviceByStableKey()
     {
         var state = new TssNetworkSessionState(TssNetworkRunProfile.Create(1, new NetworkScenarioConfig()));
@@ -165,6 +309,79 @@ public sealed class TssDeviceSessionTests
         Assert.IsTrue(evaluator.Complete);
         Assert.AreSame(snapshot, evaluator.CompletionSnapshot);
         Assert.AreEqual(4, evaluator.CompletionSnapshot.ProfileSeed);
+    }
+
+    [Test]
+    public void SuspendedDeadVlanIsAcceptedAndUnusedPortsAreEvaluated()
+    {
+        var profile = TssNetworkRunProfile.Create(5, new NetworkScenarioConfig());
+        var state = new TssNetworkSessionState(profile);
+        var an1 = state.GetOrCreateDevice("AN1", EquipmentCategory.Switch, "AN-1");
+        var an2 = state.GetOrCreateDevice("AN2", EquipmentCategory.Switch, "AN-2");
+        an1.Vlans[profile.ManagementVlan] = profile.ManagementVlanName;
+        an1.Vlans[profile.ReceptionVlan] = profile.ReceptionVlanName;
+        an1.Vlans[profile.DataVlan] = profile.DataVlanName;
+        an1.Vlans[profile.NativeVlan] = profile.NativeVlanName;
+        an1.Vlans[profile.DeadVlan] = profile.DeadVlanName + " (suspended)";
+
+        for (var port = 8; port <= 24; port++)
+            an1.Interfaces["Fa0/" + port] = new NetworkInterfaceState { Name = "Fa0/" + port, AccessVlan = profile.DeadVlan, AdminUp = false };
+        for (var port = 5; port <= 24; port++)
+            an2.Interfaces["Fa0/" + port] = new NetworkInterfaceState { Name = "Fa0/" + port, AccessVlan = profile.DeadVlan, AdminUp = false };
+
+        var result = new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2();
+
+        Assert.IsFalse(result.UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Vlans"));
+        Assert.IsFalse(result.UnmetCategories.Exists(x => x.Id == "WP2.UnusedPorts"));
+        Assert.IsTrue(result.WasAttempted("WP2.UnusedPorts"));
+    }
+
+    [Test]
+    public void ProviderAliasRecordsEndpointEvidence()
+    {
+        var config = new NetworkScenarioConfig
+        {
+            evidenceRequirements = new[]
+            {
+                new NetworkEvidenceRequirement { evidenceId = "IT1-provider", command = "ping provider" }
+            }
+        };
+        var profile = TssNetworkRunProfile.Create(6, config);
+        var state = new TssNetworkSessionState(profile);
+        var endpoint = state.GetOrCreateEndpoint("IT1", "IT1");
+        endpoint.Layer1Connected = endpoint.Layer2Connected = true;
+
+        var result = new TssEndpointCommandProcessor(state).Execute(endpoint.Key, "ping provider");
+
+        Assert.IsTrue(result.Accepted);
+        Assert.IsTrue(endpoint.Evidence.Contains("IT1-provider"));
+    }
+
+    [Test]
+    public void WirelessStateBackedWorkPackageCompletesAfterLeaseDiagnosticsAndPage()
+    {
+        var profile = TssNetworkRunProfile.Create(8, new NetworkScenarioConfig());
+        var state = new TssNetworkSessionState(profile);
+        var laptop = state.GetOrCreateEndpoint("laptop", "TestLaptop", EquipmentCategory.Laptop);
+        state.SetAccessPointUplink(true);
+        state.AccessPoint.Configured = true;
+        var accessSwitch = state.GetOrCreateDevice("switch", EquipmentCategory.Switch, "AN-1");
+        accessSwitch.Vlans[profile.ReceptionVlan] = profile.ReceptionVlanName;
+        accessSwitch.Interfaces["Fa0/7"] = new NetworkInterfaceState { Name = "Fa0/7", AdminUp = true, CarrierUp = true, AccessVlan = profile.ReceptionVlan };
+        accessSwitch.Interfaces["Fa0/6"] = new NetworkInterfaceState { Name = "Fa0/6", AdminUp = true, CarrierUp = true, IsTrunk = true, NativeVlan = profile.NativeVlan, AllowedVlans = new System.Collections.Generic.HashSet<int> { profile.ManagementVlan, profile.ReceptionVlan, profile.DataVlan } };
+        var router = state.GetOrCreateDevice("router", EquipmentCategory.Router, "CN-1");
+        router.Interfaces["Fa0/1"] = new NetworkInterfaceState { Name = "Fa0/1", AdminUp = true, CarrierUp = true, Address = profile.WanCustomerAddress, Mask = "255.255.255.252" };
+        router.Routes.Add(new NetworkRouteState { Network = "0.0.0.0", Mask = "0.0.0.0", NextHop = profile.WanProviderAddress });
+        state.SetProviderDemarcConnected(true);
+
+        Assert.IsTrue(state.TryAssociateWirelessClient(laptop.Key, profile.Ssid, profile.WifiPassphrase, out _));
+        Assert.IsTrue(new TssEndpointCommandProcessor(state).TryApply(laptop.Key, true, string.Empty, string.Empty, string.Empty, string.Empty, out _));
+        var commands = new TssEndpointCommandProcessor(state);
+        commands.Execute(laptop.Key, "ipconfig");
+        Assert.IsTrue(commands.Execute(laptop.Key, "ping provider").Accepted);
+        Assert.IsTrue(state.TryLoadRedWolfPage(laptop.Key, out _));
+
+        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer4().Complete);
     }
 
     [Test]
@@ -315,6 +532,11 @@ public sealed class TssDeviceSessionTests
     [Test]
     public void DefaultLogicalLayerSettingsAssignedProperly()
     {
+        var routerState = new TssDeviceLogicalState("r1", EquipmentCategory.Router, "Router01");
+        Assert.AreEqual(string.Empty, routerState.IpAddress);
+        Assert.AreEqual(string.Empty, routerState.DefaultGateway);
+        Assert.IsFalse(routerState.UseDhcp);
+
         var switchState = new TssDeviceLogicalState("sw1", EquipmentCategory.Switch, "Switch01");
         Assert.AreEqual("192.168.1.2", switchState.IpAddress);
         Assert.AreEqual("255.255.255.0", switchState.SubnetMask);
@@ -571,6 +793,18 @@ public sealed class TssDeviceSessionTests
 
         processor.Execute("enable");
         processor.Execute("configure terminal");
+        var defaultRoute = processor.Execute("ip route 0.0.0.0 0.0.0.0 10.42.17.2");
+        Assert.IsTrue(defaultRoute.Accepted);
+        Assert.IsTrue(defaultRoute.StateChanged);
+        Assert.AreEqual(1, processor.Device.Routes.Count);
+        Assert.IsFalse(processor.Execute("show ip route").Accepted);
+        StringAssert.DoesNotContain("S*   0.0.0.0/0 [1/0] via 10.42.17.2", processor.Execute("do show ip route").Output);
+        Assert.IsTrue(processor.Execute("interface Fa0/1").Accepted);
+        Assert.IsTrue(processor.Execute("no shutdown").Accepted);
+        Assert.IsTrue(processor.Execute("ip add 10.42.17.1 255.255.255.252").Accepted);
+        processor.Device.Interfaces["Fa0/1"].CarrierUp = true;
+        StringAssert.Contains("S*   0.0.0.0/0 [1/0] via 10.42.17.2", processor.Execute("do show ip route").Output);
+        Assert.IsTrue(processor.Execute("exit").Accepted);
         Assert.IsFalse(processor.Execute("interface GE00").Accepted);
         Assert.IsFalse(processor.Execute("interface GE01").Accepted);
         Assert.IsFalse(processor.Execute("interface Gi0/0").Accepted);
@@ -578,12 +812,12 @@ public sealed class TssDeviceSessionTests
         Assert.IsFalse(processor.Device.Interfaces.ContainsKey("GE00"));
         Assert.IsFalse(processor.Device.Interfaces.ContainsKey("GE01"));
         Assert.IsFalse(processor.Device.Interfaces.ContainsKey("Fa0/0"));
-        Assert.IsTrue(processor.Execute("interface Fa0/0").Accepted);
+        Assert.IsTrue(processor.Execute("int f0/0").Accepted);
         Assert.IsTrue(processor.Execute("no shutdown").Accepted);
         Assert.IsTrue(processor.Execute("exit").Accepted);
         Assert.IsTrue(processor.Execute("interface Fa0/0.123").Accepted);
         Assert.IsTrue(processor.Execute("encapsulation dot1q 123").Accepted);
-        Assert.IsTrue(processor.Execute("ip address 10.20.30.1 255.255.255.0").Accepted);
+        Assert.IsTrue(processor.Execute("ip add 10.20.30.1 255.255.255.0").Accepted);
 
         Assert.IsTrue(processor.Device.Interfaces.ContainsKey("Fa0/0"));
         Assert.IsTrue(processor.Device.Interfaces.ContainsKey("Fa0/0.123"));
@@ -594,6 +828,26 @@ public sealed class TssDeviceSessionTests
         var invalid = processor.Execute("ip address 999.1.1.1 255.255.255.0");
         Assert.IsFalse(invalid.Accepted);
         Assert.AreEqual(before, processor.Device.Interfaces["Fa0/0.123"].Address);
+
+        Object.DestroyImmediate(scenario);
+        Object.DestroyImmediate(sessionObject);
+    }
+
+    [Test]
+    public void SwitchCliAcceptsIpAddAlias()
+    {
+        var sessionObject = new GameObject("SwitchCliTestSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true, profileSeed = 43 };
+        session.BeginScenario(scenario);
+        var processor = new TssCliCommandProcessor(session, "Switch", EquipmentCategory.Switch, "SW-1");
+
+        processor.Execute("enable");
+        processor.Execute("configure terminal");
+        Assert.IsTrue(processor.Execute("interface Fa0/1").Accepted);
+        Assert.IsTrue(processor.Execute("ip add 192.168.1.2 255.255.255.0").Accepted);
+        Assert.AreEqual("192.168.1.2", processor.Device.Interfaces["Fa0/1"].Address);
 
         Object.DestroyImmediate(scenario);
         Object.DestroyImmediate(sessionObject);

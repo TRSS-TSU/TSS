@@ -298,12 +298,17 @@ public sealed class TssDeviceSessionController : MonoBehaviour
     private static string SessionInterfaceName(TssPortEndpoint endpoint, EquipmentCategory category)
     {
         var name = string.IsNullOrWhiteSpace(endpoint?.DisplayLabel) ? endpoint?.name : endpoint.DisplayLabel;
-        if (category != EquipmentCategory.Router)
-            return name;
-
         var endpointId = endpoint?.EndpointId ?? string.Empty;
         var separator = endpointId.LastIndexOf(':');
         var suffix = separator >= 0 ? endpointId.Substring(separator + 1) : endpointId;
+        if (category == EquipmentCategory.Switch
+            && suffix.StartsWith("Fa", System.StringComparison.OrdinalIgnoreCase)
+            && int.TryParse(suffix.Substring(2), out var switchPort))
+            return "Fa0/" + switchPort;
+
+        if (category != EquipmentCategory.Router)
+            return name;
+
         if (suffix.Equals("Fa00", System.StringComparison.OrdinalIgnoreCase) || suffix.Equals("Fa0/0", System.StringComparison.OrdinalIgnoreCase))
             return "Fa0/0";
         if (suffix.Equals("Fa01", System.StringComparison.OrdinalIgnoreCase) || suffix.Equals("Fa0/1", System.StringComparison.OrdinalIgnoreCase))
@@ -359,7 +364,7 @@ public sealed class TssDeviceSessionController : MonoBehaviour
             network.SetAccessPointUplink(session && session.IsAccessPointUplinkConnected());
             if (ctx.Category == EquipmentCategory.Laptop)
             {
-                var associated = network.AccessPoint.UplinkConnected && network.AccessPoint.Configured && network.IsAccessPointSwitchPortReady();
+                var associated = network.IsWirelessAssociated(ctx.Key);
                 endpoint.Layer1Connected = associated;
                 endpoint.Layer2Connected = associated;
             }
@@ -388,6 +393,9 @@ public sealed class TssDeviceSessionController : MonoBehaviour
             _lastWorkstationSourceKey = ctx.Key;
         presenter.Initialize(state, deviceObject, CloseCurrentSession, ctx.Key, initiatingSourceKey);
         IsSessionOpen = true;
+
+        if (network != null)
+            TssTrainingSession.Instance?.NotifyNetworkStateChanged();
 
         if (TssRuntimeUi.Instance)
             TssRuntimeUi.Instance.PushExternalGameplayLock(this);

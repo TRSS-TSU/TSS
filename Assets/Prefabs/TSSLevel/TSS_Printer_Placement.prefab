@@ -2218,7 +2218,9 @@ MonoBehaviour:
   - endpoint: {fileID: 0}
     endpointId: Eth01
     renderer: {fileID: 330842341688511768}
+    mode: 0
     connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
 --- !u!1 &4986410176026322580
 GameObject:

@@ -729,6 +729,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 continue;
 
             var panel = panelTransform.gameObject;
+            EnsureSlidePanelOverlay(panel);
             var title = panelTransform.Find("Title")?.GetComponent<Text>();
             var body = panelTransform.Find("Body")?.GetComponent<Text>();
             _hudSlidePanels.Add(panel);
@@ -737,12 +738,26 @@ public sealed class TssRuntimeUi : MonoBehaviour
         }
     }
 
+    private static void EnsureSlidePanelOverlay(GameObject panel)
+    {
+        if (!panel)
+            return;
+
+        var canvas = panel.GetComponent<Canvas>() ?? panel.AddComponent<Canvas>();
+        canvas.overrideSorting = true;
+        canvas.sortingOrder = 600;
+        var raycaster = panel.GetComponent<GraphicRaycaster>() ?? panel.AddComponent<GraphicRaycaster>();
+        raycaster.enabled = true;
+    }
+
     private void BuildRightSlidePanels()
     {
         _sopSlidePanel = _sopPanel;
+        EnsureSlidePanelOverlay(_sopSlidePanel);
 
         var wp1 = _hudRoot.Find("HudWp1SlidePanel");
         _wp1SlidePanel = wp1 ? wp1.gameObject : null;
+        EnsureSlidePanelOverlay(_wp1SlidePanel);
         _wp1SlideTitleText = wp1 ? wp1.Find("Title")?.GetComponent<Text>() : null;
         _wp1SlideBodyText = wp1 ? wp1.Find("Body")?.GetComponent<Text>() : null;
 
@@ -1018,27 +1033,32 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (workPackage == 1)
             return PlacementPanelText();
 
-        if (workPackage == 4)
-            return StaticWorkPackageChecklist(
-                "Access point installed at the designated ceiling mount",
-                "AP uplink landed through the patch panel",
-                "AP switchport placed in the correct VLAN",
-                "Guest SSID secured and verified from the test laptop");
-
         if (session.NetworkState == null)
+        {
+            if (workPackage == 4)
+                return StaticWorkPackageChecklist(
+                    "Access point installed at the designated ceiling mount",
+                    "AP uplink landed through the patch panel",
+                    "AP switchport placed in the correct VLAN",
+                    "Guest SSID secured and verified from the test laptop");
+
             return StaticWorkPackageChecklist(
                 workPackage == 2 ? "Switches hardened and configured" : "Router hardened and configured",
                 workPackage == 2 ? "VLANs, access ports, and trunks verified" : "Inter-VLAN gateways and WAN verified",
                 "Required connectivity evidence verified",
                 "Configuration saved");
+        }
 
+        var evaluator = new TssNetworkWorkPackageEvaluator(session.NetworkState);
         var result = workPackage == 2
-            ? new TssNetworkWorkPackageEvaluator(session.NetworkState).EvaluateLayer2()
-            : new TssNetworkWorkPackageEvaluator(session.NetworkState).EvaluateLayer3();
+            ? evaluator.EvaluateLayer2()
+            : workPackage == 3
+                ? evaluator.EvaluateLayer3()
+                : evaluator.EvaluateLayer4();
 
         var builder = new StringBuilder();
         var complete = 0;
-        var total = workPackage == 2 ? 7 : 6;
+        var total = workPackage == 2 ? 7 : workPackage == 3 ? 6 : 7;
         builder.AppendLine($"Complete: {complete}/{total}");
         builder.AppendLine();
 
@@ -1050,9 +1070,9 @@ public sealed class TssRuntimeUi : MonoBehaviour
             AppendChecklistLine(builder, result, "Access ports assigned to the correct VLAN", "WP2.Access.", ref complete, prefix: true);
             AppendChecklistLine(builder, result, "Required trunks established", "WP2.Trunks", ref complete, prefix: true);
             AppendChecklistLine(builder, result, "Both switch configurations saved", "WP2.AN-1.Save", ref complete, "WP2.AN-2.Save");
-            AppendUncheckedLine(builder, "Unused ports parked in the dead VLAN and shut");
+            AppendChecklistLine(builder, result, "Unused ports parked in the dead VLAN and shut", "WP2.UnusedPorts", ref complete);
         }
-        else
+        else if (workPackage == 3)
         {
             AppendChecklistLine(builder, result, "Router hardened", "WP3.Hardening", ref complete);
             AppendChecklistLine(builder, result, "Inter-VLAN gateways configured", "WP3.Subinterfaces", ref complete);
@@ -1060,6 +1080,16 @@ public sealed class TssRuntimeUi : MonoBehaviour
             AppendChecklistLine(builder, result, "Default route points to the provider", "WP3.DefaultRoute", ref complete);
             AppendChecklistLine(builder, result, "Endpoint connectivity verified", "WP3.EndpointEvidence.", ref complete, prefix: true);
             AppendChecklistLine(builder, result, "Router configuration saved", "WP3.Save", ref complete);
+        }
+        else
+        {
+            AppendChecklistLine(builder, result, "AP uplink is connected", "WP4.APUplink", ref complete);
+            AppendChecklistLine(builder, result, "AP switchport is in the Reception VLAN", "WP4.SwitchPort", ref complete);
+            AppendChecklistLine(builder, result, "Guest wireless settings are configured", "WP4.APConfig", ref complete);
+            AppendChecklistLine(builder, result, "Test laptop is associated over Wi-Fi", "WP4.LaptopAssociation", ref complete);
+            AppendChecklistLine(builder, result, "Test laptop received the DHCP lease", "WP4.Dhcp", ref complete);
+            AppendChecklistLine(builder, result, "Laptop diagnostics reached the provider", "WP4.Diagnostics", ref complete);
+            AppendChecklistLine(builder, result, "RedWolf page loaded", "WP4.RedWolf", ref complete);
         }
 
         var text = builder.ToString();
@@ -1174,7 +1204,11 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
         var bodyText = row.Find("SectionBody")?.GetComponent<Text>();
         if (bodyText)
+        {
+            if (hasBinder)
+                bodyText.fontSize = 17;
             bodyText.text = hasBinder ? BinderBody(_selectedSopSectionIndex) : SopBody(sections[_selectedSopSectionIndex]);
+        }
     }
 
     private void EnsureSopTabCapacity(int count)
@@ -1196,25 +1230,60 @@ public sealed class TssRuntimeUi : MonoBehaviour
         switch (index)
         {
             case 0:
-                return (scenario.sopSections != null && scenario.sopSections.Length > 0 ? scenario.sopSections[0].body + "\n\n" : string.Empty)
-                    + "Assigned names: PDU1, AN-1, CN-1, IT2, PDU2, AN-2, IT1, Reception1, Reception2, Data1, Data2, Data3.";
+                return BinderHeading("Rack build order")
+                    + "GROUND FLOOR / RACK01\nTop to bottom: PDU1, Patch1, AN-1, CN-1, IT2 (server).\n\n"
+                    + "SECOND FLOOR / RACK02\nTop to bottom: PDU2, Patch2, AN-2.\n\n"
+                    + "WORK AREAS\nIT1: IT room | Reception1 and Reception2: Reception\n"
+                    + "Data1: Office 1 | Data2 and Data3: Office 2\n"
+                    + "AP-1 and TestLaptop: Guest Lounge. Use these exact names.";
             case 1:
-                return $"Create on both switches:\n{profile.ManagementVlanName}: VLAN {profile.ManagementVlan}\n{profile.ReceptionVlanName}: VLAN {profile.ReceptionVlan}\n{profile.DataVlanName}: VLAN {profile.DataVlan}\n{profile.NativeVlanName}: VLAN {profile.NativeVlan}\n{profile.DeadVlanName}: VLAN {profile.DeadVlan}";
+                return BinderHeading("Layer 2 plan")
+                    + $"Create on both switches:\n{profile.ManagementVlanName}: VLAN {profile.ManagementVlan}\n{profile.ReceptionVlanName}: VLAN {profile.ReceptionVlan}\n{profile.DataVlanName}: VLAN {profile.DataVlan}\n{profile.NativeVlanName}: VLAN {profile.NativeVlan} (native)\n{profile.DeadVlanName}: VLAN {profile.DeadVlan} (unused ports)\n\n"
+                    + "ACCESS PORTS\nAN-1 Fa0/2 IT1; Fa0/3 Reception1; Fa0/4 Reception2; Fa0/5 IT2\n"
+                    + "AN-2 Fa0/2 Data1; Fa0/3 Data2; Fa0/4 Data3\n\n"
+                    + "802.1Q TRUNKS\nAN-1 Fa0/1 to AN-2 Fa0/1; AN-1 Fa0/6 to CN-1 Fa0/0\n"
+                    + "Set dot1q, trunk mode, native VLAN, and allow Management, Reception, and Data.";
             case 2:
-                return $"Management: {profile.ManagementNetwork}.0/24, gateway {profile.ManagementNetwork}.1\nReception: {profile.ReceptionNetwork}.0/24, gateway {profile.ReceptionNetwork}.1\nData: {profile.DataNetwork}.0/24, gateway {profile.DataNetwork}.1\n\n{string.Join("\n", profile.EndpointAddresses.Select(x => x.Key + ": " + x.Value))}";
+                return BinderHeading("Addressing and gateways")
+                    + $"MANAGEMENT / VLAN {profile.ManagementVlan}\nNetwork {profile.ManagementNetwork}.0/24 | gateway {profile.ManagementNetwork}.1\n"
+                    + $"RECEPTION / VLAN {profile.ReceptionVlan}\nNetwork {profile.ReceptionNetwork}.0/24 | gateway {profile.ReceptionNetwork}.1\n"
+                    + $"DATA / VLAN {profile.DataVlan}\nNetwork {profile.DataNetwork}.0/24 | gateway {profile.DataNetwork}.1\n\n"
+                    + "ENDPOINT ADDRESSES\n"
+                    + string.Join("  ", new[] { "IT1", "IT2" }.Select(key => key + " " + profile.EndpointAddresses[key])) + "\n"
+                    + string.Join("  ", new[] { "Reception1", "Reception2" }.Select(key => key + " " + profile.EndpointAddresses[key])) + "\n"
+                    + string.Join("  ", new[] { "Data1", "Data2", "Data3" }.Select(key => key + " " + profile.EndpointAddresses[key])) + "\n"
+                    + $"AP-1 {profile.ApManagementAddress} | TestLaptop {profile.TestLaptopAddress} (DHCP)\n\n"
+                    + "CN-1: Fa0/0.<VLAN> subinterfaces use dot1q and the matching gateway above.";
             case 3:
-                return "Structured endpoint ports:\n" + string.Join("\n", profile.RequiredPorts.Select(x => x.deviceRole + " " + x.interfaceName + " -> " + x.endpointId))
-                    + "\n\nUse the scenario's permanent infrastructure and complete every required punch-down before patching to the access switch.";
+                return BinderHeading("Cable schedule")
+                    + "SWITCH AND ROUTER LINKS\nAN-1 Fa0/1 to AN-2 Fa0/1: crossover\nCN-1 Fa0/0 to AN-1 Fa0/6: straight-through\n\n"
+                    + "GROUND FLOOR\nIT1 to AN-1 Fa0/2; IT2 to AN-1 Fa0/5\nReception1/2 to wall ports 1/2, then Patch1 ports 1/2 to AN-1 Fa0/3/4.\n\n"
+                    + "SECOND FLOOR\nData1/2/3 to Office wall ports, then Patch2 ports 1/5/6 to AN-2 Fa0/2/3/4.\n\n"
+                    + "CIRCUIT AND WIRELESS\nCN-1 Fa0/1 to Patch1 Port18; AP-1 to Reception Wall Port05, then Patch1 Port17 to AN-1 Fa0/7.\n"
+                    + "Complete each punch-down and patch cord in the structured path.";
             case 4:
-                return $"Circuit ID: {profile.CircuitId}\nCustomer: {profile.WanCustomerAddress}/30\nProvider: {profile.WanProviderAddress}\n\nPatch CN-1 Fa0/1 to Rack01 patch-panel Port18. The provider handoff is permanently landed at the DEMARC. Configure the customer address and a default route through the provider.";
+                return BinderHeading("Carrier circuit letter")
+                    + $"CIRCUIT ID\n{profile.CircuitId}\n\n"
+                    + $"CUSTOMER / CN-1 Fa0/1\nAddress {profile.WanCustomerAddress} /30\nProvider next hop {profile.WanProviderAddress}\n\n"
+                    + "PHYSICAL HANDOFF\nPatch CN-1 Fa0/1 to Rack01 Patch1 Port18. The carrier side is landed at the DEMARC.\n\n"
+                    + $"ROUTING\nConfigure a default route to {profile.WanProviderAddress}. Verify with show ip route and an endpoint ping.";
             case 5:
-                return $"Guest Lounge AP\nManagement address: {profile.ApManagementAddress}\nSSID: {profile.Ssid}\nPassphrase: {profile.WifiPassphrase}\nChannel: {profile.WirelessChannel}\n\nRun the AP to Reception Wall Port05, then Rack01 patch-panel Port17 to AN-1 Fa0/7 in the Reception VLAN.";
+                return BinderHeading("Guest wireless")
+                    + $"AP-1 MANAGEMENT\nAddress {profile.ApManagementAddress} on the Reception network.\n\n"
+                    + $"GUEST WI-FI\nSSID {profile.Ssid}\nPassphrase {profile.WifiPassphrase}\nChannel {profile.WirelessChannel}; disable WPS and apply the secured settings.\n\n"
+                    + "UPLINK\nAP-1 to Reception Wall Port05, then Rack01 Patch1 Port17 to AN-1 Fa0/7 in the Reception VLAN.\n\n"
+                    + $"TEST LAPTOP\nJoin the guest SSID, use DHCP, then verify {profile.TestLaptopAddress}, provider reachability, and the RedWolf page.";
             case 6:
-                return $"Enable secret: {profile.EnableSecret}\nConsole password: {profile.ConsolePassword}\nVTY password: {profile.VtyPassword}\nAP administrator password: {profile.ApAdminPassword}\n\nDo not place these values in notes or debug output.";
+                return BinderHeading("Run credentials")
+                    + $"NETWORK DEVICES\nEnable secret: {profile.EnableSecret}\nConsole password: {profile.ConsolePassword}\nVTY password: {profile.VtyPassword}\n\n"
+                    + $"ACCESS POINT\nAdministrator password: {profile.ApAdminPassword}\n\n"
+                    + "These credentials are generated for this run. Keep them in the binder; do not copy them into notes or debug output.";
             default:
                 return string.Empty;
         }
     }
+
+    private static string BinderHeading(string title) => $"<color=#E69529><b>{title.ToUpperInvariant()}</b></color>\n\n";
 
     private string SopBody(SopSection section)
     {
@@ -1236,6 +1305,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (!_sopTabsContainer)
             return;
 
+        var tabsRect = _sopTabsContainer as RectTransform;
+        var tabWidth = tabsRect && sectionCount > 0 ? tabsRect.rect.width / sectionCount : 78f;
         for (var i = 0; i < _sopTabsContainer.childCount; i++)
         {
             var tab = _sopTabsContainer.GetChild(i);
@@ -1244,9 +1315,23 @@ public sealed class TssRuntimeUi : MonoBehaviour
             if (!hasSection)
                 continue;
 
+            if (tab is RectTransform tabRect)
+            {
+                tabRect.anchoredPosition = new Vector2(i * tabWidth, 0f);
+                tabRect.sizeDelta = new Vector2(tabWidth - 2f, 32f);
+            }
+
             var label = tab.GetComponentInChildren<Text>();
             if (label)
+            {
                 label.text = hasBinder ? BinderTabTitles[i] : sections[i].title;
+                if (hasBinder)
+                {
+                    label.resizeTextForBestFit = true;
+                    label.resizeTextMinSize = 9;
+                    label.resizeTextMaxSize = 12;
+                }
+            }
 
             var button = tab.GetComponent<Button>();
             if (!button)

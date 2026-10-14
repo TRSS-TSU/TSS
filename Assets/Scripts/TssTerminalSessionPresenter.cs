@@ -46,6 +46,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
     [Header("Sidebar / Logical State")]
     [SerializeField] private Transform interfaceListContainer;
     [SerializeField] private Text sidebarStatusText;
+    [SerializeField] private Text commandReferenceText;
 
     private TssDeviceLogicalState _state;
     private Action _onClose;
@@ -57,6 +58,8 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
     private string _configuredInterface = "FastEthernet0/1";
     private int _lastSubmitFrame = -1;
     private TssCliCommandProcessor _processor;
+    private TssTrainingSession _notificationSession;
+    private NetworkDeviceState _observedNetworkDevice;
     private readonly List<string> _commandHistory = new();
     private readonly List<string> _pendingShowLines = new();
     private int _historyIndex;
@@ -79,6 +82,14 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             commandInput.onSubmit.AddListener(_ => SubmitCurrentInput());
 
         // ponytail: legacy fields stay serialized so unrebuilt scene instances remain loadable.
+    }
+
+    private void OnDisable()
+    {
+        if (_notificationSession)
+            _notificationSession.StateChanged -= OnNetworkStateChanged;
+        _notificationSession = null;
+        _observedNetworkDevice = null;
     }
 
     private void Update()
@@ -125,6 +136,12 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         _onClose = onClose;
         _cliMode = CiscoCliMode.UserExec;
         _processor = new TssCliCommandProcessor(TssTrainingSession.Instance, deviceKey ?? state.DeviceKey, state.Category, state.DeviceName);
+        if (_notificationSession)
+            _notificationSession.StateChanged -= OnNetworkStateChanged;
+        _notificationSession = TssTrainingSession.Instance;
+        if (_notificationSession)
+            _notificationSession.StateChanged += OnNetworkStateChanged;
+        _observedNetworkDevice = _processor.Device?.Clone();
         _commandHistory.Clear();
         _pendingShowLines.Clear();
         _historyIndex = 0;
@@ -157,6 +174,8 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
 
         UpdateSubheader();
         PopulateSidebarInterfaces();
+        if (commandReferenceText)
+            commandReferenceText.text = TssCliCommandProcessor.BuildCommandReference(state.Category);
 
         _consoleHistory.Clear();
         AppendToConsole(isRouter ? GetRouterBootBanner(state) : GetSwitchBootBanner(state));
@@ -179,7 +198,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
 
         var isRouter = _state.Category == EquipmentCategory.Router;
         subheaderText.text = isRouter
-            ? $"Hostname: {_state.DeviceName}   Gateway: {_state.DefaultGateway}   Interfaces: {_state.Interfaces.Count} Ports"
+            ? $"Hostname: {_state.DeviceName}   Interfaces: {_state.Interfaces.Count} Ports"
             : $"Hostname: {_state.DeviceName}   Mgmt IP: {_state.IpAddress}   MAC: {_state.MacAddress}   VLAN 1";
     }
 
@@ -340,9 +359,24 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         }
 
         var lower = cmd.ToLowerInvariant().Trim();
+        if (lower == "ip add" || lower.StartsWith("ip add "))
+        {
+            cmd = "ip address" + cmd.Substring(6);
+            lower = cmd.ToLowerInvariant();
+        }
         var parts = cmd.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
         var lowerParts = lower.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
         var verb = lowerParts[0];
+
+        var isShowCommand = lower.StartsWith("show ") || lower.StartsWith("sh ");
+        if (isShowCommand && !lower.StartsWith("do ") && _cliMode != CiscoCliMode.UserExec && _cliMode != CiscoCliMode.PrivilegedExec)
+        {
+            AppendToConsole("% Invalid input detected at '^' marker. Use 'do show ...' from configuration mode.\n");
+            UpdatePrompt();
+            if (commandInput && commandInput.gameObject.activeInHierarchy)
+                commandInput.ActivateInputField();
+            return;
+        }
 
         if (lower == "clear" || lower == "cls")
         {
@@ -511,6 +545,57 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             commandInput.ActivateInputField();
     }
 
+    private void OnNetworkStateChanged()
+    {
+        if (!gameObject.activeInHierarchy || _processor == null || !_processor.IsAvailable)
+            return;
+
+        var current = _processor.Device;
+        AppendInterfaceStateChanges(_observedNetworkDevice, current);
+        _observedNetworkDevice = current?.Clone();
+        _state?.SyncFromNetwork(current);
+        UpdateSubheader();
+    }
+
+    private void AppendInterfaceStateChanges(NetworkDeviceState before, NetworkDeviceState after)
+    {
+        if (before == null || after == null)
+            return;
+
+        foreach (var pair in after.Interfaces)
+        {
+            if (!before.Interfaces.TryGetValue(pair.Key, out var previous))
+                continue;
+
+            var current = pair.Value;
+            var wasProtocolUp = previous.AdminUp && previous.CarrierUp;
+            var isProtocolUp = current.AdminUp && current.CarrierUp;
+            var label = CiscoInterfaceName(current.Name);
+
+            if (previous.AdminUp != current.AdminUp)
+            {
+                if (!current.AdminUp)
+                    AppendToConsole($"%LINK-5-CHANGED: Interface {label}, changed state to administratively down\n");
+                else if (current.CarrierUp)
+                    AppendToConsole($"%LINK-3-UPDOWN: Interface {label}, changed state to up\n");
+            }
+
+            if (wasProtocolUp != isProtocolUp)
+                AppendToConsole($"%LINEPROTO-5-UPDOWN: Line protocol on Interface {label}, changed state to {(isProtocolUp ? "up" : "down")}\n");
+
+            if (!string.Equals(previous.Address, current.Address, StringComparison.OrdinalIgnoreCase)
+                || !string.Equals(previous.Mask, current.Mask, StringComparison.OrdinalIgnoreCase))
+                AppendToConsole("%SYS-5-CONFIG_I: Configured from console by console\n");
+        }
+    }
+
+    private static string CiscoInterfaceName(string name)
+    {
+        if (!string.IsNullOrWhiteSpace(name) && name.StartsWith("Fa", StringComparison.OrdinalIgnoreCase))
+            return "FastEthernet" + name.Substring(2);
+        return name ?? "Unknown";
+    }
+
     public void BrowseHistoryUp() => BrowseHistory(-1);
 
     public void BrowseHistoryDown() => BrowseHistory(1);
@@ -583,7 +668,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
 
             CiscoCliMode.InterfaceConfig =>
                 "Interface Configuration Commands:\n" +
-                "  ip address <ip> <mask>     Set IPv4 address on interface\n" +
+                "  ip address <ip> <mask> | ip add <ip> <mask>     Set IPv4 address on interface\n" +
                 "  no shutdown                Enable interface\n" +
                 "  shutdown                   Administratively disable interface\n" +
                 "  exit                       Exit to global configuration mode\n" +
@@ -715,7 +800,8 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
     {
         var sb = new StringBuilder();
         sb.AppendLine("Codes: L - local, C - connected, S - static, R - RIP, M - mobile, B - BGP");
-        sb.AppendLine($"Gateway of last resort is {_state?.DefaultGateway ?? "0.0.0.0"} to network 0.0.0.0\n");
+        var gateway = string.IsNullOrWhiteSpace(_state?.DefaultGateway) ? "not set" : _state.DefaultGateway;
+        sb.AppendLine($"Gateway of last resort is {gateway} to network 0.0.0.0\n");
         if (_state != null)
         {
             foreach (var iface in _state.Interfaces)

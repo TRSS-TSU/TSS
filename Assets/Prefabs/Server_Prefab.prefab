@@ -7189,65 +7189,77 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TSS.Runtime::TssDeviceLinkIndicator
   bindings:
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 2815320482852500200}
     endpointId: GE01
     renderer: {fileID: 3597652410337443275}
     connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 2815320482852500200}
     endpointId: GE01
     renderer: {fileID: 6898303205856911447}
     connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 2815320482852500200}
     endpointId: GE01
     renderer: {fileID: 2730989652667169864}
     connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 2815320482852500200}
     endpointId: GE01
     renderer: {fileID: 5640935873663128429}
     connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 2815320482852500200}
     endpointId: GE01
     renderer: {fileID: 2884440325794949458}
     connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 2815320482852500200}
     endpointId: GE01
     renderer: {fileID: 6216544205655899282}
     connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 2815320482852500200}
     endpointId: GE01
     renderer: {fileID: 5312944497244542342}
     connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 2815320482852500200}
     endpointId: GE01
     renderer: {fileID: 3472661536538253334}
     connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 2815320482852500200}
     endpointId: GE01
     renderer: {fileID: 6394944088687507018}
     connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 2815320482852500200}
     endpointId: GE01
     renderer: {fileID: 9083642660433572251}
     connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 2815320482852500200}
     endpointId: GE01
     renderer: {fileID: 682412884635178660}
     connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 0}
+  - endpoint: {fileID: 2815320482852500200}
     endpointId: GE01
     renderer: {fileID: 1580290732015233565}
     connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
 --- !u!1 &6466711026114624882
 GameObject:
@@ -10231,10 +10243,41 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 3685594998399043684, guid: 173ad3e08f452ce49908da87236a6e48, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2815320482852500200}
   m_SourcePrefab: {fileID: 100100000, guid: 173ad3e08f452ce49908da87236a6e48, type: 3}
 --- !u!4 &1221456168398428525 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 1901105981382763632, guid: 173ad3e08f452ce49908da87236a6e48, type: 3}
   m_PrefabInstance: {fileID: 761511001729907997}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &4158145336442991993 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3685594998399043684, guid: 173ad3e08f452ce49908da87236a6e48, type: 3}
+  m_PrefabInstance: {fileID: 761511001729907997}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2815320482852500200
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4158145336442991993}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: GE01
+  displayLabel: GE01
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12

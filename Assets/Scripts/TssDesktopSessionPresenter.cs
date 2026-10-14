@@ -238,6 +238,17 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
             applyFeedbackText.text = category == EquipmentCategory.AccessPoint
                 ? "Set the AP management address here. Configure SSID and security from a connected desktop or laptop browser."
                 : string.Empty;
+
+        if (category == EquipmentCategory.Laptop)
+        {
+            SetButtonLabel(openAccessPointBrowserButton, "Join Guest Wi-Fi");
+            SetButtonLabel(checkServerConnectionButton, "Open RedWolf Page");
+        }
+        else
+        {
+            SetButtonLabel(openAccessPointBrowserButton, "AP Browser");
+            SetButtonLabel(checkServerConnectionButton, "Verify Server");
+        }
     }
 
     private void OnDhcpToggled(bool isDhcp)
@@ -302,6 +313,20 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
     private void CheckServerConnection()
     {
         var network = networkStateForPresenter();
+        if (_state != null && _state.Category == EquipmentCategory.Laptop)
+        {
+            var error = string.Empty;
+            var loaded = network != null && network.TryLoadRedWolfPage(_deviceKey, out error);
+            if (!loaded && string.IsNullOrEmpty(error)) error = "Network state unavailable.";
+            if (applyFeedbackText)
+            {
+                applyFeedbackText.text = loaded ? "RedWolf Search loaded. Guest provider access confirmed." : error;
+                applyFeedbackText.color = loaded ? new Color(0.35f, 1f, 0.5f, 1f) : new Color(1f, 0.45f, 0.45f, 1f);
+            }
+            if (loaded) TssTrainingSession.Instance?.NotifyNetworkStateChanged();
+            return;
+        }
+
         var profile = network?.Profile;
         if (network == null || profile == null || !profile.EndpointAddresses.TryGetValue("IT2", out var serverAddress))
             return;
@@ -322,6 +347,19 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
             return;
 
         network.SetAccessPointUplink(session.IsAccessPointUplinkConnected());
+        if (_state != null && _state.Category == EquipmentCategory.Laptop)
+        {
+            ConfigureAccessPointCard(true);
+            if (accessPointBrowserCard)
+                accessPointBrowserCard.SetActive(true);
+            if (accessPointBrowserStatusText)
+                accessPointBrowserStatusText.text = "Guest Wi-Fi | Enter the assigned SSID and passphrase";
+            if (accessPointBrowserFeedbackText)
+                accessPointBrowserFeedbackText.text = "Join the secured guest network, then select DHCP and Apply Settings.";
+            return;
+        }
+
+        ConfigureAccessPointCard(false);
         var reachable = new TssNetworkReachabilityEvaluator(network).Evaluate(_deviceKey, network.Profile.ApManagementAddress);
         if (!network.AccessPoint.UplinkConnected || !network.IsAccessPointSwitchPortReady() || !reachable.Success)
         {
@@ -346,6 +384,22 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         var network = networkStateForPresenter();
         if (network == null)
             return;
+
+        if (_state != null && _state.Category == EquipmentCategory.Laptop)
+        {
+            var joined = network.TryAssociateWirelessClient(
+                _deviceKey,
+                accessPointSsidInput ? accessPointSsidInput.text : string.Empty,
+                accessPointPassphraseInput ? accessPointPassphraseInput.text : string.Empty,
+                out var joinError);
+            if (accessPointBrowserFeedbackText)
+            {
+                accessPointBrowserFeedbackText.text = joined ? "Associated to the guest SSID. Select DHCP and Apply Settings." : joinError;
+                accessPointBrowserFeedbackText.color = joined ? new Color(0.35f, 1f, 0.5f, 1f) : new Color(1f, 0.45f, 0.45f, 1f);
+            }
+            if (joined) TssTrainingSession.Instance?.NotifyNetworkStateChanged();
+            return;
+        }
 
         var saved = network.TryConfigureAccessPoint(
             _deviceKey,
@@ -476,6 +530,29 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
     {
         gameObject.SetActive(false);
         _onClose?.Invoke();
+    }
+
+    private void ConfigureAccessPointCard(bool laptop)
+    {
+        var title = accessPointBrowserCard ? accessPointBrowserCard.transform.Find("Header/Title")?.GetComponent<Text>() : null;
+        if (title) title.text = laptop ? "GUEST WI-FI JOIN" : "ACCESS POINT MANAGEMENT";
+        SetInputRowVisible(accessPointAdminPasswordInput, !laptop);
+        SetInputRowVisible(accessPointChannelInput, !laptop);
+        if (accessPointDisableWpsToggle)
+            accessPointDisableWpsToggle.gameObject.SetActive(!laptop);
+        SetButtonLabel(saveAccessPointButton, laptop ? "Join Wi-Fi" : "Save AP Settings");
+    }
+
+    private static void SetInputRowVisible(InputField field, bool visible)
+    {
+        if (field && field.transform.parent)
+            field.transform.parent.gameObject.SetActive(visible);
+    }
+
+    private static void SetButtonLabel(Button button, string label)
+    {
+        var text = button ? button.GetComponentInChildren<Text>() : null;
+        if (text) text.text = label;
     }
 
     private static bool WasEscapePressed()

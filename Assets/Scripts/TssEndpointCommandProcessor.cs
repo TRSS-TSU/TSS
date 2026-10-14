@@ -20,9 +20,18 @@ public sealed class TssEndpointCommandProcessor
         var command = Normalize(input);
         if (command.Equals("cls", StringComparison.OrdinalIgnoreCase)) return new TssEndpointCommandResult(string.Empty, false, true);
         if (!_state.TryGetEndpoint(sourceKey, out var source)) return new TssEndpointCommandResult("Network endpoint is unavailable.\n", false, false);
-        if (command.Equals("ipconfig", StringComparison.OrdinalIgnoreCase)) return new TssEndpointCommandResult(IpConfig(source), false, true);
-        if (command.StartsWith("ping ", StringComparison.OrdinalIgnoreCase)) return Diagnose(sourceKey, command.Substring(5), false);
-        if (command.StartsWith("tracert ", StringComparison.OrdinalIgnoreCase)) return Diagnose(sourceKey, command.Substring(7), true);
+        if (command.Equals("ipconfig", StringComparison.OrdinalIgnoreCase))
+        {
+            source.AttemptedEvidence.Add("ipconfig");
+            if (source.HasValidAddress) source.Evidence.Add("ipconfig");
+            return new TssEndpointCommandResult(IpConfig(source), false, true);
+        }
+        if (command.StartsWith("ping ", StringComparison.OrdinalIgnoreCase))
+        {
+            var enteredTarget = command.Substring(5).Trim();
+            return Diagnose(sourceKey, ResolveTarget(enteredTarget), false, command);
+        }
+        if (command.StartsWith("tracert ", StringComparison.OrdinalIgnoreCase)) return Diagnose(sourceKey, ResolveTarget(command.Substring(7)), true, command);
         return new TssEndpointCommandResult("'" + command + "' is not recognized.\n", false, false);
     }
 
@@ -83,7 +92,7 @@ public sealed class TssEndpointCommandProcessor
         return true;
     }
 
-    private TssEndpointCommandResult Diagnose(string sourceKey, string target, bool trace)
+    private TssEndpointCommandResult Diagnose(string sourceKey, string target, bool trace, string enteredCommand)
     {
         if (!TssNetworkAddress.IsAddress(target)) return new TssEndpointCommandResult("Invalid IPv4 address.\n", false, false);
         var result = _reachability.Evaluate(sourceKey, target);
@@ -95,15 +104,23 @@ public sealed class TssEndpointCommandProcessor
             foreach (var hop in result.TraceHops) sb.AppendLine("  " + hop);
         }
         sb.AppendLine(result.Success ? "Reply from " + target + ": reachable." : result.Diagnostic);
-        RecordRequiredEvidence(sourceKey, source, "ping " + target, result.Success);
+        RecordRequiredEvidence(sourceKey, source, enteredCommand, "ping " + target, result.Success);
         return new TssEndpointCommandResult(sb.ToString(), false, true);
     }
 
-    private void RecordRequiredEvidence(string sourceKey, EndpointNetworkState source, string command, bool succeeded)
+    private void RecordRequiredEvidence(string sourceKey, EndpointNetworkState source, string enteredCommand, string canonicalCommand, bool succeeded)
     {
+        if (source != null && source.Category == EquipmentCategory.Laptop && canonicalCommand.Equals("ping " + _state.Profile.WanProviderAddress, StringComparison.OrdinalIgnoreCase))
+        {
+            source.AttemptedEvidence.Add("TestLaptop-provider");
+            if (succeeded) source.Evidence.Add("TestLaptop-provider");
+        }
+
         foreach (var requirement in _state.Profile?.EvidenceRequirements ?? Array.Empty<NetworkEvidenceRequirement>())
         {
-            if (requirement == null || string.IsNullOrWhiteSpace(requirement.evidenceId) || !Normalize(requirement.command).Equals(command, StringComparison.OrdinalIgnoreCase))
+            if (requirement == null || string.IsNullOrWhiteSpace(requirement.evidenceId)
+                || (!Normalize(requirement.command).Equals(enteredCommand, StringComparison.OrdinalIgnoreCase)
+                    && !Normalize(requirement.command).Equals(canonicalCommand, StringComparison.OrdinalIgnoreCase)))
                 continue;
             source.AttemptedEvidence.Add(requirement.evidenceId);
             if (succeeded)
@@ -112,6 +129,13 @@ public sealed class TssEndpointCommandProcessor
                 _state.Evidence.Add(sourceKey + ":" + requirement.evidenceId);
             }
         }
+    }
+
+    private string ResolveTarget(string target)
+    {
+        return target.Equals("provider", StringComparison.OrdinalIgnoreCase)
+            ? _state.Profile.WanProviderAddress
+            : target;
     }
 
     private static string Normalize(string input)
