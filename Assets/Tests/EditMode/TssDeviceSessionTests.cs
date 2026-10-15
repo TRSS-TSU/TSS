@@ -140,6 +140,183 @@ public sealed class TssDeviceSessionTests
     }
 
     [Test]
+    public void SwitchCliResetsAccessVlanToDefault()
+    {
+        var sessionObject = new GameObject("CliTestSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        session.BeginScenario(scenario);
+        var processor = new TssCliCommandProcessor(session, "Switch", EquipmentCategory.Switch, "Switch");
+
+        processor.Execute("enable");
+        processor.Execute("configure terminal");
+        Assert.IsTrue(processor.Execute("interface Fa0/2").Accepted);
+        Assert.IsTrue(processor.Execute("switchport access vlan 20").Accepted);
+        Assert.AreEqual(20, processor.Device.Interfaces["Fa0/2"].AccessVlan);
+        Assert.IsTrue(processor.Execute("no switchport access vlan").Accepted);
+        Assert.AreEqual(1, processor.Device.Interfaces["Fa0/2"].AccessVlan);
+
+        Object.DestroyImmediate(scenario);
+        Object.DestroyImmediate(sessionObject);
+    }
+
+    [Test]
+    public void SwitchCommandReferenceCommandsAreAcceptedAndPersisted()
+    {
+        var sessionObject = new GameObject("CliReferenceSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+
+        try
+        {
+            session.BeginScenario(scenario);
+            var processor = new TssCliCommandProcessor(session, "Switch", EquipmentCategory.Switch, "Switch");
+            Assert.IsTrue(processor.Execute("enable").Accepted);
+            Assert.IsTrue(processor.Execute("configure terminal").Accepted);
+            Assert.IsTrue(processor.Execute("hostname SW-CLI").Accepted);
+            Assert.AreEqual("SW-CLI", processor.Device.Hostname);
+            Assert.IsTrue(processor.Execute("enable secret secret").Accepted);
+            Assert.IsTrue(processor.Execute("no ip domain-lookup").Accepted);
+            Assert.IsTrue(processor.Execute("service password-encryption").Accepted);
+            Assert.IsTrue(processor.Execute("banner motd #AUTHORIZED#").Accepted);
+            Assert.IsTrue(processor.Execute("interface range Fa0/2 - Fa0/3").Accepted);
+            Assert.IsTrue(processor.Execute("switchport trunk encapsulation dot1q").Accepted);
+            Assert.IsTrue(processor.Execute("switchport mode trunk").Accepted);
+            Assert.IsTrue(processor.Execute("switchport trunk allowed vlan 10,20").Accepted);
+            Assert.IsTrue(processor.Execute("switchport trunk native vlan 99").Accepted);
+            Assert.IsTrue(processor.Execute("ip address 192.0.2.2 255.255.255.0").Accepted);
+            Assert.IsTrue(processor.Execute("shutdown").Accepted);
+            Assert.IsTrue(processor.Execute("do show vlan brief").Accepted);
+            Assert.IsTrue(processor.Execute("exit").Accepted);
+            Assert.IsTrue(processor.Execute("line console 0").Accepted);
+            Assert.IsTrue(processor.Execute("password consolepw").Accepted);
+            Assert.IsTrue(processor.Execute("login").Accepted);
+            Assert.IsTrue(processor.Execute("exit").Accepted);
+            Assert.IsTrue(processor.Execute("line vty 0 4").Accepted);
+            Assert.IsTrue(processor.Execute("password vtypw").Accepted);
+            Assert.IsTrue(processor.Execute("login").Accepted);
+            Assert.IsTrue(processor.Execute("exit").Accepted);
+            Assert.IsTrue(processor.Execute("vlan 10").Accepted);
+            Assert.IsTrue(processor.Execute("name Data").Accepted);
+            Assert.IsTrue(processor.Execute("state suspend").Accepted);
+            Assert.IsTrue(processor.Execute("exit").Accepted);
+            Assert.IsTrue(processor.Execute("ip route 10.10.10.0 255.255.255.0 192.0.2.1").Accepted);
+            Assert.IsTrue(processor.Execute("end").Accepted);
+
+            foreach (var command in new[]
+            {
+                "show running-config", "show startup-config", "show ip interface brief",
+                "show interfaces", "show interfaces trunk", "show vlan brief",
+                "show mac address-table", "ping 192.0.2.1", "clear"
+            })
+                Assert.IsTrue(processor.Execute(command).Accepted, command);
+
+            Assert.IsTrue(processor.Execute("copy running-config startup-config").Accepted);
+            Assert.IsNotNull(processor.Device.StartupSnapshot);
+            Assert.IsTrue(processor.Device.Interfaces["Fa0/2"].TrunkEncapsulationDot1q);
+            Assert.IsTrue(processor.Device.ConsoleLoginRequired);
+            Assert.IsTrue(processor.Device.VtyLoginRequired);
+            Assert.AreEqual("Data (suspended)", processor.Device.Vlans[10]);
+            Assert.IsTrue(processor.Execute("disable").Accepted);
+            Assert.AreEqual(TssNetworkCliMode.UserExec, processor.Device.Mode);
+            Assert.IsTrue(processor.Execute("enable").Accepted);
+            Assert.IsTrue(processor.Execute("exit").Accepted);
+            Assert.AreEqual(TssNetworkCliMode.UserExec, processor.Device.Mode);
+        }
+        finally
+        {
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
+    public void RouterCommandReferenceCommandsAreAcceptedAndPersisted()
+    {
+        var sessionObject = new GameObject("CliRouterReferenceSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+
+        try
+        {
+            session.BeginScenario(scenario);
+            var processor = new TssCliCommandProcessor(session, "Router", EquipmentCategory.Router, "Router");
+            Assert.IsTrue(processor.Execute("enable").Accepted);
+            Assert.IsTrue(processor.Execute("configure terminal").Accepted);
+            Assert.IsTrue(processor.Execute("hostname R-CLI").Accepted);
+            Assert.IsTrue(processor.Execute("interface Fa0/0.10").Accepted);
+            Assert.IsTrue(processor.Execute("encapsulation dot1q 10").Accepted);
+            Assert.IsTrue(processor.Execute("ip add 192.168.10.1 255.255.255.0").Accepted);
+            Assert.IsTrue(processor.Execute("no shutdown").Accepted);
+            Assert.IsTrue(processor.Execute("exit").Accepted);
+            Assert.IsTrue(processor.Execute("ip route 10.10.10.0 255.255.255.0 192.168.10.254").Accepted);
+            Assert.IsTrue(processor.Execute("end").Accepted);
+
+            foreach (var command in new[]
+            {
+                "show running-config", "show startup-config", "show ip interface brief",
+                "show interfaces", "show ip route", "ping 192.168.10.254"
+            })
+                Assert.IsTrue(processor.Execute(command).Accepted, command);
+
+            Assert.AreEqual("R-CLI", processor.Device.Hostname);
+            Assert.AreEqual(10, processor.Device.Interfaces["Fa0/0.10"].Dot1qVlan);
+            Assert.AreEqual("192.168.10.1", processor.Device.Interfaces["Fa0/0.10"].Address);
+            Assert.AreEqual(1, processor.Device.Routes.Count);
+        }
+        finally
+        {
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
+    public void FirstPersonDeviceTitleRefreshesWhenNetworkHostnameChanges()
+    {
+        var sessionObject = new GameObject("FirstPersonTitleSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        var controlsObject = new GameObject("TssTerminalFirstPersonControls(Clone)");
+        var controls = controlsObject.AddComponent<TssDeviceFirstPersonControls>();
+        var titleObject = new GameObject("DeviceTitle", typeof(RectTransform), typeof(Text));
+        var title = titleObject.GetComponent<Text>();
+        title.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+        try
+        {
+            session.BeginScenario(scenario);
+            session.NetworkState.GetOrCreateDevice("Rack:Rack01:U01", EquipmentCategory.Switch, "Original").Hostname = "Renamed";
+            typeof(TssDeviceFirstPersonControls).GetField("deviceTitleText", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(controls, title);
+            typeof(TssDeviceFirstPersonControls).GetField("_cachedContext", BindingFlags.Instance | BindingFlags.NonPublic)
+                .SetValue(controls, new TssDeviceSessionController.DeviceContext
+                {
+                    Key = "Rack:Rack01:U01",
+                    DeviceName = "Original",
+                    Category = EquipmentCategory.Switch
+                });
+
+            session.NetworkState.TryGetDevice("Rack:Rack01:U01", out var device);
+            device.Hostname = "ChangedByCli";
+            session.NotifyNetworkStateChanged();
+
+            Assert.AreEqual("ChangedByCli (Switch)", title.text);
+        }
+        finally
+        {
+            Object.DestroyImmediate(titleObject);
+            Object.DestroyImmediate(controlsObject);
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
     public void EndpointBindingUsesExactSuffixOnly()
     {
         var root = new GameObject("Root");

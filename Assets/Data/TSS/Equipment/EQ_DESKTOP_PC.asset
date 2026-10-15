@@ -17,7 +17,7 @@ MonoBehaviour:
   category: 6
   rackUnits: 1
   rackPrefab: {fileID: 0}
-  carryPrefab: {fileID: 8754142908855366041, guid: 3e20fca3c99e79e478de1650318e27f1, type: 3}
+  carryPrefab: {fileID: 4327680794412319598, guid: 7699f5af06713974ba61777a8a830f6e, type: 3}
   useRearRackPlacement: 0
   rackLocalOffset: {x: 0, y: 0, z: 0}
   rackLocalEuler: {x: 0, y: 0, z: 0}
@@ -25,7 +25,7 @@ MonoBehaviour:
   carryLocalOffset: {x: 0, y: 0.3, z: 0.1}
   carryLocalEuler: {x: -180, y: -4.5, z: 0}
   carryLocalScale: {x: 0.6, y: 0.6, z: 0.6}
-  placementPrefab: {fileID: 8754142908855366041, guid: 3e20fca3c99e79e478de1650318e27f1, type: 3}
+  placementPrefab: {fileID: 4327680794412319598, guid: 7699f5af06713974ba61777a8a830f6e, type: 3}
   placementLocalOffset: {x: 0, y: 0.1, z: 0}
   placementLocalEuler: {x: 0, y: 0, z: 0}
   placementLocalScale: {x: 0.4, y: 0.4, z: 0.4}
@@ -35,3 +35,4 @@ MonoBehaviour:
     label: Ethernet Port 01
     supportedCableTypes: 000000000100000002000000
     portAnchorPath: Ports/Eth01
+    interfaceFace: 0

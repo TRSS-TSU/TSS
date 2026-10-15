@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: PDU
   category: 3
   rackUnits: 1
-  rackPrefab: {fileID: 919132149155446097, guid: 7ff362f731125854fb281bca87dedfa8, type: 3}
-  carryPrefab: {fileID: 919132149155446097, guid: 7ff362f731125854fb281bca87dedfa8, type: 3}
+  rackPrefab: {fileID: 4005364528288020029, guid: 27049e98755a9a5438d897418555db5b, type: 3}
+  carryPrefab: {fileID: 4005364528288020029, guid: 27049e98755a9a5438d897418555db5b, type: 3}
   useRearRackPlacement: 1
   rackLocalOffset: {x: 0.646, y: 0, z: -0.039}
   rackLocalEuler: {x: 0, y: 180, z: 0}
@@ -25,7 +25,7 @@ MonoBehaviour:
   carryLocalOffset: {x: -0.6135, y: -0.0361, z: -0.0388}
   carryLocalEuler: {x: -90, y: 0, z: 0}
   carryLocalScale: {x: 1, y: 1, z: 1}
-  placementPrefab: {fileID: 919132149155446097, guid: 7ff362f731125854fb281bca87dedfa8, type: 3}
+  placementPrefab: {fileID: 4005364528288020029, guid: 27049e98755a9a5438d897418555db5b, type: 3}
   placementLocalOffset: {x: 0, y: 0, z: 0}
   placementLocalEuler: {x: 0, y: 0, z: 0}
   placementLocalScale: {x: 1, y: 1, z: 1}

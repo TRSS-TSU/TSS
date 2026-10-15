@@ -174,14 +174,18 @@ public sealed class TssNetworkSessionState
 
     public bool IsEndpointLogicalLayer1Available(TssTrainingSession session, string endpointId)
     {
-        return TryGetLogicalInterface(session, endpointId, out _, out var iface)
-            && iface.AdminUp && iface.CarrierUp;
+        if (!TryGetLogicalInterface(session, endpointId, out _, out var iface))
+            return session && session.IsEndpointOnEffectivePhysicalPath(endpointId);
+
+        return iface.AdminUp && iface.CarrierUp;
     }
 
     public bool IsEndpointLogicalLayer2Available(TssTrainingSession session, string endpointId)
     {
-        if (!TryGetLogicalInterface(session, endpointId, out var device, out var iface)
-            || !iface.AdminUp || !iface.CarrierUp)
+        if (!TryGetLogicalInterface(session, endpointId, out var device, out var iface))
+            return session && session.IsEndpointOnEffectivePhysicalPath(endpointId);
+
+        if (!iface.AdminUp || !iface.CarrierUp)
             return false;
 
         if (device.Category != EquipmentCategory.Switch)
@@ -551,6 +555,8 @@ public sealed class NetworkDeviceState
     public bool UseDhcp;
     public bool PasswordEncryption;
     public bool DomainLookupDisabled;
+    public bool ConsoleLoginRequired;
+    public bool VtyLoginRequired;
     public readonly Dictionary<int, string> Vlans = new();
     public readonly Dictionary<string, NetworkInterfaceState> Interfaces = new(StringComparer.OrdinalIgnoreCase);
     public readonly List<NetworkRouteState> Routes = new();
@@ -580,7 +586,8 @@ public sealed class NetworkDeviceState
             EnableSecret = EnableSecret, ConsolePassword = ConsolePassword, VtyPassword = VtyPassword, Motd = Motd,
             MacAddress = MacAddress, ManagementAddress = ManagementAddress, ManagementMask = ManagementMask,
             DefaultGateway = DefaultGateway, DnsAddress = DnsAddress, UseDhcp = UseDhcp,
-            PasswordEncryption = PasswordEncryption, DomainLookupDisabled = DomainLookupDisabled, Mode = Mode,
+            PasswordEncryption = PasswordEncryption, DomainLookupDisabled = DomainLookupDisabled,
+            ConsoleLoginRequired = ConsoleLoginRequired, VtyLoginRequired = VtyLoginRequired, Mode = Mode,
             SelectedVlan = SelectedVlan, SelectedLine = SelectedLine, SelectedInterfaces = new List<string>(SelectedInterfaces), ExpectedRole = ExpectedRole
         };
         foreach (var vlan in Vlans) copy.Vlans[vlan.Key] = vlan.Value;
@@ -599,6 +606,7 @@ public sealed class NetworkInterfaceState
     public bool AdminUp;
     public bool CarrierUp;
     public bool IsTrunk;
+    public bool TrunkEncapsulationDot1q;
     public int AccessVlan = 1;
     public HashSet<int> AllowedVlans = new();
     public int NativeVlan = 1;

@@ -174,7 +174,10 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
 
         UpdateSubheader();
         PopulateSidebarInterfaces();
-        if (commandReferenceText)
+        var commandGrid = GetComponentInChildren<TssCommandReferenceGrid>(true);
+        if (commandGrid)
+            commandGrid.SetReference(state.Category);
+        else if (commandReferenceText)
             commandReferenceText.text = TssCliCommandProcessor.BuildCommandReference(state.Category);
 
         _consoleHistory.Clear();
@@ -339,6 +342,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             }
             else
             {
+                var wasUserExec = _processor.Device.Mode == TssNetworkCliMode.UserExec;
                 var result = _processor.Execute(cmd);
                 _state.SyncFromNetwork(_processor.Device);
                 _cliMode = result.Mode switch
@@ -352,6 +356,11 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
                 };
                 AppendCommandOutput(cmd, result.Output);
                 if (result.StateChanged) UpdateSubheader();
+                if (string.Equals(cmd, "exit", StringComparison.OrdinalIgnoreCase) && wasUserExec)
+                {
+                    Close();
+                    return;
+                }
             }
             UpdatePrompt();
             if (commandInput) commandInput.ActivateInputField();
@@ -554,6 +563,8 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         AppendInterfaceStateChanges(_observedNetworkDevice, current);
         _observedNetworkDevice = current?.Clone();
         _state?.SyncFromNetwork(current);
+        if (titleText && _state != null)
+            titleText.text = $"{_state.DeviceName} - Terminal Console";
         UpdateSubheader();
     }
 

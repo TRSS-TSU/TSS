@@ -1104,6 +1104,7 @@ Transform:
   m_Children:
   - {fileID: 6618337805411154358}
   - {fileID: 832915124333774929}
+  - {fileID: 8374179084785005092}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &9178251895820056651
@@ -1158,145 +1159,169 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TSS.Runtime::TssDeviceLinkIndicator
   bindings:
-  - endpoint: {fileID: 8849998278331423421}
+  - mode: 0
+    endpoint: {fileID: 8849998278331423421}
     endpointId: Fa01
     renderer: {fileID: 3298300087223165108}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 4230878839806917373}
+  - mode: 0
+    endpoint: {fileID: 4230878839806917373}
     endpointId: Fa02
     renderer: {fileID: 3824181655303086543}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 638220738803650421}
+  - mode: 0
+    endpoint: {fileID: 638220738803650421}
     endpointId: Fa03
     renderer: {fileID: 3644929541372097274}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 7662799461635427239}
+  - mode: 0
+    endpoint: {fileID: 7662799461635427239}
     endpointId: Fa04
     renderer: {fileID: 7731300528759390839}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 328335466541533917}
+  - mode: 0
+    endpoint: {fileID: 328335466541533917}
     endpointId: Fa05
     renderer: {fileID: 8228061744877564573}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 6161745347035126555}
+  - mode: 0
+    endpoint: {fileID: 6161745347035126555}
     endpointId: Fa06
     renderer: {fileID: 3039086900486552156}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 6436207919891357909}
+  - mode: 0
+    endpoint: {fileID: 6436207919891357909}
     endpointId: Fa07
     renderer: {fileID: 3695347679986158917}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 8015264726423586610}
+  - mode: 0
+    endpoint: {fileID: 8015264726423586610}
     endpointId: Fa08
     renderer: {fileID: 7966297816246884187}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 477687041574118748}
+  - mode: 0
+    endpoint: {fileID: 477687041574118748}
     endpointId: Fa09
     renderer: {fileID: 3347193838860061785}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 7662887220160682749}
+  - mode: 0
+    endpoint: {fileID: 7662887220160682749}
     endpointId: Fa10
     renderer: {fileID: 8436065309935411663}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 4111643956163593180}
+  - mode: 0
+    endpoint: {fileID: 4111643956163593180}
     endpointId: Fa11
     renderer: {fileID: 271486679770201500}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 6965884847360552070}
+  - mode: 0
+    endpoint: {fileID: 6965884847360552070}
     endpointId: Fa12
     renderer: {fileID: 1818434623224847325}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 7173419031058233492}
+  - mode: 0
+    endpoint: {fileID: 7173419031058233492}
     endpointId: Fa13
     renderer: {fileID: 8094759611184423214}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 977110193162989088}
+  - mode: 0
+    endpoint: {fileID: 977110193162989088}
     endpointId: Fa14
     renderer: {fileID: 5687202351230678178}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 4194605302903255174}
+  - mode: 0
+    endpoint: {fileID: 4194605302903255174}
     endpointId: Fa15
     renderer: {fileID: 1503898788683290742}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 8816137814679229028}
+  - mode: 0
+    endpoint: {fileID: 8816137814679229028}
     endpointId: Fa16
     renderer: {fileID: 5110816818003351464}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 7295752954342417417}
+  - mode: 0
+    endpoint: {fileID: 7295752954342417417}
     endpointId: Fa17
     renderer: {fileID: 8834349288282702467}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 9172142510123551163}
+  - mode: 0
+    endpoint: {fileID: 9172142510123551163}
     endpointId: Fa18
     renderer: {fileID: 3731083403554232176}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 5318330934763016850}
+  - mode: 0
+    endpoint: {fileID: 5318330934763016850}
     endpointId: Fa19
     renderer: {fileID: 3228470241068870734}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 289403390529637043}
+  - mode: 0
+    endpoint: {fileID: 289403390529637043}
     endpointId: Fa20
     renderer: {fileID: 210711603111686871}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 913436490718179171}
+  - mode: 0
+    endpoint: {fileID: 913436490718179171}
     endpointId: Fa21
     renderer: {fileID: 8194402489315821239}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 4023224219228822727}
+  - mode: 0
+    endpoint: {fileID: 4023224219228822727}
     endpointId: Fa22
     renderer: {fileID: 5294969347385072059}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 7188890285803877196}
+  - mode: 0
+    endpoint: {fileID: 7188890285803877196}
     endpointId: Fa23
     renderer: {fileID: 6593007915044949900}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     protocolDownMaterial: {fileID: -8032686581531455957, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
     disconnectedMaterial: {fileID: 3210359945339807437, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  - endpoint: {fileID: 8914945001980941162}
+  - mode: 0
+    endpoint: {fileID: 8914945001980941162}
     endpointId: Fa24
     renderer: {fileID: 1572325347831539819}
     connectedMaterial: {fileID: -3441055671475344754, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
@@ -20917,6 +20942,103 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 1901105981382763632, guid: 173ad3e08f452ce49908da87236a6e48, type: 3}
   m_PrefabInstance: {fileID: 7899244709643466266}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8533552070946698558
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 7225522913594126767}
+    m_Modifications:
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.376
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.18
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.0544
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0.0071
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.201
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 180
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 739413606998063891, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_Name
+      value: Device Name Plaque
+      objectReference: {fileID: 0}
+    - target: {fileID: 5873887574868088635, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0.92
+      objectReference: {fileID: 0}
+    - target: {fileID: 6587672669470062859, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_fontSize
+      value: 0.18
+      objectReference: {fileID: 0}
+    - target: {fileID: 6587672669470062859, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 0.18
+      objectReference: {fileID: 0}
+    - target: {fileID: 6587672669470062859, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_overflowMode
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects:
+    - {fileID: 9097447474625847989, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+    - {fileID: 9091020556738922638, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+    - {fileID: 4372992951740989901, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+--- !u!4 &8374179084785005092 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+  m_PrefabInstance: {fileID: 8533552070946698558}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &8796203662191308156
 PrefabInstance:

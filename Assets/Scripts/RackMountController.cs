@@ -183,7 +183,9 @@ public sealed class RackMountController : MonoBehaviour
         instance.transform.localPosition = GetInstalledLocalPosition(equipment, startingU);
         instance.transform.localRotation = Quaternion.Euler(installedLocalEuler + equipment.rackLocalEuler);
         instance.transform.localScale = equipment.rackLocalScale;
-        TssPortEndpointBinder.ConfigureEndpoints(instance, TssTrainingSession.GetRackOwnerPrefix(RackId, startingU), equipment);
+        var ownerPrefix = TssTrainingSession.GetRackOwnerPrefix(RackId, startingU);
+        TssPortEndpointBinder.ConfigureEndpoints(instance, ownerPrefix, equipment);
+        TssRackDeviceNamePlaque.Ensure(instance)?.Configure(ownerPrefix, equipment.displayName);
 
         foreach (var collider in instance.GetComponentsInChildren<Collider>(true))
         {
@@ -381,6 +383,11 @@ public sealed class RackMountController : MonoBehaviour
     private void HandleSessionStateChanged()
     {
         ApplyScenarioConfig();
+        foreach (var item in _installedItems)
+        {
+            SetInstalledDeviceName(item.Key, GetInstalledDeviceName(item.Key));
+            item.Value.Visual?.GetComponentInChildren<TssRackDeviceNamePlaque>(true)?.RefreshCurrentName();
+        }
         RefreshHighlights();
     }
 
@@ -571,3 +578,5 @@ public sealed class RackMountController : MonoBehaviour
         }
     }
 }
+
+

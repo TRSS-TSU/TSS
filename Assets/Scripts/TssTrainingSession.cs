@@ -444,6 +444,32 @@ public sealed class TssTrainingSession : MonoBehaviour
         return false;
     }
 
+    public bool RenameNetworkDevice(string deviceKey, string deviceName)
+    {
+        if (string.IsNullOrWhiteSpace(deviceKey))
+            return false;
+
+        var cleanName = CleanDeviceName(deviceName);
+        if (string.IsNullOrWhiteSpace(cleanName))
+            return false;
+
+        for (var i = 0; i < _installed.Count; i++)
+        {
+            var record = _installed[i];
+            if (GetRackOwnerPrefix(record.RackId, record.StartingU).Equals(deviceKey, StringComparison.OrdinalIgnoreCase))
+                return RenameRackInstalled(record.RackId, record.StartingU, cleanName);
+        }
+
+        for (var i = 0; i < _endpointPlacements.Count; i++)
+        {
+            var record = _endpointPlacements[i];
+            if (GetEndpointOwnerPrefix(record.PlacementId).Equals(deviceKey, StringComparison.OrdinalIgnoreCase))
+                return RenameEndpoint(record.PlacementId, cleanName);
+        }
+
+        return false;
+    }
+
     public TssScenarioDefinition GetFallbackScenario()
     {
         return fallbackScenario;

@@ -51,6 +51,7 @@ public sealed class EndpointPlacementStation : MonoBehaviour
     private Color[][] _baseColors;
     private Camera _mainCamera;
     private bool _isHovered;
+    private TssTrainingSession _session;
 
     public string StationId => stationId;
 
@@ -69,6 +70,16 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         CacheRenderers();
     }
 
+    private void OnEnable()
+    {
+        SubscribeSession();
+    }
+
+    private void Start()
+    {
+        SubscribeSession();
+    }
+
     private void Update()
     {
         UpdateHoverAndClick();
@@ -76,7 +87,38 @@ public sealed class EndpointPlacementStation : MonoBehaviour
 
     private void OnDisable()
     {
+        if (_session)
+            _session.StateChanged -= HandleSessionStateChanged;
+        _session = null;
         SetHighlight(false);
+    }
+
+    private void SubscribeSession()
+    {
+        if (_session)
+            return;
+
+        _session = TssTrainingSession.Instance;
+        if (!_session)
+            return;
+
+        _session.StateChanged += HandleSessionStateChanged;
+        HandleSessionStateChanged();
+    }
+
+    private void HandleSessionStateChanged()
+    {
+        foreach (var pair in _placedVisuals)
+        {
+            if (!pair.Value)
+                continue;
+
+            var deviceName = GetDeviceName(pair.Key);
+            UpdateNameSign(pair.Key, deviceName);
+            pair.Value.GetComponentInChildren<TssRackDeviceNamePlaque>(true)?.RefreshCurrentName();
+            foreach (var endpoint in pair.Value.GetComponentsInChildren<TssPortEndpoint>(true))
+                endpoint.SetDeviceName(deviceName);
+        }
     }
 
     private void OnMouseDown()
@@ -169,7 +211,9 @@ public sealed class EndpointPlacementStation : MonoBehaviour
             visual.transform.localPosition = record.Equipment.placementLocalOffset;
             visual.transform.localRotation = Quaternion.Euler(record.Equipment.placementLocalEuler);
             visual.transform.localScale = record.Equipment.placementLocalScale;
-            TssPortEndpointBinder.ConfigureEndpoints(visual, TssTrainingSession.GetEndpointOwnerPrefix(record.PlacementId), record.Equipment, record.DeviceName);
+            var ownerPrefix = TssTrainingSession.GetEndpointOwnerPrefix(record.PlacementId);
+            TssPortEndpointBinder.ConfigureEndpoints(visual, ownerPrefix, record.Equipment, record.DeviceName);
+            TssRackDeviceNamePlaque.Ensure(visual)?.Configure(ownerPrefix, record.DeviceName);
 
             foreach (var collider in visual.GetComponentsInChildren<Collider>(true))
             {
@@ -188,7 +232,6 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         target.center = GetPlacedInteractionTriggerCenter(record.Equipment);
         target.size = GetPlacedInteractionTriggerSize(record.Equipment);
         root.AddComponent<EndpointPlacedEquipmentTarget>().Initialize(this, record.PlacementId, record.Equipment);
-        CreateNameSign(root.transform, record);
         _placedVisuals[record.PlacementId] = root;
     }
 
@@ -269,13 +312,19 @@ public sealed class EndpointPlacementStation : MonoBehaviour
 
     public void PickupPlaced(string placementId, EquipmentDefinition equipment)
     {
+        _placedVisuals.TryGetValue(placementId, out var visual);
+        if (visual)
+            visual.SetActive(false);
+
         if (!TssTrainingSession.Instance.TryPickupEndpoint(placementId, equipment, out var message))
         {
+            if (visual)
+                visual.SetActive(true);
             TssRuntimeUi.Instance?.ShowHudMessage(message);
             return;
         }
 
-        if (_placedVisuals.TryGetValue(placementId, out var visual) && visual)
+        if (visual)
             Destroy(visual);
 
         _placedVisuals.Remove(placementId);
@@ -609,3 +658,4 @@ public sealed class EndpointPlacementStation : MonoBehaviour
 #endif
     }
 }
+

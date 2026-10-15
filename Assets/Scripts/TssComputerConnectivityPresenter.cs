@@ -68,28 +68,30 @@ public sealed class TssComputerConnectivityPresenter : MonoBehaviour, ITssEndpoi
             return;
 
         endpoint = ResolveEndpoint();
-        if (monitor)
-            monitor.MonitorLogicalLayerChanges(endpoint);
         var session = TssTrainingSession.Instance ? TssTrainingSession.Instance : _session;
         if (session && endpoint)
         {
             var connected = session.IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId);
             if (session.NetworkState != null)
             {
+                var layer1 = connected && session.NetworkState.IsEndpointLogicalLayer1Available(session, endpoint.EndpointId);
+                var layer2 = layer1 && session.NetworkState.IsEndpointLogicalLayer2Available(session, endpoint.EndpointId);
                 var separator = endpoint.EndpointId.LastIndexOf(':');
                 var key = separator > 0 ? endpoint.EndpointId.Substring(0, separator) : endpoint.EndpointId;
                 if (session.NetworkState.TryGetEndpoint(key, out var state))
                 {
                     var result = new TssNetworkReachabilityEvaluator(session.NetworkState).Evaluate(key, state.Gateway);
-                    var layer1 = connected && session.NetworkState.IsEndpointLogicalLayer1Available(session, endpoint.EndpointId);
-                    var layer2 = layer1 && session.NetworkState.IsEndpointLogicalLayer2Available(session, endpoint.EndpointId);
-                    var layer3 = layer2 && result.Success;
-                    ApplyLayerStates(layer1, layer2, layer3);
+                    var layer3 = layer2 && session.NetworkState.IsEndpointLayer3Operational(endpoint.EndpointId);
+                    var wanReachable = layer3 && result.Success;
+                    ApplyLayerStates(layer1, layer2, layer3, wanReachable);
                     return;
                 }
+
+                ApplyLayerStates(layer1, layer2, false, false);
+                return;
             }
 
-            ApplyLayerStates(connected, connected, false);
+            ApplyLayerStates(connected, connected, false, false);
             return;
         }
 
@@ -99,7 +101,7 @@ public sealed class TssComputerConnectivityPresenter : MonoBehaviour, ITssEndpoi
             secondaryMonitor.SetPowerOff();
     }
 
-    private void ApplyLayerStates(bool layer1, bool layer2, bool layer3)
+    private void ApplyLayerStates(bool layer1, bool layer2, bool layer3, bool wanReachable)
     {
         if (!monitor)
             return;
@@ -114,6 +116,14 @@ public sealed class TssComputerConnectivityPresenter : MonoBehaviour, ITssEndpoi
 
         if (!layer2)
         {
+            monitor.SetLayerState(1, true);
+            if (secondaryMonitor && secondaryMonitor != monitor)
+                secondaryMonitor.SetLayerState(2, false);
+            return;
+        }
+
+        if (!layer3)
+        {
             monitor.SetLayerState(2, true);
             if (secondaryMonitor && secondaryMonitor != monitor)
                 secondaryMonitor.SetLayerState(3, false);
@@ -122,15 +132,15 @@ public sealed class TssComputerConnectivityPresenter : MonoBehaviour, ITssEndpoi
 
         monitor.SetLayerState(3, true);
         if (secondaryMonitor && secondaryMonitor != monitor)
-            secondaryMonitor.SetLayerState(4, layer3);
+            secondaryMonitor.SetLayerState(4, wanReachable);
     }
 
     private TssPortEndpoint ResolveEndpoint()
     {
-        if (endpoint || !_placementStation)
+        if (!_placementStation)
             return endpoint;
 
-        foreach (var target in FindObjectsByType<EndpointPlacedEquipmentTarget>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+        foreach (var target in FindObjectsByType<EndpointPlacedEquipmentTarget>(FindObjectsInactive.Exclude, FindObjectsSortMode.None))
             if (target && target.Station == _placementStation && target.Equipment
                 && target.Equipment.category == EquipmentCategory.DesktopPc)
                 return target.GetComponentInChildren<TssPortEndpoint>(true);

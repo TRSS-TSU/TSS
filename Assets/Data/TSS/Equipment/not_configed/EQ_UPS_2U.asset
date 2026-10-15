@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: UPS
   category: 2
   rackUnits: 2
-  rackPrefab: {fileID: 919132149155446097, guid: de92cd98ddfbb3547bf9dc67dbd2c8a3, type: 3}
-  carryPrefab: {fileID: 919132149155446097, guid: de92cd98ddfbb3547bf9dc67dbd2c8a3, type: 3}
+  rackPrefab: {fileID: 1676661429941216207, guid: 5f0c00a5cb292c1469df0615ac791b4c, type: 3}
+  carryPrefab: {fileID: 1676661429941216207, guid: 5f0c00a5cb292c1469df0615ac791b4c, type: 3}
   useRearRackPlacement: 0
   rackLocalOffset: {x: -0.002, y: 0.0241, z: -0.072}
   rackLocalEuler: {x: 0, y: 0, z: 0}
@@ -25,7 +25,14 @@ MonoBehaviour:
   carryLocalOffset: {x: 0, y: 0, z: 0}
   carryLocalEuler: {x: -90, y: 0, z: 0}
   carryLocalScale: {x: 1, y: 1, z: 1}
+  placementPrefab: {fileID: 1676661429941216207, guid: 5f0c00a5cb292c1469df0615ac791b4c, type: 3}
+  placementLocalOffset: {x: 0, y: 0, z: 0}
+  placementLocalEuler: {x: 0, y: 0, z: 0}
+  placementLocalScale: {x: 1, y: 1, z: 1}
   interfaces:
   - name: Data-ready
     connectorType: TBD
     label: Future ports
+    supportedCableTypes: 
+    portAnchorPath: 
+    interfaceFace: 0

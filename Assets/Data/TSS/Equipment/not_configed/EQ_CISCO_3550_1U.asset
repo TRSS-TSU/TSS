@@ -16,15 +16,23 @@ MonoBehaviour:
   displayName: Cisco 3550 Switch
   category: 1
   rackUnits: 1
-  rackPrefab: {fileID: 919132149155446097, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
-  carryPrefab: {fileID: 919132149155446097, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+  rackPrefab: {fileID: 3371249741854463104, guid: ee97a8481108c774488ed3766ac4ac5b, type: 3}
+  carryPrefab: {fileID: 3371249741854463104, guid: ee97a8481108c774488ed3766ac4ac5b, type: 3}
+  useRearRackPlacement: 0
   rackLocalOffset: {x: 0, y: 0, z: 0.165}
   rackLocalEuler: {x: -90, y: 0, z: 0}
   rackLocalScale: {x: 100, y: 100, z: 100}
   carryLocalOffset: {x: 0, y: 0, z: 0}
   carryLocalEuler: {x: 180, y: 0, z: 0}
   carryLocalScale: {x: 100, y: 100, z: 100}
+  placementPrefab: {fileID: 3371249741854463104, guid: ee97a8481108c774488ed3766ac4ac5b, type: 3}
+  placementLocalOffset: {x: 0, y: 0, z: 0}
+  placementLocalEuler: {x: 0, y: 0, z: 0}
+  placementLocalScale: {x: 1, y: 1, z: 1}
   interfaces:
   - name: Data-ready
     connectorType: TBD
     label: Future ports
+    supportedCableTypes: 
+    portAnchorPath: 
+    interfaceFace: 0

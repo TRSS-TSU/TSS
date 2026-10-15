@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using StarterAssets;
 using UnityEngine;
+using UnityEngine.InputSystem;
 using UnityEngine.UI;
 
 public sealed class TssRuntimeUi : MonoBehaviour
@@ -150,6 +151,12 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
     private void Update()
     {
+        if (WasEscapePressed())
+        {
+            CloseOpenUi();
+            return;
+        }
+
         ApplyGameplayInputLock(IsAnyGameplayMenuOpen());
         if (_contextText && !string.IsNullOrEmpty(_statusMessage) && Time.time >= _statusUntil)
         {
@@ -1482,6 +1489,22 @@ public sealed class TssRuntimeUi : MonoBehaviour
             || (_correctionPanel && _correctionPanel.activeSelf)
             || (_computerPanel && _computerPanel.activeSelf)
             || _externalGameplayLocks.Count > 0;
+    }
+
+    private void CloseOpenUi()
+    {
+        if (!IsAnyGameplayMenuOpen() && _activeHudSlidePanel < 0 && _activeRightSlidePanel < 0)
+            return;
+
+        CloseActiveMenu();
+        _activeHudSlidePanel = -1;
+        _activeRightSlidePanel = -1;
+        RefreshHudAdditions();
+    }
+
+    private static bool WasEscapePressed()
+    {
+        return Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame;
     }
 
     private void CancelHeld()

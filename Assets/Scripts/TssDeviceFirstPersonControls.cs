@@ -13,6 +13,7 @@ public sealed class TssDeviceFirstPersonControls : MonoBehaviour
 
     private TssObjectInteractable _targetInteractable;
     private TssDeviceSessionController.DeviceContext _cachedContext;
+    private TssTrainingSession _session;
 
     private void Awake()
     {
@@ -32,6 +33,19 @@ public sealed class TssDeviceFirstPersonControls : MonoBehaviour
     private void Start()
     {
         BindToActiveDevice();
+        SubscribeSession();
+    }
+
+    private void OnEnable()
+    {
+        SubscribeSession();
+    }
+
+    private void OnDisable()
+    {
+        if (_session)
+            _session.StateChanged -= HandleSessionStateChanged;
+        _session = null;
     }
 
     public void Configure(bool terminalSession, string title = null)
@@ -67,6 +81,40 @@ public sealed class TssDeviceFirstPersonControls : MonoBehaviour
 
         if (sessionButtonText)
             sessionButtonText.text = isTerminalSession ? "Terminal Session" : "Desktop Session";
+
+        RefreshDeviceTitle();
+    }
+
+    private void SubscribeSession()
+    {
+        if (_session)
+            return;
+
+        _session = TssTrainingSession.Instance;
+        if (!_session)
+            return;
+
+        _session.StateChanged += HandleSessionStateChanged;
+        RefreshDeviceTitle();
+    }
+
+    private void HandleSessionStateChanged()
+    {
+        RefreshDeviceTitle();
+    }
+
+    private void RefreshDeviceTitle()
+    {
+        if (!deviceTitleText || _cachedContext == null)
+            return;
+
+        var deviceName = _cachedContext.DeviceName;
+        var network = TssTrainingSession.Instance ? TssTrainingSession.Instance.NetworkState : null;
+        if (network != null && network.TryGetDevice(_cachedContext.Key, out var device)
+            && !string.IsNullOrWhiteSpace(device.Hostname))
+            deviceName = device.Hostname;
+
+        deviceTitleText.text = $"{deviceName} ({_cachedContext.Category})";
     }
 
     private void OnReturnClicked()

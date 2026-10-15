@@ -218,6 +218,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -440,6 +441,7 @@ Transform:
   m_Children:
   - {fileID: 5833342060805425056}
   - {fileID: 2546526941337809071}
+  - {fileID: 2705410657092932558}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &6430057008607564569
@@ -1080,6 +1082,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -1936,6 +1939,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -2162,6 +2166,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -2388,6 +2393,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -3154,6 +3160,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -3650,6 +3657,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -4416,6 +4424,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -4642,6 +4651,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -5228,6 +5238,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -5544,6 +5555,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -6599,6 +6611,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -6735,6 +6748,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -7051,6 +7065,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -7547,6 +7562,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -8224,6 +8240,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -8450,6 +8467,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -9036,6 +9054,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -9172,6 +9191,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -10659,6 +10679,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -11246,6 +11267,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -11382,6 +11404,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -11698,6 +11721,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -11924,6 +11948,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -12960,6 +12985,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -13366,6 +13392,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -13592,6 +13619,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -13998,6 +14026,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -14224,6 +14253,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -14990,6 +15020,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -15576,6 +15607,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -15892,6 +15924,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -17383,6 +17416,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -17609,6 +17643,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -18285,6 +18320,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -18511,6 +18547,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -19007,6 +19044,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -19593,6 +19631,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -20667,6 +20706,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -20803,6 +20843,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -21029,6 +21070,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -21165,6 +21207,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -21391,6 +21434,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -21707,6 +21751,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -22743,6 +22788,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -22969,6 +23015,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -23735,6 +23782,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -24771,6 +24819,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
   endpointId: PatchPanel:Rack01:Port01
   displayLabel: PP 01 Port 01
+  deviceName: 
   connectorType: RJ45
   supportedCableTypes: 000000000100000002000000
   interfaceFace: 0
@@ -26340,3 +26389,96 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1001 &2869293582221219028
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 2083005269158916278}
+    m_Modifications:
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.376428
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.18
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -0.050000045
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 739413606998063891, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_Name
+      value: Device Name Plaque
+      objectReference: {fileID: 0}
+    - target: {fileID: 5873887574868088635, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 0.92
+      objectReference: {fileID: 0}
+    - target: {fileID: 6587672669470062859, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_fontSize
+      value: 0.18
+      objectReference: {fileID: 0}
+    - target: {fileID: 6587672669470062859, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_fontSizeBase
+      value: 0.18
+      objectReference: {fileID: 0}
+    - target: {fileID: 6587672669470062859, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+      propertyPath: m_overflowMode
+      value: 1
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects:
+    - {fileID: 9097447474625847989, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+    - {fileID: 9091020556738922638, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+    - {fileID: 4372992951740989901, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+--- !u!4 &2705410657092932558 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 169531392413009690, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
+  m_PrefabInstance: {fileID: 2869293582221219028}
+  m_PrefabAsset: {fileID: 0}
