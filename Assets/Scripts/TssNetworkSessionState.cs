@@ -171,6 +171,25 @@ public sealed class TssNetworkSessionState
                     return iface.AdminUp && iface.CarrierUp;
         return !endpointId.StartsWith("Rack:", StringComparison.OrdinalIgnoreCase);
     }
+
+    public bool IsEndpointLogicalLayer1Available(TssTrainingSession session, string endpointId)
+    {
+        return TryGetLogicalInterface(session, endpointId, out _, out var iface)
+            && iface.AdminUp && iface.CarrierUp;
+    }
+
+    public bool IsEndpointLogicalLayer2Available(TssTrainingSession session, string endpointId)
+    {
+        if (!TryGetLogicalInterface(session, endpointId, out var device, out var iface)
+            || !iface.AdminUp || !iface.CarrierUp)
+            return false;
+
+        if (device.Category != EquipmentCategory.Switch)
+            return true;
+        return iface.IsTrunk
+            ? iface.AllowedVlans != null && iface.AllowedVlans.Any(vlan => IsActiveVlan(device, vlan))
+            : IsActiveVlan(device, iface.AccessVlan);
+    }
     public bool IsEndpointLayer2Available(string endpointId)
     {
         if (!TryGetInterfaceByEndpoint(endpointId, out var device, out var iface))
@@ -246,6 +265,26 @@ public sealed class TssNetworkSessionState
         foreach (var candidate in _devices.Values)
             foreach (var candidateInterface in candidate.Interfaces.Values)
                 if (string.Equals(candidateInterface.EndpointId, endpointId, StringComparison.OrdinalIgnoreCase))
+                {
+                    device = candidate;
+                    iface = candidateInterface;
+                    return true;
+                }
+
+        return false;
+    }
+
+    private bool TryGetLogicalInterface(TssTrainingSession session, string endpointId, out NetworkDeviceState device, out NetworkInterfaceState iface)
+    {
+        device = null;
+        iface = null;
+        if (string.IsNullOrWhiteSpace(endpointId))
+            return false;
+
+        foreach (var candidate in _devices.Values)
+            foreach (var candidateInterface in candidate.Interfaces.Values)
+                if (string.Equals(candidateInterface.EndpointId, endpointId, StringComparison.OrdinalIgnoreCase)
+                    || (session && session.HasPhysicalPath(endpointId, candidateInterface.EndpointId)))
                 {
                     device = candidate;
                     iface = candidateInterface;

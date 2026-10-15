@@ -76,8 +76,6 @@ MonoBehaviour:
   inventory:
   - equipment: {fileID: 11400000, guid: fc6fc05c6c9a74e45b9af3472abf428e, type: 2}
     quantity: 2
-  - equipment: {fileID: 11400000, guid: fcb40dc2e4fb0684f85ec8204128f9fd, type: 2}
-    quantity: 2
   - equipment: {fileID: 11400000, guid: 9f73692d4caf61749a4b7bf4e3e4f26e, type: 2}
     quantity: 2
   - equipment: {fileID: 11400000, guid: 20bfae7a5c31d384b979d1fd86cdea22, type: 2}

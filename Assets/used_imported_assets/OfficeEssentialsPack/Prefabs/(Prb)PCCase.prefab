@@ -319,7 +319,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 0.3, y: 0.3, z: 0.3}
+  m_LocalScale: {x: 0.5, y: 0.5, z: 0.5}
   m_ConstrainProportionsScale: 1
   m_Children:
   - {fileID: 3759141573351954940}
@@ -380,10 +380,12 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: TSS.Runtime::TssDeviceLinkIndicator
   bindings:
-  - endpoint: {fileID: 0}
+  - mode: 0
+    endpoint: {fileID: 0}
     endpointId: Eth01
     renderer: {fileID: 2586417638061160639}
     connectedMaterial: {fileID: 5101333888805271078, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
+    protocolDownMaterial: {fileID: 0}
     disconnectedMaterial: {fileID: 4655001904588715859, guid: 4f12cfcab8567a64cbcf4ff8fc572a22, type: 3}
 --- !u!1001 &5863763528855497916
 PrefabInstance:

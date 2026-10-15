@@ -59,8 +59,8 @@ public sealed class TssDeviceLinkIndicator : MonoBehaviour, ITssEndpointBindingC
 
             var endpoint = ResolveEndpoint(binding);
             var layer1Up = endpoint && session && session.IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId)
-                && session.NetworkState != null && session.NetworkState.IsEndpointLayer1Available(endpoint.EndpointId);
-            var layer2Up = layer1Up && session.NetworkState.IsEndpointLayer2Available(endpoint.EndpointId);
+                && session.NetworkState != null && session.NetworkState.IsEndpointLogicalLayer1Available(session, endpoint.EndpointId);
+            var layer2Up = layer1Up && session.NetworkState.IsEndpointLogicalLayer2Available(session, endpoint.EndpointId);
             var layer3Up = layer1Up && session.NetworkState.IsEndpointLayer3Operational(endpoint.EndpointId);
             var material = binding.mode == IndicatorMode.Status
                 ? layer1Up ? binding.connectedMaterial : binding.disconnectedMaterial

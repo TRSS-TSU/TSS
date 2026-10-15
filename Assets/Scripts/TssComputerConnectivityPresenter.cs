@@ -6,7 +6,7 @@ public sealed class TssComputerConnectivityPresenter : MonoBehaviour, ITssEndpoi
 {
     [SerializeField] private TssPortEndpoint endpoint;
     [SerializeField] private MonitorTextureRotator monitor;
-    [SerializeField] private Texture2D offlineScreen;
+    [SerializeField] private MonitorTextureRotator secondaryMonitor;
     private EndpointPlacementStation _placementStation;
 
     private TssTrainingSession _session;
@@ -18,6 +18,13 @@ public sealed class TssComputerConnectivityPresenter : MonoBehaviour, ITssEndpoi
             endpoint = GetComponentInChildren<TssPortEndpoint>(true);
         if (!monitor)
             monitor = GetComponentInChildren<MonitorTextureRotator>(true);
+        if (!secondaryMonitor)
+            foreach (var candidate in GetComponentsInChildren<MonitorTextureRotator>(true))
+                if (candidate && candidate != monitor)
+                {
+                    secondaryMonitor = candidate;
+                    break;
+                }
 
         _placementStation = FindPlacementStation();
     }
@@ -25,8 +32,26 @@ public sealed class TssComputerConnectivityPresenter : MonoBehaviour, ITssEndpoi
     private void OnEnable()
     {
         _session = TssTrainingSession.Instance;
+        if (!_session)
+            _session = FindFirstObjectByType<TssTrainingSession>();
+
         if (_session)
             _session.StateChanged += Refresh;
+
+        Refresh();
+    }
+
+    private void Start()
+    {
+        // Scene OnEnable can run before the training session's Awake assigns Instance.
+        if (!_session)
+        {
+            _session = TssTrainingSession.Instance;
+            if (!_session)
+                _session = FindFirstObjectByType<TssTrainingSession>();
+            if (_session)
+                _session.StateChanged += Refresh;
+        }
 
         Refresh();
     }
@@ -43,7 +68,9 @@ public sealed class TssComputerConnectivityPresenter : MonoBehaviour, ITssEndpoi
             return;
 
         endpoint = ResolveEndpoint();
-        var session = TssTrainingSession.Instance;
+        if (monitor)
+            monitor.MonitorLogicalLayerChanges(endpoint);
+        var session = TssTrainingSession.Instance ? TssTrainingSession.Instance : _session;
         if (session && endpoint)
         {
             var connected = session.IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId);
@@ -54,19 +81,48 @@ public sealed class TssComputerConnectivityPresenter : MonoBehaviour, ITssEndpoi
                 if (session.NetworkState.TryGetEndpoint(key, out var state))
                 {
                     var result = new TssNetworkReachabilityEvaluator(session.NetworkState).Evaluate(key, state.Gateway);
-                    var layer1 = connected && result.FailedLayer != 1;
-                    var layer2 = layer1 && result.FailedLayer != 2;
+                    var layer1 = connected && session.NetworkState.IsEndpointLogicalLayer1Available(session, endpoint.EndpointId);
+                    var layer2 = layer1 && session.NetworkState.IsEndpointLogicalLayer2Available(session, endpoint.EndpointId);
                     var layer3 = layer2 && result.Success;
-                    monitor.SetLayerStates(layer1, layer2, layer3);
+                    ApplyLayerStates(layer1, layer2, layer3);
                     return;
                 }
             }
 
-            monitor.SetLayerStates(connected, connected, false);
+            ApplyLayerStates(connected, connected, false);
             return;
         }
 
-        monitor.SetConnectivityOverride(offlineScreen);
+        if (monitor)
+            monitor.SetPowerOff();
+        if (secondaryMonitor && secondaryMonitor != monitor)
+            secondaryMonitor.SetPowerOff();
+    }
+
+    private void ApplyLayerStates(bool layer1, bool layer2, bool layer3)
+    {
+        if (!monitor)
+            return;
+
+        if (!layer1)
+        {
+            monitor.SetLayerState(1, false);
+            if (secondaryMonitor && secondaryMonitor != monitor)
+                secondaryMonitor.SetLayerState(2, false);
+            return;
+        }
+
+        if (!layer2)
+        {
+            monitor.SetLayerState(2, true);
+            if (secondaryMonitor && secondaryMonitor != monitor)
+                secondaryMonitor.SetLayerState(3, false);
+            return;
+        }
+
+        monitor.SetLayerState(3, true);
+        if (secondaryMonitor && secondaryMonitor != monitor)
+            secondaryMonitor.SetLayerState(4, layer3);
     }
 
     private TssPortEndpoint ResolveEndpoint()

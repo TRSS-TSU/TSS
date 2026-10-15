@@ -58,7 +58,6 @@ public static class TssPlacementEvaluator
         }
 
         RequireInventory(scenario, EquipmentCategory.Pdu, 2, messages);
-        RequireInventory(scenario, EquipmentCategory.PatchPanel, 2, messages);
         RequireInventory(scenario, EquipmentCategory.Switch, 2, messages);
         RequireInventory(scenario, EquipmentCategory.Router, 1, messages);
         RequireInventory(scenario, EquipmentCategory.Server, 1, messages);

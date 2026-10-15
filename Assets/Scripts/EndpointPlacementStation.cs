@@ -152,6 +152,7 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         }
 
         CreatePlacedVisual(anchor, record);
+        TssTrainingSession.Instance.NotifyStateChanged();
         TssRuntimeUi.Instance?.ShowHudMessage(message);
     }
 

@@ -596,10 +596,6 @@ public sealed class TssRuntimeUi : MonoBehaviour
             }
 
             var remaining = session.GetRemaining(equipment);
-            var label = rowInstance.transform.Find("ItemLabel")?.GetComponent<Text>();
-            if (label)
-                label.text = $"{equipment.displayName}  x{remaining}";
-
             var btn = rowInstance.transform.Find("TakeButton")?.GetComponent<Button>();
             if (btn)
             {
@@ -609,13 +605,16 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
                 var btnText = btn.GetComponentInChildren<Text>();
                 if (btnText)
+                {
+                    btnText.text = $"{equipment.displayName}  x{remaining}";
                     btnText.color = hasStock ? Color.white : new Color(0.55f, 0.58f, 0.60f, 0.75f);
+                }
 
                 if (hasStock)
                     btn.onClick.AddListener(() => _openCase?.Checkout(equipment));
             }
 
-            y -= 52f;
+            y -= 56f;
         }
 
         foreach (var item in session.GetScenarioCableInventory())
@@ -646,10 +645,6 @@ public sealed class TssRuntimeUi : MonoBehaviour
             }
 
             var remainingCables = session.GetRemaining(cable);
-            var label = rowInstance.transform.Find("ItemLabel")?.GetComponent<Text>();
-            if (label)
-                label.text = $"{cable.displayName} cable  x{remainingCables}";
-
             var btn = rowInstance.transform.Find("TakeButton")?.GetComponent<Button>();
             if (btn)
             {
@@ -659,13 +654,16 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
                 var btnText = btn.GetComponentInChildren<Text>();
                 if (btnText)
+                {
+                    btnText.text = $"{cable.displayName}  x{remainingCables}";
                     btnText.color = hasStock ? Color.white : new Color(0.55f, 0.58f, 0.60f, 0.75f);
+                }
 
                 if (hasStock)
                     btn.onClick.AddListener(() => _openCase?.CheckoutCable(cable));
             }
 
-            y -= 52f;
+            y -= 56f;
         }
     }
 

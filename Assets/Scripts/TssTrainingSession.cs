@@ -37,6 +37,8 @@ public sealed class TssTrainingSession : MonoBehaviour
     public TssNetworkSessionState NetworkState { get; private set; }
     public string StudentId { get; private set; }
 
+    public void NotifyStateChanged() => StateChanged?.Invoke();
+
     private void Awake()
     {
         Instance = this;
