@@ -1,0 +1,239 @@
+336 TRS - Technical Support Specialist 
+Block 5 Capstone – Storyboard\n\nNetworking Capstone\nStudent Objective: Student will enter an empty building, rack the hardware, cable it, bring up VLANs, route between them, reach NIPRNET, and light up wireless – in one continuous run. \nPrior Knowledge: Students would have already performed all aspects of the capstone in previous labs. 
+
+STS: 
+Configure Switches (2b)
+Configure VLANs (2b)
+Implement Logical Security (2b)
+Configure Logical Security for Network Equipment (2b)
+Configure Routers (2b)
+Apply IP Address (2b)
+Add Device to Network (2b)\nOverall Requirements:
+- Delivered to the student via a Learning Management System such as Moodle or Cornerstone. 
+- Requires the ability to track student progress and completion
+- Can be used along with a Form 98 for instructor grading \nResources:
+Instructor PC Guide
+Student PC Instructions\n\nCapstone Break out: \nPART I: LAYER 1 (8 Tasks)
+PART 2: LAYER 2 (7 Tasks)
+PART 3: LAYER 3 (4 Tasks)
+PART 4: LAYER 3 (3 Tasks)\n\nLOG IN \n\nLAY OUT\n\nBINDER\n\n\nEquipment Box Inventory: \n\nPART I – Layer 1 Physical \n\n\nPART I – Physical Cont. \n\n\nPART I – Physical Cont. \n\n\nPART I – Physical Cont. \n\n\nPART I – Physical Cont. \nPART I – Physical Cont. \n\n\nPART I – Physical Cont. \n\n\nPART I – Physical Cont. \n\nLAST NAME + COMPUTER NUMBER
+- Student names and numbers are not pre-loaded.
+- The profile is generated based on what the student enters. 
+ex: 
+
+BEGIN CAPSTONE OR LOAD FROM CODE:
+- New run or student can load from a previous point. 
+
+ | \nCAPSTONE BEGINS
+
+Top Right Window: Student task list to keep student on track 
+
+Top Left Window:
+A Binder is available to the student with all required information to complete the lab. 
+ | \nBottom Left Buttons:
+
+BINDER – Always available to the student
+SAVE – Lab should autosave but always good to save?
+EXPORT CODE – Student can export to save their progress.  | 
+\nKeys
+  | 
+
+\n1st floor 
+IT Room
+Reception
+Guest Lounge 
+Server Rack \n\n2nd Floor 
+Office 1
+Office 2
+Server Rack\n\nNaming and Racks  | \n | \nVLANs | \n | \nIP Plan | 
+\n | \nCABLE Schedule | 
+\n | \nCircuit Letter | \n | \nWireless | \n | \nCredentials | \n | \n\n
+RACK PDU
+Core Router
+Printer
+Patch Panel
+Rack Server
+Wireless AP
+8-Port Switch
+Desktop PC
+Test Latptop\nPART 1: Layer 1 (15 points)\nPhase 1. Populates the ground floor rack in the correct physical order\nPhase 2. Repeats rack build in the upstairs closet\nPhase 3. Places the user devices on their desks\nPhase 4. Places the upstairs user devices correctly\nPhase 5. Connects 2 switches with the correct cable type\nPhase 6. Wire the ground floor. Structured-cabling path through the patch panel.\nPhase 7. Repeat the structured path upstairs with three drops\nPhase 8. Uplink the router and land the carrier circuit.\n
+PHASE 1: 
+Student will set up the first floor IT Room Rack
+
+ | \n1. Rack a PDU in slot 1 (top) and name it PDU1
+
+Student must access the equipment box by walking towards the tan box and typing E on the keyboard | 
+\nSelect PDU in equipment box  | NOTE TO STUDENT:  Draw one item. Carry it to a rack slot, a desk, or (the WAP) the Guest Lounge ceiling, then name it per the Binder. You can draw as many as you need – nothing here is consumed. 
+
+\nPlace equipment in  Rack by walking to the rack
+
+Type E to view rack
+ | \nSelect location on rack 
+
+ | 
+\nRename PDU per instructions to PDU 1
+ | 
+\nObserve task turn green to indicate that the student completed the task.  | \n2. Rack a Patch Panel in slot 2, named Patch 1
+
+Repeat steps to retrieve equipment and place in rack. 
+Rename and look for green text.  | 
+\n3. Rack a Switch in slot 3, named AN-1 | 
+
+\n4. Rack the Core Router in slot 4, named CN-1 | 
+\n5. Rack a Server in slot 5 (heaviest, lowest), named IT2 | \nPHASE 1 FINAL RESULT: 
+ | 
+\n
+PHASE 2:
+Student will set up the second floor Rack  (Office 2 closet)
+
+Student will access equipment in the same fashion and walk up the stairs to the second floor |  \n1. Rack a PDU in slot 1, named PDU2
+
+Observe task turn green to indicate that the student completed the task. | \n2. Rack a Patch Panel in slot 2, named Patch2
+
+Repeat steps to retrieve equipment and place in rack. 
+Look for green text.  | 
+
+\n3. Rack a Switch in slot 3, named AN-2 | 
+
+\nPHASE 2 FINAL RESULT: 
+ |  \n
+PHASE 3:
+Student will set up the ground floor End Devices  |   \n1. Place a PC on the IT Desk, named IT1 | NOTE TO STUDENT: Each desktop device has one NIC on its rear panel 0- drag a cable straight off the LAN jack
+
+aw
+
+
+
+\n2. Place a PC on the Reception Desk, named Reception 1 | 
+
+
+
+\n3. Place a printer on the reception desk, named Reception 2 | 
+
+
+\n
+PHASE 3 FINAL RESULT: | \n
+PHASE 4:
+Student will set up 2nd floor end Devices  |   \n1. Place PC on the Office 1 Desk, named Dataaa1 | 
+ 
+\n2. Place a PC on the Office 2 desk, named Data2 |  
+
+
+\n3. Place a printer on the Office 2 Desk, named Data3 | 
+
+\n
+PHASE 4 FINAL RESULT: | 
+
+\nPHASE 5:
+Connect AN-1 Port 1 to AN-2 Port 1 with a crossover cable. Two switches; their TX and RX pins line up, so the pairs must be crossed.  |   
+
+\nLocate the first floor rack
+Locate the AN-1 switch
+
+Select Port 1
+
+Select crossover at the bottom |  
+
+
+\n- Select Port 1 and drag it out
+- Close window | 
+\nTravel upstairs to locate 2nd floor rack 
+Select port 1 of AN-2 | 
+ \nPHASE 5 FINAL RESULT: |  \n
+PHASE 6:
+ |   \n1. IT1 –> AN-1 Port 2
+
+Student must connect the IT1 IT Room Desktop LAN port using a straight-through cable to the AN-1 8 port Switch. 
+ | 
+
+
+
+
+\n2. IT2 (Server) –> AN-1 Port 5
+
+- Using a straight through cable student must connect the Server to the AN-1 8 port switch.  | 
+
+\n3. Reception1 -> Reception Mount Port 1
+
+Reception desktop PC must connect to the Reception Mount Port using a Straight-Through cable
+
+Mount Port is on the wall | 
+
+
+
+
+\n4. Reception2 -> Reception Mount Port 2
+
+Student will connect the Printer to the mount port using a straight-through cable | 
+
+
+ 
+
+\n5. Punch-down: Reception Mount Punch 1 -> Patch1 Punch 1
+
+Student must connect the reception mount punch with the Patch 1 Panel using a crossover cable 
+NOTE:  Student must select rear to access the back part of the Patch 1 Panel |  
+
+
+ \n6. Punch-down: Reception Mount Punch 2 -> Patch1 Punch 2
+
+Repeat the process.  | 
+
+
+
+
+\n7. Patch cord: Patch1 Port 1 -> AN-1 Port 3
+
+Using a straight through connect Patch 1 port to AN-1 Port 3
+ |  
+
+
+
+\n8. Patch cord: Patch1 Port 2 -> AN-1 Port 4 | 
+\n
+PHASE 7:
+ |   \n1. Data1 -> Office 1 Mount Port 1
+
+Using a straight-through cable connect the data 1 port to the wall mount port |  
+\n2. DATA2 -> Office 2 Mount Port 1
+
+Office 2 desktop to wall mount Port 1 using a straight-through cable  | 
+
+ 
+
+
+
+
+\n3. Data3 -> Office 2 Mount Port 2 
+
+Connect the office 2 printer to the wall mount Port 2 using a straight- through cable | 
+
+\n4. Punch-down: Office 1 Mount Punch 1 – Patch2 Punch 1
+ | 
+
+
+
+
+\n5. Punch-down: Office 2 Mount Punch 2 -> Patch2 Punch 3 | 
+
+
+
+\n6. Punch Down: Office 2 Mount Punch 2 -> Patch2 Punch 3 | 
+
+
+
+
+
+\n7. Patch Cord: Patch2 Port 1 -> AN-2 Port 2 | \n8. Patch Cord: Patch2 Port 2 -> AN-2 Port 3 |  \n9. Patch Cord: Patch2 Port 3 -> AN-2 Port 4 | \n | 
+
+\n
+PHASE 8:
+ |   \n1.  | \n2.  | 
+
+
+
+\n3.  | 
+
+
+\n
+PHASE 8 FINAL RESULT: | 
