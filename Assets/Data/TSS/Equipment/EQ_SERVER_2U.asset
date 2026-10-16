@@ -17,7 +17,7 @@ MonoBehaviour:
   category: 4
   rackUnits: 2
   rackPrefab: {fileID: 6430748568416650616, guid: a066c94de7f9cf244a42ef0c634aaab6, type: 3}
-  carryPrefab: {fileID: 919132149155446097, guid: c095cbf7529a59b4cba9104152e47930, type: 3}
+  carryPrefab: {fileID: 6430748568416650616, guid: a066c94de7f9cf244a42ef0c634aaab6, type: 3}
   useRearRackPlacement: 1
   rackLocalOffset: {x: -0.002, y: 0, z: -0.2161}
   rackLocalEuler: {x: 0, y: 0, z: 0}

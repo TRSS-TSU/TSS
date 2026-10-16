@@ -9,6 +9,7 @@ public sealed class TssRackDeviceNamePlaque : MonoBehaviour
     private TssTrainingSession _session;
     private string _deviceKey;
     private string _fallbackName;
+    private TssRackDeviceNamePlaque[] _linkedPlaques;
 
     private void Awake()
     {
@@ -34,11 +35,15 @@ public sealed class TssRackDeviceNamePlaque : MonoBehaviour
 
     public void Configure(string deviceKey, string fallbackName)
     {
-        _deviceKey = deviceKey;
-        _fallbackName = fallbackName;
-        ResolveText();
-        SubscribeSession();
-        RefreshCurrentName();
+        var plaques = _linkedPlaques ?? new[] { this };
+        foreach (var plaque in plaques)
+        {
+            plaque._deviceKey = deviceKey;
+            plaque._fallbackName = fallbackName;
+            plaque.ResolveText();
+            plaque.SubscribeSession();
+            plaque.RefreshCurrentName();
+        }
     }
 
     public static TssRackDeviceNamePlaque Ensure(GameObject deviceRoot)
@@ -51,6 +56,7 @@ public sealed class TssRackDeviceNamePlaque : MonoBehaviour
         if (!plaque)
             plaque = deviceRoot.AddComponent<TssRackDeviceNamePlaque>();
 
+        plaque._linkedPlaques = deviceRoot.GetComponentsInChildren<TssRackDeviceNamePlaque>(true);
         plaque.ResolveText();
 
         return plaque;

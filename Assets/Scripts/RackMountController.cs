@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using StarterAssets;
 using UnityEngine;
+using UnityEngine.EventSystems;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -23,6 +24,7 @@ public sealed class RackMountController : MonoBehaviour
     [SerializeField] private Vector3 rearSlotLocalOffset = new(0f, 0f, -0.56f);
     [SerializeField] private Vector3 slotLocalSize = new(0.55f, 0.035f, 0.035f);
     [SerializeField] private Color validSlotColor = new(0.2f, 1f, 0.35f, 0.55f);
+    [SerializeField] private Color hoveredSlotColor = new(0.1f, 0.45f, 1f, 0.8f);
 
     private readonly HashSet<int> _reserved = new();
     private readonly HashSet<int> _occupied = new();
@@ -32,6 +34,8 @@ public sealed class RackMountController : MonoBehaviour
     private TssTrainingSession _session;
     private bool _playerInRange;
     private Material _slotMaterial;
+    private Material _hoveredSlotMaterial;
+    private int _hoveredU;
     private Camera _mainCamera;
 
     public string RackId => rackId;
@@ -63,6 +67,15 @@ public sealed class RackMountController : MonoBehaviour
         if (_session)
             _session.StateChanged -= HandleSessionStateChanged;
         _session = null;
+        ClearHoveredSlot();
+    }
+
+    private void OnDestroy()
+    {
+        if (_slotMaterial)
+            Destroy(_slotMaterial);
+        if (_hoveredSlotMaterial)
+            Destroy(_hoveredSlotMaterial);
     }
 
     private void Start()
@@ -73,7 +86,12 @@ public sealed class RackMountController : MonoBehaviour
     private void Update()
     {
         if (!IsPlayerInRange() || !TssTrainingSession.Instance)
+        {
+            ClearHoveredSlot();
             return;
+        }
+
+        UpdateSlotHover();
 
         if (!WasPrimaryPressed(out var screenPosition))
             return;
@@ -152,6 +170,9 @@ public sealed class RackMountController : MonoBehaviour
         if (!equipment)
             return false;
 
+        if (IsFrontSlotBlocked(equipment, startingU) || _reserved.Contains(startingU))
+            return false;
+
         if (IsDualSidedRackEquipment(equipment))
         {
             return RackSpanValidator.CanPlace(startingU, equipment.rackUnits, firstInstallableU, lastInstallableU, _reserved, _occupied)
@@ -210,10 +231,13 @@ public sealed class RackMountController : MonoBehaviour
         if (TssRuntimeUi.Instance && TssRuntimeUi.Instance.IsGameplayInputBlocked)
             return;
 
+        var held = TssTrainingSession.Instance ? TssTrainingSession.Instance.HeldItem : null;
+        if (IsFrontSlotBlocked(held, startingU) || _reserved.Contains(startingU))
+            return;
+
         if (!TssTrainingSession.Instance)
             return;
 
-        var held = TssTrainingSession.Instance.HeldItem;
         if (!held)
             return;
 
@@ -409,6 +433,8 @@ public sealed class RackMountController : MonoBehaviour
         _slotMaterial = new Material(Shader.Find("Universal Render Pipeline/Lit"));
         _slotMaterial.color = validSlotColor;
         _slotMaterial.SetFloat("_Surface", 1f);
+        _hoveredSlotMaterial = new Material(_slotMaterial);
+        _hoveredSlotMaterial.color = hoveredSlotColor;
 
         for (var u = lowestU; u <= highestU; u++)
         {
@@ -469,6 +495,80 @@ public sealed class RackMountController : MonoBehaviour
             pair.Value.transform.localPosition = GetSlotLocalPosition(held, pair.Key);
             pair.Value.SetActive(IsPlayerInRange() && CanInstall(held, pair.Key));
         }
+
+        if (_hoveredU != 0 && (!_slots.TryGetValue(_hoveredU, out var hoveredSlot) || !hoveredSlot.activeSelf))
+            ClearHoveredSlot();
+    }
+
+    private void UpdateSlotHover()
+    {
+        var held = TssTrainingSession.Instance ? TssTrainingSession.Instance.HeldItem : null;
+        if (!held || !_mainCamera)
+        {
+            ClearHoveredSlot();
+            return;
+        }
+
+        var ray = _mainCamera.ScreenPointToRay(GetPointerPosition());
+        RackUClickTarget hoveredTarget = null;
+        var closestDistance = float.PositiveInfinity;
+        foreach (var hit in Physics.RaycastAll(ray, Mathf.Infinity, ~0, QueryTriggerInteraction.Collide))
+        {
+            var target = hit.collider.GetComponentInParent<RackUClickTarget>();
+            if (!target || target.Rack != this || hit.distance >= closestDistance)
+                continue;
+
+            hoveredTarget = target;
+            closestDistance = hit.distance;
+        }
+
+        SetHoveredSlot(hoveredTarget ? hoveredTarget.U : 0);
+    }
+
+    private void SetHoveredSlot(int u)
+    {
+        if (_hoveredU == u)
+        {
+            if (u != 0)
+                PositionHoverLabel(u);
+            return;
+        }
+
+        if (_slots.TryGetValue(_hoveredU, out var previousSlot))
+            previousSlot.GetComponent<Renderer>().sharedMaterial = _slotMaterial;
+
+        _hoveredU = u;
+        if (!_slots.TryGetValue(u, out var hoveredSlot))
+        {
+            TssRuntimeUi.Instance?.HideRackSlotHover();
+            return;
+        }
+
+        hoveredSlot.GetComponent<Renderer>().sharedMaterial = _hoveredSlotMaterial;
+        PositionHoverLabel(u);
+    }
+
+    private void PositionHoverLabel(int u)
+    {
+        TssRuntimeUi.Instance?.ShowRackSlotHover(u);
+    }
+
+    private void ClearHoveredSlot()
+    {
+        if (_slots.TryGetValue(_hoveredU, out var previousSlot))
+            previousSlot.GetComponent<Renderer>().sharedMaterial = _slotMaterial;
+
+        _hoveredU = 0;
+        TssRuntimeUi.Instance?.HideRackSlotHover();
+    }
+
+    private static Vector3 GetPointerPosition()
+    {
+#if ENABLE_INPUT_SYSTEM
+        return Mouse.current != null ? (Vector3)Mouse.current.position.ReadValue() : Vector3.zero;
+#else
+        return Input.mousePosition;
+#endif
     }
 
     private Vector3 GetULocalPosition(int u)
@@ -514,6 +614,14 @@ public sealed class RackMountController : MonoBehaviour
         return equipment && equipment.category == EquipmentCategory.Server;
     }
 
+    private static bool IsFrontSlotBlocked(EquipmentDefinition equipment, int startingU)
+    {
+        if (!equipment || (equipment.useRearRackPlacement && !IsDualSidedRackEquipment(equipment)))
+            return false;
+
+        return startingU == 30 || startingU == 31;
+    }
+
     private static void SetOccupied(HashSet<int> occupiedSet, int u, bool occupied)
     {
         if (occupied)
@@ -538,6 +646,12 @@ public sealed class RackMountController : MonoBehaviour
 #if ENABLE_INPUT_SYSTEM
         if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame)
         {
+            if (EventSystem.current && EventSystem.current.IsPointerOverGameObject())
+            {
+                screenPosition = default;
+                return false;
+            }
+
             screenPosition = Mouse.current.position.ReadValue();
             return true;
         }
@@ -547,6 +661,9 @@ public sealed class RackMountController : MonoBehaviour
             foreach (var touch in Touchscreen.current.touches)
             {
                 if (!touch.press.wasPressedThisFrame)
+                    continue;
+
+                if (EventSystem.current && EventSystem.current.IsPointerOverGameObject(touch.touchId.ReadValue()))
                     continue;
 
                 screenPosition = touch.position.ReadValue();

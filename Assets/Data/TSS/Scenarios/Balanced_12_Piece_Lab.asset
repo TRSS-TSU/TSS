@@ -97,6 +97,20 @@ MonoBehaviour:
     quantity: 10
   - cable: {fileID: 11400000, guid: 7a8091403b6214e47a1c50a3939bd562, type: 2}
     quantity: 10
+  defaultPlayerCableType: 0
+  cableTypeRequirements:
+  - requirementId: InterClosetRack01
+    endpointAId: Rack:Rack01:U35:Fa01
+    endpointBId: PatchPanel:Rack01:Port48
+    requiredCableType: 1
+  - requirementId: InterClosetRack02
+    endpointAId: Rack:Rack02:U35:Fa01
+    endpointBId: PatchPanel:Rack02:Port48
+    requiredCableType: 0
+  - requirementId: DemarcWan
+    endpointAId: Rack:Rack01:U30:Fa01
+    endpointBId: PatchPanel:Rack01:Port18
+    requiredCableType: 0
   permanentConnections:
   - connectionId: Infrastructure001
     cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
@@ -426,14 +440,6 @@ MonoBehaviour:
     requiresPunchDownTermination: 1
     endpointATerminationModuleId: Infrastructure041:A
     endpointBTerminationModuleId: Infrastructure041:B
-  - connectionId: Infrastructure042
-    cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
-    cableType: 0
-    patchPanelEndpointId: PatchPanel:Rack01:Port17
-    wallportEndpointId: WallPort:Reception:Port05
-    requiresPunchDownTermination: 0
-    endpointATerminationModuleId: 
-    endpointBTerminationModuleId: 
   - connectionId: Infrastructure043
     cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
     cableType: 0
@@ -529,10 +535,15 @@ MonoBehaviour:
   - title: WP1 - Physical Installation
     body: "Building 1042 physical installation.\n\nDeliverables:\n- Populate both racks
       per the SOP rack elevation and name every device.\n- Place user equipment at its
-      assigned work area.\n- Establish the inter-closet link between both switches with
-      the correct cable type.\n- Terminate every user drop through the structured path:
-      workstation to wall mount, punch-down to patch panel, patch cord to switch.\n-
-      Uplink the router to the ground-floor switch and land the carrier circuit on the
+      assigned work area.\n- Complete the permanent inter-closet run from Rack01
+      Patch1 Port48 to Rack02 Patch2 Port48, including both punch-down terminations.\n-
+      Use a crossover patch cord from AN-1 Fa0/1 to Rack01 Patch1 Port48 and a
+      straight-through patch cord from AN-2 Fa0/1 to Rack02 Patch2 Port48 to form
+      the inter-closet trunk path. Use a straight-through patch cord from CN-1 Fa0/1
+      to Rack01 Patch1 Port18 for the DEMARC handoff.\n-
+      Terminate every user drop through the structured path: workstation to wall mount,
+      punch-down to patch panel, patch cord to switch.\n- Uplink the router to the
+      ground-floor switch and land the carrier circuit on the
       demarc.\n\nAcceptance: Physical only. A miswired run stays silent until connectivity
       verification in WP3."
   - title: WP2 - Layer 2

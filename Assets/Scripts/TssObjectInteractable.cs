@@ -87,13 +87,15 @@ public sealed class TssObjectInteractable : MonoBehaviour
             return;
         }
 
-        if (IsPlayerInInteractionRange() && _isHovered && WasPrimaryClickPressed())
+        if (!IsPlacedEndpointBlockedWithoutCable()
+            && IsPlayerInInteractionRange() && _isHovered && WasPrimaryClickPressed())
             EnterFirstPerson();
     }
 
     private void OnMouseDown()
     {
-        if (IsPlayerInInteractionRange() && !_isFirstPerson && _transition == null && !IsGameplayInputBlocked())
+        if (!IsPlacedEndpointBlockedWithoutCable()
+            && IsPlayerInInteractionRange() && !_isFirstPerson && _transition == null && !IsGameplayInputBlocked())
             EnterFirstPerson();
     }
 
@@ -464,5 +466,11 @@ public sealed class TssObjectInteractable : MonoBehaviour
     private static bool IsGameplayInputBlocked()
     {
         return TssRuntimeUi.Instance && TssRuntimeUi.Instance.IsGameplayInputBlocked;
+    }
+
+    private bool IsPlacedEndpointBlockedWithoutCable()
+    {
+        return GetComponentInParent<EndpointPlacedEquipmentTarget>()
+            && (!TssTrainingSession.Instance || !TssTrainingSession.Instance.HeldCable);
     }
 }

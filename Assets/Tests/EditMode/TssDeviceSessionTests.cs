@@ -173,6 +173,12 @@ public sealed class TssDeviceSessionTests
         {
             session.BeginScenario(scenario);
             var processor = new TssCliCommandProcessor(session, "Switch", EquipmentCategory.Switch, "Switch");
+            var switchReference = TssCliCommandProcessor.BuildCommandReference(EquipmentCategory.Switch);
+            StringAssert.Contains("interface Fa0/1 | interface range Fa0/2 - Fa0/4", switchReference);
+            StringAssert.Contains("switchport trunk encapsulation dot1q", switchReference);
+            StringAssert.Contains("switchport mode trunk", switchReference);
+            StringAssert.Contains("switchport trunk allowed vlan <id>[,<id>]", switchReference);
+            StringAssert.Contains("switchport trunk native vlan <id>", switchReference);
             Assert.IsTrue(processor.Execute("enable").Accepted);
             Assert.IsTrue(processor.Execute("configure terminal").Accepted);
             Assert.IsTrue(processor.Execute("hostname SW-CLI").Accepted);
@@ -216,6 +222,11 @@ public sealed class TssDeviceSessionTests
             Assert.IsTrue(processor.Execute("copy running-config startup-config").Accepted);
             Assert.IsNotNull(processor.Device.StartupSnapshot);
             Assert.IsTrue(processor.Device.Interfaces["Fa0/2"].TrunkEncapsulationDot1q);
+            Assert.IsTrue(processor.Device.Interfaces["Fa0/2"].IsTrunk);
+            Assert.AreEqual(99, processor.Device.Interfaces["Fa0/2"].NativeVlan);
+            Assert.AreEqual(2, processor.Device.Interfaces["Fa0/2"].AllowedVlans.Count);
+            Assert.IsTrue(processor.Device.Interfaces["Fa0/2"].AllowedVlans.Contains(10));
+            Assert.IsTrue(processor.Device.Interfaces["Fa0/2"].AllowedVlans.Contains(20));
             Assert.IsTrue(processor.Device.ConsoleLoginRequired);
             Assert.IsTrue(processor.Device.VtyLoginRequired);
             Assert.AreEqual("Data (suspended)", processor.Device.Vlans[10]);
@@ -244,6 +255,11 @@ public sealed class TssDeviceSessionTests
         {
             session.BeginScenario(scenario);
             var processor = new TssCliCommandProcessor(session, "Router", EquipmentCategory.Router, "Router");
+            var routerReference = TssCliCommandProcessor.BuildCommandReference(EquipmentCategory.Router);
+            StringAssert.Contains("interface Fa0/0 | interface Fa0/0.<vlan>", routerReference);
+            StringAssert.Contains("encapsulation dot1q <vlan>", routerReference);
+            StringAssert.Contains("ip route <network> <mask> <next-hop>", routerReference);
+            StringAssert.Contains("show ip route | show route", routerReference);
             Assert.IsTrue(processor.Execute("enable").Accepted);
             Assert.IsTrue(processor.Execute("configure terminal").Accepted);
             Assert.IsTrue(processor.Execute("hostname R-CLI").Accepted);

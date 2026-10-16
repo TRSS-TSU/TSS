@@ -38,7 +38,15 @@ public sealed class TssWorkPackageCondition
 public sealed class TssNetworkWorkPackageEvaluator
 {
     private readonly TssNetworkSessionState _state;
-    public TssNetworkWorkPackageEvaluator(TssNetworkSessionState state) { _state = state; }
+    private readonly TssTrainingSession _session;
+    // Cable correctness stays scenario-driven while all connector-compatible cable types remain placeable.
+    public TssNetworkWorkPackageEvaluator(TssNetworkSessionState state)
+        : this(state, TssTrainingSession.Instance) { }
+    public TssNetworkWorkPackageEvaluator(TssNetworkSessionState state, TssTrainingSession session)
+    {
+        _state = state;
+        _session = session;
+    }
 
     public TssWorkPackageResult EvaluateLayer2()
     {
@@ -50,6 +58,7 @@ public sealed class TssNetworkWorkPackageEvaluator
         CheckVlans(an1, "AN-1", result); CheckVlans(an2, "AN-2", result);
         CheckAccessPorts(an1, an2, result);
         CheckTrunks(an1, an2, result);
+        CheckCableTypes(result);
         CheckUnusedPorts(an1, an2, result);
         if (result.Complete) result = new TssWorkPackageResult(_state.SaveCompletionSnapshot("WP2"));
         return result;
@@ -156,6 +165,28 @@ public sealed class TssNetworkWorkPackageEvaluator
                 result.Attempt("WP2.Trunks");
             if (pair.Item1 == null || !pair.Item1.Interfaces.TryGetValue(pair.Item2, out var port) || !port.IsTrunk || !port.AdminUp || !port.CarrierUp || port.NativeVlan != _state.Profile.NativeVlan || !port.AllowedVlans.Contains(_state.Profile.ManagementVlan) || !port.AllowedVlans.Contains(_state.Profile.ReceptionVlan) || !port.AllowedVlans.Contains(_state.Profile.DataVlan))
                 result.Add("WP2.Trunks", "Required trunks are incomplete.");
+        }
+    }
+
+    private void CheckCableTypes(TssWorkPackageResult result)
+    {
+        var session = _session;
+        if (!session || !ReferenceEquals(session.NetworkState, _state))
+            return;
+
+        foreach (var status in session.GetCableTypeStatuses())
+        {
+            var id = "WP2.CableTypes." + (string.IsNullOrWhiteSpace(status.ConnectionId) ? "Required" : status.ConnectionId);
+            if (status.IsConnected)
+                result.Attempt("WP2.CableTypes");
+
+            if (status.IsCorrect && status.IsConnected)
+                continue;
+
+            var endpoints = status.EndpointAId + " to " + status.EndpointBId;
+            result.Add(id, status.IsConnected
+                ? $"{endpoints} uses {status.ActualCableType}; required {status.RequiredCableType}."
+                : $"{endpoints} is not connected with the required {status.RequiredCableType} cable.");
         }
     }
 

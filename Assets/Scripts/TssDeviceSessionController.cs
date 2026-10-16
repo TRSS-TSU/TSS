@@ -276,7 +276,7 @@ public sealed class TssDeviceSessionController : MonoBehaviour
                 iface.EndpointId = endpoint.EndpointId;
                 iface.CarrierUp = ctx.Category == EquipmentCategory.Router && name == "Fa0/1"
                     ? TssTrainingSession.Instance.IsProviderDemarcConnected(endpoint.EndpointId)
-                    : TssTrainingSession.Instance.IsEndpointConnected(endpoint.EndpointId);
+                    : TssTrainingSession.Instance.IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId);
             }
             network.SetProviderDemarcConnected(ProviderDemarcConnected(network, TssTrainingSession.Instance));
             state = TssDeviceLogicalState.FromNetwork(device, TssTrainingSession.Instance);
@@ -371,7 +371,7 @@ public sealed class TssDeviceSessionController : MonoBehaviour
             else
             {
                 endpoint.Layer1Connected = endpoints.Length > 0 && session
-                    && (session.IsEndpointConnected(endpoints[0].EndpointId) || session.IsEndpointOnEffectivePhysicalPath(endpoints[0].EndpointId));
+                    && session.IsEndpointOnEffectivePhysicalPath(endpoints[0].EndpointId);
                 endpoint.Layer2Connected = endpoint.Layer1Connected;
             }
             state = new TssDeviceLogicalState(ctx.Key, ctx.Category, ctx.DeviceName)

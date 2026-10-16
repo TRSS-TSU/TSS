@@ -3,9 +3,6 @@ using System;
 using StarterAssets;
 using TMPro;
 using UnityEngine;
-#if ENABLE_INPUT_SYSTEM
-using UnityEngine.InputSystem;
-#endif
 
 public sealed class EndpointPlacementStation : MonoBehaviour
 {
@@ -40,20 +37,13 @@ public sealed class EndpointPlacementStation : MonoBehaviour
     [SerializeField] private Vector3 placedInteractionTriggerSize = new(1.5f, 1.2f, 1.5f);
     [SerializeField] private Vector3 printerPlacedInteractionTriggerCenter = new(0f, 0.35f, 0f);
     [SerializeField] private Vector3 printerPlacedInteractionTriggerSize = new(0.75f, 0.7f, 0.75f);
-    [SerializeField] private Color hoverTint = new(0.2f, 0.75f, 1f, 1f);
-    [SerializeField, Range(0f, 1f)] private float hoverBlend = 0.35f;
-
     private readonly Dictionary<string, GameObject> _placedVisuals = new();
     private bool _playerInRange;
     private int _nextPlacementNumber = 1;
-    private Renderer[] _renderers;
-    private Material[][] _materials;
-    private Color[][] _baseColors;
-    private Camera _mainCamera;
-    private bool _isHovered;
     private TssTrainingSession _session;
 
     public string StationId => stationId;
+    internal bool IsPlayerInRange => _playerInRange;
 
     private void Awake()
     {
@@ -66,8 +56,7 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         if (placementAnchors == null || placementAnchors.Length == 0)
             placementAnchors = new[] { transform };
 
-        _mainCamera = Camera.main;
-        CacheRenderers();
+        RefreshPlacementTriggers();
     }
 
     private void OnEnable()
@@ -80,17 +69,11 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         SubscribeSession();
     }
 
-    private void Update()
-    {
-        UpdateHoverAndClick();
-    }
-
     private void OnDisable()
     {
         if (_session)
             _session.StateChanged -= HandleSessionStateChanged;
         _session = null;
-        SetHighlight(false);
     }
 
     private void SubscribeSession()
@@ -108,6 +91,7 @@ public sealed class EndpointPlacementStation : MonoBehaviour
 
     private void HandleSessionStateChanged()
     {
+        RefreshPlacementTriggers();
         foreach (var pair in _placedVisuals)
         {
             if (!pair.Value)
@@ -121,10 +105,24 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         }
     }
 
-    private void OnMouseDown()
+    internal bool IsAnchorOccupied(Transform anchor)
     {
-        if (_isHovered && !IsGameplayInputBlocked())
-            TryOpenPlacementPrompt();
+        if (!anchor)
+            return false;
+
+        foreach (var visual in _placedVisuals.Values)
+        {
+            if (visual && Vector3.Distance(visual.transform.position, anchor.position) < 0.01f)
+                return true;
+        }
+
+        return false;
+    }
+
+    private void RefreshPlacementTriggers()
+    {
+        foreach (var trigger in GetComponentsInChildren<EndpointPlacementTrigger>(true))
+            trigger.RefreshAvailability();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -154,6 +152,28 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         }
 
         return false;
+    }
+
+    internal bool CanPlaceCategory(EquipmentCategory category)
+    {
+        foreach (var acceptedCategory in acceptedCategories)
+        {
+            if (acceptedCategory != category)
+                continue;
+
+            var categoryAnchors = GetCategoryAnchors(category);
+            return HasAnchor(categoryAnchors)
+                ? GetFreeAnchor(categoryAnchors) != null
+                : GetFreeAnchor(placementAnchors) != null;
+        }
+
+        return false;
+    }
+
+    internal void ClickPlacementTrigger(EquipmentCategory category)
+    {
+        if (CanPlaceCategory(category))
+            TryOpenPlacementPrompt();
     }
 
     public string NextPlacementId(EquipmentDefinition equipment)
@@ -241,23 +261,25 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         if (!CanInspectPlacedEndpoint(session))
             return;
 
-        if (TryEnterPlacedCableView(placementId))
+        if (session.HeldCable && TryEnterPlacedCableView(placementId))
             return;
 
         var currentName = GetDeviceName(placementId);
         var computerTitle = string.IsNullOrWhiteSpace(currentName) ? equipment.displayName : currentName.Trim();
-        Action accessComputer = () =>
-        {
-            if (!TryEnterPlacedCableView(placementId))
-                ShowComputerForPlacement(placementId, computerTitle, owner);
-        };
+        Action accessComputer = session.HeldCable
+            ? () =>
+            {
+                if (!TryEnterPlacedCableView(placementId))
+                    ShowComputerForPlacement(placementId, computerTitle, owner);
+            }
+            : null;
         if (TssRuntimeUi.Instance)
         {
             TssRuntimeUi.Instance.ShowEndpointMenu(
                 $"{StationId} {equipment.displayName}",
                 true,
                 true,
-                true,
+                session.HeldCable,
                 deviceName =>
                 {
                     if (TssTrainingSession.Instance.RenameEndpoint(placementId, deviceName))
@@ -328,6 +350,7 @@ public sealed class EndpointPlacementStation : MonoBehaviour
             Destroy(visual);
 
         _placedVisuals.Remove(placementId);
+        RefreshPlacementTriggers();
         TssRuntimeUi.Instance?.ShowHudMessage(message);
     }
 
@@ -463,10 +486,12 @@ public sealed class EndpointPlacementStation : MonoBehaviour
 
     private IReadOnlyList<Transform> GetCategoryAnchors(EquipmentDefinition equipment)
     {
-        if (!equipment)
-            return null;
+        return equipment ? GetCategoryAnchors(equipment.category) : null;
+    }
 
-        return equipment.category switch
+    private IReadOnlyList<Transform> GetCategoryAnchors(EquipmentCategory category)
+    {
+        return category switch
         {
             EquipmentCategory.DesktopPc => desktopPlacementAnchors,
             EquipmentCategory.Printer => printerPlacementAnchors,
@@ -540,122 +565,5 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         return TssRuntimeUi.Instance && TssRuntimeUi.Instance.IsGameplayInputBlocked;
     }
 
-    private void UpdateHoverAndClick()
-    {
-        var hovered = _playerInRange && CanPlace(TssTrainingSession.Instance ? TssTrainingSession.Instance.HeldItem : null) && !IsGameplayInputBlocked() && IsMouseOverStation();
-
-        SetHighlight(hovered);
-        _isHovered = hovered;
-
-        if (_isHovered && WasPrimaryClickPressed())
-            TryOpenPlacementPrompt();
-    }
-
-    private bool IsMouseOverStation()
-    {
-        if (!_mainCamera)
-            _mainCamera = Camera.main;
-
-        if (!_mainCamera)
-            return false;
-
-        var ray = _mainCamera.ScreenPointToRay(GetMousePosition());
-        var hits = Physics.RaycastAll(ray, Mathf.Infinity, ~0, QueryTriggerInteraction.Collide);
-        System.Array.Sort(hits, (left, right) => left.distance.CompareTo(right.distance));
-
-        foreach (var hit in hits)
-        {
-            if (hit.collider && hit.collider.transform.IsChildOf(transform))
-                return true;
-
-        }
-
-        return false;
-    }
-
-    private void CacheRenderers()
-    {
-        _renderers = GetComponentsInChildren<Renderer>(true);
-        _materials = new Material[_renderers.Length][];
-        _baseColors = new Color[_renderers.Length][];
-
-        for (var rendererIndex = 0; rendererIndex < _renderers.Length; rendererIndex++)
-        {
-            var materials = _renderers[rendererIndex].materials;
-            _materials[rendererIndex] = materials;
-            _baseColors[rendererIndex] = new Color[materials.Length];
-
-            for (var materialIndex = 0; materialIndex < materials.Length; materialIndex++)
-                _baseColors[rendererIndex][materialIndex] = GetMaterialColor(materials[materialIndex]);
-        }
-    }
-
-    private void SetHighlight(bool highlighted)
-    {
-        if (_materials == null)
-            return;
-
-        if (IsGameplayInputBlocked())
-            highlighted = false;
-
-        for (var rendererIndex = 0; rendererIndex < _materials.Length; rendererIndex++)
-        {
-            var materials = _materials[rendererIndex];
-            Debug.Log("materials");
-            for (var materialIndex = 0; materialIndex < materials.Length; materialIndex++)
-            {
-                var material = materials[materialIndex];
-                if (!material){
-
-                    Debug.Log ("No Material to Color.");
-                    continue;
-                }
-                else{
-
-                var baseColor = _baseColors[rendererIndex][materialIndex];
-                    Debug.Log ("Material:" + material);
-                SetMaterialColor(material, highlighted ? Color.Lerp(baseColor, hoverTint, hoverBlend) : baseColor);
-                }
-
-            }
-        }
-    }
-
-    private static Color GetMaterialColor(Material material)
-    {
-        if (!material)
-            return Color.white;
-
-        if (material.HasProperty("_BaseColor"))
-            return material.GetColor("_BaseColor");
-
-        return material.HasProperty("_Color") ? material.GetColor("_Color") : Color.white;
-    }
-
-    private static void SetMaterialColor(Material material, Color color)
-    {
-        if (material.HasProperty("_BaseColor"))
-            material.SetColor("_BaseColor", color);
-        else if (material.HasProperty("_Color"))
-            material.SetColor("_Color", color);
-    }
-
-    private static Vector3 GetMousePosition()
-    {
-#if ENABLE_INPUT_SYSTEM
-        return Mouse.current != null ? (Vector3)Mouse.current.position.ReadValue() : Vector3.zero;
-#else
-        return Input.mousePosition;
-#endif
-    }
-
-    private static bool WasPrimaryClickPressed()
-    {
-#if ENABLE_INPUT_SYSTEM
-        return Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame;
-#else
-        return Input.GetMouseButtonDown(0);
-#endif
-    }
 }
 

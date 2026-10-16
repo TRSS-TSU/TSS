@@ -104,6 +104,23 @@ public static class TssDeviceSessionPrefabBuilder
         bgHlg.childForceExpandWidth = true;
         bgHlg.childForceExpandHeight = true;
 
+        // ponytail: a transparent Image is enough to consume empty-row raycasts.
+        if (isTerminal)
+        {
+            var rowRaycastBlocker = new GameObject("ButtonRowRaycastBlocker", typeof(RectTransform), typeof(Image), typeof(LayoutElement));
+            rowRaycastBlocker.transform.SetParent(buttonsGroup.transform, false);
+            rowRaycastBlocker.transform.SetAsFirstSibling();
+            var blockerRt = rowRaycastBlocker.GetComponent<RectTransform>();
+            blockerRt.anchorMin = Vector2.zero;
+            blockerRt.anchorMax = Vector2.one;
+            blockerRt.offsetMin = Vector2.zero;
+            blockerRt.offsetMax = Vector2.zero;
+            var blockerImage = rowRaycastBlocker.GetComponent<Image>();
+            blockerImage.color = new Color(0f, 0f, 0f, 0.001f);
+            blockerImage.raycastTarget = true;
+            rowRaycastBlocker.GetComponent<LayoutElement>().ignoreLayout = true;
+        }
+
         var returnBtn = MakeButton(buttonsGroup.transform, "ReturnButton", "Return", Vector2.zero, new Vector2(150f, 44f), BtnNormal);
         var sessionLabel = isTerminal ? "Terminal Session" : "Desktop Session";
         var sessionBtn = MakeButton(buttonsGroup.transform, "SessionButton", sessionLabel, Vector2.zero, new Vector2(150f, 44f), isTerminal ? new Color(0.12f, 0.32f, 0.28f, 0.95f) : new Color(0.12f, 0.26f, 0.42f, 0.95f));

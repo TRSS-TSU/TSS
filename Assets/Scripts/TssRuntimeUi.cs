@@ -40,6 +40,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
     private Canvas _canvas;
     private Transform _hudRoot;
     private Text _heldText;
+    private Text _rackSlotHoverText;
     private Text _objectiveText;
     private Text _contextText;
     private Text _progressText;
@@ -113,8 +114,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
     private static readonly string[] BinderTabTitles = { "Naming & Racks", "VLANs", "IP Plan", "Cable Schedule", "Circuit Letter", "Wireless", "Credentials" };
     private static readonly Vector2 HudSlidePanelHiddenPosition = new(-1150f, 0f);
     private static readonly Vector2 HudSlidePanelShownPosition = new(20f, 0f);
-    private static readonly Vector2 HudRightSlidePanelHiddenPosition = new(1150f, 0f);
-    private static readonly Vector2 HudRightSlidePanelShownPosition = new(-20f, 0f);
+    private static readonly Vector2 HudRightSlidePanelShownPosition = new(-20f, -101f);
+    private const float HudSlideAnimationSpeed = 8f;
 
     public bool IsGameplayInputBlocked => IsAnyGameplayMenuOpen();
 
@@ -288,6 +289,10 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 hudRect.offsetMax = Vector2.zero;
                 hudRect.pivot = new Vector2(0.5f, 0.5f);
             }
+
+            _rackSlotHoverText = _hudRoot.Find("RackSlotHoverText")?.GetComponent<Text>();
+            if (_rackSlotHoverText && !_rackSlotHoverText.font)
+                _rackSlotHoverText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
         }
         var heldTextTransform = rootInstance.transform.Find("HUD/HeldText");
         if (heldTextTransform)
@@ -451,6 +456,27 @@ public sealed class TssRuntimeUi : MonoBehaviour
         _statusMessage = message.Trim();
         _statusUntil = Time.time + 3f;
         RefreshHudAdditions();
+    }
+
+    public void ShowRackSlotHover(int u)
+    {
+        if (!_rackSlotHoverText && _hudRoot)
+            _rackSlotHoverText = _hudRoot.Find("RackSlotHoverText")?.GetComponent<Text>();
+
+        if (_rackSlotHoverText && !_rackSlotHoverText.font)
+            _rackSlotHoverText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+        if (!_rackSlotHoverText)
+            return;
+
+        _rackSlotHoverText.text = $"U{u:00}";
+        _rackSlotHoverText.gameObject.SetActive(true);
+    }
+
+    public void HideRackSlotHover()
+    {
+        if (_rackSlotHoverText)
+            _rackSlotHoverText.gameObject.SetActive(false);
     }
 
     public void ShowNamePrompt(
@@ -1054,7 +1080,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 "Configuration saved");
         }
 
-        var evaluator = new TssNetworkWorkPackageEvaluator(session.NetworkState);
+        var evaluator = new TssNetworkWorkPackageEvaluator(session.NetworkState, session);
         var result = workPackage == 2
             ? evaluator.EvaluateLayer2()
             : workPackage == 3
@@ -1191,28 +1217,36 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
         EnsureSopTabCapacity(sectionCount);
         RefreshSopTabs(sections, sectionCount, hasBinder);
-
-        for (var i = 0; i < _sopContentContainer.childCount; i++)
-            _sopContentContainer.GetChild(i).gameObject.SetActive(i == 0);
-
         if (_sopContentContainer.childCount == 0)
         {
             Debug.LogWarning("TssRuntimeUi SOP panel requires one prefab content row.");
             return;
         }
 
-        var row = _sopContentContainer.GetChild(0);
-
-        var titleText = row.Find("SectionTitle")?.GetComponent<Text>();
-        if (titleText)
-            titleText.text = hasBinder ? BinderTabTitles[_selectedSopSectionIndex] : sections[_selectedSopSectionIndex].title;
-
-        var bodyText = row.Find("SectionBody")?.GetComponent<Text>();
-        if (bodyText)
+        while (_sopContentContainer.childCount < sectionCount)
         {
-            if (hasBinder)
-                bodyText.fontSize = 17;
-            bodyText.text = hasBinder ? BinderBody(_selectedSopSectionIndex) : SopBody(sections[_selectedSopSectionIndex]);
+            var row = Instantiate(_sopContentContainer.GetChild(0).gameObject, _sopContentContainer);
+            row.name = "SectionRow" + _sopContentContainer.childCount.ToString("00");
+        }
+
+        for (var i = 0; i < _sopContentContainer.childCount; i++)
+        {
+            var row = _sopContentContainer.GetChild(i);
+            var hasSection = i < sectionCount && (hasBinder || sections[i] != null);
+            row.gameObject.SetActive(hasSection && i == _selectedSopSectionIndex);
+            if (!hasSection)
+                continue;
+
+            var titleText = row.Find("SectionTitle")?.GetComponent<Text>();
+            if (titleText)
+                titleText.text = hasBinder ? BinderTabTitles[i] : sections[i].title;
+
+            var bodyText = row.Find("SectionBody")?.GetComponent<Text>();
+            if (bodyText)
+            {
+                bodyText.fontSize = 40;
+                bodyText.text = hasBinder ? BinderBody(i) : SopBody(sections[i]);
+            }
         }
     }
 
@@ -1261,10 +1295,13 @@ public sealed class TssRuntimeUi : MonoBehaviour
                     + "CN-1: Fa0/0.<VLAN> subinterfaces use dot1q and the matching gateway above.";
             case 3:
                 return BinderHeading("Cable schedule")
-                    + "SWITCH AND ROUTER LINKS\nAN-1 Fa0/1 to AN-2 Fa0/1: crossover\nCN-1 Fa0/0 to AN-1 Fa0/6: straight-through\n\n"
+                    + "INTER-CLOSET LINK\nRack01 Patch1 Port48 to Rack02 Patch2 Port48: permanent punch-down run; complete both terminations.\n"
+                    + "Patch cords: AN-1 Fa0/1 to Patch1 Port48: crossover; AN-2 Fa0/1 to Patch2 Port48: straight-through.\n"
+                    + "CN-1 Fa0/0 to AN-1 Fa0/6: straight-through.\n\n"
+                    + "DEMARC\nCN-1 Fa0/1 to Patch1 Port18: straight-through.\n\n"
                     + "GROUND FLOOR\nIT1 to AN-1 Fa0/2; IT2 to AN-1 Fa0/5\nReception1/2 to wall ports 1/2, then Patch1 ports 1/2 to AN-1 Fa0/3/4.\n\n"
                     + "SECOND FLOOR\nData1/2/3 to Office wall ports, then Patch2 ports 1/5/6 to AN-2 Fa0/2/3/4.\n\n"
-                    + "CIRCUIT AND WIRELESS\nCN-1 Fa0/1 to Patch1 Port18; AP-1 to Reception Wall Port05, then Patch1 Port17 to AN-1 Fa0/7.\n"
+                    + "CIRCUIT AND WIRELESS\nCN-1 Fa0/1 to Patch1 Port18; AP-1 to any Reception Wall Port 01-04, then the matching Patch1 Port 01-04 to AN-1 Fa0/7.\n"
                     + "Complete each punch-down and patch cord in the structured path.";
             case 4:
                 return BinderHeading("Carrier circuit letter")
@@ -1276,7 +1313,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 return BinderHeading("Guest wireless")
                     + $"AP-1 MANAGEMENT\nAddress {profile.ApManagementAddress} on the Reception network.\n\n"
                     + $"GUEST WI-FI\nSSID {profile.Ssid}\nPassphrase {profile.WifiPassphrase}\nChannel {profile.WirelessChannel}; disable WPS and apply the secured settings.\n\n"
-                    + "UPLINK\nAP-1 to Reception Wall Port05, then Rack01 Patch1 Port17 to AN-1 Fa0/7 in the Reception VLAN.\n\n"
+                    + "UPLINK\nAP-1 to Reception Wall Port 01-04, then the matching Rack01 Patch1 Port 01-04 to AN-1 Fa0/7 in the Reception VLAN.\n\n"
                     + $"TEST LAPTOP\nJoin the guest SSID, use DHCP, then verify {profile.TestLaptopAddress}, provider reachability, and the RedWolf page.";
             case 6:
                 return BinderHeading("Run credentials")
@@ -1311,7 +1348,13 @@ public sealed class TssRuntimeUi : MonoBehaviour
             return;
 
         var tabsRect = _sopTabsContainer as RectTransform;
-        var tabWidth = tabsRect && sectionCount > 0 ? tabsRect.rect.width / sectionCount : 78f;
+        var tabContainerWidth = tabsRect ? tabsRect.rect.width : 0f;
+        if (tabContainerWidth <= 0f && tabsRect?.parent is RectTransform parentRect)
+            tabContainerWidth = parentRect.rect.width + (tabsRect.sizeDelta.x < 0f ? tabsRect.sizeDelta.x : 0f);
+
+        var tabWidth = sectionCount > 0 && tabContainerWidth > 0f
+            ? tabContainerWidth / sectionCount
+            : 78f;
         for (var i = 0; i < _sopTabsContainer.childCount; i++)
         {
             var tab = _sopTabsContainer.GetChild(i);
@@ -1322,20 +1365,20 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
             if (tab is RectTransform tabRect)
             {
+                tabRect.anchorMin = new Vector2(0f, 1f);
+                tabRect.anchorMax = new Vector2(0f, 1f);
+                tabRect.pivot = new Vector2(0f, 1f);
                 tabRect.anchoredPosition = new Vector2(i * tabWidth, 0f);
-                tabRect.sizeDelta = new Vector2(tabWidth - 2f, 32f);
+                tabRect.sizeDelta = new Vector2(Mathf.Max(1f, tabWidth - 2f), 88f);
             }
 
             var label = tab.GetComponentInChildren<Text>();
             if (label)
             {
                 label.text = hasBinder ? BinderTabTitles[i] : sections[i].title;
-                if (hasBinder)
-                {
-                    label.resizeTextForBestFit = true;
-                    label.resizeTextMinSize = 9;
-                    label.resizeTextMaxSize = 12;
-                }
+                label.resizeTextForBestFit = true;
+                label.resizeTextMinSize = 26;
+                label.resizeTextMaxSize = 30;
             }
 
             var button = tab.GetComponent<Button>();
@@ -1418,7 +1461,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 continue;
 
             var target = i == _activeHudSlidePanel ? HudSlidePanelShownPosition : HudSlidePanelHiddenPosition;
-            rect.anchoredPosition = Vector2.Lerp(rect.anchoredPosition, target, Time.unscaledDeltaTime * 12f);
+            rect.anchoredPosition = SmoothSlidePosition(rect.anchoredPosition, target);
         }
 
         AnimateRightSlidePanel(_sopSlidePanel, _activeRightSlidePanel == 0);
@@ -1431,8 +1474,15 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (!rect)
             return;
 
-        var target = shown ? HudRightSlidePanelShownPosition : HudRightSlidePanelHiddenPosition;
-        rect.anchoredPosition = Vector2.Lerp(rect.anchoredPosition, target, Time.unscaledDeltaTime * 12f);
+        var target = shown ? HudRightSlidePanelShownPosition : new Vector2(rect.rect.width + 60f, -101f);
+        rect.anchoredPosition = SmoothSlidePosition(rect.anchoredPosition, target);
+    }
+
+    private static Vector2 SmoothSlidePosition(Vector2 current, Vector2 target)
+    {
+        var t = 1f - Mathf.Exp(-HudSlideAnimationSpeed * Time.unscaledDeltaTime);
+        var next = Vector2.Lerp(current, target, t);
+        return (target - next).sqrMagnitude <= 0.25f ? target : next;
     }
 
     private void ConfirmNamePrompt()

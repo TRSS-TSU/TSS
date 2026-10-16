@@ -224,7 +224,10 @@ public sealed class TssPhysicalConnectionPanel : MonoBehaviour
 
     public static string FormatConnectionRow(TssPhysicalConnectionRecord connection, TssTrainingSession session)
     {
-        return $"{connection.CableType}: {EndpointLabel(connection.EndpointAId, session)} <-> {EndpointLabel(connection.EndpointBId, session)}";
+        var status = session && !connection.IsPermanent
+            ? session.IsCableTypeCorrect(connection) ? " [Correct]" : " [Incorrect]"
+            : string.Empty;
+        return $"{connection.CableType}: {EndpointLabel(connection.EndpointAId, session)} <-> {EndpointLabel(connection.EndpointBId, session)}{status}";
     }
 
     public static string EndpointLabel(string endpointId, TssTrainingSession session)

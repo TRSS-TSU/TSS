@@ -115,7 +115,7 @@ public sealed class TssWirelessDevicePresentation : MonoBehaviour, ITssEndpointB
             return false;
 
         foreach (var endpoint in _endpoints)
-            if (endpoint && session.IsEndpointConnected(endpoint.EndpointId))
+            if (endpoint && session.IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId))
                 return true;
         return false;
     }

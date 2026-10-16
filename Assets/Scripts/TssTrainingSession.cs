@@ -5,7 +5,6 @@ using UnityEngine;
 
 public sealed class TssTrainingSession : MonoBehaviour
 {
-    private const string AccessPointPatchPanelEndpointId = "PatchPanel:Rack01:Port17";
     private const string ProviderDemarcEndpointId = "Demarc:Provider:Port01";
     public static TssTrainingSession Instance { get; private set; }
 
@@ -158,7 +157,7 @@ public sealed class TssTrainingSession : MonoBehaviour
 
             iface.CarrierUp = device.Category == EquipmentCategory.Router && iface.Name == "Fa0/1"
                 ? IsProviderDemarcConnected(iface.EndpointId)
-                : IsEndpointConnected(iface.EndpointId);
+                : IsEndpointOnEffectivePhysicalPath(iface.EndpointId);
         }
 
         foreach (var device in NetworkState.Devices)
@@ -504,12 +503,6 @@ public sealed class TssTrainingSession : MonoBehaviour
             return false;
         }
 
-        if (!endpoint.Supports(HeldCable.cableType))
-        {
-            message = $"{endpoint.DisplayLabel} does not support {HeldCable.cableType}.";
-            return false;
-        }
-
         if (!_selectedCableEndpoint)
         {
             _selectedCableEndpoint = endpoint;
@@ -599,14 +592,14 @@ public sealed class TssTrainingSession : MonoBehaviour
             {
                 // ponytail: direct device-to-device player cables are effective without a permanent segment.
                 if (HasPhysicalPath(leaves[i], leaves[j], true)
-                    || HasConnection(leaves[i], leaves[j]))
+                    || HasEffectiveConnection(leaves[i], leaves[j]))
                     paths.Add(new TssPhysicalPathRecord(leaves[i], leaves[j]));
             }
         }
 
         foreach (var connection in _physicalConnections)
         {
-            if (connection.IsPermanent)
+            if (connection.IsPermanent || !IsCableTypeCorrect(connection))
                 continue;
 
             var deviceEndpoint = IsConfiguredPermanentEndpoint(connection.EndpointAId)
@@ -656,6 +649,7 @@ public sealed class TssTrainingSession : MonoBehaviour
         foreach (var connection in _physicalConnections)
         {
             if (connection.IsPermanent
+                || !IsCableTypeCorrect(connection)
                 || (connection.EndpointAId != endpointId && connection.EndpointBId != endpointId))
                 continue;
 
@@ -677,9 +671,21 @@ public sealed class TssTrainingSession : MonoBehaviour
 
             var prefix = GetEndpointOwnerPrefix(placement.PlacementId) + ":";
             foreach (var endpoint in FindObjectsByType<TssPortEndpoint>(FindObjectsInactive.Include, FindObjectsSortMode.None))
-                if (endpoint.EndpointId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)
-                    && HasPhysicalPath(endpoint.EndpointId, AccessPointPatchPanelEndpointId, true))
-                    return true;
+            {
+                if (!endpoint.EndpointId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                for (var port = 1; port <= 4; port++)
+                {
+                    var wallport = $"WallPort:Reception:Port{port:00}";
+                    var patchPanel = $"PatchPanel:Rack01:Port{port:00}";
+                    var switchport = "Rack:Rack01:U35:Fa07";
+                    if (HasCorrectPlayerConnection(endpoint.EndpointId, wallport)
+                        && HasPermanentConnection(wallport, patchPanel)
+                        && HasCorrectPlayerConnection(patchPanel, switchport))
+                        return true;
+                }
+            }
         }
 
         return false;
@@ -689,6 +695,48 @@ public sealed class TssTrainingSession : MonoBehaviour
     {
         return !string.IsNullOrWhiteSpace(routerEndpointId)
             && HasPhysicalPath(routerEndpointId, ProviderDemarcEndpointId, true);
+    }
+
+    public bool IsCableTypeCorrect(TssPhysicalConnectionRecord connection)
+    {
+        return connection.IsPermanent || connection.CableType == RequiredCableType(connection.EndpointAId, connection.EndpointBId);
+    }
+
+    public IReadOnlyList<TssCableTypeStatus> GetCableTypeStatuses()
+    {
+        var statuses = new List<TssCableTypeStatus>();
+        foreach (var connection in _physicalConnections)
+        {
+            if (connection.IsPermanent)
+                continue;
+
+            var required = RequiredCableType(connection.EndpointAId, connection.EndpointBId);
+            statuses.Add(new TssCableTypeStatus(
+                connection.ConnectionId,
+                connection.EndpointAId,
+                connection.EndpointBId,
+                connection.CableType,
+                required,
+                true,
+                connection.CableType == required));
+        }
+
+        foreach (var requirement in Scenario?.cableTypeRequirements ?? System.Array.Empty<ScenarioCableTypeRequirement>())
+        {
+            if (requirement == null || HasPlayerConnection(requirement.endpointAId, requirement.endpointBId))
+                continue;
+
+            statuses.Add(new TssCableTypeStatus(
+                requirement.requirementId,
+                requirement.endpointAId,
+                requirement.endpointBId,
+                requirement.requiredCableType,
+                requirement.requiredCableType,
+                false,
+                false));
+        }
+
+        return statuses;
     }
 
     public bool TryGetTerminationLinks(string endpointId, out IReadOnlyList<ScenarioPermanentCableConnection> links)
@@ -902,12 +950,6 @@ public sealed class TssTrainingSession : MonoBehaviour
             return false;
         }
 
-        if (!second.Supports(HeldCable.cableType))
-        {
-            message = $"{second.DisplayLabel} does not support {HeldCable.cableType}.";
-            return false;
-        }
-
         message = string.Empty;
         return true;
     }
@@ -1105,6 +1147,22 @@ public sealed class TssTrainingSession : MonoBehaviour
         return false;
     }
 
+    private bool HasEffectiveConnection(string endpointAId, string endpointBId)
+    {
+        foreach (var connection in _physicalConnections)
+        {
+            if (!IsCableTypeCorrect(connection))
+                continue;
+
+            var sameDirection = connection.EndpointAId == endpointAId && connection.EndpointBId == endpointBId;
+            var reverseDirection = connection.EndpointAId == endpointBId && connection.EndpointBId == endpointAId;
+            if (sameDirection || reverseDirection)
+                return true;
+        }
+
+        return false;
+    }
+
     private bool HasPhysicalPath(string endpointAId, string endpointBId, bool requirePermanent)
     {
         if (string.IsNullOrWhiteSpace(endpointAId) || string.IsNullOrWhiteSpace(endpointBId))
@@ -1123,6 +1181,9 @@ public sealed class TssTrainingSession : MonoBehaviour
             var node = queue.Dequeue();
             foreach (var connection in _physicalConnections)
             {
+                if (!IsCableTypeCorrect(connection))
+                    continue;
+
                 var other = ConnectedOtherEndpoint(connection, node.EndpointId);
                 if (string.IsNullOrEmpty(other))
                     continue;
@@ -1138,6 +1199,57 @@ public sealed class TssTrainingSession : MonoBehaviour
         }
 
         return false;
+    }
+
+    private TssCableType RequiredCableType(string endpointAId, string endpointBId)
+    {
+        foreach (var requirement in Scenario?.cableTypeRequirements ?? System.Array.Empty<ScenarioCableTypeRequirement>())
+        {
+            if (requirement != null && EndpointPairMatches(requirement.endpointAId, requirement.endpointBId, endpointAId, endpointBId))
+                return requirement.requiredCableType;
+        }
+
+        return Scenario ? Scenario.defaultPlayerCableType : TssCableType.StraightThrough;
+    }
+
+    private bool HasPlayerConnection(string endpointAId, string endpointBId)
+    {
+        foreach (var connection in _physicalConnections)
+        {
+            if (!connection.IsPermanent && EndpointPairMatches(connection.EndpointAId, connection.EndpointBId, endpointAId, endpointBId))
+                return true;
+        }
+
+        return false;
+    }
+
+    private bool HasCorrectPlayerConnection(string endpointAId, string endpointBId)
+    {
+        foreach (var connection in _physicalConnections)
+            if (!connection.IsPermanent
+                && IsCableTypeCorrect(connection)
+                && EndpointPairMatches(connection.EndpointAId, connection.EndpointBId, endpointAId, endpointBId))
+                return true;
+
+        return false;
+    }
+
+    private bool HasPermanentConnection(string endpointAId, string endpointBId)
+    {
+        foreach (var connection in _physicalConnections)
+            if (connection.IsPermanent
+                && EndpointPairMatches(connection.EndpointAId, connection.EndpointBId, endpointAId, endpointBId))
+                return true;
+
+        return false;
+    }
+
+    private static bool EndpointPairMatches(string firstA, string firstB, string secondA, string secondB)
+    {
+        return (string.Equals(firstA, secondA, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(firstB, secondB, StringComparison.OrdinalIgnoreCase))
+            || (string.Equals(firstA, secondB, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(firstB, secondA, StringComparison.OrdinalIgnoreCase));
     }
 
     private static string ConnectedOtherEndpoint(TssPhysicalConnectionRecord connection, string endpointId)
@@ -1229,6 +1341,28 @@ public readonly struct TssPhysicalConnectionRecord
         EndpointBId = endpointBId;
         Visual = visual;
         IsPermanent = isPermanent;
+    }
+}
+
+public readonly struct TssCableTypeStatus
+{
+    public readonly string ConnectionId;
+    public readonly string EndpointAId;
+    public readonly string EndpointBId;
+    public readonly TssCableType ActualCableType;
+    public readonly TssCableType RequiredCableType;
+    public readonly bool IsConnected;
+    public readonly bool IsCorrect;
+
+    public TssCableTypeStatus(string connectionId, string endpointAId, string endpointBId, TssCableType actualCableType, TssCableType requiredCableType, bool isConnected, bool isCorrect)
+    {
+        ConnectionId = connectionId;
+        EndpointAId = endpointAId;
+        EndpointBId = endpointBId;
+        ActualCableType = actualCableType;
+        RequiredCableType = requiredCableType;
+        IsConnected = isConnected;
+        IsCorrect = isCorrect;
     }
 }
 

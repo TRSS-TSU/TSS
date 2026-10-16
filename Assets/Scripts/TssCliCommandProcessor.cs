@@ -196,20 +196,21 @@ public sealed class TssCliCommandProcessor
     {
         var isRouter = category == EquipmentCategory.Router;
         var execCommands = isRouter
-            ? new[] { "show ip interface brief\tDisplay interface status", "show interfaces\tDisplay interface details", "show ip route\tDisplay the routing table", "ping <ip>\tTest reachability" }
+            ? new[] { "show ip interface brief\tDisplay interface status", "show interfaces\tDisplay interface details", "show ip route | show route\tDisplay the routing table", "ping <ip>\tTest reachability" }
             : new[] { "show ip interface brief\tDisplay interface status", "show interfaces\tDisplay interface details", "show interfaces trunk\tDisplay active trunks", "show vlan brief\tDisplay VLANs and ports", "show mac address-table\tDisplay learned MACs", "ping <ip>\tTest reachability" };
         var interfaceCommands = isRouter
-            ? new[] { "ip address <address> <mask> | ip add <address> <mask>\tAssign an IPv4 address", "no shutdown | shutdown\tEnable or disable the interface", "encapsulation dot1q <vlan>\tSet the router subinterface VLAN" }
-            : new[] { "switchport trunk encapsulation dot1q\tUse 802.1Q trunking", "switchport mode access | trunk\tSet the port mode", "switchport access vlan <id>\tAssign the access VLAN", "no switchport access vlan\tReset access VLAN to default", "switchport trunk allowed vlan <id>[,<id>]\tSet allowed trunk VLANs", "switchport trunk native vlan <id>\tSet the native VLAN", "ip address <address> <mask> | ip add <address> <mask>\tAssign an IPv4 address", "no shutdown | shutdown\tEnable or disable the interface" };
+            ? new[] { "ip address <address> <mask> | ip add <address> <mask>\tAssign an IPv4 address", "no shutdown | shutdown\tEnable or disable the interface", "encapsulation dot1q <vlan>\tAssociate a VLAN with a router subinterface" }
+            : new[] { "switchport trunk encapsulation dot1q\tEnable 802.1Q trunk encapsulation", "switchport mode trunk\tCreate a trunk interface", "switchport mode access\tSet an access interface", "switchport access vlan <id>\tAssign the access VLAN", "no switchport access vlan\tReset access VLAN to VLAN 1", "switchport trunk allowed vlan <id>[,<id>]\tAssociate allowed VLANs with the trunk", "switchport trunk native vlan <id>\tSet the native VLAN", "ip address <address> <mask> | ip add <address> <mask>\tAssign an IPv4 address", "no shutdown | shutdown\tEnable or disable the interface" };
 
         var sb = new StringBuilder((isRouter ? "ROUTER" : "SWITCH") + " COMMAND REFERENCE\n\n");
         sb.AppendLine("  COMMAND".PadRight(36) + " | WHAT IT DOES");
         AppendReferenceSection(sb, "User / Privileged EXEC", new[]
         {
-            "enable | disable\tEnter or leave privileged mode",
-            "show running-config | show startup-config\tDisplay saved configuration",
-            "configure terminal\tEnter global configuration",
-            "copy running-config startup-config\tSave the configuration",
+            "enable | en | disable\tEnter or leave privileged mode",
+            "show running-config | show run\tDisplay the active configuration",
+            "show startup-config | show start\tDisplay the saved configuration",
+            "configure terminal | conf t\tEnter global configuration",
+            "copy running-config startup-config | write memory\tSave the configuration",
             "exit | clear\tLeave the session or clear output"
         });
         AppendReferenceSection(sb, "EXEC show and test commands", execCommands);
@@ -220,7 +221,7 @@ public sealed class TssCliCommandProcessor
             "no ip domain-lookup\tDisable DNS lookup",
             "service password-encryption\tObscure configured passwords",
             "banner motd <delimiter>text<delimiter>\tSet the login banner",
-            "interface <name> | range <first> - <last>\tSelect interfaces",
+            isRouter ? "interface Fa0/0 | interface Fa0/0.<vlan>\tSelect a physical interface or subinterface" : "interface Fa0/1 | interface range Fa0/2 - Fa0/4\tSelect a port or port range",
             "ip route <network> <mask> <next-hop>\tAdd a static route",
             "line console 0 | line vty 0 4\tSelect a terminal line",
             "vlan <id>\tCreate or select a VLAN",

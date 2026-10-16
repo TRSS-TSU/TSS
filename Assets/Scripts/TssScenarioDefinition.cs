@@ -9,6 +9,8 @@ public sealed class TssScenarioDefinition : ScriptableObject
     public string sceneName = "SampleScene";
     public ScenarioInventoryItem[] inventory;
     public ScenarioCableInventoryItem[] cableInventory;
+    public TssCableType defaultPlayerCableType = TssCableType.StraightThrough;
+    public ScenarioCableTypeRequirement[] cableTypeRequirements;
     public ScenarioPermanentCableConnection[] permanentConnections;
     public RackScenarioConfig[] racks;
     public ExpectedRackPlacement[] expectedRackPlacements;
@@ -29,6 +31,15 @@ public sealed class ScenarioCableInventoryItem
 {
     public TssCableDefinition cable;
     [Min(0)] public int quantity;
+}
+
+[Serializable]
+public sealed class ScenarioCableTypeRequirement
+{
+    public string requirementId;
+    public string endpointAId;
+    public string endpointBId;
+    public TssCableType requiredCableType = TssCableType.StraightThrough;
 }
 
 [Serializable]
