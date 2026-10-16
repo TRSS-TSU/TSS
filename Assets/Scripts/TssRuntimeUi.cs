@@ -119,6 +119,21 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
     public bool IsGameplayInputBlocked => IsAnyGameplayMenuOpen();
 
+    public void SetFirstPersonControlsHudVisible(bool visible)
+    {
+        if (!_hudRoot)
+            return;
+
+        for (var i = 0; i < HudInfoNames.Length; i++)
+        {
+            _hudRoot.Find($"Hud{HudInfoNames[i]}SlidePanel")?.gameObject.SetActive(visible);
+            _hudRoot.Find($"HudInfo{HudInfoNames[i]}Button")?.gameObject.SetActive(visible);
+        }
+
+        _hudRoot.Find("ContextTextBackdrop")?.gameObject.SetActive(visible);
+        _contextText?.gameObject.SetActive(visible);
+    }
+
     private void Awake()
     {
         Instance = this;

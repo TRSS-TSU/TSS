@@ -39,13 +39,21 @@ public sealed class TssDeviceFirstPersonControls : MonoBehaviour
     private void OnEnable()
     {
         SubscribeSession();
+        SetFirstPersonHudVisible(false);
     }
 
     private void OnDisable()
     {
+        SetFirstPersonHudVisible(true);
         if (_session)
             _session.StateChanged -= HandleSessionStateChanged;
         _session = null;
+    }
+
+    private static void SetFirstPersonHudVisible(bool visible)
+    {
+        if (TssRuntimeUi.Instance)
+            TssRuntimeUi.Instance.SetFirstPersonControlsHudVisible(visible);
     }
 
     public void Configure(bool terminalSession, string title = null)
