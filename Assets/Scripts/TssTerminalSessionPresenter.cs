@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -329,8 +330,14 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             return;
 
         cmd = cmd.Trim();
-        RememberCommand(cmd);
-        AppendToConsole($"{GetCurrentPrompt()} {cmd}\n");
+        var awaitingEnablePassword = _processor != null && _processor.Device != null && _processor.Device.AwaitingEnablePassword;
+        if (awaitingEnablePassword)
+            AppendToConsole("********\n");
+        else
+        {
+            RememberCommand(cmd);
+            AppendToConsole($"{GetCurrentPrompt()} {cmd}\n");
+        }
 
         if (_processor != null && _processor.IsAvailable)
         {
@@ -692,24 +699,48 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
     private string BuildShowRunningConfig()
     {
         var sb = new StringBuilder();
+        var network = TssTrainingSession.Instance ? TssTrainingSession.Instance.NetworkState : null;
+        NetworkDeviceState networkDevice = null;
+        if (network != null && !string.IsNullOrWhiteSpace(_state?.DeviceKey))
+            network.TryGetDevice(_state.DeviceKey, out networkDevice);
         sb.AppendLine("Building configuration...");
         sb.AppendLine("Current configuration : 1084 bytes");
         sb.AppendLine("!");
         sb.AppendLine("version 15.0");
         sb.AppendLine("no service timestamps log datetime msec");
         sb.AppendLine("no service password-encryption");
+        if (networkDevice != null && !string.IsNullOrEmpty(networkDevice.EnableSecret))
+            sb.AppendLine("enable secret <configured>");
+        if (networkDevice != null && !string.IsNullOrEmpty(networkDevice.EnablePassword))
+            sb.AppendLine("enable password " + (networkDevice.PasswordEncryption ? "<encrypted>" : networkDevice.EnablePassword));
         sb.AppendLine("!");
         sb.AppendLine($"hostname {(_state != null ? _state.DeviceName : "Switch")}");
         sb.AppendLine("!");
         if (_state != null)
         {
-            foreach (var iface in _state.Interfaces)
+            foreach (var iface in _state.Interfaces.OrderBy(item => InterfaceOrderKey(item.InterfaceName), StringComparer.OrdinalIgnoreCase))
             {
                 sb.AppendLine($"interface {iface.InterfaceName}");
-                if (_state.Category == EquipmentCategory.Switch)
+                if (_state.Category == EquipmentCategory.Router)
                 {
-                    sb.AppendLine($" switchport mode {iface.PortMode.ToLowerInvariant()}");
-                    sb.AppendLine($" switchport access vlan {iface.VlanId}");
+                    var adminUp = networkDevice != null
+                        && networkDevice.Interfaces.TryGetValue(iface.InterfaceName, out var networkInterface)
+                        && networkInterface.AdminUp;
+                    if (!adminUp)
+                        sb.AppendLine(" shutdown");
+                }
+                else if (networkDevice != null && networkDevice.Interfaces.TryGetValue(iface.InterfaceName, out var switchInterface))
+                {
+                    if (switchInterface.TrunkEncapsulationDot1q && switchInterface.IsTrunk)
+                        sb.AppendLine(" switchport trunk encapsulation dot1q");
+                    if (switchInterface.SwitchportModeConfigured)
+                        sb.AppendLine($" switchport mode {(switchInterface.IsTrunk ? "trunk" : "access")}");
+                    if (switchInterface.IsTrunk && switchInterface.AllowedVlans.Count > 0)
+                        sb.AppendLine($" switchport trunk allowed vlan {string.Join(",", switchInterface.AllowedVlans.OrderBy(vlan => vlan))}");
+                    if (switchInterface.IsTrunk && switchInterface.NativeVlan != 1)
+                        sb.AppendLine($" switchport trunk native vlan {switchInterface.NativeVlan}");
+                    if (!switchInterface.IsTrunk && switchInterface.SwitchportAccessVlanConfigured)
+                        sb.AppendLine($" switchport access vlan {switchInterface.AccessVlan}");
                 }
                 else if (!string.IsNullOrEmpty(iface.IpAddress))
                 {
@@ -720,11 +751,55 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             }
         }
         sb.AppendLine("line con 0");
-        sb.AppendLine("line vty 0 4");
-        sb.AppendLine(" login");
+        if (networkDevice != null && !string.IsNullOrEmpty(networkDevice.ConsolePassword))
+            sb.AppendLine(" password " + (networkDevice.PasswordEncryption ? "<encrypted>" : networkDevice.ConsolePassword));
+        if (networkDevice != null && networkDevice.ConsoleLoginRequired)
+            sb.AppendLine(" login");
         sb.AppendLine("!");
+        sb.AppendLine("line vty 0 4");
+        if (networkDevice != null && !string.IsNullOrEmpty(networkDevice.VtyPassword))
+            sb.AppendLine(" password " + (networkDevice.PasswordEncryption ? "<encrypted>" : networkDevice.VtyPassword));
+        if (networkDevice != null && networkDevice.VtyLoginRequired)
+            sb.AppendLine(" login");
+        sb.AppendLine("!");
+        if (_state != null && _state.Category == EquipmentCategory.Switch)
+        {
+            var vlanIds = new SortedSet<int> { 1 };
+            foreach (var iface in _state.Interfaces)
+                vlanIds.Add(iface.VlanId);
+            if (networkDevice != null)
+                foreach (var vlanId in networkDevice.Vlans.Keys)
+                    vlanIds.Add(vlanId);
+            foreach (var vlanId in vlanIds)
+            {
+                var vlanName = networkDevice != null && networkDevice.Vlans.TryGetValue(vlanId, out var configuredName)
+                    ? configuredName.Replace(" (suspended)", string.Empty, StringComparison.OrdinalIgnoreCase)
+                    : vlanId == 1 ? "default" : "VLAN" + vlanId;
+                sb.AppendLine($"vlan {vlanId}");
+                if (!string.Equals(vlanName, "default", StringComparison.OrdinalIgnoreCase))
+                    sb.AppendLine($" name {vlanName}");
+                sb.AppendLine("!");
+            }
+        }
         sb.AppendLine("end");
         return sb.ToString();
+    }
+
+    private static string InterfaceOrderKey(string name)
+    {
+        var key = new StringBuilder();
+        for (var index = 0; index < (name ?? string.Empty).Length; index++)
+        {
+            if (!char.IsDigit(name[index]))
+            {
+                key.Append(char.ToLowerInvariant(name[index]));
+                continue;
+            }
+            var start = index;
+            while (index + 1 < name.Length && char.IsDigit(name[index + 1])) index++;
+            key.Append(int.Parse(name.Substring(start, index - start + 1)).ToString("D6"));
+        }
+        return key.ToString();
     }
 
     private string BuildShowIpInterfaceBrief()
@@ -792,16 +867,36 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         var sb = new StringBuilder();
         sb.AppendLine("VLAN Name                             Status    Ports");
         sb.AppendLine("---- -------------------------------- --------- -------------------------------");
-        var ports = new StringBuilder();
+        var portsByVlan = new Dictionary<int, List<string>>();
         if (_state != null)
         {
-            for (var i = 0; i < _state.Interfaces.Count; i++)
+            foreach (var iface in _state.Interfaces)
             {
-                if (i > 0) ports.Append(", ");
-                ports.Append(_state.Interfaces[i].InterfaceName);
+                if (string.Equals(iface.PortMode, "Trunk", StringComparison.OrdinalIgnoreCase))
+                    continue;
+                if (!portsByVlan.TryGetValue(iface.VlanId, out var ports))
+                    portsByVlan[iface.VlanId] = ports = new List<string>();
+                ports.Add(iface.InterfaceName);
             }
         }
-        sb.AppendLine($"1    default                          active    {ports}");
+        var network = TssTrainingSession.Instance ? TssTrainingSession.Instance.NetworkState : null;
+        NetworkDeviceState networkDevice = null;
+        if (network != null && !string.IsNullOrWhiteSpace(_state?.DeviceKey))
+            network.TryGetDevice(_state.DeviceKey, out networkDevice);
+        var vlanIds = new SortedSet<int> { 1 };
+        foreach (var vlanId in portsByVlan.Keys)
+            vlanIds.Add(vlanId);
+        if (networkDevice != null)
+            foreach (var vlanId in networkDevice.Vlans.Keys)
+                vlanIds.Add(vlanId);
+        foreach (var vlanId in vlanIds)
+        {
+            var name = networkDevice != null && networkDevice.Vlans.TryGetValue(vlanId, out var configuredName)
+                ? configuredName.Replace(" (suspended)", string.Empty, StringComparison.OrdinalIgnoreCase)
+                : vlanId == 1 ? "default" : "VLAN" + vlanId;
+            portsByVlan.TryGetValue(vlanId, out var ports);
+            sb.AppendLine($"{vlanId,-4} {name,-32} active    {string.Join(", ", ports ?? new List<string>())}");
+        }
         sb.AppendLine("1002 fddi-default                     act/unsup ");
         sb.AppendLine("1003 token-ring-default               act/unsup ");
         return sb.ToString();

@@ -23,6 +23,8 @@ MonoBehaviour:
     dataVlanName: Data
     nativeVlanName: Native
     deadVlanName: Dead_Vlan
+    dhcpNetworkNames:
+    - Reception
     vlanMinimum: 10
     vlanMaximum: 390
     endpointAliases:

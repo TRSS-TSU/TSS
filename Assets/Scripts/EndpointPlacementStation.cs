@@ -252,6 +252,7 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         target.center = GetPlacedInteractionTriggerCenter(record.Equipment);
         target.size = GetPlacedInteractionTriggerSize(record.Equipment);
         root.AddComponent<EndpointPlacedEquipmentTarget>().Initialize(this, record.PlacementId, record.Equipment);
+        CreateNameSign(root.transform, record);
         _placedVisuals[record.PlacementId] = root;
     }
 
@@ -266,11 +267,16 @@ public sealed class EndpointPlacementStation : MonoBehaviour
 
         var currentName = GetDeviceName(placementId);
         var computerTitle = string.IsNullOrWhiteSpace(currentName) ? equipment.displayName : currentName.Trim();
-        Action accessComputer = session.HeldCable
+        var canAccessComputer = equipment.category == EquipmentCategory.DesktopPc
+            || equipment.category == EquipmentCategory.Laptop
+            || equipment.category == EquipmentCategory.Printer;
+        Action accessComputer = canAccessComputer
             ? () =>
             {
-                if (!TryEnterPlacedCableView(placementId))
-                    ShowComputerForPlacement(placementId, computerTitle, owner);
+                if (session.HeldCable && TryEnterPlacedCableView(placementId))
+                    return;
+
+                ShowComputerForPlacement(placementId, computerTitle);
             }
             : null;
         if (TssRuntimeUi.Instance)
@@ -279,7 +285,7 @@ public sealed class EndpointPlacementStation : MonoBehaviour
                 $"{StationId} {equipment.displayName}",
                 true,
                 true,
-                session.HeldCable,
+                canAccessComputer,
                 deviceName =>
                 {
                     if (TssTrainingSession.Instance.RenameEndpoint(placementId, deviceName))
@@ -354,22 +360,15 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         TssRuntimeUi.Instance?.ShowHudMessage(message);
     }
 
-    private void ShowComputerForPlacement(string placementId, string title, object owner)
+    private void ShowComputerForPlacement(string placementId, string title)
     {
-        var session = TssTrainingSession.Instance;
-        if (!session || !TryGetPlacedEndpoint(placementId, out var endpoint) || !session.IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId))
-        {
-            TssRuntimeUi.Instance?.ShowComputerMenu(title, owner, "Network unavailable.");
-            return;
-        }
-
         if (_placedVisuals.TryGetValue(placementId, out var visual) && visual && TssDeviceSessionController.Instance)
         {
             TssDeviceSessionController.Instance.OpenDesktopSession(visual);
             return;
         }
 
-        TssRuntimeUi.Instance?.ShowComputerMenu(title, owner);
+        Debug.LogWarning($"Unable to open desktop session for placed computer '{title}'.");
     }
 
     private void CreateNameSign(Transform root, EndpointPlacementRecord record)

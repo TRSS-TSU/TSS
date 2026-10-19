@@ -134,10 +134,19 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
 
     private static void EnsureEventSystem()
     {
-        if (FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>())
+        var existing = FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>();
+        if (existing)
+        {
+            if (!existing.GetComponent<TssUiTabNavigation>())
+                existing.gameObject.AddComponent<TssUiTabNavigation>();
             return;
+        }
 
-        var eventSystem = new GameObject("EventSystem", typeof(UnityEngine.EventSystems.EventSystem));
+        var eventSystem = new GameObject(
+            "EventSystem",
+            typeof(UnityEngine.EventSystems.EventSystem),
+            typeof(TssUiTabNavigation)
+        );
 #if ENABLE_INPUT_SYSTEM
         eventSystem.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
 #else

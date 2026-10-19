@@ -70,40 +70,51 @@ public sealed class TssDeviceLogicalState
         DeviceName = network.Hostname; MacAddress = network.MacAddress; IpAddress = network.ManagementAddress;
         SubnetMask = network.ManagementMask; DefaultGateway = network.DefaultGateway; DnsServer = network.DnsAddress;
         UseDhcp = network.UseDhcp;
+
+        var existing = new Dictionary<string, InterfaceLogicalRecord>(StringComparer.OrdinalIgnoreCase);
+        foreach (var record in Interfaces)
+            if (record != null && !string.IsNullOrWhiteSpace(record.InterfaceName))
+                existing[record.InterfaceName] = record;
+
+        Interfaces.Clear();
+        foreach (var iface in network.Interfaces.Values)
+        {
+            existing.TryGetValue(iface.Name, out var previous);
+            Interfaces.Add(new InterfaceLogicalRecord
+            {
+                InterfaceName = iface.Name,
+                EndpointId = iface.EndpointId,
+                IsPhysicalLinkUp = iface.CarrierUp,
+                ConnectedPeerDevice = previous?.ConnectedPeerDevice,
+                ConnectedPeerPort = previous?.ConnectedPeerPort,
+                MacAddress = previous?.MacAddress,
+                VlanId = iface.AccessVlan,
+                PortMode = iface.IsTrunk ? "Trunk" : "Access",
+                IpAddress = string.IsNullOrEmpty(iface.Address) ? string.Empty : iface.Address + "/24",
+                SpeedDuplex = previous?.SpeedDuplex ?? "100 Mbps Full"
+            });
+        }
+    }
+
+    public void SyncFromEndpoint(EndpointNetworkState endpoint)
+    {
+        if (endpoint == null) return;
+        MacAddress = endpoint.MacAddress;
+        IpAddress = endpoint.Address;
+        SubnetMask = endpoint.Mask;
+        DefaultGateway = endpoint.Gateway;
+        DnsServer = endpoint.Dns;
+        UseDhcp = endpoint.UseDhcp;
     }
 
     private void AssignDefaults()
     {
-        SubnetMask = "255.255.255.0";
-        DefaultGateway = "192.168.1.1";
-        DnsServer = "8.8.8.8";
-
-        switch (Category)
-        {
-            case EquipmentCategory.Router:
-                IpAddress = string.Empty;
-                DefaultGateway = string.Empty;
-                UseDhcp = false;
-                break;
-            case EquipmentCategory.Switch:
-                IpAddress = "192.168.1.2";
-                UseDhcp = false;
-                break;
-            case EquipmentCategory.Server:
-                IpAddress = "192.168.1.10";
-                DnsServer = "192.168.1.10";
-                UseDhcp = false;
-                break;
-            case EquipmentCategory.Printer:
-                IpAddress = "192.168.1.200";
-                UseDhcp = false;
-                break;
-            case EquipmentCategory.DesktopPc:
-            default:
-                IpAddress = "192.168.1.101";
-                UseDhcp = true;
-                break;
-        }
+        // Player-owned addressing starts unassigned. Scenario expectations stay in TssNetworkRunProfile.
+        IpAddress = string.Empty;
+        SubnetMask = string.Empty;
+        DefaultGateway = string.Empty;
+        DnsServer = string.Empty;
+        UseDhcp = false;
     }
 
     public void RefreshPhysicalConnectivity(IEnumerable<TssPortEndpoint> endpoints, TssTrainingSession session)
@@ -112,7 +123,6 @@ public sealed class TssDeviceLogicalState
         if (endpoints == null)
             return;
 
-        var portIndex = 1;
         foreach (var endpoint in endpoints)
         {
             if (!endpoint)
@@ -127,9 +137,6 @@ public sealed class TssDeviceLogicalState
                 PortMode = Category == EquipmentCategory.Switch ? "Access" : "N/A",
                 SpeedDuplex = "100 Mbps Full"
             };
-
-            if (Category == EquipmentCategory.Router)
-                rec.IpAddress = $"192.168.{portIndex}.1/24";
 
             if (session != null && !string.IsNullOrWhiteSpace(endpoint.EndpointId))
             {
@@ -147,7 +154,6 @@ public sealed class TssDeviceLogicalState
             }
 
             Interfaces.Add(rec);
-            portIndex++;
         }
     }
 

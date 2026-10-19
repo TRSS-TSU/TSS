@@ -40,6 +40,7 @@ public sealed class TssNetworkRunProfile
     public readonly string DataVlanName;
     public readonly string NativeVlanName;
     public readonly string DeadVlanName;
+    public readonly HashSet<string> DhcpNetworkNames = new(StringComparer.OrdinalIgnoreCase);
 
     private TssNetworkRunProfile(int seed, NetworkScenarioConfig config, string studentId)
     {
@@ -68,6 +69,8 @@ public sealed class TssNetworkRunProfile
         DataVlanName = config?.dataVlanName ?? "Data";
         NativeVlanName = config?.nativeVlanName ?? "Native";
         DeadVlanName = config?.deadVlanName ?? "Dead_Vlan";
+        foreach (var name in config?.dhcpNetworkNames is { Length: > 0 } configured ? configured : new[] { ReceptionVlanName })
+            if (!string.IsNullOrWhiteSpace(name)) DhcpNetworkNames.Add(name.Trim());
         RoleBindings = config?.roleBindings ?? Array.Empty<NetworkRoleBinding>();
         RequiredPorts = config?.requiredPorts is { Length: > 0 } ? config.requiredPorts : DefaultPorts();
         EvidenceRequirements = config?.evidenceRequirements is { Length: > 0 } ? config.evidenceRequirements : DefaultEvidence();
@@ -110,6 +113,14 @@ public sealed class TssNetworkRunProfile
         new NetworkEvidenceRequirement { evidenceId = "IT1-provider", command = "ping " + WanProviderAddress, description = "Endpoint-originated provider diagnostic" }
     };
     private void Add(string role, string network, int host) => EndpointAddresses[role] = network + "." + host;
+    public bool IsDhcpNetwork(string address)
+    {
+        if (string.IsNullOrWhiteSpace(address)) return false;
+        var networkName = address.StartsWith(ManagementNetwork + ".", StringComparison.Ordinal) ? ManagementVlanName
+            : address.StartsWith(ReceptionNetwork + ".", StringComparison.Ordinal) ? ReceptionVlanName
+            : address.StartsWith(DataNetwork + ".", StringComparison.Ordinal) ? DataVlanName : string.Empty;
+        return DhcpNetworkNames.Contains(networkName);
+    }
     private static int[] Unique(System.Random random, int count, int min, int max)
     {
         var values = new HashSet<int>(); while (values.Count < count) values.Add(random.Next(min, max)); return values.ToArray();
@@ -134,6 +145,8 @@ public sealed class TssNetworkRunProfile
 
 public enum TssNetworkCliMode { UserExec, PrivilegedExec, GlobalConfig, InterfaceConfig, LineConfig, VlanConfig }
 
+
+// Runtime network session state.\n
 public sealed class TssNetworkSessionState
 {
     private readonly Dictionary<string, NetworkDeviceState> _devices = new(StringComparer.OrdinalIgnoreCase);
@@ -543,6 +556,7 @@ public sealed class NetworkDeviceState
     public readonly string Key;
     public readonly EquipmentCategory Category;
     public string Hostname;
+    public string EnablePassword;
     public string EnableSecret;
     public string ConsolePassword;
     public string VtyPassword;
@@ -563,6 +577,7 @@ public sealed class NetworkDeviceState
     public readonly HashSet<string> Evidence = new(StringComparer.OrdinalIgnoreCase);
     public NetworkDeviceState StartupSnapshot;
     public TssNetworkCliMode Mode;
+    public bool AwaitingEnablePassword;
     public List<string> SelectedInterfaces = new();
     public int SelectedVlan;
     public string SelectedLine;
@@ -583,11 +598,12 @@ public sealed class NetworkDeviceState
     {
         var copy = new NetworkDeviceState(Key, Category, Hostname, null)
         {
-            EnableSecret = EnableSecret, ConsolePassword = ConsolePassword, VtyPassword = VtyPassword, Motd = Motd,
+            EnablePassword = EnablePassword, EnableSecret = EnableSecret, ConsolePassword = ConsolePassword, VtyPassword = VtyPassword, Motd = Motd,
             MacAddress = MacAddress, ManagementAddress = ManagementAddress, ManagementMask = ManagementMask,
             DefaultGateway = DefaultGateway, DnsAddress = DnsAddress, UseDhcp = UseDhcp,
             PasswordEncryption = PasswordEncryption, DomainLookupDisabled = DomainLookupDisabled,
             ConsoleLoginRequired = ConsoleLoginRequired, VtyLoginRequired = VtyLoginRequired, Mode = Mode,
+            AwaitingEnablePassword = AwaitingEnablePassword,
             SelectedVlan = SelectedVlan, SelectedLine = SelectedLine, SelectedInterfaces = new List<string>(SelectedInterfaces), ExpectedRole = ExpectedRole
         };
         foreach (var vlan in Vlans) copy.Vlans[vlan.Key] = vlan.Value;
@@ -606,6 +622,8 @@ public sealed class NetworkInterfaceState
     public bool AdminUp;
     public bool CarrierUp;
     public bool IsTrunk;
+    public bool SwitchportModeConfigured;
+    public bool SwitchportAccessVlanConfigured;
     public bool TrunkEncapsulationDot1q;
     public int AccessVlan = 1;
     public HashSet<int> AllowedVlans = new();
@@ -634,9 +652,9 @@ public sealed class EndpointNetworkState
     public string MacAddress;
     public bool UseDhcp;
     public string Address;
-    public string Mask = "255.255.255.0";
+    public string Mask = string.Empty;
     public string Gateway;
-    public string Dns = "8.8.8.8";
+    public string Dns = string.Empty;
     public bool Layer1Connected;
     public bool Layer2Connected;
     public string DeviceKey;
@@ -654,11 +672,8 @@ public sealed class EndpointNetworkState
         Key = key;
         Role = role ?? string.Empty;
         MacAddress = TssNetworkRunProfile.MacFor(profile?.Seed ?? 0, key);
-        var addressRole = Role;
-        if (profile != null && profile.EndpointAliases.TryGetValue(Role, out var mappedRole))
-            addressRole = mappedRole;
-        Address = profile != null && profile.EndpointAddresses.TryGetValue(addressRole, out var address) ? address : string.Empty;
-        Gateway = GatewayFor(Address, profile);
+        Address = string.Empty;
+        Gateway = string.Empty;
     }
 
     public EndpointNetworkState Clone()

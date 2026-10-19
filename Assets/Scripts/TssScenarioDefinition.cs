@@ -104,6 +104,7 @@ public sealed class NetworkScenarioConfig
     public string dataVlanName = "Data";
     public string nativeVlanName = "Native";
     public string deadVlanName = "Dead_Vlan";
+    public string[] dhcpNetworkNames = { "Reception" };
     public int vlanMinimum = 10;
     public int vlanMaximum = 399;
     public string[] endpointAliases;

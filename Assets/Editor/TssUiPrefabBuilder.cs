@@ -92,7 +92,7 @@ public static class TssUiPrefabBuilder
     {
         var path = $"{UiDir}/TssRuntimeCanvas.prefab";
         var root = PrefabUtility.LoadPrefabContents(path);
-        var panelNames = new[] { "HUD", "CasePanel", "SopPanel", "NamePromptPanel", "CorrectionPanel", "ComputerPanel", "DebugPanel" };
+        var panelNames = new[] { "HUD", "CasePanel", "SopPanel", "NamePromptPanel", "CorrectionPanel", "DebugPanel" };
 
         foreach (var panelName in panelNames)
         {
@@ -134,7 +134,6 @@ public static class TssUiPrefabBuilder
             "SopPanel" => "TssSopPanel",
             "NamePromptPanel" => "TssNamePromptPanel",
             "CorrectionPanel" => "TssCorrectionPanel",
-            "ComputerPanel" => "TssComputerPanel",
             "DebugPanel" => "TssDebugPanel",
             _ => $"Tss{childName}"
         };

@@ -48,6 +48,11 @@ public sealed class TssEndpointCommandProcessor
                 error = "The test laptop must use DHCP after associating to the secured guest AP.";
                 return false;
             }
+            if (!_state.Profile.IsDhcpNetwork(_state.Profile.TestLaptopAddress))
+            {
+                error = "DHCP is not available on this scenario network.";
+                return false;
+            }
             if (!_state.AccessPoint.UplinkConnected || !_state.AccessPoint.Configured || !_state.IsAccessPointSwitchPortReady() || !source.Layer1Connected || !source.Layer2Connected)
             {
                 error = "DHCP is unavailable: associate to the configured AP after its uplink and switchport are ready.";
@@ -73,6 +78,9 @@ public sealed class TssEndpointCommandProcessor
             return false;
         }
 
+        if (useDhcp)
+            return TryApplyScenarioDhcp(sourceKey, source, out error);
+
         if ((!string.IsNullOrWhiteSpace(address) && !TssNetworkAddress.IsAddress(address))
             || (!string.IsNullOrWhiteSpace(mask) && !TssNetworkAddress.IsMask(mask))
             || (!string.IsNullOrWhiteSpace(gateway) && !TssNetworkAddress.IsAddress(gateway))
@@ -89,6 +97,51 @@ public sealed class TssEndpointCommandProcessor
         }
         source.UseDhcp = useDhcp;
         if (!useDhcp) { source.Address = address; source.Mask = mask; source.Gateway = gateway; source.Dns = dns; }
+        return true;
+    }
+
+    private bool TryApplyScenarioDhcp(string sourceKey, EndpointNetworkState source, out string error)
+    {
+        error = string.Empty;
+        var expectedAddress = _state.ExpectedAddress(source);
+        if (!_state.Profile.IsDhcpNetwork(expectedAddress))
+        {
+            error = "DHCP is not available on this scenario network; use static addressing.";
+            return false;
+        }
+        if (!source.Layer1Connected || !source.Layer2Connected)
+        {
+            error = "DHCP is unavailable: connect and configure the endpoint path first.";
+            return false;
+        }
+        if (!_state.IsProviderDhcpAvailable())
+        {
+            error = "DHCP is unavailable: configure the provider uplink and default route first.";
+            return false;
+        }
+
+        var oldUseDhcp = source.UseDhcp;
+        var oldAddress = source.Address;
+        var oldMask = source.Mask;
+        var oldGateway = source.Gateway;
+        var oldDns = source.Dns;
+        source.UseDhcp = true;
+        source.Address = expectedAddress;
+        source.Mask = "255.255.255.0";
+        source.Gateway = EndpointNetworkState.GatewayFor(expectedAddress, _state.Profile);
+        source.Dns = _state.Profile.WanProviderAddress;
+
+        var reachability = new TssNetworkReachabilityEvaluator(_state).Evaluate(sourceKey, _state.Profile.WanProviderAddress);
+        if (!reachability.Success)
+        {
+            source.UseDhcp = oldUseDhcp;
+            source.Address = oldAddress;
+            source.Mask = oldMask;
+            source.Gateway = oldGateway;
+            source.Dns = oldDns;
+            error = "DHCP is unavailable: " + reachability.Diagnostic;
+            return false;
+        }
         return true;
     }
 

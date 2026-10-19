@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
@@ -162,6 +163,108 @@ public sealed class TssDeviceSessionTests
     }
 
     [Test]
+    public void SwitchCliAcceptsAccessPortAliases()
+    {
+        var sessionObject = new GameObject("CliAliasSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        session.BeginScenario(scenario);
+        var processor = new TssCliCommandProcessor(session, "Switch", EquipmentCategory.Switch, "Switch");
+
+        processor.Execute("enable");
+        processor.Execute("configure terminal");
+        Assert.IsTrue(processor.Execute("interface Fa0/2").Accepted);
+        Assert.IsTrue(processor.Execute("swi mo acc").Accepted);
+        Assert.IsFalse(processor.Device.Interfaces["Fa0/2"].IsTrunk);
+        Assert.IsTrue(processor.Execute("sw acc vl 80").Accepted);
+        Assert.AreEqual(80, processor.Device.Interfaces["Fa0/2"].AccessVlan);
+        var logical = TssDeviceLogicalState.FromNetwork(processor.Device, session);
+        Assert.IsTrue(processor.Execute("sw mode trunk").Accepted);
+        Assert.IsTrue(processor.Device.Interfaces["Fa0/2"].IsTrunk);
+        logical.SyncFromNetwork(processor.Device);
+        Assert.AreEqual("Trunk", logical.Interfaces.Single(item => item.InterfaceName == "Fa0/2").PortMode);
+        Assert.IsTrue(processor.Execute("no swi mo tr").Accepted);
+        Assert.IsTrue(processor.Execute("switchport mode tr").Accepted);
+        Assert.IsTrue(processor.Execute("no sw mo tr").Accepted);
+        Assert.IsTrue(processor.Execute("swi mo tr").Accepted);
+        Assert.IsTrue(processor.Device.Interfaces["Fa0/2"].IsTrunk);
+        Assert.IsTrue(processor.Execute("no sw mo trunk").Accepted);
+        Assert.IsFalse(processor.Device.Interfaces["Fa0/2"].IsTrunk);
+        Assert.IsTrue(processor.Execute("no sw acc vl").Accepted);
+        Assert.AreEqual(1, processor.Device.Interfaces["Fa0/2"].AccessVlan);
+
+        Object.DestroyImmediate(scenario);
+        Object.DestroyImmediate(sessionObject);
+    }
+
+    [Test]
+    public void SwitchCliDisplaysVlanPortsAndInterfaceModesFromState()
+    {
+        var sessionObject = new GameObject("CliDisplaySession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        try
+        {
+            session.BeginScenario(scenario);
+            var processor = new TssCliCommandProcessor(session, "Switch", EquipmentCategory.Switch, "Switch");
+            processor.Execute("enable");
+            processor.Execute("configure terminal");
+            processor.Execute("interface Fa0/1");
+            processor.Execute("interface Fa0/2");
+            processor.Execute("switchport mode access");
+            processor.Execute("switchport access vlan 80");
+            processor.Execute("exit");
+            processor.Execute("interface Fa0/10");
+            processor.Execute("exit");
+            processor.Execute("end");
+
+            var vlanOutput = processor.Execute("show vlan brief").Output;
+            StringAssert.Contains("1    default", vlanOutput);
+            StringAssert.Contains("80   VLAN80", vlanOutput);
+            StringAssert.Contains("Fa0/2", vlanOutput);
+
+            var running = processor.Execute("show running-config").Output;
+            StringAssert.Contains(" switchport mode access", running);
+            StringAssert.Contains(" switchport access vlan 80", running);
+            StringAssert.DoesNotContain(" switchport trunk ", running);
+            StringAssert.Contains("\n!\n", running);
+            StringAssert.Contains("interface Fa0/2", running);
+            Assert.Less(running.IndexOf("interface Fa0/2", StringComparison.Ordinal), running.IndexOf("interface Fa0/10", StringComparison.Ordinal));
+            Assert.Less(running.IndexOf("interface Fa0/2", StringComparison.Ordinal), running.IndexOf("\r\nvlan 1\r\n", StringComparison.Ordinal));
+        }
+        finally
+        {
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
+    public void SwitchCliCanSelectInterfaceFromVlanConfiguration()
+    {
+        var sessionObject = new GameObject("CliVlanInterfaceSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        session.BeginScenario(scenario);
+        var processor = new TssCliCommandProcessor(session, "Switch", EquipmentCategory.Switch, "Switch");
+
+        processor.Execute("enable");
+        processor.Execute("configure terminal");
+        Assert.IsTrue(processor.Execute("vlan 80").Accepted);
+        Assert.IsTrue(processor.Execute("name Management").Accepted);
+        Assert.IsTrue(processor.Execute("int Fa0/2").Accepted);
+        Assert.AreEqual(TssNetworkCliMode.InterfaceConfig, processor.Device.Mode);
+        Assert.IsTrue(processor.Execute("int Fa0/3").Accepted);
+        CollectionAssert.Contains(processor.Device.SelectedInterfaces, "Fa0/3");
+
+        Object.DestroyImmediate(scenario);
+        Object.DestroyImmediate(sessionObject);
+    }
+
+    [Test]
     public void SwitchCommandReferenceCommandsAreAcceptedAndPersisted()
     {
         var sessionObject = new GameObject("CliReferenceSession", typeof(TssTrainingSession));
@@ -219,6 +322,9 @@ public sealed class TssDeviceSessionTests
             })
                 Assert.IsTrue(processor.Execute(command).Accepted, command);
 
+            Assert.IsTrue(processor.Device.Evidence.Contains("show interfaces trunk"));
+            Assert.IsTrue(processor.Device.Evidence.Contains("show vlan brief"));
+
             Assert.IsTrue(processor.Execute("copy running-config startup-config").Accepted);
             Assert.IsNotNull(processor.Device.StartupSnapshot);
             Assert.IsTrue(processor.Device.Interfaces["Fa0/2"].TrunkEncapsulationDot1q);
@@ -232,7 +338,13 @@ public sealed class TssDeviceSessionTests
             Assert.AreEqual("Data (suspended)", processor.Device.Vlans[10]);
             Assert.IsTrue(processor.Execute("disable").Accepted);
             Assert.AreEqual(TssNetworkCliMode.UserExec, processor.Device.Mode);
-            Assert.IsTrue(processor.Execute("enable").Accepted);
+            var enableChallenge = processor.Execute("enable");
+            Assert.IsTrue(enableChallenge.Accepted);
+            StringAssert.Contains("Password", enableChallenge.Output);
+            Assert.AreEqual(TssNetworkCliMode.UserExec, processor.Device.Mode);
+            Assert.IsFalse(processor.Execute("wrong-secret").Accepted);
+            Assert.IsTrue(processor.Execute("secret").Accepted);
+            Assert.AreEqual(TssNetworkCliMode.PrivilegedExec, processor.Device.Mode);
             Assert.IsTrue(processor.Execute("exit").Accepted);
             Assert.AreEqual(TssNetworkCliMode.UserExec, processor.Device.Mode);
         }
@@ -260,10 +372,29 @@ public sealed class TssDeviceSessionTests
             StringAssert.Contains("encapsulation dot1q <vlan>", routerReference);
             StringAssert.Contains("ip route <network> <mask> <next-hop>", routerReference);
             StringAssert.Contains("show ip route | show route", routerReference);
+            StringAssert.DoesNotContain("VLAN configuration", routerReference);
             Assert.IsTrue(processor.Execute("enable").Accepted);
+            Assert.IsFalse(processor.Execute("show vlan").Accepted);
+            Assert.IsFalse(processor.Execute("show interfaces trunk").Accepted);
+            Assert.IsFalse(processor.Execute("show mac").Accepted);
             Assert.IsTrue(processor.Execute("configure terminal").Accepted);
             Assert.IsTrue(processor.Execute("hostname R-CLI").Accepted);
-            Assert.IsTrue(processor.Execute("interface Fa0/0.10").Accepted);
+            Assert.IsFalse(processor.Execute("vlan 10").Accepted);
+            Assert.IsTrue(processor.Execute("interface Fa0/0").Accepted);
+            Assert.IsTrue(processor.Execute("int Fa0/0.10").Accepted);
+            Assert.IsTrue(processor.Execute("int Fa0/0.20").Accepted);
+            Assert.IsTrue(processor.Execute("int Fa0/0.10").Accepted);
+            Assert.IsTrue(processor.Execute("exit").Accepted);
+            Assert.IsTrue(processor.Execute("int Fa0/0.2").Accepted);
+            Assert.IsTrue(processor.Execute("exit").Accepted);
+            Assert.IsTrue(processor.Execute("int Fa0/0.10").Accepted);
+            Assert.AreEqual(TssNetworkCliMode.InterfaceConfig, processor.Device.Mode);
+            var defaultRunning = processor.Execute("do show running-config").Output;
+            StringAssert.Contains("interface Fa0/0\r\n shutdown\r\n!", defaultRunning);
+            StringAssert.Contains("interface Fa0/0.10\r\n shutdown\r\n!", defaultRunning);
+            StringAssert.Contains("\r\n!\r\n", defaultRunning);
+            Assert.Less(defaultRunning.IndexOf("interface Fa0/0.2", StringComparison.Ordinal), defaultRunning.IndexOf("interface Fa0/0.10", StringComparison.Ordinal));
+            Assert.IsFalse(processor.Execute("switchport mode trunk").Accepted);
             Assert.IsTrue(processor.Execute("encapsulation dot1q 10").Accepted);
             Assert.IsTrue(processor.Execute("ip add 192.168.10.1 255.255.255.0").Accepted);
             Assert.IsTrue(processor.Execute("no shutdown").Accepted);
@@ -731,21 +862,21 @@ public sealed class TssDeviceSessionTests
         Assert.IsFalse(routerState.UseDhcp);
 
         var switchState = new TssDeviceLogicalState("sw1", EquipmentCategory.Switch, "Switch01");
-        Assert.AreEqual("192.168.1.2", switchState.IpAddress);
-        Assert.AreEqual("255.255.255.0", switchState.SubnetMask);
-        Assert.AreEqual("192.168.1.1", switchState.DefaultGateway);
+        Assert.AreEqual(string.Empty, switchState.IpAddress);
+        Assert.AreEqual(string.Empty, switchState.SubnetMask);
+        Assert.AreEqual(string.Empty, switchState.DefaultGateway);
         Assert.IsFalse(switchState.UseDhcp);
 
         var pcState = new TssDeviceLogicalState("pc1", EquipmentCategory.DesktopPc, "PC01");
-        Assert.AreEqual("192.168.1.101", pcState.IpAddress);
-        Assert.IsTrue(pcState.UseDhcp);
+        Assert.AreEqual(string.Empty, pcState.IpAddress);
+        Assert.IsFalse(pcState.UseDhcp);
 
         var serverState = new TssDeviceLogicalState("srv1", EquipmentCategory.Server, "SRV01");
-        Assert.AreEqual("192.168.1.10", serverState.IpAddress);
+        Assert.AreEqual(string.Empty, serverState.IpAddress);
         Assert.IsFalse(serverState.UseDhcp);
 
         var printerState = new TssDeviceLogicalState("prn1", EquipmentCategory.Printer, "PRN01");
-        Assert.AreEqual("192.168.1.200", printerState.IpAddress);
+        Assert.AreEqual(string.Empty, printerState.IpAddress);
         Assert.IsFalse(printerState.UseDhcp);
     }
 
@@ -1070,7 +1201,7 @@ public sealed class TssDeviceSessionTests
         pres.Initialize(state, null, null);
 
         Assert.AreEqual("Workstation OS Enterprise", titleText.text);
-        Assert.AreEqual("192.168.1.101", ipInput.text);
+        Assert.AreEqual(string.Empty, ipInput.text);
 
         Object.DestroyImmediate(go);
     }

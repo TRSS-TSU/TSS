@@ -73,6 +73,7 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
     private string _initiatingSourceKey;
     private bool _useDhcp;
     private TssEndpointCommandProcessor _commands;
+    private TssTrainingSession _subscribedSession;
     private readonly List<string> _commandHistory = new();
     private int _historyIndex = -1;
 
@@ -101,8 +102,6 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
             historyUpButton.onClick.AddListener(() => BrowseHistory(-1));
         if (historyDownButton)
             historyDownButton.onClick.AddListener(() => BrowseHistory(1));
-        if (commandInput)
-            commandInput.onEndEdit.AddListener(_ => SubmitCommand());
         if (printTestPageButton)
             printTestPageButton.onClick.AddListener(PrintTestPage);
     }
@@ -126,6 +125,11 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         }
     }
 
+    private void OnDisable()
+    {
+        UnsubscribeFromNetworkState();
+    }
+
     public void Initialize(TssDeviceLogicalState state, GameObject deviceObject, Action onClose, string deviceKey = null, string initiatingSourceKey = null)
     {
         _state = state;
@@ -133,16 +137,10 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         _deviceKey = deviceKey ?? state.DeviceKey;
         _initiatingSourceKey = initiatingSourceKey;
         var network = TssTrainingSession.Instance ? TssTrainingSession.Instance.NetworkState : null;
+        SubscribeToNetworkState();
         _commands = network != null ? new TssEndpointCommandProcessor(network) : null;
         if (network != null && network.TryGetEndpoint(_deviceKey, out var endpoint))
-        {
-            state.UseDhcp = endpoint.UseDhcp;
-            state.IpAddress = endpoint.Address;
-            state.SubnetMask = endpoint.Mask;
-            state.DefaultGateway = endpoint.Gateway;
-            state.DnsServer = endpoint.Dns;
-            state.MacAddress = endpoint.MacAddress;
-        }
+            state.SyncFromEndpoint(endpoint);
         _useDhcp = state.UseDhcp;
 
         var category = state.Category;
@@ -291,15 +289,13 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         }
         if (!_commands.TryApply(_deviceKey, _useDhcp, ip, mask, gateway, dns, out var error))
         {
+            if (networkStateForPresenter() is { } failedNetwork && failedNetwork.TryGetEndpoint(_deviceKey, out var failedEndpoint))
+                SyncEndpointPresentation(failedEndpoint);
             if (applyFeedbackText) { applyFeedbackText.text = error; applyFeedbackText.color = new Color(1f, 0.45f, 0.45f, 1f); }
             return;
         }
         if (networkStateForPresenter() is { } network && network.TryGetEndpoint(_deviceKey, out var endpoint))
-        {
-            _state.UseDhcp = endpoint.UseDhcp;
-            _state.IpAddress = endpoint.Address; _state.SubnetMask = endpoint.Mask;
-            _state.DefaultGateway = endpoint.Gateway; _state.DnsServer = endpoint.Dns;
-        }
+            SyncEndpointPresentation(endpoint);
         TssTrainingSession.Instance?.NotifyNetworkStateChanged();
 
         if (applyFeedbackText)
@@ -345,6 +341,18 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         var session = TssTrainingSession.Instance;
         if (network == null || session == null)
             return;
+
+        if (_state != null
+            && (_state.Category == EquipmentCategory.DesktopPc || _state.Category == EquipmentCategory.Laptop)
+            && (!network.TryGetEndpoint(_deviceKey, out var sourceEndpoint) || !sourceEndpoint.Layer1Connected))
+        {
+            if (applyFeedbackText)
+            {
+                applyFeedbackText.text = "Layer 1: connect this computer before checking the AP uplink.";
+                applyFeedbackText.color = new Color(1f, 0.45f, 0.45f, 1f);
+            }
+            return;
+        }
 
         network.SetAccessPointUplink(session.IsAccessPointUplinkConnected());
         if (_state != null && _state.Category == EquipmentCategory.Laptop)
@@ -487,19 +495,49 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
 
     private void SubmitCommand()
     {
-        if (!commandInput || _commands == null)
+        if (!commandInput)
             return;
         var input = commandInput.text.Trim();
         if (string.IsNullOrEmpty(input))
             return;
+        var existingHistoryIndex = _commandHistory.FindIndex(command => command.Equals(input, StringComparison.OrdinalIgnoreCase));
+        if (existingHistoryIndex >= 0)
+            _commandHistory.RemoveAt(existingHistoryIndex);
         _commandHistory.Add(input);
         _historyIndex = _commandHistory.Count;
-        var result = _commands.Execute(_deviceKey, input);
         if (input.Equals("cls", StringComparison.OrdinalIgnoreCase))
-            if (commandOutputText) commandOutputText.text = string.Empty;
+        {
+            if (commandOutputText)
+                commandOutputText.text = string.Empty;
+        }
         else if (commandOutputText)
-            commandOutputText.text += "> " + input + "\n" + result.Output;
+        {
+            var output = _commands != null
+                ? _commands.Execute(_deviceKey, input).Output
+                : "Network endpoint is unavailable.\n";
+            commandOutputText.text += "> " + input + "\n" + output;
+        }
+        RefreshCommandOutputView();
         commandInput.text = string.Empty;
+    }
+
+    private void RefreshCommandOutputView()
+    {
+        if (!commandOutputText)
+            return;
+
+        commandOutputText.horizontalOverflow = HorizontalWrapMode.Wrap;
+        commandOutputText.verticalOverflow = VerticalWrapMode.Overflow;
+        Canvas.ForceUpdateCanvases();
+
+        var scrollRect = commandOutputText.GetComponentInParent<ScrollRect>();
+        var viewportHeight = scrollRect && scrollRect.viewport ? scrollRect.viewport.rect.height : 0f;
+        var height = Mathf.Max(viewportHeight, commandOutputText.preferredHeight + 16f);
+        commandOutputText.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, height);
+
+        Canvas.ForceUpdateCanvases();
+        if (scrollRect)
+            scrollRect.verticalNormalizedPosition = 0f;
     }
 
     private void BrowseHistory(int direction)
@@ -525,6 +563,50 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
     }
 
     private static TssNetworkSessionState networkStateForPresenter() => TssTrainingSession.Instance ? TssTrainingSession.Instance.NetworkState : null;
+
+    private void SubscribeToNetworkState()
+    {
+        UnsubscribeFromNetworkState();
+        _subscribedSession = TssTrainingSession.Instance;
+        if (_subscribedSession)
+            _subscribedSession.StateChanged += OnNetworkStateChanged;
+    }
+
+    private void UnsubscribeFromNetworkState()
+    {
+        if (_subscribedSession)
+            _subscribedSession.StateChanged -= OnNetworkStateChanged;
+        _subscribedSession = null;
+    }
+
+    private void OnNetworkStateChanged()
+    {
+        var network = networkStateForPresenter();
+        if (_state == null || network == null || !network.TryGetEndpoint(_deviceKey, out var endpoint))
+            return;
+        SyncEndpointPresentation(endpoint);
+    }
+
+    private void SyncEndpointPresentation(EndpointNetworkState endpoint)
+    {
+        if (_state == null || endpoint == null)
+            return;
+        _state.SyncFromEndpoint(endpoint);
+        _useDhcp = endpoint.UseDhcp;
+        if (dhcpToggle)
+            dhcpToggle.SetIsOnWithoutNotify(endpoint.UseDhcp);
+        if (staticToggle)
+            staticToggle.SetIsOnWithoutNotify(!endpoint.UseDhcp);
+        if (ipAddressInput)
+            ipAddressInput.text = endpoint.Address;
+        if (subnetMaskInput)
+            subnetMaskInput.text = endpoint.Mask;
+        if (defaultGatewayInput)
+            defaultGatewayInput.text = endpoint.Gateway;
+        if (dnsServerInput)
+            dnsServerInput.text = endpoint.Dns;
+        SetInputInteractable(!endpoint.UseDhcp);
+    }
 
     public void Close()
     {

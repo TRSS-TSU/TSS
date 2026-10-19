@@ -78,6 +78,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
     private InputField _namePromptInput;
     private Button _nameConfirmButton;
     private Button _nameCancelButton;
+    private bool _namePromptClosing;
 
     private GameObject _correctionPanel;
     private Text _correctionTitle;
@@ -86,11 +87,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
     private Button _corrPickupButton;
     private Button _corrAccessComputerButton;
     private Button _corrCloseButton;
-
-    private GameObject _computerPanel;
-    private Text _computerTitle;
-    private InputField _computerInput;
-    private Button _computerCloseButton;
+    private bool _correctionClosing;
 
     private GameObject _debugPanel;
     private Text _debugText;
@@ -116,6 +113,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
     private static readonly Vector2 HudSlidePanelShownPosition = new(20f, 0f);
     private static readonly Vector2 HudRightSlidePanelShownPosition = new(-20f, -101f);
     private const float HudSlideAnimationSpeed = 8f;
+    private const float ModalScreenWidth = 3840f;
+    private const float ModalSlideDuration = 0.4f;
 
     public bool IsGameplayInputBlocked => IsAnyGameplayMenuOpen();
 
@@ -199,7 +198,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
     public void ShowCasePanel(EquipmentCaseStation station)
     {
-        CloseActiveMenu();
+        CloseActiveMenu(null, false);
         _openCase = station;
         _activeMenuOwner = station;
         if (_casePanel)
@@ -233,18 +232,26 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
     public void CloseActiveMenu(object owner)
     {
+        CloseActiveMenu(owner, true);
+    }
+
+    private void CloseActiveMenu(object owner, bool animateModalPanels)
+    {
         if (owner != null && _activeMenuOwner != owner)
             return;
 
         if (_casePanel)
             _casePanel.SetActive(false);
-        if (_namePromptPanel)
-            _namePromptPanel.SetActive(false);
-        if (_correctionPanel)
-            _correctionPanel.SetActive(false);
-        if (_computerPanel)
-            _computerPanel.SetActive(false);
-
+        if (animateModalPanels)
+        {
+            BeginHideNamePrompt();
+            BeginHideCorrectionPanel();
+        }
+        else
+        {
+            HideModalPanelImmediately(_namePromptPanel, ref _namePromptClosing);
+            HideModalPanelImmediately(_correctionPanel, ref _correctionClosing);
+        }
         _openCase = null;
         _activeMenuOwner = null;
         _namePromptConfirmed = null;
@@ -428,12 +435,6 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 closeBtn.onClick.AddListener(HideCorrectionPanel);
         }
 
-        var computerPanelTransform = rootInstance.transform.Find("ComputerPanel");
-        if (computerPanelTransform)
-            WireComputerPanel(computerPanelTransform);
-        else
-            Debug.LogWarning("TssRuntimeUi runtime canvas is missing ComputerPanel.");
-
         // Wire DebugPanel
         var debugPanelTransform = rootInstance.transform.Find("DebugPanel");
         if (debugPanelTransform)
@@ -501,7 +502,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
         object owner = null
     )
     {
-        CloseActiveMenu();
+        CloseActiveMenu(null, false);
         _activeMenuOwner = owner;
         _namePromptConfirmed = onConfirm;
         if (_namePromptTitle)
@@ -511,11 +512,13 @@ public sealed class TssRuntimeUi : MonoBehaviour
             _namePromptInput.text = initialValue ?? string.Empty;
         }
         if (_namePromptPanel)
+        {
+            _namePromptClosing = false;
             _namePromptPanel.SetActive(true);
+            SetModalPanelStartPosition(_namePromptPanel);
+        }
         if (_correctionPanel)
             _correctionPanel.SetActive(false);
-        if (_computerPanel)
-            _computerPanel.SetActive(false);
         if (_namePromptInput)
             _namePromptInput.ActivateInputField();
         ApplyGameplayInputLock(true);
@@ -544,7 +547,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
         string currentName = ""
     )
     {
-        CloseActiveMenu();
+        CloseActiveMenu(null, false);
         _activeMenuOwner = owner;
         _renameConfirmed = onRename;
         _pickupConfirmed = onPickup;
@@ -567,32 +570,15 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 btnText.text = "Inspect Device";
         }
         if (_correctionPanel)
+        {
+            _correctionClosing = false;
             _correctionPanel.SetActive(true);
+            SetModalPanelStartPosition(_correctionPanel);
+        }
         if (_namePromptPanel)
             _namePromptPanel.SetActive(false);
-        if (_computerPanel)
-            _computerPanel.SetActive(false);
         if (_correctionInput && canRename)
             _correctionInput.ActivateInputField();
-        ApplyGameplayInputLock(true);
-    }
-
-    public void ShowComputerMenu(string title, object owner = null, string message = "")
-    {
-        CloseActiveMenu();
-        _activeMenuOwner = owner;
-        if (_computerTitle)
-            _computerTitle.text = title;
-        if (_computerInput)
-            _computerInput.text = message ?? string.Empty;
-        if (_computerPanel)
-            _computerPanel.SetActive(true);
-        if (_namePromptPanel)
-            _namePromptPanel.SetActive(false);
-        if (_correctionPanel)
-            _correctionPanel.SetActive(false);
-        if (_computerInput)
-            _computerInput.ActivateInputField();
         ApplyGameplayInputLock(true);
     }
 
@@ -662,7 +648,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
                     btn.onClick.AddListener(() => _openCase?.Checkout(equipment));
             }
 
-            y -= 56f;
+            y -= 96f;
         }
 
         foreach (var item in session.GetScenarioCableInventory())
@@ -711,7 +697,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
                     btn.onClick.AddListener(() => _openCase?.CheckoutCable(cable));
             }
 
-            y -= 56f;
+            y -= 96f;
         }
     }
 
@@ -1481,6 +1467,38 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
         AnimateRightSlidePanel(_sopSlidePanel, _activeRightSlidePanel == 0);
         AnimateRightSlidePanel(_wp1SlidePanel, _activeRightSlidePanel == 1);
+        AnimateModalPanel(_namePromptPanel, ref _namePromptClosing);
+        AnimateModalPanel(_correctionPanel, ref _correctionClosing);
+    }
+
+    private static void SetModalPanelStartPosition(GameObject panel)
+    {
+        var rect = panel ? panel.GetComponent<RectTransform>() : null;
+        if (rect)
+            rect.anchoredPosition = new Vector2(-ModalTravelDistance(rect), 0f);
+    }
+
+    private void AnimateModalPanel(GameObject panel, ref bool closing)
+    {
+        if (!panel || !panel.activeSelf)
+            return;
+
+        var rect = panel.GetComponent<RectTransform>();
+        if (!rect)
+            return;
+
+        var target = closing
+            ? new Vector2(ModalTravelDistance(rect), 0f)
+            : Vector2.zero;
+        var step = ModalTravelDistance(rect) / ModalSlideDuration * Time.unscaledDeltaTime;
+        rect.anchoredPosition = Vector2.MoveTowards(rect.anchoredPosition, target, step);
+
+        if (closing && rect.anchoredPosition == target)
+        {
+            panel.SetActive(false);
+            closing = false;
+            ApplyGameplayInputLock(IsAnyGameplayMenuOpen());
+        }
     }
 
     private static void AnimateRightSlidePanel(GameObject panel, bool shown)
@@ -1500,6 +1518,11 @@ public sealed class TssRuntimeUi : MonoBehaviour
         return (target - next).sqrMagnitude <= 0.25f ? target : next;
     }
 
+    private static float ModalTravelDistance(RectTransform rect)
+    {
+        return (ModalScreenWidth + rect.rect.width) * 0.5f;
+    }
+
     private void ConfirmNamePrompt()
     {
         var onConfirm = _namePromptConfirmed;
@@ -1509,11 +1532,16 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
     private void HideNamePrompt()
     {
-        if (_namePromptPanel)
-            _namePromptPanel.SetActive(false);
+        BeginHideNamePrompt();
         _namePromptConfirmed = null;
         ClearOwner(_activeMenuOwner);
         ApplyGameplayInputLock(IsAnyGameplayMenuOpen());
+    }
+
+    private void BeginHideNamePrompt()
+    {
+        if (_namePromptPanel && _namePromptPanel.activeSelf)
+            _namePromptClosing = true;
     }
 
     private void ConfirmRename()
@@ -1531,13 +1559,31 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
     private void HideCorrectionPanel()
     {
-        if (_correctionPanel)
-            _correctionPanel.SetActive(false);
+        BeginHideCorrectionPanel();
         _renameConfirmed = null;
         _pickupConfirmed = null;
         _accessComputerConfirmed = null;
         ClearOwner(_activeMenuOwner);
         ApplyGameplayInputLock(IsAnyGameplayMenuOpen());
+    }
+
+    private void BeginHideCorrectionPanel()
+    {
+        if (_correctionPanel && _correctionPanel.activeSelf)
+            _correctionClosing = true;
+    }
+
+    private static void HideModalPanelImmediately(GameObject panel, ref bool closing)
+    {
+        if (panel)
+        {
+            panel.SetActive(false);
+            var rect = panel.GetComponent<RectTransform>();
+            if (rect)
+                rect.anchoredPosition = Vector2.zero;
+        }
+
+        closing = false;
     }
 
     private void ConfirmAccessComputer()
@@ -1552,7 +1598,6 @@ public sealed class TssRuntimeUi : MonoBehaviour
         return (_casePanel && _casePanel.activeSelf)
             || (_namePromptPanel && _namePromptPanel.activeSelf)
             || (_correctionPanel && _correctionPanel.activeSelf)
-            || (_computerPanel && _computerPanel.activeSelf)
             || _externalGameplayLocks.Count > 0;
     }
 
@@ -1650,17 +1695,6 @@ public sealed class TssRuntimeUi : MonoBehaviour
             _activeMenuOwner = null;
     }
 
-    private void WireComputerPanel(Transform panelTransform)
-    {
-        _computerPanel = panelTransform.gameObject;
-        _computerTitle = panelTransform.Find("Title")?.GetComponent<Text>();
-        _computerInput = panelTransform.Find("DeviceInput")?.GetComponent<InputField>();
-        _computerCloseButton = panelTransform.Find("CloseButton")?.GetComponent<Button>();
-        if (_computerCloseButton)
-            _computerCloseButton.onClick.AddListener(CloseActiveMenu);
-        _computerPanel.SetActive(false);
-    }
-
     private static void ClearChildren(Transform parent)
     {
         for (var i = parent.childCount - 1; i >= 0; i--)
@@ -1685,13 +1719,19 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
     private static void EnsureEventSystem()
     {
-        if (FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>())
+        var existing = FindFirstObjectByType<UnityEngine.EventSystems.EventSystem>();
+        if (existing)
+        {
+            if (!existing.GetComponent<TssUiTabNavigation>())
+                existing.gameObject.AddComponent<TssUiTabNavigation>();
             return;
+        }
 
         var eventSystem = new GameObject(
             "EventSystem",
             typeof(UnityEngine.EventSystems.EventSystem)
         );
+        eventSystem.AddComponent<TssUiTabNavigation>();
 #if ENABLE_INPUT_SYSTEM
         eventSystem.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
 #else

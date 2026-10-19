@@ -39,6 +39,44 @@ public sealed class TssEndpointAddressingTests
     }
 
     [Test]
+    public void ManagementNetworkRemainsStaticWhenReceptionIsDhcpCapable()
+    {
+        var profile = TssNetworkRunProfile.Create(12345, new NetworkScenarioConfig());
+        var state = new TssNetworkSessionState(profile);
+        var endpoint = state.GetOrCreateEndpoint("pc", "IT1", EquipmentCategory.DesktopPc);
+
+        Assert.IsFalse(new TssEndpointCommandProcessor(state).TryApply("pc", true, string.Empty, string.Empty, string.Empty, string.Empty, out var error));
+        StringAssert.Contains("static addressing", error);
+        Assert.IsFalse(endpoint.UseDhcp);
+        Assert.AreEqual(string.Empty, endpoint.Address);
+    }
+
+    [Test]
+    public void LogicalStateMirrorsStaticAndDhcpEndpointAddressing()
+    {
+        var profile = TssNetworkRunProfile.Create(12345, new NetworkScenarioConfig());
+        var state = new TssNetworkSessionState(profile);
+        var endpoint = state.GetOrCreateEndpoint("pc", "Reception1", EquipmentCategory.DesktopPc);
+        var logical = new TssDeviceLogicalState("pc", EquipmentCategory.DesktopPc, "PC");
+
+        logical.SyncFromEndpoint(endpoint);
+        Assert.IsFalse(logical.UseDhcp);
+        Assert.AreEqual(string.Empty, logical.IpAddress);
+
+        endpoint.UseDhcp = true;
+        endpoint.Address = profile.EndpointAddresses["Reception1"];
+        endpoint.Mask = "255.255.255.0";
+        endpoint.Gateway = profile.ReceptionNetwork + ".1";
+        endpoint.Dns = profile.WanProviderAddress;
+        logical.SyncFromEndpoint(endpoint);
+
+        Assert.IsTrue(logical.UseDhcp);
+        Assert.AreEqual(endpoint.Address, logical.IpAddress);
+        Assert.AreEqual(endpoint.Gateway, logical.DefaultGateway);
+        Assert.AreEqual(endpoint.Dns, logical.DnsServer);
+    }
+
+    [Test]
     public void LaptopDhcpRequiresProviderUplinkAndRoute()
     {
         var profile = TssNetworkRunProfile.Create(12345, new NetworkScenarioConfig());
@@ -60,5 +98,32 @@ public sealed class TssEndpointAddressingTests
         state.SetProviderDemarcConnected(true);
         Assert.IsTrue(commands.TryApply("laptop", true, string.Empty, string.Empty, string.Empty, string.Empty, out _));
         Assert.AreEqual(profile.WanProviderAddress, laptop.Dns);
+    }
+
+    [Test]
+    public void WiredDhcpUsesScenarioNetworkAndRequiresRouterAndProviderPath()
+    {
+        var config = new NetworkScenarioConfig { dhcpNetworkNames = new[] { "Reception" } };
+        var profile = TssNetworkRunProfile.Create(12345, config);
+        var state = new TssNetworkSessionState(profile);
+        var endpoint = state.GetOrCreateEndpoint("pc", "Reception1", EquipmentCategory.DesktopPc);
+        endpoint.Layer1Connected = endpoint.Layer2Connected = true;
+        var access = state.GetOrCreateDevice("switch", EquipmentCategory.Switch, "AN-1");
+        access.ExpectedRole = "AN-1";
+        access.Vlans[profile.ReceptionVlan] = profile.ReceptionVlanName;
+        access.Interfaces["Fa0/3"] = new NetworkInterfaceState { Name = "Fa0/3", AdminUp = true, CarrierUp = true, AccessVlan = profile.ReceptionVlan, EndpointId = "pc" };
+        access.Interfaces["Fa0/6"] = new NetworkInterfaceState { Name = "Fa0/6", AdminUp = true, CarrierUp = true, IsTrunk = true, NativeVlan = profile.NativeVlan, AllowedVlans = new System.Collections.Generic.HashSet<int> { profile.ReceptionVlan } };
+        var router = state.GetOrCreateDevice("router", EquipmentCategory.Router, "CN-1");
+        router.ExpectedRole = "CN-1";
+        router.Interfaces["Fa0/0"] = new NetworkInterfaceState { Name = "Fa0/0", AdminUp = true, CarrierUp = true };
+        router.Interfaces["Fa0/0.10"] = new NetworkInterfaceState { Name = "Fa0/0.10", AdminUp = true, CarrierUp = true, Dot1qVlan = profile.ReceptionVlan, Address = profile.ReceptionNetwork + ".1", Mask = "255.255.255.0" };
+        router.Interfaces["Fa0/1"] = new NetworkInterfaceState { Name = "Fa0/1", AdminUp = true, CarrierUp = true, Address = profile.WanCustomerAddress, Mask = "255.255.255.252" };
+        router.Routes.Add(new NetworkRouteState { Network = "0.0.0.0", Mask = "0.0.0.0", NextHop = profile.WanProviderAddress });
+        state.SetProviderDemarcConnected(true);
+
+        Assert.IsTrue(new TssEndpointCommandProcessor(state).TryApply("pc", true, string.Empty, string.Empty, string.Empty, string.Empty, out var error), error);
+        Assert.AreEqual(profile.EndpointAddresses["Reception1"], endpoint.Address);
+        Assert.AreEqual(profile.ReceptionNetwork + ".1", endpoint.Gateway);
+        Assert.AreEqual(profile.WanProviderAddress, endpoint.Dns);
     }
 }
