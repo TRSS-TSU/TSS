@@ -92,7 +92,7 @@ GameObject:
   - component: {fileID: 4755061662560663895}
   - component: {fileID: 8419796874945766490}
   m_Layer: 0
-  m_Name: SopButton
+  m_Name: BinderButton
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -718,7 +718,7 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 0
     m_LineSpacing: 1
-  m_Text: SOP
+  m_Text: Binder
 --- !u!1 &6259802854943567869
 GameObject:
   m_ObjectHideFlags: 0

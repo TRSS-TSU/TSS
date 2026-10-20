@@ -331,7 +331,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 btn.onClick.AddListener(CancelHeld);
         }
 
-        var sopBtnTransform = rootInstance.transform.Find("HUD/SopButton");
+        var sopBtnTransform = rootInstance.transform.Find("HUD/BinderButton");
         if (sopBtnTransform)
         {
             _sopButton = sopBtnTransform.GetComponent<Button>();
@@ -380,14 +380,14 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 closeBtn.onClick.AddListener(() => _openCase?.ClosePanel());
         }
 
-        // Wire SopPanel
-        var sopPanelTransform = rootInstance.transform.Find("SopPanel");
+        // Wire BinderPanel
+        var sopPanelTransform = rootInstance.transform.Find("BinderPanel");
         if (sopPanelTransform)
         {
             _sopPanel = sopPanelTransform.gameObject;
             _sopPanel.SetActive(true);
-            _sopTabsContainer = sopPanelTransform.Find("SopTabs");
-            _sopContentContainer = sopPanelTransform.Find("SopContent");
+            _sopTabsContainer = sopPanelTransform.Find("BinderTabs");
+            _sopContentContainer = sopPanelTransform.Find("BinderContent");
         }
         BuildRightSlidePanels();
 
@@ -1189,7 +1189,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
         return count;
     }
 
-    private void RefreshSopPanel()
+private void RefreshSopPanel()
     {
         if (
             !_sopPanel
@@ -1199,9 +1199,10 @@ public sealed class TssRuntimeUi : MonoBehaviour
         )
             return;
 
-        var sections = session.Scenario.sopSections;
-        var hasBinder = session.NetworkProfile != null;
-        var sectionCount = hasBinder ? BinderTabTitles.Length : sections?.Length ?? 0;
+        var profile = session.NetworkProfile;
+        var hasBinder = profile != null;
+        var sections = Array.Empty<SopSection>();
+        var sectionCount = hasBinder ? BinderTabTitles.Length : 0;
         var panelTitle = _sopPanel.transform.Find("PanelTitle")?.GetComponent<Text>();
         if (panelTitle)
             panelTitle.text = hasBinder ? "Training Binder" : "SOP Guide";
@@ -1241,14 +1242,105 @@ public sealed class TssRuntimeUi : MonoBehaviour
             var titleText = row.Find("SectionTitle")?.GetComponent<Text>();
             if (titleText)
                 titleText.text = hasBinder ? BinderTabTitles[i] : sections[i].title;
+            if (hasBinder)
+                ApplyBinderReferenceText(row, i, session.Scenario.binderReference);
+
+            var namingTab = row.GetComponent<TssNamingTabPresenter>();
+            if (hasBinder && i == 0 && namingTab)
+            {
+                namingTab.SetValues(session.Scenario);
+                continue;
+            }
+            var vlanTab = row.GetComponent<TssVlanTabPresenter>();
+            if (hasBinder && i == 1 && vlanTab)
+            {
+                vlanTab.SetValues(
+                    session.Scenario.scenarioId,
+                    profile.ManagementVlan,
+                    profile.ReceptionVlan,
+                    profile.DataVlan,
+                    profile.NativeVlan,
+                    profile.DeadVlan,
+                    session.Scenario.binderReference?.vlans
+                );
+                continue;
+            }
+            var ipPlanTab = row.GetComponent<TssIpPlanTabPresenter>();
+            if (hasBinder && i == 2 && ipPlanTab)
+            {
+                ipPlanTab.SetValues(session.Scenario.scenarioId, profile, session.Scenario.binderReference?.ipPlan);
+                continue;
+            }
+
+            var cableScheduleTab = row.GetComponent<TssCableScheduleTabPresenter>();
+            if (hasBinder && i == 3 && cableScheduleTab)
+            {
+                cableScheduleTab.SetValues(session.Scenario.scenarioId, profile, session.Scenario.cableSchedule, session.Scenario.binderReference?.cableSchedule);
+                continue;
+            }
+
+            var referenceTab = row.GetComponent<TssBinderReferenceTabPresenter>();
+            if (hasBinder && i >= 4 && i <= 6 && referenceTab)
+            {
+                referenceTab.SetValues(session.Scenario, profile);
+                continue;
+            }
+
 
             var bodyText = row.Find("SectionBody")?.GetComponent<Text>();
             if (bodyText)
             {
-                bodyText.fontSize = 40;
+                bodyText.fontSize = hasBinder && i == 0 ? 31 : 40;
                 bodyText.text = hasBinder ? BinderBody(i) : SopBody(sections[i]);
             }
         }
+    }
+
+    private static void ApplyBinderReferenceText(Transform row, int index, TssBinderReferenceContent content)
+    {
+        if (!row || content == null)
+            return;
+
+        var configuredSectionTitle = index switch
+        {
+            0 => content.namingAndRacks?.sectionTitle,
+            1 => content.vlans?.sectionTitle,
+            2 => content.ipPlan?.sectionTitle,
+            3 => content.cableSchedule?.sectionTitle,
+            4 => content.circuitLetter?.sectionTitle,
+            5 => content.wireless?.sectionTitle,
+            6 => content.credentials?.sectionTitle,
+            _ => string.Empty
+        };
+        if (!string.IsNullOrWhiteSpace(configuredSectionTitle))
+        {
+            var sectionTitle = row.Find("SectionTitle")?.GetComponent<Text>();
+            if (sectionTitle)
+                sectionTitle.text = configuredSectionTitle;
+        }
+
+        if (index == 2 && content.ipPlan != null && !string.IsNullOrWhiteSpace(content.ipPlan.hostAddressesHeading))
+        {
+            var hostHeading = row.Find("HostAddressesHeading")?.GetComponent<Text>();
+            if (hostHeading)
+                hostHeading.text = content.ipPlan.hostAddressesHeading;
+        }
+
+        var intro = index switch
+        {
+            0 => content.namingAndRacks?.intro,
+            1 => content.vlans?.intro,
+            2 => content.ipPlan?.paragraph,
+            3 => content.cableSchedule?.introParagraph,
+            _ => string.Empty
+        };
+        if (string.IsNullOrWhiteSpace(intro))
+            return;
+
+        var targetName = index == 2 ? "Paragraph" : "IntroParagraph";
+        var text = row.Find(targetName)?.GetComponent<Text>();
+        if (text)
+            text.text = intro;
     }
 
     private void EnsureSopTabCapacity(int count)
@@ -1270,12 +1362,22 @@ public sealed class TssRuntimeUi : MonoBehaviour
         switch (index)
         {
             case 0:
-                return BinderHeading("Rack build order")
-                    + "GROUND FLOOR / RACK01\nTop to bottom: PDU1, Patch1, AN-1, CN-1, IT2 (server).\n\n"
-                    + "SECOND FLOOR / RACK02\nTop to bottom: PDU2, Patch2, AN-2.\n\n"
-                    + "WORK AREAS\nIT1: IT room | Reception1 and Reception2: Reception\n"
-                    + "Data1: Office 1 | Data2 and Data3: Office 2\n"
-                    + "AP-1 and TestLaptop: Guest Lounge. Use these exact names.";
+                return BinderHeading("Naming standard")
+                    + "AN = Access Node (switch). CN = Core Node (router). Rack order is not cosmetic: power at the top, away from data; patch panel directly above the switch it feeds; router beside the switch it uplinks to; and the heavy box lowest for center of gravity.\n\n"
+                    + "<color=#E69529><b>FIRST FLOOR RACK / RACK01</b></color>\n"
+                    + "<color=#9DB7C9><b>SLOT       DEVICE                 NAME</b></color>\n"
+                    + "U1 (top)  Rack PDU                PDU1\nPower at the top, away from data cabling\n\n"
+                    + "U2        8-port patch panel     Patch1\nDirectly above its switch - short patch runs\n\n"
+                    + "U3        8-port switch           AN-1\nAccess node, ground floor\n\n"
+                    + "U4        Core router              CN-1\nBeside the switch it trunks to; feeds the demarc\n\n"
+                    + "U5        Rack server              IT2\nHeavy and hot - lowest in the rack\n\n"
+                    + "U6        -                        spare\nLeave open for growth\n\n"
+                    + "<color=#E69529><b>SECOND FLOOR RACK / RACK02</b></color>\n"
+                    + "<color=#9DB7C9><b>SLOT       DEVICE                 NAME</b></color>\n"
+                    + "U1        Rack PDU                PDU2\n"
+                    + "U2        Patch panel             Patch2\n"
+                    + "U3        Switch                  AN-2\n\n"
+                    + "<color=#9DB7C9><i>No server upstairs. Wall mounts are already installed - facilities did that.</i></color>";
             case 1:
                 return BinderHeading("Layer 2 plan")
                     + $"Create on both switches:\n{profile.ManagementVlanName}: VLAN {profile.ManagementVlan}\n{profile.ReceptionVlanName}: VLAN {profile.ReceptionVlan}\n{profile.DataVlanName}: VLAN {profile.DataVlan}\n{profile.NativeVlanName}: VLAN {profile.NativeVlan} (native)\n{profile.DeadVlanName}: VLAN {profile.DeadVlan} (unused ports)\n\n"

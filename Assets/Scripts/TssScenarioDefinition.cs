@@ -12,11 +12,76 @@ public sealed class TssScenarioDefinition : ScriptableObject
     public TssCableType defaultPlayerCableType = TssCableType.StraightThrough;
     public ScenarioCableTypeRequirement[] cableTypeRequirements;
     public ScenarioPermanentCableConnection[] permanentConnections;
+    public ScenarioCableScheduleEntry[] cableSchedule;
+    public ScenarioNamingEntry[] namingRows;
     public RackScenarioConfig[] racks;
     public ExpectedRackPlacement[] expectedRackPlacements;
     public ExpectedEndpointPlacement[] expectedEndpointPlacements;
-    public SopSection[] sopSections;
     public NetworkScenarioConfig networkScenario;
+    public TssBinderReferenceContent binderReference;
+}
+
+[Serializable]
+public sealed class TssBinderReferenceContent
+{
+    public TssBinderNamingContent namingAndRacks;
+    public TssBinderVlanContent vlans;
+    public TssBinderIpPlanContent ipPlan;
+    public TssBinderCableScheduleContent cableSchedule;
+    public TssBinderTabContent circuitLetter;
+    public TssBinderTabContent wireless;
+    public TssBinderTabContent credentials;
+}
+
+[Serializable]
+public sealed class TssBinderNamingContent
+{
+    public string sectionTitle;
+    public string scenarioHeading;
+    [TextArea(2, 8)] public string intro;
+}
+
+[Serializable]
+public sealed class TssBinderVlanContent
+{
+    public string sectionTitle;
+    public string scenarioHeading;
+    [TextArea(2, 8)] public string intro;
+    [TextArea(2, 8)] public string endingParagraph;
+}
+
+[Serializable]
+public sealed class TssBinderIpPlanContent
+{
+    public string sectionTitle;
+    public string scenarioHeading;
+    public string hostAddressesHeading;
+    [TextArea(2, 8)] public string paragraph;
+}
+
+[Serializable]
+public sealed class TssBinderCableScheduleContent
+{
+    public string sectionTitle;
+    public string scenarioHeading;
+    [TextArea(2, 8)] public string introParagraph;
+}
+
+[Serializable]
+public sealed class TssBinderTabContent
+{
+    public string sectionTitle;
+    public string scenarioHeading;
+    [TextArea(2, 8)] public string intro;
+    [TextArea(2, 8)] public string note;
+    public TssBinderReferenceRow[] rows;
+}
+
+[Serializable]
+public sealed class TssBinderReferenceRow
+{
+    public string label;
+    public string value;
 }
 
 [Serializable]
@@ -53,6 +118,26 @@ public sealed class ScenarioPermanentCableConnection
     public bool requiresPunchDownTermination;
     public string endpointATerminationModuleId;
     public string endpointBTerminationModuleId;
+}
+
+[Serializable]
+public sealed class ScenarioCableScheduleEntry
+{
+    public string fromEndpoint;
+    public string fromPort;
+    public string toEndpoint;
+    public string toPort;
+    public string cableType;
+}
+
+[Serializable]
+public sealed class ScenarioNamingEntry
+{
+    public string rackId;
+    public string slot;
+    public string device;
+    public string assignedName;
+    public string rationale;
 }
 
 [Serializable]
