@@ -137,6 +137,10 @@ public static class TssExternalScenarioValidator
         HashSet<string> names, List<EquipmentDefinition> equipment, List<string> errors)
     {
         if (network == null) { errors.Add("networkScenario is required."); return; }
+        foreach (var value in new[] { network.circuitId, network.ssid, network.wifiPassphrase, network.apAdminPassword, network.enableSecret, network.consolePassword, network.vtyPassword, network.motd })
+            Required(value, "networkScenario instructor-authored value", errors);
+        if (network.wirelessChannel != 1 && network.wirelessChannel != 6 && network.wirelessChannel != 11)
+            errors.Add("wirelessChannel must be 1, 6, or 11.");
         // The current generator uses tens from 10..390 and needs four different values.
         if (network.vlanMinimum < 10 || network.vlanMaximum > 390 || network.vlanMinimum % 10 != 0 || network.vlanMaximum % 10 != 0 || network.vlanMaximum - network.vlanMinimum < 30)
             errors.Add("VLAN bounds must be multiples of 10 within 10..390 with at least four values.");

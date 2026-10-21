@@ -185,6 +185,16 @@ public sealed class NetworkScenarioConfig
 {
     public bool enableLayer23Simulation;
     [Min(1)] public int profileSeed = 20261008;
+    [Header("Instructor-authored run values")]
+    public string circuitId = "CIR-TRAINING-001";
+    public string ssid = "TSS-GUEST";
+    public string wifiPassphrase = "TrainingWifi!";
+    public int wirelessChannel = 6;
+    public string apAdminPassword = "TrainingAp!";
+    public string enableSecret = "TrainingEnable";
+    public string consolePassword = "TrainingConsole";
+    public string vtyPassword = "TrainingVty";
+    [TextArea] public string motd = "AUTHORIZED TRAINING ACCESS ONLY";
     public string managementVlanName = "Management";
     public string receptionVlanName = "Reception";
     public string dataVlanName = "Data";

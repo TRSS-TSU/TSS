@@ -58,12 +58,15 @@ public sealed class TssNetworkRunProfile
         WanNetwork = $"10.{random.Next(10, 240)}.{random.Next(10, 240)}";
         WanCustomerAddress = WanNetwork + ".1";
         WanProviderAddress = WanNetwork + ".2";
-        CircuitId = "CIR-" + random.Next(100000, 999999).ToString(CultureInfo.InvariantCulture);
-        EnableSecret = Token(random); ConsolePassword = Token(random); VtyPassword = Token(random); Motd = "AUTHORIZED TRAINING ACCESS ONLY";
-        Ssid = "TSS-GUEST-" + random.Next(100, 999).ToString(CultureInfo.InvariantCulture);
-        WifiPassphrase = Token(random) + "!";
-        ApAdminPassword = Token(random) + "!";
-        WirelessChannel = new[] { 1, 6, 11 }[random.Next(3)];
+        CircuitId = config?.circuitId ?? string.Empty;
+        EnableSecret = config?.enableSecret ?? string.Empty;
+        ConsolePassword = config?.consolePassword ?? string.Empty;
+        VtyPassword = config?.vtyPassword ?? string.Empty;
+        Motd = config?.motd ?? string.Empty;
+        Ssid = config?.ssid ?? string.Empty;
+        WifiPassphrase = config?.wifiPassphrase ?? string.Empty;
+        ApAdminPassword = config?.apAdminPassword ?? string.Empty;
+        WirelessChannel = config?.wirelessChannel ?? 0;
         ManagementVlanName = config?.managementVlanName ?? "Management";
         ReceptionVlanName = config?.receptionVlanName ?? "Reception";
         DataVlanName = config?.dataVlanName ?? "Data";
@@ -134,7 +137,6 @@ public sealed class TssNetworkRunProfile
         while (values.Count < count) values.Add(random.Next(min / 10, max / 10 + 1) * 10);
         return values.ToArray();
     }
-    private static string Token(System.Random random) => "T" + random.Next(100000, 999999).ToString(CultureInfo.InvariantCulture);
     public static string MacFor(int seed, string key)
     {
         uint hash = 2166136261u;

@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header><div><p class="eyebrow">TSS2 · LOCAL AUTHORING</p><h1>Scenario Config Editor</h1></div><div id="status" aria-live="polite">Load a scenario pack to begin.</div></header>
+  <header><div><p class="eyebrow">TSS2 · LOCAL AUTHORING</p><h1>Scenario Config Editor</h1><p class="subtitle">Start with the instructor-facing values. Use Advanced JSON only for facility-specific scenario details.</p></div><div id="status" aria-live="polite">Load a scenario pack to begin.</div></header>
   <main>
     <section class="toolbar" aria-label="Scenario controls">
       <button id="loadWorkspace">Load shipped samples</button>
@@ -17,17 +17,48 @@
       <button id="downloadScenario" disabled>Download scenario</button>
       <button id="downloadManifest" disabled>Download manifest</button>
     </section>
+    <section id="guidedAuthoring" class="guided" aria-label="Guided scenario authoring" hidden>
+      <article class="form-card">
+        <div class="card-heading"><p class="step">1 · BASICS</p><h2>Scenario Basics</h2><p>These values control how this scenario is identified in the local package and Main Menu.</p></div>
+        <div class="form-grid basics-grid">
+          <label>Scenario ID<input id="basicScenarioId" pattern="[A-Za-z0-9_-]+" autocomplete="off"></label>
+          <label>Menu label<input id="basicDisplayName" autocomplete="off"></label>
+          <label class="full">Instructor description<textarea id="basicDescription" rows="2" placeholder="Optional planning note for this menu entry"></textarea></label>
+          <label>Unity scene<input id="basicSceneName" value="TSS" disabled></label>
+          <p class="field-help">Changing the ID updates the matching manifest entry and download filename.</p>
+        </div>
+      </article>
+      <article class="form-card network-card">
+        <div class="card-heading"><p class="step">2 · NETWORK TRAINING VALUES</p><h2>What students must configure</h2><p>These fields drive the binder, AP workflow, CLI expectations, and evaluation for this scenario.</p></div>
+        <div class="form-grid network-grid">
+          <label>Circuit ID<input id="networkCircuitId" autocomplete="off"></label>
+          <label>Wireless SSID<input id="networkSsid" autocomplete="off"></label>
+          <label>Wi-Fi passphrase<input id="networkWifiPassphrase" autocomplete="off"></label>
+          <label>Wireless channel<select id="networkWirelessChannel"><option value="1">1</option><option value="6">6</option><option value="11">11</option></select></label>
+          <label>AP administrator password<input id="networkApAdminPassword" autocomplete="off"></label>
+          <label>Enable secret<input id="networkEnableSecret" autocomplete="off"></label>
+          <label>Console password<input id="networkConsolePassword" autocomplete="off"></label>
+          <label>VTY password<input id="networkVtyPassword" autocomplete="off"></label>
+          <label class="full">Login banner / MOTD<textarea id="networkMotd" rows="2"></textarea></label>
+        </div>
+      </article>
+    </section>
     <section class="workspace">
       <aside>
         <h2>Validation</h2><ul id="errors"><li>Nothing loaded.</li></ul>
-        <h2>Contract</h2><p>Schema 1 only. Unity remains the final authority for equipment, endpoint, role, and simulator validation.</p>
+        <h2>Authoring boundary</h2><p>The editor writes the JSON package. Unity remains the final authority for facility IDs, equipment, ports, and launch validation.</p>
         <button id="clearDraft" class="quiet">Clear saved draft</button>
       </aside>
-      <section class="editor"><label for="json">Scenario JSON</label><textarea id="json" spellcheck="false" disabled></textarea></section>
-      <aside class="preview"><h2>Binder preview</h2><div id="binder"><p>Load a scenario to preview its authored binder content.</p></div></aside>
+      <section class="editor">
+        <details id="advancedJson">
+          <summary><span>3 · ADVANCED JSON</span><small>Placements, equipment, cables, binder structure, roles, and evidence</small></summary>
+          <label for="json">Full scenario JSON</label><textarea id="json" spellcheck="false" disabled></textarea>
+        </details>
+      </section>
+      <aside class="preview"><h2>Binder preview</h2><p class="preview-help">Instructor-authored network tokens are shown with their current values.</p><div id="binder"><p>Load a scenario to preview its authored binder content.</p></div></aside>
     </section>
   </main>
-  <template id="binderTemplate"><article><h3></h3><strong></strong><p></p></article></template>
+  <template id="binderTemplate"><article><h3></h3><strong></strong><p></p><dl></dl></article></template>
   <script src="app.js"></script>
 </body>
 </html>

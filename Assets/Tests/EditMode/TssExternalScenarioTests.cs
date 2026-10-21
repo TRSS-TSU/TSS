@@ -160,6 +160,33 @@ public sealed class TssExternalScenarioTests
     }
 
     [Test]
+    public void InstructorAuthoredRunValuesOverrideTheProfileSeed()
+    {
+        var config = BaselineData().networkScenario;
+        config.circuitId = "CIR-INSTRUCTOR-42";
+        config.ssid = "NAS-TRAINING";
+        config.wifiPassphrase = "FlySafe25!";
+        config.wirelessChannel = 11;
+        config.apAdminPassword = "ApAdmin25!";
+        config.enableSecret = "Enable25";
+        config.consolePassword = "Console25";
+        config.vtyPassword = "Vty25";
+        config.motd = "NAS TRAINING ONLY";
+
+        var profile = TssNetworkRunProfile.Create(12345, config);
+
+        Assert.AreEqual("CIR-INSTRUCTOR-42", profile.CircuitId);
+        Assert.AreEqual("NAS-TRAINING", profile.Ssid);
+        Assert.AreEqual("FlySafe25!", profile.WifiPassphrase);
+        Assert.AreEqual(11, profile.WirelessChannel);
+        Assert.AreEqual("ApAdmin25!", profile.ApAdminPassword);
+        Assert.AreEqual("Enable25", profile.EnableSecret);
+        Assert.AreEqual("Console25", profile.ConsolePassword);
+        Assert.AreEqual("Vty25", profile.VtyPassword);
+        Assert.AreEqual("NAS TRAINING ONLY", profile.Motd);
+    }
+
+    [Test]
     public void FallbackSelectionAndHandoffPreserveAuthoredAsset()
     {
         var choices = TssExternalScenarioLoader.GetFallbackScenarios(new[] { null, baseline, baseline }, null);

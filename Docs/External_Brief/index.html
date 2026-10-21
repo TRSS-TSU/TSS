@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TSS2 External Scenario Brief</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="hero">
+    <p class="eyebrow">TSS2 / IMPLEMENTATION BRIEF</p>
+    <h1>External Scenario Configuration<br><span>&amp; Graphify Local Model Setup</span></h1>
+    <p class="lede">A practical guide to the new scenario-authoring path, its Unity support layer, the local editor, and the optional Graphify semantic-extraction setup.</p>
+    <div class="badges"><span>Schema v1</span><span>Four scenarios</span><span>Local-first</span><span>Unity remains authoritative</span></div>
+  </header>
+
+  <nav aria-label="Brief sections"><a href="#summary" class="active">Summary</a><a href="#architecture">Architecture</a><a href="#editor">Web editor</a><a href="#unity">Unity workflow</a><a href="#support">TSS2 support</a><a href="#validation">Validation</a><a href="#graphify">Graphify</a><a href="#limits">Limits</a></nav>
+
+  <main>
+    <section id="summary" class="panel intro">
+      <p class="section-label">01 — Overview</p><h2>What was created</h2>
+      <p>The TSS2 facility can now run instructor-authored training scenarios from JSON files without rewriting the scene, prefabs, equipment assets, endpoint labels, or the existing training-session singleton. The data is loaded from <code>Assets/StreamingAssets/Scenarios</code>, validated, then adapted into the existing <code>TssScenarioDefinition</code> shape that the simulator already understands.</p>
+      <div class="grid cards"><article><h3>External scenario package</h3><p>A versioned manifest plus exactly four versioned JSON scenario files drive the four-choice Main Menu.</p></article><article><h3>Runtime adapter</h3><p>Validated external data becomes a transient scenario definition. Existing installation, cabling, binder, network, and evaluation code keeps its current contract.</p></article><article><h3>Local authoring editor</h3><p>A dependency-free browser tool imports, edits, checks, previews, saves a local draft, and downloads the JSON package.</p></article><article><h3>Safe fallback</h3><p>If a manifest or scenario fails validation, the original serialized scenario remains available instead of allowing a partial launch.</p></article></div>
+    </section>
+
+    <section id="architecture" class="panel">
+      <p class="section-label">02 — Data flow</p><h2>How the pieces connect</h2>
+      <div class="flow"><div>Instructor JSON<br><small>Manifest + four scenarios</small></div><b>→</b><div>Unity loader<br><small>Read, parse, validate</small></div><b>→</b><div>Runtime adapter<br><small>Transient definition</small></div><b>→</b><div>TSS2 systems<br><small>Menu, session, binder, evaluator</small></div></div>
+      <div class="two-col"><div><h3>What JSON owns</h3><ul><li>Scenario identity, name, and the TSS scene.</li><li>Equipment/cable quantities, cabling, schedule and permanent connections.</li><li>Rack/station placement requirements, names, phases, network rules, evidence, and binder text.</li></ul></div><div><h3>What Unity still owns</h3><ul><li>Scene geometry, actual Unity assets, prefabs, endpoint bindings, simulation behavior, and evaluation engine.</li><li>Student-specific IP addresses, VLAN values, credentials, and other deterministic runtime values.</li><li>The final asset/facility validation decision before launch.</li></ul></div></div>
+    </section>
+
+    <section id="editor" class="panel">
+      <p class="section-label">03 — Scenario Config Editor</p><h2>How to use the web app</h2>
+      <p>The editor is a local static page at <code>sites/tss-scenario-config-editor/dist/index.html</code>. It is intentionally not a hosted service and does not modify Unity assets or publish scenarios.</p>
+      <ol class="steps"><li><strong>Open the page through a local web server.</strong> Select <em>Load shipped samples</em> to load the current package, or choose <em>Import manifest + scenarios</em> and select <code>manifest.json</code> plus its referenced scenario files.</li><li><strong>Select a scenario.</strong> The drop-down chooses one of the imported entries. The JSON editor shows the full authored object for that scenario.</li><li><strong>Edit the authored data.</strong> Keep the format, schema version, scenario ID, display name, and scene aligned with the corresponding manifest entry. Edit only reference-free fields; never add Unity GUIDs, instance IDs, prefab references, transforms, or per-student credentials.</li><li><strong>Validate and preview.</strong> The browser checks the version-1 structure, required fields, duplicate identifiers, inventory quantities, rack ranges, and manifest identity. The Binder Preview shows authored sections without pretending to generate runtime tokens.</li><li><strong>Download and install.</strong> Download the scenario and, if changed, the manifest. Place the JSON files in <code>Assets/StreamingAssets/Scenarios</code>, preserving the filenames referenced by the manifest.</li></ol>
+      <aside class="callout"><strong>Important:</strong> browser validation is a quick authoring guardrail. Unity performs the final catalog, facility, asset, network-role, and launch validation.</aside>
+    </section>
+
+    <section id="unity" class="panel">
+      <p class="section-label">04 — Unity workflow</p><h2>Using edited JSON with TSS2</h2>
+      <div class="two-col"><div><h3>Package layout</h3><pre>Assets/StreamingAssets/Scenarios/
+├── manifest.json
+├── balanced-lab.json
+├── installation-practice.json
+├── network-verification.json
+└── wireless-readiness.json</pre><p>The manifest must be <code>tss-scenario-manifest</code>, schema version <code>1</code>, and contain exactly four entries. Each entry's ID, name, scene, and filename must match its scenario file.</p></div><div><h3>Run and test</h3><ol><li>Back up instructor edits before using the sample-export command; it rewrites all four samples.</li><li>Open MainMenu in Unity and enter Play Mode.</li><li>Confirm four enabled scenario choices, then launch each choice with a last name and positive computer number.</li><li>Use <strong>TSS → External Scenarios → Run Edit Mode Tests</strong> and <strong>Run Play Mode Tests</strong>.</li><li>Review results in <code>Temp/TssScenarioTests</code> and resolve any <code>[TSS Scenarios]</code> warnings before release.</li></ol></div></div>
+      <h3>Authoring rules that matter</h3><div class="grid cards compact"><article><h4>Stable IDs only</h4><p>Use equipment IDs, cable IDs, rack IDs, station IDs, and endpoint IDs already known to the catalog.</p></article><article><h4>Generated values stay out</h4><p>Use binder tokens such as <code>{ManagementVlan}</code> and <code>{Ssid}</code>; do not hard-code generated addresses or passwords.</p></article><article><h4>Current facility only</h4><p>This schema configures the existing TSS facility, not arbitrary topologies or scene geometry.</p></article></div>
+    </section>
+
+    <section id="support" class="panel">
+      <p class="section-label">05 — TSS2 support elements</p><h2>What was added to the simulator</h2>
+      <div class="support-list"><article><h3>External DTO and schema identity</h3><p><code>TssExternalScenarioData</code> and manifest DTOs define a reference-free, versioned schema. Equipment and cable references use stable IDs rather than Unity object references.</p></article><article><h3>Catalog and validator</h3><p><code>TssScenarioCatalog</code> maps allowed equipment/cables and snapshots supported facility IDs. The validator rejects invalid identities, duplicates, unknown assets, impossible quantities, invalid placements, VLAN/rack issues, and malformed supporting data.</p></article><article><h3>Loader and adapter</h3><p><code>TssExternalScenarioLoader</code> loads local JSON through <code>UnityWebRequest</code>, validates it, and creates a temporary runtime <code>TssScenarioDefinition</code>. Authored ScriptableObject assets are never modified.</p></article><article><h3>Startup and ownership safeguards</h3><p>The menu displays valid external choices and disables duplicate clicks while loading. Runtime definitions pass through the existing launch handoff and are released when replaced or unloaded.</p></article><article><h3>Network and cabling continuity</h3><p>Student/scenario seeding still generates deterministic profiles. A bounded role/rack-range match resolves the CN-1 U30-to-U34 installation rule without changing endpoint IDs or physical scene data.</p></article><article><h3>Tools, tests, and documentation</h3><p>Editor commands rebuild the asset/facility catalog, export samples, and run focused tests. Documentation records the contract, limitations, recovery notes, and expected behaviors.</p></article></div>
+    </section>
+
+    <section id="validation" class="panel">
+      <p class="section-label">06 — Verification record</p><h2>What was tested</h2>
+      <div class="metrics"><div><strong>40 / 40</strong><span>Focused Edit Mode tests passed</span></div><div><strong>5 / 5</strong><span>Focused Play Mode tests passed</span></div><div><strong>4</strong><span>External choices tested from Main Menu</span></div></div>
+      <p>Focused coverage included menu launch, normalized student IDs, one active session, selected inventory and permanent links, actual rack/endpoint placement, placement evaluation, required cable connections, network evaluator cable conditions, all seven binder tabs, and invalid-file fallback/rejection paths.</p>
+      <aside class="callout warn"><strong>Scope note:</strong> the wider Edit Mode suite still has 18 unresolved failures that were not fixed by this feature. Packaging, device performance, and every manual network-training work package require separate verification.</aside>
+    </section>
+
+    <section id="graphify" class="panel">
+      <p class="section-label">07 — Graphify local model setup</p><h2>When Graphify needs a model</h2>
+      <p>Graphify can build code structure locally with deterministic AST extraction. It does <strong>not</strong> use a vector database or embeddings model for its graph queries. A generative model is optional for semantic extraction of documents and richer inferred relationships, not a prerequisite for code-only indexing.</p>
+      <div class="two-col"><div><h3>LM Studio recommendation</h3><p>Run a chat/instruct or coding model capable of following structured prompts—not an embedding-only model. Use the exact model ID exposed by LM Studio's <code>/v1/models</code> endpoint.</p><pre>$env:OPENAI_API_KEY = "lm-studio"
+$env:OPENAI_BASE_URL = "http://localhost:1234/v1"
+$env:OPENAI_MODEL = "&lt;LM Studio model id&gt;"
+
+graphify extract "C:\path\to\repo" `
+  --backend openai --max-concurrency 1 `
+  --token-budget 4000 --api-timeout 900</pre></div><div><h3>Why these settings</h3><ul><li>LM Studio exposes an OpenAI-compatible local server, commonly at <code>http://localhost:1234/v1</code>.</li><li><code>OPENAI_API_KEY</code> only needs a non-empty local value when the server does not require a real key.</li><li>One concurrent request is the safe starting point for a local model; increase only after observing stable throughput.</li><li>Graphify's installed package/skill version should be kept aligned before relying on a particular backend feature.</li></ul></div></div>
+    </section>
+
+    <section id="limits" class="panel final">
+      <p class="section-label">08 — Boundaries and next steps</p><h2>What this work does not change</h2>
+      <ul><li>It does not change Unity scene geometry, prefabs, manual transforms, endpoint labels, or existing singleton authority.</li><li>It does not make the web editor a replacement for Unity validation, source control, or device-build testing.</li><li>It does not add FMS, aircraft, map, or approach fields to TSS scenarios.</li><li>It does not require an LM Studio model for normal Graphify structural indexing.</li></ul>
+      <p class="closing">Use the editor to make focused JSON changes, let Unity validate and exercise those changes, and add a backend only when shared authoring, approvals, revision history, or remote delivery become real requirements.</p>
+    </section>
+  </main>
+  <footer>Prepared from the External Scenario Configuration implementation and Graphify local-model setup work. <span id="year"></span></footer>
+  <script src="script.js"></script>
+</body>
+</html>

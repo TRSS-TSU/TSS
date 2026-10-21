@@ -685,7 +685,7 @@ MonoBehaviour:
       scenarioHeading: CABLE RUN SCHEDULE - {ScenarioId}
       introParagraph: Punch-downs are permanent copper through walls and ceiling. Patch cords are field-replaceable. Cable type identifies the expected connection class.
     circuitLetter:
-      sectionTitle: Circuit Letter
+      sectionTitle: CIRCUIT HANDOFF LETTER
       scenarioHeading: CIRCUIT LETTER - {ScenarioId}
       intro: Tapped to the NID on the IT room wall. The only place your WAN addressing
         appears, so you never configure the provider side.
@@ -700,7 +700,7 @@ MonoBehaviour:
       - label: Mask
         value: 255.255.255.252
     wireless:
-      sectionTitle: Wireless
+      sectionTitle: WIRELESS AP CONFIG SHEET
       scenarioHeading: WIRELESS - {ScenarioId}
       intro: The WAP mounts on the Guest Lounge ceiling and lands on a spare switchport
         in the {ReceptionVlanName} VLAN. Configure it from IT1's browser at its management
