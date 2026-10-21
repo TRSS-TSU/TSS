@@ -1,0 +1,34 @@
+{
+    "format": "tss-scenario-manifest",
+    "schemaVersion": 1,
+    "scenarios": [
+        {
+            "scenarioId": "BALANCED_12_PIECE_LAB",
+            "displayName": "WP1 Physical Installation",
+            "jsonFile": "balanced-lab.json",
+            "sceneName": "TSS",
+            "description": "Original balanced facility exercise."
+        },
+        {
+            "scenarioId": "INSTALLATION_PRACTICE",
+            "displayName": "Installation Practice",
+            "jsonFile": "installation-practice.json",
+            "sceneName": "TSS",
+            "description": "Extra equipment and cables; start with the second rack."
+        },
+        {
+            "scenarioId": "NETWORK_VERIFICATION",
+            "displayName": "Network Verification",
+            "jsonFile": "network-verification.json",
+            "sceneName": "TSS",
+            "description": "Alternate VLAN bounds and additional endpoint diagnostics."
+        },
+        {
+            "scenarioId": "WIRELESS_READINESS",
+            "displayName": "Wireless Readiness",
+            "jsonFile": "wireless-readiness.json",
+            "sceneName": "TSS",
+            "description": "Wireless-focused binder and readiness checks with spare equipment."
+        }
+    ]
+}

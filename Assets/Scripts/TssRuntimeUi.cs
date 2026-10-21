@@ -1261,7 +1261,8 @@ private void RefreshSopPanel()
                     profile.DataVlan,
                     profile.NativeVlan,
                     profile.DeadVlan,
-                    session.Scenario.binderReference?.vlans
+                    session.Scenario.binderReference?.vlans,
+                    profile
                 );
                 continue;
             }

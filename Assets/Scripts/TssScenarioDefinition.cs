@@ -4,6 +4,7 @@ using UnityEngine;
 [CreateAssetMenu(menuName = "TSS/Scenario Definition")]
 public sealed class TssScenarioDefinition : ScriptableObject
 {
+    public bool IsExternalRuntime { get; internal set; }
     public string scenarioId;
     public string displayName;
     public string sceneName = "SampleScene";

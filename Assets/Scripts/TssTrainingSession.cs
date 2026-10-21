@@ -64,6 +64,8 @@ public sealed class TssTrainingSession : MonoBehaviour
 
     public void BeginScenario(TssScenarioDefinition scenario, string studentId = null)
     {
+        if (Scenario != scenario)
+            TssScenarioLaunchState.ReleaseRuntime(Scenario);
         Scenario = scenario;
         StudentId = studentId ?? string.Empty;
         HeldItem = null;
@@ -113,6 +115,12 @@ public sealed class TssTrainingSession : MonoBehaviour
         RefreshInterfaceCarriers();
         RefreshPlacedDesktopConnectivity();
         StateChanged?.Invoke();
+    }
+
+    private void OnDestroy()
+    {
+        TssScenarioLaunchState.ReleaseRuntime(Scenario);
+        if (Instance == this) Instance = null;
     }
 
     private void RefreshPlacedDesktopConnectivity()
@@ -723,13 +731,17 @@ public sealed class TssTrainingSession : MonoBehaviour
 
         foreach (var requirement in Scenario?.cableTypeRequirements ?? System.Array.Empty<ScenarioCableTypeRequirement>())
         {
-            if (requirement == null || HasPlayerConnection(requirement.endpointAId, requirement.endpointBId))
+            if (requirement == null)
+                continue;
+            var endpointA = ResolveRequiredRackEndpoint(requirement.endpointAId);
+            var endpointB = ResolveRequiredRackEndpoint(requirement.endpointBId);
+            if (HasPlayerConnection(endpointA, endpointB))
                 continue;
 
             statuses.Add(new TssCableTypeStatus(
                 requirement.requirementId,
-                requirement.endpointAId,
-                requirement.endpointBId,
+                endpointA,
+                endpointB,
                 requirement.requiredCableType,
                 requirement.requiredCableType,
                 false,
@@ -1205,11 +1217,37 @@ public sealed class TssTrainingSession : MonoBehaviour
     {
         foreach (var requirement in Scenario?.cableTypeRequirements ?? System.Array.Empty<ScenarioCableTypeRequirement>())
         {
-            if (requirement != null && EndpointPairMatches(requirement.endpointAId, requirement.endpointBId, endpointAId, endpointBId))
+            if (requirement != null && EndpointPairMatches(ResolveRequiredRackEndpoint(requirement.endpointAId), ResolveRequiredRackEndpoint(requirement.endpointBId), endpointAId, endpointBId))
                 return requirement.requiredCableType;
         }
 
         return Scenario ? Scenario.defaultPlayerCableType : TssCableType.StraightThrough;
+    }
+
+    private string ResolveRequiredRackEndpoint(string endpointId)
+    {
+        if (string.IsNullOrEmpty(endpointId)) return endpointId;
+        // A role's authored U identifies its port; allowed placement ranges can move that device.
+        // Resolve only scenario requirements. Never rewrite physical endpoint IDs or authored data.
+        foreach (var binding in Scenario?.networkScenario?.roleBindings ?? Array.Empty<NetworkRoleBinding>())
+        {
+            if (binding == null || string.IsNullOrEmpty(binding.deviceKey) || !endpointId.StartsWith(binding.deviceKey + ":", StringComparison.Ordinal)) continue;
+            foreach (var expected in Scenario.expectedRackPlacements ?? Array.Empty<ExpectedRackPlacement>())
+            {
+                if (expected == null || expected.requiredName != binding.role || expected.category != binding.category) continue;
+                var firstU = expected.endingU == 0 ? expected.startingU : Math.Min(expected.startingU, expected.endingU);
+                var lastU = Math.Max(expected.startingU, expected.endingU);
+                var prefix = $"Rack:{expected.rackId}:U";
+                if (!binding.deviceKey.StartsWith(prefix, StringComparison.Ordinal) ||
+                    !int.TryParse(binding.deviceKey.Substring(prefix.Length), out var authoredU) || authoredU < firstU || authoredU > lastU) continue;
+                foreach (var installed in _installed)
+                    if (installed.RackId == expected.rackId && installed.DeviceName == expected.requiredName &&
+                        installed.Equipment && installed.Equipment.category == expected.category &&
+                        installed.StartingU >= firstU && installed.StartingU <= lastU)
+                        return GetRackOwnerPrefix(installed.RackId, installed.StartingU) + endpointId.Substring(binding.deviceKey.Length);
+            }
+        }
+        return endpointId;
     }
 
     private bool HasPlayerConnection(string endpointAId, string endpointBId)
@@ -1417,8 +1455,16 @@ public static class TssScenarioLaunchState
 
     public static void Select(TssScenarioDefinition scenario, string studentId = null)
     {
+        if (_selectedScenario != scenario) ReleaseRuntime(_selectedScenario);
         _selectedScenario = scenario;
         _studentId = studentId ?? string.Empty;
+    }
+
+    public static void ReleaseRuntime(TssScenarioDefinition scenario)
+    {
+        if (!scenario || !scenario.IsExternalRuntime) return;
+        if (Application.isPlaying) UnityEngine.Object.Destroy(scenario);
+        else UnityEngine.Object.DestroyImmediate(scenario);
     }
 
     public static bool TryCreateStudentId(string lastName, string computerNumber, out string studentId)

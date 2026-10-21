@@ -8,7 +8,7 @@ public sealed class TssVlanTabPresenter : MonoBehaviour
     [SerializeField] private Text[] vlanIds;
     [SerializeField] private Text endingParagraph;
 
-    public void SetValues(string scenarioId, int managementVlan, int receptionVlan, int dataVlan, int nativeVlan, int deadVlan, TssBinderVlanContent content = null)
+    public void SetValues(string scenarioId, int managementVlan, int receptionVlan, int dataVlan, int nativeVlan, int deadVlan, TssBinderVlanContent content = null, TssNetworkRunProfile profile = null)
     {
         if (scenarioHeading)
             scenarioHeading.text = string.IsNullOrWhiteSpace(content?.scenarioHeading)
@@ -20,6 +20,16 @@ public sealed class TssVlanTabPresenter : MonoBehaviour
         SetVlanId(2, dataVlan);
         SetVlanId(3, nativeVlan);
         SetVlanId(4, deadVlan);
+
+        if (profile != null)
+        {
+            var names = new[] { profile.ManagementVlanName, profile.ReceptionVlanName, profile.DataVlanName, profile.NativeVlanName, profile.DeadVlanName };
+            for (var i = 0; i < names.Length; i++)
+            {
+                var label = transform.Find($"VlanTable/Row{i + 2:00}/Cell02/Text")?.GetComponent<Text>();
+                if (label) label.text = names[i];
+            }
+        }
 
         if (endingParagraph)
         {

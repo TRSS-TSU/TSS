@@ -1,0 +1,1031 @@
+{
+    "format": "tss-scenario",
+    "schemaVersion": 1,
+    "scenarioId": "WIRELESS_READINESS",
+    "displayName": "Wireless Readiness",
+    "sceneName": "TSS",
+    "inventory": [
+        {
+            "equipmentId": "EQ_PDU_1U",
+            "quantity": 2
+        },
+        {
+            "equipmentId": "EQ_CISCO_2960_POE_1U",
+            "quantity": 2
+        },
+        {
+            "equipmentId": "EQ_ROUTER_1U",
+            "quantity": 1
+        },
+        {
+            "equipmentId": "EQ_SERVER_2U",
+            "quantity": 1
+        },
+        {
+            "equipmentId": "EQ_DESKTOP_PC",
+            "quantity": 7
+        },
+        {
+            "equipmentId": "EQ_PRINTER",
+            "quantity": 2
+        },
+        {
+            "equipmentId": "EQ_ACCESS_POINT",
+            "quantity": 2
+        },
+        {
+            "equipmentId": "EQ_LAPTOP",
+            "quantity": 1
+        }
+    ],
+    "cableInventory": [
+        {
+            "cableId": "straight-through",
+            "quantity": 35
+        },
+        {
+            "cableId": "crossover",
+            "quantity": 10
+        },
+        {
+            "cableId": "rollover",
+            "quantity": 10
+        }
+    ],
+    "defaultPlayerCableType": 0,
+    "cableTypeRequirements": [
+        {
+            "requirementId": "InterClosetRack01",
+            "endpointAId": "Rack:Rack01:U35:Fa01",
+            "endpointBId": "PatchPanel:Rack01:Port48",
+            "requiredCableType": 1
+        },
+        {
+            "requirementId": "InterClosetRack02",
+            "endpointAId": "Rack:Rack02:U35:Fa01",
+            "endpointBId": "PatchPanel:Rack02:Port48",
+            "requiredCableType": 0
+        },
+        {
+            "requirementId": "DemarcWan",
+            "endpointAId": "Rack:Rack01:U30:Fa01",
+            "endpointBId": "PatchPanel:Rack01:Port18",
+            "requiredCableType": 0
+        }
+    ],
+    "permanentConnections": [
+        {
+            "connectionId": "Infrastructure001",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port01",
+            "wallportEndpointId": "WallPort:Reception:Port01",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure001:A",
+            "endpointBTerminationModuleId": "Infrastructure001:B"
+        },
+        {
+            "connectionId": "Infrastructure002",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port02",
+            "wallportEndpointId": "WallPort:Reception:Port02",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure002:A",
+            "endpointBTerminationModuleId": "Infrastructure002:B"
+        },
+        {
+            "connectionId": "Infrastructure003",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port03",
+            "wallportEndpointId": "WallPort:Reception:Port03",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure003:A",
+            "endpointBTerminationModuleId": "Infrastructure003:B"
+        },
+        {
+            "connectionId": "Infrastructure004",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port04",
+            "wallportEndpointId": "WallPort:Reception:Port04",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure004:A",
+            "endpointBTerminationModuleId": "Infrastructure004:B"
+        },
+        {
+            "connectionId": "Infrastructure005",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port01",
+            "wallportEndpointId": "WallPort:Floor02:Office01:Wallport01:Port01",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure005:A",
+            "endpointBTerminationModuleId": "Infrastructure005:B"
+        },
+        {
+            "connectionId": "Infrastructure006",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port02",
+            "wallportEndpointId": "WallPort:Floor02:Office01:Wallport01:Port02",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure006:A",
+            "endpointBTerminationModuleId": "Infrastructure006:B"
+        },
+        {
+            "connectionId": "Infrastructure007",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port03",
+            "wallportEndpointId": "WallPort:Floor02:Office01:Wallport01:Port03",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure007:A",
+            "endpointBTerminationModuleId": "Infrastructure007:B"
+        },
+        {
+            "connectionId": "Infrastructure008",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port04",
+            "wallportEndpointId": "WallPort:Floor02:Office01:Wallport01:Port04",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure008:A",
+            "endpointBTerminationModuleId": "Infrastructure008:B"
+        },
+        {
+            "connectionId": "Infrastructure009",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port05",
+            "wallportEndpointId": "WallPort:Floor02:Office02:Wallport01:Port01",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure009:A",
+            "endpointBTerminationModuleId": "Infrastructure009:B"
+        },
+        {
+            "connectionId": "Infrastructure010",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port06",
+            "wallportEndpointId": "WallPort:Floor02:Office02:Wallport01:Port02",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure010:A",
+            "endpointBTerminationModuleId": "Infrastructure010:B"
+        },
+        {
+            "connectionId": "Infrastructure011",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port07",
+            "wallportEndpointId": "WallPort:Floor02:Office02:Wallport01:Port03",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure011:A",
+            "endpointBTerminationModuleId": "Infrastructure011:B"
+        },
+        {
+            "connectionId": "Infrastructure012",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port08",
+            "wallportEndpointId": "WallPort:Floor02:Office02:Wallport01:Port04",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure012:A",
+            "endpointBTerminationModuleId": "Infrastructure012:B"
+        },
+        {
+            "connectionId": "Infrastructure013",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port48",
+            "wallportEndpointId": "PatchPanel:Rack02:Port48",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure013:A",
+            "endpointBTerminationModuleId": "Infrastructure013:B"
+        },
+        {
+            "connectionId": "Infrastructure014",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port05",
+            "wallportEndpointId": "WallPort:Floor01:Office01:Wallport01:Port01",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure014:A",
+            "endpointBTerminationModuleId": "Infrastructure014:B"
+        },
+        {
+            "connectionId": "Infrastructure015",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port06",
+            "wallportEndpointId": "WallPort:Floor01:Office01:Wallport01:Port02",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure015:A",
+            "endpointBTerminationModuleId": "Infrastructure015:B"
+        },
+        {
+            "connectionId": "Infrastructure016",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port07",
+            "wallportEndpointId": "WallPort:Floor01:Office01:Wallport01:Port03",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure016:A",
+            "endpointBTerminationModuleId": "Infrastructure016:B"
+        },
+        {
+            "connectionId": "Infrastructure017",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port08",
+            "wallportEndpointId": "WallPort:Floor01:Office01:Wallport01:Port04",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure017:A",
+            "endpointBTerminationModuleId": "Infrastructure017:B"
+        },
+        {
+            "connectionId": "Infrastructure018",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port09",
+            "wallportEndpointId": "WallPort:Floor01:Office02:Wallport01:Port01",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure018:A",
+            "endpointBTerminationModuleId": "Infrastructure018:B"
+        },
+        {
+            "connectionId": "Infrastructure019",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port10",
+            "wallportEndpointId": "WallPort:Floor01:Office02:Wallport01:Port02",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure019:A",
+            "endpointBTerminationModuleId": "Infrastructure019:B"
+        },
+        {
+            "connectionId": "Infrastructure020",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port11",
+            "wallportEndpointId": "WallPort:Floor01:Office02:Wallport01:Port03",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure020:A",
+            "endpointBTerminationModuleId": "Infrastructure020:B"
+        },
+        {
+            "connectionId": "Infrastructure021",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port12",
+            "wallportEndpointId": "WallPort:Floor01:Office02:Wallport01:Port04",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure021:A",
+            "endpointBTerminationModuleId": "Infrastructure021:B"
+        },
+        {
+            "connectionId": "Infrastructure022",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port13",
+            "wallportEndpointId": "WallPort:Floor01:Office03:Wallport01:Port01",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure022:A",
+            "endpointBTerminationModuleId": "Infrastructure022:B"
+        },
+        {
+            "connectionId": "Infrastructure023",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port14",
+            "wallportEndpointId": "WallPort:Floor01:Office03:Wallport01:Port02",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure023:A",
+            "endpointBTerminationModuleId": "Infrastructure023:B"
+        },
+        {
+            "connectionId": "Infrastructure024",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port15",
+            "wallportEndpointId": "WallPort:Floor01:Office03:Wallport01:Port03",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure024:A",
+            "endpointBTerminationModuleId": "Infrastructure024:B"
+        },
+        {
+            "connectionId": "Infrastructure025",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port16",
+            "wallportEndpointId": "WallPort:Floor01:Office03:Wallport01:Port04",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure025:A",
+            "endpointBTerminationModuleId": "Infrastructure025:B"
+        },
+        {
+            "connectionId": "Infrastructure026",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port09",
+            "wallportEndpointId": "WallPort:Floor02:Office03:Wallport01:Port01",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure026:A",
+            "endpointBTerminationModuleId": "Infrastructure026:B"
+        },
+        {
+            "connectionId": "Infrastructure027",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port10",
+            "wallportEndpointId": "WallPort:Floor02:Office03:Wallport01:Port02",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure027:A",
+            "endpointBTerminationModuleId": "Infrastructure027:B"
+        },
+        {
+            "connectionId": "Infrastructure028",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port11",
+            "wallportEndpointId": "WallPort:Floor02:Office03:Wallport01:Port03",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure028:A",
+            "endpointBTerminationModuleId": "Infrastructure028:B"
+        },
+        {
+            "connectionId": "Infrastructure029",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port12",
+            "wallportEndpointId": "WallPort:Floor02:Office03:Wallport01:Port04",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure029:A",
+            "endpointBTerminationModuleId": "Infrastructure029:B"
+        },
+        {
+            "connectionId": "Infrastructure030",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port13",
+            "wallportEndpointId": "WallPort:Floor02:Office03:Wallport02:Port01",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure030:A",
+            "endpointBTerminationModuleId": "Infrastructure030:B"
+        },
+        {
+            "connectionId": "Infrastructure031",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port14",
+            "wallportEndpointId": "WallPort:Floor02:Office03:Wallport02:Port02",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure031:A",
+            "endpointBTerminationModuleId": "Infrastructure031:B"
+        },
+        {
+            "connectionId": "Infrastructure032",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port15",
+            "wallportEndpointId": "WallPort:Floor02:Office03:Wallport02:Port03",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure032:A",
+            "endpointBTerminationModuleId": "Infrastructure032:B"
+        },
+        {
+            "connectionId": "Infrastructure033",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port16",
+            "wallportEndpointId": "WallPort:Floor02:Office03:Wallport02:Port04",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure033:A",
+            "endpointBTerminationModuleId": "Infrastructure033:B"
+        },
+        {
+            "connectionId": "Infrastructure034",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port17",
+            "wallportEndpointId": "WallPort:Floor02:Office04:Wallport01:Port01",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure034:A",
+            "endpointBTerminationModuleId": "Infrastructure034:B"
+        },
+        {
+            "connectionId": "Infrastructure035",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port18",
+            "wallportEndpointId": "WallPort:Floor02:Office04:Wallport01:Port02",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure035:A",
+            "endpointBTerminationModuleId": "Infrastructure035:B"
+        },
+        {
+            "connectionId": "Infrastructure036",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port19",
+            "wallportEndpointId": "WallPort:Floor02:Office04:Wallport01:Port03",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure036:A",
+            "endpointBTerminationModuleId": "Infrastructure036:B"
+        },
+        {
+            "connectionId": "Infrastructure037",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port20",
+            "wallportEndpointId": "WallPort:Floor02:Office04:Wallport01:Port04",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure037:A",
+            "endpointBTerminationModuleId": "Infrastructure037:B"
+        },
+        {
+            "connectionId": "Infrastructure038",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port21",
+            "wallportEndpointId": "WallPort:Floor02:Office05:Wallport01:Port01",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure038:A",
+            "endpointBTerminationModuleId": "Infrastructure038:B"
+        },
+        {
+            "connectionId": "Infrastructure039",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port22",
+            "wallportEndpointId": "WallPort:Floor02:Office05:Wallport01:Port02",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure039:A",
+            "endpointBTerminationModuleId": "Infrastructure039:B"
+        },
+        {
+            "connectionId": "Infrastructure040",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port23",
+            "wallportEndpointId": "WallPort:Floor02:Office05:Wallport01:Port03",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure040:A",
+            "endpointBTerminationModuleId": "Infrastructure040:B"
+        },
+        {
+            "connectionId": "Infrastructure041",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack02:Port24",
+            "wallportEndpointId": "WallPort:Floor02:Office05:Wallport01:Port04",
+            "requiresPunchDownTermination": true,
+            "endpointATerminationModuleId": "Infrastructure041:A",
+            "endpointBTerminationModuleId": "Infrastructure041:B"
+        },
+        {
+            "connectionId": "Infrastructure043",
+            "cableId": "straight-through",
+            "cableType": 0,
+            "patchPanelEndpointId": "PatchPanel:Rack01:Port18",
+            "wallportEndpointId": "Demarc:Provider:Port01",
+            "requiresPunchDownTermination": false,
+            "endpointATerminationModuleId": "",
+            "endpointBTerminationModuleId": ""
+        }
+    ],
+    "cableSchedule": [
+        {
+            "fromEndpoint": "AN-1",
+            "fromPort": "Port 1",
+            "toEndpoint": "AN-2",
+            "toPort": "Port 1",
+            "cableType": "Crossover"
+        },
+        {
+            "fromEndpoint": "IT1",
+            "fromPort": "NIC",
+            "toEndpoint": "AN-1",
+            "toPort": "Port 2",
+            "cableType": "Straight"
+        },
+        {
+            "fromEndpoint": "IT2",
+            "fromPort": "NIC",
+            "toEndpoint": "AN-1",
+            "toPort": "Port 5",
+            "cableType": "Straight"
+        },
+        {
+            "fromEndpoint": "Reception1",
+            "fromPort": "NIC",
+            "toEndpoint": "Reception Mount",
+            "toPort": "Port 1",
+            "cableType": "Straight"
+        },
+        {
+            "fromEndpoint": "Reception2",
+            "fromPort": "NIC",
+            "toEndpoint": "Reception Mount",
+            "toPort": "Port 2",
+            "cableType": "Straight"
+        },
+        {
+            "fromEndpoint": "Reception Mount",
+            "fromPort": "Punch 1",
+            "toEndpoint": "Patch1",
+            "toPort": "Punch 1",
+            "cableType": "Structural"
+        },
+        {
+            "fromEndpoint": "Reception Mount",
+            "fromPort": "Punch 2",
+            "toEndpoint": "Patch1",
+            "toPort": "Punch 2",
+            "cableType": "Structural"
+        },
+        {
+            "fromEndpoint": "Patch1",
+            "fromPort": "Port 1",
+            "toEndpoint": "AN-1",
+            "toPort": "Port 3",
+            "cableType": "Patch cord"
+        },
+        {
+            "fromEndpoint": "Patch1",
+            "fromPort": "Port 2",
+            "toEndpoint": "AN-1",
+            "toPort": "Port 4",
+            "cableType": "Patch cord"
+        },
+        {
+            "fromEndpoint": "Data1",
+            "fromPort": "NIC",
+            "toEndpoint": "Office 1 Mount",
+            "toPort": "Port 1",
+            "cableType": "Straight"
+        },
+        {
+            "fromEndpoint": "Data2",
+            "fromPort": "NIC",
+            "toEndpoint": "Office 2 Mount",
+            "toPort": "Port 1",
+            "cableType": "Straight"
+        },
+        {
+            "fromEndpoint": "Data3",
+            "fromPort": "NIC",
+            "toEndpoint": "Office 2 Mount",
+            "toPort": "Port 2",
+            "cableType": "Straight"
+        },
+        {
+            "fromEndpoint": "Office 1 Mount",
+            "fromPort": "Punch 1",
+            "toEndpoint": "Patch2",
+            "toPort": "Punch 1",
+            "cableType": "Structural"
+        },
+        {
+            "fromEndpoint": "Office 2 Mount",
+            "fromPort": "Punch 1",
+            "toEndpoint": "Patch2",
+            "toPort": "Punch 2",
+            "cableType": "Structural"
+        },
+        {
+            "fromEndpoint": "Office 2 Mount",
+            "fromPort": "Punch 2",
+            "toEndpoint": "Patch2",
+            "toPort": "Punch 3",
+            "cableType": "Structural"
+        },
+        {
+            "fromEndpoint": "Patch2",
+            "fromPort": "Port 1",
+            "toEndpoint": "AN-2",
+            "toPort": "Port 2",
+            "cableType": "Patch cord"
+        },
+        {
+            "fromEndpoint": "Patch2",
+            "fromPort": "Port 2",
+            "toEndpoint": "AN-2",
+            "toPort": "Port 3",
+            "cableType": "Patch cord"
+        },
+        {
+            "fromEndpoint": "Patch2",
+            "fromPort": "Port 3",
+            "toEndpoint": "AN-2",
+            "toPort": "Port 4",
+            "cableType": "Patch cord"
+        }
+    ],
+    "namingRows": [
+        {
+            "rackId": "Rack01",
+            "slot": "Rear U38 - U35",
+            "device": "Rack PDU",
+            "assignedName": "PDU1",
+            "rationale": "Power at the top rear, away from data cabling"
+        },
+        {
+            "rackId": "Rack01",
+            "slot": "Front U40",
+            "device": "24-port Patch Panel",
+            "assignedName": "Patch1",
+            "rationale": "Directly above its switch - short patch runs"
+        },
+        {
+            "rackId": "Rack01",
+            "slot": "Front U38 - U35",
+            "device": "24-port Switch",
+            "assignedName": "AN-1",
+            "rationale": "Access node, ground floor"
+        },
+        {
+            "rackId": "Rack01",
+            "slot": "Front U34 - U38",
+            "device": "Core Router",
+            "assignedName": "CN-1",
+            "rationale": "Below the switch it trunks to; feeds the demarc"
+        },
+        {
+            "rackId": "Rack01",
+            "slot": "Front U8 - U3",
+            "device": "Rack Server",
+            "assignedName": "IT2",
+            "rationale": "Heavy and hot - lowest in the rack"
+        },
+        {
+            "rackId": "Rack02",
+            "slot": "Rear U38 - U35",
+            "device": "Rack PDU",
+            "assignedName": "PDU2",
+            "rationale": ""
+        },
+        {
+            "rackId": "Rack02",
+            "slot": "Front U40",
+            "device": "Patch Panel",
+            "assignedName": "Patch2",
+            "rationale": ""
+        },
+        {
+            "rackId": "Rack02",
+            "slot": "Front U38 - U35",
+            "device": "24-port Switch",
+            "assignedName": "AN-2",
+            "rationale": ""
+        }
+    ],
+    "racks": [
+        {
+            "rackId": "Rack01",
+            "lowestU": 3,
+            "highestU": 38,
+            "firstInstallableU": 3,
+            "lastInstallableU": 38,
+            "reservedUPositions": [
+                40
+            ]
+        },
+        {
+            "rackId": "Rack02",
+            "lowestU": 3,
+            "highestU": 38,
+            "firstInstallableU": 3,
+            "lastInstallableU": 38,
+            "reservedUPositions": [
+                40
+            ]
+        }
+    ],
+    "expectedRackPlacements": [
+        {
+            "phaseLabel": "Phase 1",
+            "rackId": "Rack01",
+            "startingU": 35,
+            "endingU": 38,
+            "category": 3,
+            "requiredName": "PDU1"
+        },
+        {
+            "phaseLabel": "Phase 1",
+            "rackId": "Rack01",
+            "startingU": 35,
+            "endingU": 38,
+            "category": 1,
+            "requiredName": "AN-1"
+        },
+        {
+            "phaseLabel": "Phase 1",
+            "rackId": "Rack01",
+            "startingU": 30,
+            "endingU": 34,
+            "category": 0,
+            "requiredName": "CN-1"
+        },
+        {
+            "phaseLabel": "Phase 1",
+            "rackId": "Rack01",
+            "startingU": 3,
+            "endingU": 8,
+            "category": 4,
+            "requiredName": "IT2"
+        },
+        {
+            "phaseLabel": "Phase 2",
+            "rackId": "Rack02",
+            "startingU": 35,
+            "endingU": 38,
+            "category": 3,
+            "requiredName": "PDU2"
+        },
+        {
+            "phaseLabel": "Phase 2",
+            "rackId": "Rack02",
+            "startingU": 35,
+            "endingU": 38,
+            "category": 1,
+            "requiredName": "AN-2"
+        }
+    ],
+    "expectedEndpointPlacements": [
+        {
+            "phaseLabel": "Phase 3",
+            "stationId": "ITDesk",
+            "category": 6,
+            "requiredName": "IT1"
+        },
+        {
+            "phaseLabel": "Phase 3",
+            "stationId": "ReceptionDesk",
+            "category": 6,
+            "requiredName": "Reception1"
+        },
+        {
+            "phaseLabel": "Phase 3",
+            "stationId": "ReceptionDesk",
+            "category": 7,
+            "requiredName": "Reception2"
+        },
+        {
+            "phaseLabel": "Phase 4",
+            "stationId": "Office1Desk",
+            "category": 6,
+            "requiredName": "Data1"
+        },
+        {
+            "phaseLabel": "Phase 4",
+            "stationId": "Office2Desk",
+            "category": 6,
+            "requiredName": "Data2"
+        },
+        {
+            "phaseLabel": "Phase 4",
+            "stationId": "Office2Desk",
+            "category": 7,
+            "requiredName": "Data3"
+        },
+        {
+            "phaseLabel": "Phase 4",
+            "stationId": "LobbyTable01",
+            "category": 8,
+            "requiredName": "AP-1"
+        },
+        {
+            "phaseLabel": "Phase 4",
+            "stationId": "LobbyTable01",
+            "category": 9,
+            "requiredName": "TestLaptop"
+        }
+    ],
+    "networkScenario": {
+        "enableLayer23Simulation": true,
+        "profileSeed": 20261008,
+        "managementVlanName": "Management",
+        "receptionVlanName": "Reception",
+        "dataVlanName": "Data",
+        "nativeVlanName": "Native",
+        "deadVlanName": "Dead_Vlan",
+        "dhcpNetworkNames": [
+            "Reception"
+        ],
+        "vlanMinimum": 10,
+        "vlanMaximum": 390,
+        "endpointAliases": [
+            "IT1",
+            "IT2",
+            "Reception1",
+            "Reception2",
+            "Data1",
+            "Data2",
+            "Data3",
+            "AP-1"
+        ],
+        "roleBindings": [
+            {
+                "role": "AN-1",
+                "deviceKey": "Rack:Rack01:U35",
+                "category": 1,
+                "displayName": "AN-1"
+            },
+            {
+                "role": "AN-2",
+                "deviceKey": "Rack:Rack02:U35",
+                "category": 1,
+                "displayName": "AN-2"
+            },
+            {
+                "role": "CN-1",
+                "deviceKey": "Rack:Rack01:U30",
+                "category": 0,
+                "displayName": "CN-1"
+            }
+        ],
+        "requiredPorts": [
+            {
+                "deviceRole": "AN-1",
+                "interfaceName": "Fa0/2",
+                "endpointId": "IT1"
+            },
+            {
+                "deviceRole": "AN-1",
+                "interfaceName": "Fa0/3",
+                "endpointId": "Reception1"
+            },
+            {
+                "deviceRole": "AN-1",
+                "interfaceName": "Fa0/4",
+                "endpointId": "Reception2"
+            },
+            {
+                "deviceRole": "AN-1",
+                "interfaceName": "Fa0/5",
+                "endpointId": "IT2"
+            },
+            {
+                "deviceRole": "AN-2",
+                "interfaceName": "Fa0/2",
+                "endpointId": "Data1"
+            },
+            {
+                "deviceRole": "AN-2",
+                "interfaceName": "Fa0/3",
+                "endpointId": "Data2"
+            },
+            {
+                "deviceRole": "AN-2",
+                "interfaceName": "Fa0/4",
+                "endpointId": "Data3"
+            }
+        ],
+        "evidenceRequirements": [
+            {
+                "evidenceId": "IT1-provider",
+                "command": "ping provider",
+                "description": "Endpoint-originated provider diagnostic"
+            },
+            {
+                "evidenceId": "Wireless-provider-trace",
+                "command": "tracert provider",
+                "description": "Record a provider route trace during wireless readiness checks."
+            }
+        ]
+    },
+    "binderReference": {
+        "namingAndRacks": {
+            "sectionTitle": "Naming & Racks",
+            "scenarioHeading": "NAMING & RACKS - {ScenarioId}",
+            "intro": "Wireless-focused binder and readiness checks with spare equipment. AN = Access Node (switch). CN = Core Node (router). Rack order is not cosmetic; power stays at the top, the patch panel sits directly above the switch it feeds, the router sits below its uplink switch, and the heavy box stays lowest for stability."
+        },
+        "vlans": {
+            "sectionTitle": "VLANs",
+            "scenarioHeading": "VLAN ASSIGNMENT - {ScenarioId}",
+            "intro": "These IDs are yours. Build this database on both switches; VLAN databases are locally significant, so AN-2 will not learn AN-1's VLANs across the trunk.",
+            "endingParagraph": "Trunk (Fa0/1 both switches): 802.1Q, allowed {ManagementVlan},{ReceptionVlan},{DataVlan}, native {NativeVlan}. Every unused port: access VLAN {DeadVlan} + shutdown."
+        },
+        "ipPlan": {
+            "sectionTitle": "IP Plan",
+            "scenarioHeading": "ADDRESSING PLAN - {ScenarioId}",
+            "hostAddressesHeading": "HOST ADDRESSES",
+            "paragraph": "All networks are /24. The gateway is always .1 and lives on a CN-1 sub-interface, never on a switch."
+        },
+        "cableSchedule": {
+            "sectionTitle": "Cable Schedule",
+            "scenarioHeading": "CABLE RUN SCHEDULE - {ScenarioId}",
+            "introParagraph": "Training variant: Wireless Readiness. Punch-downs are permanent copper through walls and ceiling. Patch cords are field-replaceable. Cable type identifies the expected connection class."
+        },
+        "circuitLetter": {
+            "sectionTitle": "Circuit Letter",
+            "scenarioHeading": "CIRCUIT LETTER - {ScenarioId}",
+            "intro": "Tapped to the NID on the IT room wall. The only place your WAN addressing appears, so you never configure the provider side.",
+            "note": "Customer shall install a default route toward {WanProviderAddress}.",
+            "rows": [
+                {
+                    "label": "Circuit ID",
+                    "value": "{CircuitId}"
+                },
+                {
+                    "label": "Provider side",
+                    "value": "{WanProviderAddress} /30"
+                },
+                {
+                    "label": "Customer side",
+                    "value": "{WanCustomerAddress} /30"
+                },
+                {
+                    "label": "Mask",
+                    "value": "255.255.255.252"
+                }
+            ]
+        },
+        "wireless": {
+            "sectionTitle": "Wireless",
+            "scenarioHeading": "WIRELESS - {ScenarioId}",
+            "intro": "Wireless readiness: configure AP-1, associate TestLaptop, then verify provider access. The WAP mounts on the Guest Lounge ceiling and lands on a spare switchport in the {ReceptionVlanName} VLAN. Configure it from IT1's browser at its management IP.",
+            "note": "1, 6, and 11 are the only non-overlapping 2.4 GHz channels in North America. Use the assigned channel, disable WPS, and change the AP admin password.",
+            "rows": [
+                {
+                    "label": "AP name",
+                    "value": "WAP1"
+                },
+                {
+                    "label": "SSID",
+                    "value": "{Ssid}"
+                },
+                {
+                    "label": "Security",
+                    "value": "WPA2-PSK (AES)"
+                },
+                {
+                    "label": "Passphrase",
+                    "value": "{WifiPassphrase}"
+                },
+                {
+                    "label": "Channel",
+                    "value": "{WirelessChannel} (2.4 GHz)"
+                },
+                {
+                    "label": "WPS",
+                    "value": "DISABLED"
+                },
+                {
+                    "label": "Admin password",
+                    "value": "{ApAdminPassword}"
+                },
+                {
+                    "label": "Uplink VLAN",
+                    "value": "{ReceptionVlanName} (VLAN {ReceptionVlan})"
+                },
+                {
+                    "label": "Management IP",
+                    "value": "{ApManagementAddress}"
+                },
+                {
+                    "label": "Broadcast SSID",
+                    "value": "Enabled"
+                }
+            ]
+        },
+        "credentials": {
+            "sectionTitle": "Credentials",
+            "scenarioHeading": "CREDENTIALS - {ScenarioId}",
+            "intro": "Apply identically to AN-1, AN-2, and CN-1. These values are generated for the current training run.",
+            "note": "The banner is a legal requirement, not decoration. Without it, prosecuting unauthorized access gets much harder.",
+            "rows": [
+                {
+                    "label": "Console password",
+                    "value": "{ConsolePassword}"
+                },
+                {
+                    "label": "VTY password",
+                    "value": "{VtyPassword}"
+                },
+                {
+                    "label": "Enable secret",
+                    "value": "{EnableSecret}"
+                },
+                {
+                    "label": "Local user",
+                    "value": "admin / 12#$Qwert"
+                },
+                {
+                    "label": "Login banner",
+                    "value": "{Motd}"
+                },
+                {
+                    "label": "Password encryption",
+                    "value": "service password-encryption"
+                },
+                {
+                    "label": "Domain lookup",
+                    "value": "no ip domain-lookup"
+                }
+            ]
+        }
+    }
+}

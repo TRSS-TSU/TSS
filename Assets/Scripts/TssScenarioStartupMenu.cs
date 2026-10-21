@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -12,17 +15,72 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
     [SerializeField] private GameObject scenarioMenuCanvasPrefab;
     [SerializeField] private GameObject scenarioButtonPrefab;
 
-    private void Start()
+    private Transform buttonsContainer;
+    private InputField lastNameInput;
+    private InputField computerNumberInput;
+    private Text validation;
+    private Text loadStatus;
+    private TssExternalScenarioLoader loader;
+    private readonly List<Button> buttons = new();
+    private bool launching;
+    private bool fallbackAdded;
+    public bool IsReady { get; private set; }
+
+    private async void Start()
     {
         if (!session)
             session = FindFirstObjectByType<TssTrainingSession>();
 
         BuildMenu();
+        if (!buttonsContainer) return;
+        loader = new TssExternalScenarioLoader(Resources.Load<TssScenarioCatalog>(TssScenarioCatalog.ResourcePath));
+        try
+        {
+            var manifest = await loader.LoadManifestAsync();
+            foreach (var entry in manifest.scenarios)
+            {
+                try
+                {
+                    var preview = await loader.LoadScenarioAsync(entry.scenarioId);
+                    TssScenarioLaunchState.ReleaseRuntime(preview);
+                    if (!this) return;
+                    AddButton(entry.displayName, () => LaunchAsync(entry, null));
+                }
+                catch (Exception ex)
+                {
+                    loader.Warnings.Add(entry.displayName + ": " + ex.Message);
+                }
+            }
+            if (!this) return;
+            if (loader.Warnings.Count > 0 || buttons.Count == 0)
+            {
+                loadStatus.text = "Some external scenarios are unavailable. Built-in fallback is listed below.";
+                foreach (var warning in loader.Warnings) Debug.LogWarning("[TSS Scenarios] " + warning);
+                AddFallbackButtons();
+            }
+            else loadStatus.text = "Choose a scenario to begin.";
+        }
+        catch (Exception ex)
+        {
+            if (!this) return;
+            Debug.LogWarning("[TSS Scenarios] " + ex.Message);
+            loadStatus.text = "External scenarios unavailable. Using built-in scenarios.";
+            AddFallbackButtons();
+        }
+        if (!this) return;
+        IsReady = true;
+        foreach (var button in buttons) button.interactable = true;
+        if (buttons.Count == 0) loadStatus.text = "No scenarios available. Check the scenario catalog and menu configuration.";
     }
 
     private void BuildMenu()
     {
         EnsureEventSystem();
+        if (!scenarioButtonPrefab)
+        {
+            Debug.LogWarning("TssScenarioStartupMenu requires a scenario button prefab.");
+            return;
+        }
 
         GameObject canvasInstance;
         if (scenarioMenuCanvasPrefab)
@@ -37,54 +95,84 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
 
         canvasInstance.name = "TSS Scenario Selection UGUI (Prefab)";
 
-        var buttonsContainer = canvasInstance.transform.Find("ScenarioSelectionPanel/ScenarioButtonsContainer");
+        buttonsContainer = canvasInstance.transform.Find("ScenarioSelectionPanel/ScenarioButtonsContainer");
         if (!buttonsContainer) return;
 
         var panel = buttonsContainer.parent as RectTransform;
         if (panel)
-            panel.sizeDelta = new Vector2(560f, 420f);
+            panel.sizeDelta = new Vector2(680f, 700f);
         var buttonsRect = buttonsContainer as RectTransform;
         if (buttonsRect)
         {
-            buttonsRect.anchoredPosition = new Vector2(0f, -105f);
-            buttonsRect.sizeDelta = new Vector2(-80f, -230f);
+            buttonsRect.anchorMin = buttonsRect.anchorMax = new Vector2(.5f, 1f);
+            buttonsRect.pivot = new Vector2(.5f, 1f);
+            buttonsRect.anchoredPosition = new Vector2(0f, -320f);
+            buttonsRect.sizeDelta = new Vector2(580f, 320f);
         }
 
-        var lastNameInput = CreateInput(buttonsContainer.parent, "PlayerLastNameInput", "Last name", new Vector2(0f, 75f), InputField.ContentType.Standard);
-        var computerNumberInput = CreateInput(buttonsContainer.parent, "ComputerNumberInput", "Computer number", new Vector2(0f, 20f), InputField.ContentType.IntegerNumber);
-        var validation = CreateText(buttonsContainer.parent, "PlayerIdValidation", string.Empty, new Vector2(0f, -35f), 16, new Color(1f, .7f, .35f));
+        lastNameInput = CreateInput(buttonsContainer.parent, "PlayerLastNameInput", "Last name", new Vector2(0f, 230f), InputField.ContentType.Standard);
+        computerNumberInput = CreateInput(buttonsContainer.parent, "ComputerNumberInput", "Computer number", new Vector2(0f, 175f), InputField.ContentType.IntegerNumber);
+        validation = CreateText(buttonsContainer.parent, "PlayerIdValidation", string.Empty, new Vector2(0f, 120f), 16, new Color(1f, .7f, .35f));
+        validation.rectTransform.sizeDelta = new Vector2(580f, 36f);
+        loadStatus = CreateText(buttonsContainer.parent, "ScenarioLoadStatus", "Loading scenarios...", new Vector2(0f, 65f), 18, new Color(.9f, .9f, .75f));
+        loadStatus.rectTransform.sizeDelta = new Vector2(580f, 65f);
+    }
 
-        var scenario = scenarios != null && scenarios.Length > 0 ? scenarios[0] : session ? session.GetFallbackScenario() : null;
-        if (!scenario) return;
+    private void AddFallbackButtons()
+    {
+        if (fallbackAdded) return;
+        fallbackAdded = true;
+        foreach (var scenario in TssExternalScenarioLoader.GetFallbackScenarios(scenarios, session ? session.GetFallbackScenario() : null))
+            AddButton(scenario.displayName + " (Built-in)", () => LaunchAsync(null, scenario));
+    }
 
-        GameObject btnGO;
-        if (scenarioButtonPrefab)
+    private void AddButton(string title, Func<Task> launch)
+    {
+        if (!scenarioButtonPrefab) throw new InvalidOperationException("Scenario button prefab is missing.");
+        var btnGO = Instantiate(scenarioButtonPrefab, buttonsContainer, false);
+        var rect = (RectTransform)btnGO.transform;
+        rect.anchorMin = rect.anchorMax = new Vector2(.5f, 1f);
+        rect.anchoredPosition = new Vector2(0f, -26f - buttons.Count * 60f);
+        rect.sizeDelta = new Vector2(580f, 52f);
+        var label = btnGO.transform.Find("Text")?.GetComponent<Text>();
+        if (label) label.text = title;
+        var button = btnGO.GetComponent<Button>();
+        button.interactable = IsReady;
+        buttons.Add(button);
+        button.onClick.AddListener(async () => await launch());
+    }
+
+    private async Task LaunchAsync(TssScenarioManifestEntry entry, TssScenarioDefinition fallback)
+    {
+        if (launching || !IsReady) return;
+        if (!TssScenarioLaunchState.TryCreateStudentId(lastNameInput.text, computerNumberInput.text, out var studentId))
         {
-            btnGO = Instantiate(scenarioButtonPrefab, buttonsContainer, false);
-        }
-        else
-        {
-            Debug.LogWarning("TssScenarioStartupMenu requires a scenario button prefab.");
+            validation.text = "Enter a last name and a positive computer number.";
             return;
         }
-
-        var label = btnGO.transform.Find("Text")?.GetComponent<Text>();
-        if (label) label.text = scenario.displayName;
-
-        var button = btnGO.GetComponent<Button>();
-        if (button)
+        launching = true;
+        validation.text = string.Empty;
+        loadStatus.text = "Loading selected scenario...";
+        foreach (var button in buttons) button.interactable = false;
+        TssScenarioDefinition selected = null;
+        try
         {
-            button.onClick.AddListener(() =>
-            {
-                if (!TssScenarioLaunchState.TryCreateStudentId(lastNameInput.text, computerNumberInput.text, out var studentId))
-                {
-                    validation.text = "Enter a last name and a positive computer number.";
-                    return;
-                }
-
-                TssScenarioLaunchState.Select(scenario, studentId);
-                SceneManager.LoadScene(scenario.sceneName);
-            });
+            selected = entry != null ? await loader.LoadScenarioAsync(entry.scenarioId) : fallback;
+            if (!this) { TssScenarioLaunchState.ReleaseRuntime(selected); return; }
+            if (!selected || !Application.CanStreamedLevelBeLoaded(selected.sceneName)) throw new InvalidOperationException("Selected scene is unavailable.");
+            TssScenarioLaunchState.Select(selected, studentId);
+            SceneManager.LoadScene(selected.sceneName);
+        }
+        catch (Exception ex)
+        {
+            TssScenarioLaunchState.Select(null);
+            TssScenarioLaunchState.ReleaseRuntime(selected);
+            if (!this) return;
+            Debug.LogWarning("[TSS Scenarios] Launch rejected: " + ex.Message);
+            loadStatus.text = "Scenario unavailable. Select another scenario or the built-in fallback.";
+            AddFallbackButtons();
+            foreach (var button in buttons) button.interactable = true;
+            launching = false;
         }
     }
 

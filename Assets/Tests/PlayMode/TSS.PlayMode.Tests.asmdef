@@ -1,0 +1,7 @@
+{
+    "name": "TSS.PlayMode.Tests",
+    "references": ["TSS.Runtime", "UnityEngine.UI"],
+    "optionalUnityReferences": ["TestAssemblies"],
+    "defineConstraints": ["UNITY_INCLUDE_TESTS"],
+    "autoReferenced": false
+}

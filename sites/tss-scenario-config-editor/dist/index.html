@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TSS Scenario Config Editor</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header><div><p class="eyebrow">TSS2 · LOCAL AUTHORING</p><h1>Scenario Config Editor</h1></div><div id="status" aria-live="polite">Load a scenario pack to begin.</div></header>
+  <main>
+    <section class="toolbar" aria-label="Scenario controls">
+      <button id="loadWorkspace">Load shipped samples</button>
+      <label class="file">Import manifest + scenarios<input id="importFiles" type="file" accept="application/json,.json" multiple></label>
+      <label>Scenario <select id="scenarioSelect" disabled></select></label>
+      <button id="validate" disabled>Validate</button>
+      <button id="downloadScenario" disabled>Download scenario</button>
+      <button id="downloadManifest" disabled>Download manifest</button>
+    </section>
+    <section class="workspace">
+      <aside>
+        <h2>Validation</h2><ul id="errors"><li>Nothing loaded.</li></ul>
+        <h2>Contract</h2><p>Schema 1 only. Unity remains the final authority for equipment, endpoint, role, and simulator validation.</p>
+        <button id="clearDraft" class="quiet">Clear saved draft</button>
+      </aside>
+      <section class="editor"><label for="json">Scenario JSON</label><textarea id="json" spellcheck="false" disabled></textarea></section>
+      <aside class="preview"><h2>Binder preview</h2><div id="binder"><p>Load a scenario to preview its authored binder content.</p></div></aside>
+    </section>
+  </main>
+  <template id="binderTemplate"><article><h3></h3><strong></strong><p></p></article></template>
+  <script src="app.js"></script>
+</body>
+</html>
