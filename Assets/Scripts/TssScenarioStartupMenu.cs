@@ -14,6 +14,8 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
     [Header("UI Prefabs")]
     [SerializeField] private GameObject scenarioMenuCanvasPrefab;
     [SerializeField] private GameObject scenarioButtonPrefab;
+    [Tooltip("Optional serialized scene instance. When assigned, the menu is visible and editable in MainMenu before Play Mode.")]
+    [SerializeField] private GameObject scenarioMenuCanvasInstance;
 
     private Transform buttonsContainer;
     private InputField lastNameInput;
@@ -82,40 +84,50 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
             return;
         }
 
-        GameObject canvasInstance;
-        if (scenarioMenuCanvasPrefab)
+        GameObject canvasInstance = scenarioMenuCanvasInstance;
+        if (!canvasInstance && scenarioMenuCanvasPrefab)
         {
             canvasInstance = Instantiate(scenarioMenuCanvasPrefab, transform, false);
         }
-        else
+        else if (!canvasInstance)
         {
             Debug.LogWarning("TssScenarioStartupMenu requires a scenario menu canvas prefab.");
             return;
         }
 
-        canvasInstance.name = "TSS Scenario Selection UGUI (Prefab)";
+        if (!scenarioMenuCanvasInstance)
+            canvasInstance.name = "TSS Scenario Selection UGUI (Prefab)";
 
         buttonsContainer = canvasInstance.transform.Find("ScenarioSelectionPanel/ScenarioButtonsContainer");
         if (!buttonsContainer) return;
 
         var panel = buttonsContainer.parent as RectTransform;
         if (panel)
-            panel.sizeDelta = new Vector2(680f, 700f);
+        {
+            panel.anchorMin = panel.anchorMax = new Vector2(1f, .5f);
+            panel.pivot = new Vector2(1f, .5f);
+            panel.anchoredPosition = new Vector2(-72f, 0f);
+            panel.sizeDelta = new Vector2(620f, 840f);
+        }
         var buttonsRect = buttonsContainer as RectTransform;
         if (buttonsRect)
         {
             buttonsRect.anchorMin = buttonsRect.anchorMax = new Vector2(.5f, 1f);
             buttonsRect.pivot = new Vector2(.5f, 1f);
-            buttonsRect.anchoredPosition = new Vector2(0f, -320f);
-            buttonsRect.sizeDelta = new Vector2(580f, 320f);
+            buttonsRect.anchoredPosition = new Vector2(0f, -390f);
+            buttonsRect.sizeDelta = new Vector2(540f, 380f);
         }
 
-        lastNameInput = CreateInput(buttonsContainer.parent, "PlayerLastNameInput", "Last name", new Vector2(0f, 230f), InputField.ContentType.Standard);
-        computerNumberInput = CreateInput(buttonsContainer.parent, "ComputerNumberInput", "Computer number", new Vector2(0f, 175f), InputField.ContentType.IntegerNumber);
-        validation = CreateText(buttonsContainer.parent, "PlayerIdValidation", string.Empty, new Vector2(0f, 120f), 16, new Color(1f, .7f, .35f));
-        validation.rectTransform.sizeDelta = new Vector2(580f, 36f);
-        loadStatus = CreateText(buttonsContainer.parent, "ScenarioLoadStatus", "Loading scenarios...", new Vector2(0f, 65f), 18, new Color(.9f, .9f, .75f));
-        loadStatus.rectTransform.sizeDelta = new Vector2(580f, 65f);
+        lastNameInput = panel.Find("PlayerLastNameInput")?.GetComponent<InputField>()
+            ?? CreateInput(panel, "PlayerLastNameInput", "Last name", new Vector2(0f, 275f), InputField.ContentType.Standard);
+        computerNumberInput = panel.Find("ComputerNumberInput")?.GetComponent<InputField>()
+            ?? CreateInput(panel, "ComputerNumberInput", "Computer number", new Vector2(0f, 215f), InputField.ContentType.IntegerNumber);
+        validation = panel.Find("PlayerIdValidation")?.GetComponent<Text>()
+            ?? CreateText(panel, "PlayerIdValidation", string.Empty, new Vector2(0f, 155f), 16, new Color(1f, .7f, .35f));
+        validation.rectTransform.sizeDelta = new Vector2(540f, 36f);
+        loadStatus = panel.Find("ScenarioLoadStatus")?.GetComponent<Text>()
+            ?? CreateText(panel, "ScenarioLoadStatus", "Loading scenarios...", new Vector2(0f, 95f), 18, new Color(.9f, .9f, .75f));
+        loadStatus.rectTransform.sizeDelta = new Vector2(540f, 65f);
     }
 
     private void AddFallbackButtons()

@@ -60,9 +60,9 @@ Cable requirements tied to a rack role follow that correctly named/category-matc
 
 ## Student-specific values and binder content
 
-The menu retains the last-name and positive computer-number inputs. For example, ` Smith ` and `017` become `SMITH-17`. `BeginScenario` still derives the seed from normalized student ID plus scenario ID. Repeating the pair reproduces addresses, VLANs and credentials; changing the scenario ID produces an independent seed.
+The menu retains the last-name and positive computer-number inputs. For example, ` Smith ` and `017` become `SMITH-17`. `BeginScenario` still derives the seed from normalized student ID plus scenario ID for generated addresses, VLANs, and other topology values. The instructor-authored circuit ID, SSID, passphrases, channel, device passwords, and MOTD come from `networkScenario` in JSON and are not generated from that seed.
 
-Do not put generated per-student addresses or credentials in JSON. Keep binder placeholders such as `{ScenarioId}`, `{ManagementVlan}`, `{ReceptionVlan}`, `{DataVlan}`, `{NativeVlan}`, `{DeadVlan}`, `{WanProviderAddress}`, `{WanCustomerAddress}`, `{CircuitId}`, `{Ssid}`, `{WifiPassphrase}`, `{WirelessChannel}`, `{ApAdminPassword}`, `{ApManagementAddress}`, `{EnableSecret}`, `{ConsolePassword}`, `{VtyPassword}` and `{Motd}` in the sections that already support them. The sample files demonstrate the existing per-tab token support. Static instructions and fixed authored training values remain ordinary text.
+Do not put generated per-student addresses or topology values in JSON. Keep binder placeholders such as `{ScenarioId}`, `{ManagementVlan}`, `{ReceptionVlan}`, `{DataVlan}`, `{NativeVlan}`, `{DeadVlan}`, `{WanProviderAddress}`, `{WanCustomerAddress}`, `{ApManagementAddress}` in the sections that already support them. The instructor-authored values `{CircuitId}`, `{Ssid}`, `{WifiPassphrase}`, `{WirelessChannel}`, `{ApAdminPassword}`, `{EnableSecret}`, `{ConsolePassword}`, `{VtyPassword}` and `{Motd}` are configured under `networkScenario` and resolved into the binder from that scenario data. Static instructions and fixed authored training values remain ordinary text.
 
 ## Loading and failure behavior
 

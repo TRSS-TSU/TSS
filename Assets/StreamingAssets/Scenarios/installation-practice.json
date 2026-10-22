@@ -998,7 +998,7 @@
         "credentials": {
             "sectionTitle": "Credentials",
             "scenarioHeading": "CREDENTIALS - {ScenarioId}",
-            "intro": "Apply identically to AN-1, AN-2, and CN-1. These values are generated for the current training run.",
+      "intro": "Apply identically to AN-1, AN-2, and CN-1. These values are assigned by the instructor for this scenario.",
             "note": "The banner is a legal requirement, not decoration. Without it, prosecuting unauthorized access gets much harder.",
             "rows": [
                 {
