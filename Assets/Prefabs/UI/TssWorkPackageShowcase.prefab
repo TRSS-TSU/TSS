@@ -34,7 +34,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 1, y: 1}
-  m_AnchoredPosition: {x: 0, y: -25}
+  m_AnchoredPosition: {x: 40.3, y: -25}
   m_SizeDelta: {x: 0, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &6862299531765995676
@@ -495,7 +495,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 1}
   m_AnchorMax: {x: 0.5, y: 1}
-  m_AnchoredPosition: {x: 0, y: -6}
+  m_AnchoredPosition: {x: 0, y: -50}
   m_SizeDelta: {x: 912, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &1410914625915234140
@@ -942,22 +942,22 @@ MonoBehaviour:
   workPackages:
   - id: WP1
     label: WP1
-    clip: {fileID: 0}
+    clip: {fileID: 32900000, guid: 8e0faf6d94e59204c91211b9ed675433, type: 3}
     url: 
     missingMessage: WP1 video preview will be available when its clip is supplied.
   - id: WP2
     label: WP2
-    clip: {fileID: 0}
+    clip: {fileID: 32900000, guid: 0a0eccb048e4e7d44b358e488fd8cbf1, type: 3}
     url: 
     missingMessage: WP2 video preview will be available when its clip is supplied.
   - id: WP3
     label: WP3
-    clip: {fileID: 0}
+    clip: {fileID: 32900000, guid: 00e860bd8e212984cba201bb326b4806, type: 3}
     url: 
     missingMessage: WP3 video preview will be available when its clip is supplied.
   - id: WP4
     label: WP4
-    clip: {fileID: 0}
+    clip: {fileID: 32900000, guid: 2328f671530e01f409c4458475625507, type: 3}
     url: 
     missingMessage: WP4 video preview will be available when its clip is supplied.
   selectorButtons:

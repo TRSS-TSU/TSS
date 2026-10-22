@@ -16,5 +16,6 @@ MonoBehaviour:
   displayName: Crossover Ethernet Cable
   cableType: 1
   carryPrefab: {fileID: 0}
+  hudSprite: {fileID: 21300000, guid: b42ac9c83d81c294dbda036bbe23b660, type: 3}
   visualMaterial: {fileID: 2100000, guid: fb698345bbbc4d74ba2ca7b2bb59eb9d, type: 2}
   radiusMeters: 0.004

@@ -16,5 +16,6 @@ MonoBehaviour:
   displayName: Rollover Ethernet Cable
   cableType: 2
   carryPrefab: {fileID: 0}
+  hudSprite: {fileID: 21300000, guid: d9652405ab77e8848b85d593c1fdb3b9, type: 3}
   visualMaterial: {fileID: 2100000, guid: b9fafbd776255bc46ad498634fc840fb, type: 2}
   radiusMeters: 0.004

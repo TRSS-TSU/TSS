@@ -2,20 +2,53 @@ using UnityEngine;
 
 public sealed class TssCarryArmPose : MonoBehaviour
 {
-    [SerializeField] private Animator animator;
-    [SerializeField] private float handSidePadding = 0.03f;
-    [SerializeField] private float handHeightOffset = 0.02f;
-    [SerializeField] private float handForwardOffset = -0.02f;
-    [SerializeField] private float elbowSideOffset = 0.34f;
-    [SerializeField] private float elbowForwardOffset = 0.12f;
-    [SerializeField] private float elbowHeightOffset = -0.08f;
-    [SerializeField] private float desktopPcHandSide = 1.5f;
-    [SerializeField] private float desktopPcHandHeightOffset = -0.1f;
-    [SerializeField] private float desktopPcHandForwardOffset = -0.2f;
-    [SerializeField] private float desktopPcElbowSideOffset = 0.1f;
-    [SerializeField] private float desktopPcElbowForwardOffset = -0.04f;
-    [SerializeField] private float desktopPcElbowHeightOffset = -0.3f;
-    [SerializeField] private float blendSpeed = 12f;
+    [SerializeField]
+    private Animator animator;
+
+    [SerializeField]
+    private float handSidePadding = 0.03f;
+
+    [SerializeField]
+    private float handHeightOffset = 0.02f;
+
+    [SerializeField]
+    private float handForwardOffset = -0.02f;
+
+    [SerializeField]
+    private float elbowSideOffset = 0.34f;
+
+    [SerializeField]
+    private float elbowForwardOffset = 0.12f;
+
+    [SerializeField]
+    private float elbowHeightOffset = -0.08f;
+
+    [SerializeField]
+    private float desktopPcHandSide = 1.5f;
+
+    [SerializeField]
+    private float desktopPcHandHeightOffset = -0.1f;
+
+    [SerializeField]
+    private float desktopPcHandForwardOffset = -0.2f;
+
+    [SerializeField]
+    private float desktopPcElbowSideOffset = 0.1f;
+
+    [SerializeField]
+    private float desktopPcElbowForwardOffset = -0.04f;
+
+    [SerializeField]
+    private float desktopPcElbowHeightOffset = -0.3f;
+
+    [SerializeField]
+    private float laptopHandSide = 0.10f;
+
+    [SerializeField]
+    private float laptopElbowSideOffset = 0.28f;
+
+    [SerializeField]
+    private float blendSpeed = 12f;
 
     private float _weight;
 
@@ -28,7 +61,8 @@ public sealed class TssCarryArmPose : MonoBehaviour
     private void OnAnimatorIK(int layerIndex)
     {
         var session = TssTrainingSession.Instance;
-        var carrying = session && session.HeldItem && session.CarryVisual && animator && animator.isHuman;
+        var carrying =
+            session && session.HeldItem && session.CarryVisual && animator && animator.isHuman;
         _weight = Mathf.MoveTowards(_weight, carrying ? 1f : 0f, blendSpeed * Time.deltaTime);
 
         SetIkWeight(AvatarIKGoal.LeftHand, AvatarIKHint.LeftElbow, _weight);
@@ -54,6 +88,11 @@ public sealed class TssCarryArmPose : MonoBehaviour
             elbowForward = desktopPcElbowForwardOffset;
             elbowHeight = desktopPcElbowHeightOffset;
         }
+        else if (session.HeldItem.category == EquipmentCategory.Laptop)
+        {
+            side = laptopHandSide;
+            elbowSide = laptopElbowSideOffset;
+        }
 
         var handCenter = bounds.center + root.up * heightOffset + root.forward * forwardOffset;
         var leftHand = handCenter - root.right * side;
@@ -61,8 +100,14 @@ public sealed class TssCarryArmPose : MonoBehaviour
 
         animator.SetIKPosition(AvatarIKGoal.LeftHand, leftHand);
         animator.SetIKPosition(AvatarIKGoal.RightHand, rightHand);
-        animator.SetIKHintPosition(AvatarIKHint.LeftElbow, leftHand - root.right * elbowSide + root.forward * elbowForward + root.up * elbowHeight);
-        animator.SetIKHintPosition(AvatarIKHint.RightElbow, rightHand + root.right * elbowSide + root.forward * elbowForward + root.up * elbowHeight);
+        animator.SetIKHintPosition(
+            AvatarIKHint.LeftElbow,
+            leftHand - root.right * elbowSide + root.forward * elbowForward + root.up * elbowHeight
+        );
+        animator.SetIKHintPosition(
+            AvatarIKHint.RightElbow,
+            rightHand + root.right * elbowSide + root.forward * elbowForward + root.up * elbowHeight
+        );
     }
 
     private void SetIkWeight(AvatarIKGoal hand, AvatarIKHint elbow, float weight)

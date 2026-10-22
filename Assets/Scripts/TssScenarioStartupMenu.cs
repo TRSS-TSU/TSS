@@ -114,7 +114,9 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
         {
             buttonsRect.anchorMin = buttonsRect.anchorMax = new Vector2(.5f, 1f);
             buttonsRect.pivot = new Vector2(.5f, 1f);
-            buttonsRect.anchoredPosition = new Vector2(0f, -390f);
+            // Keep the first runtime-created row below the serialized section label.
+            // AddButton positions its first button at the container's top edge.
+            buttonsRect.anchoredPosition = new Vector2(0f, -450f);
             buttonsRect.sizeDelta = new Vector2(540f, 380f);
         }
 

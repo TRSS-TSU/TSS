@@ -40,6 +40,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
     private Canvas _canvas;
     private Transform _hudRoot;
     private Text _heldText;
+    private Image _heldCableImage;
     private Text _rackSlotHoverText;
     private Text _objectiveText;
     private Text _contextText;
@@ -322,6 +323,23 @@ public sealed class TssRuntimeUi : MonoBehaviour
             _heldText = heldTextTransform.GetComponent<Text>();
         }
 
+        if (_hudRoot)
+        {
+            var cableImageObject = new GameObject("HeldCableSprite", typeof(RectTransform), typeof(Image));
+            cableImageObject.transform.SetParent(_hudRoot, false);
+            var cableImageRect = (RectTransform)cableImageObject.transform;
+            cableImageRect.anchorMin = new Vector2(0f, 1f);
+            cableImageRect.anchorMax = new Vector2(0f, 1f);
+            cableImageRect.pivot = new Vector2(0f, 1f);
+            cableImageRect.localPosition = new Vector3(-1859.69995f, 958.599976f, 0f);
+            cableImageRect.sizeDelta = new Vector2(44f, 44f);
+            cableImageRect.localScale = Vector3.one * 6.66f;
+            _heldCableImage = cableImageObject.GetComponent<Image>();
+            _heldCableImage.preserveAspect = true;
+            _heldCableImage.raycastTarget = false;
+            cableImageObject.SetActive(false);
+        }
+
         var cancelBtnTransform = rootInstance.transform.Find("HUD/CancelHeldButton");
         if (cancelBtnTransform)
         {
@@ -454,6 +472,14 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 session.HeldItem ? $"Held: {session.HeldItem.displayName}"
                 : session.HeldCable ? $"Held cable: {session.HeldCable.displayName}"
                 : "Held: none";
+
+        if (_heldCableImage)
+        {
+            var sprite = session.HeldCable ? session.HeldCable.hudSprite : null;
+            _heldCableImage.sprite = sprite;
+            _heldCableImage.enabled = sprite != null;
+            _heldCableImage.gameObject.SetActive(sprite != null);
+        }
 
         if (_cancelHeldButton)
             _cancelHeldButton.SetActive(session.HeldItem != null || session.HeldCable != null);

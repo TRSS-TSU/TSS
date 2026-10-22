@@ -22,8 +22,8 @@ MonoBehaviour:
   rackLocalOffset: {x: 0, y: 0, z: 0}
   rackLocalEuler: {x: 0, y: 0, z: 0}
   rackLocalScale: {x: 1, y: 1, z: 1}
-  carryLocalOffset: {x: 0, y: 0, z: 0}
-  carryLocalEuler: {x: 0, y: 0, z: 0}
+  carryLocalOffset: {x: 0.138500005, y: 0.00159999996, z: 0.0760999992}
+  carryLocalEuler: {x: 0, y: 180, z: 0}
   carryLocalScale: {x: 1, y: 1, z: 1}
   placementPrefab: {fileID: 712077695690841932, guid: eb6fc9a8607128e49b17062cc2dd2e9e, type: 3}
   placementLocalOffset: {x: 0, y: 0, z: 0}

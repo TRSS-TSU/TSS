@@ -16,5 +16,6 @@ MonoBehaviour:
   displayName: Straight-Through Ethernet Cable
   cableType: 0
   carryPrefab: {fileID: 0}
+  hudSprite: {fileID: 21300000, guid: b7b7701bb7d53214ca981ef522b970fc, type: 3}
   visualMaterial: {fileID: 2202073336491403462, guid: 47ef83918e2e0c243ba388c579faa39e, type: 3}
   radiusMeters: 0.004
