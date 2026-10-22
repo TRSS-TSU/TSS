@@ -1,5 +1,4 @@
 * text=auto
-
 *.cs text
 *.shader text
 *.cginc text
@@ -15,7 +14,6 @@
 *.controller text
 *.overrideController text
 *.inputactions text
-
 *.png binary
 *.jpg binary
 *.jpeg binary
@@ -26,3 +24,4 @@
 *.blend1 binary
 *.pdf binary
 *.docx binary
+Assets/Video[[:space:]]Clips/*.mp4 filter=lfs diff=lfs merge=lfs -text
