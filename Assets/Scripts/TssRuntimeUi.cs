@@ -5,6 +5,7 @@ using System.Text;
 using StarterAssets;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 public sealed class TssRuntimeUi : MonoBehaviour
@@ -49,6 +50,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
     private Button _sopButton;
     private Button _connectionsButton;
     private Button _debugButton;
+    private Button _endScenarioButton;
+    private GameObject _endScenarioPanel;
     private readonly List<Button> _hudInfoButtons = new();
     private readonly List<GameObject> _hudSlidePanels = new();
     private readonly List<Text> _hudSlideTitleTexts = new();
@@ -220,6 +223,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
         if (_casePanel)
             _casePanel.SetActive(false);
+        if (_endScenarioPanel)
+            _endScenarioPanel.SetActive(false);
 
         _openCase = null;
         ClearOwner(station);
@@ -370,6 +375,27 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 else
                     _debugButton.gameObject.SetActive(false);
             }
+        }
+
+        var endScenarioButtonTransform = rootInstance.transform.Find("HUD/EndScenarioButton");
+        if (endScenarioButtonTransform)
+        {
+            _endScenarioButton = endScenarioButtonTransform.GetComponent<Button>();
+            if (_endScenarioButton)
+                _endScenarioButton.onClick.AddListener(ShowEndScenarioConfirmation);
+        }
+
+        var endScenarioPanelTransform = rootInstance.transform.Find("EndScenarioPanel");
+        if (endScenarioPanelTransform)
+        {
+            _endScenarioPanel = endScenarioPanelTransform.gameObject;
+            _endScenarioPanel.SetActive(false);
+            var confirm = endScenarioPanelTransform.Find("ConfirmButton")?.GetComponent<Button>();
+            if (confirm)
+                confirm.onClick.AddListener(ConfirmEndScenario);
+            var cancel = endScenarioPanelTransform.Find("CancelButton")?.GetComponent<Button>();
+            if (cancel)
+                cancel.onClick.AddListener(HideEndScenarioConfirmation);
         }
 
         // Wire CasePanel
@@ -1727,7 +1753,36 @@ private void RefreshSopPanel()
         return (_casePanel && _casePanel.activeSelf)
             || (_namePromptPanel && _namePromptPanel.activeSelf)
             || (_correctionPanel && _correctionPanel.activeSelf)
+            || (_endScenarioPanel && _endScenarioPanel.activeSelf)
             || _externalGameplayLocks.Count > 0;
+    }
+
+    private void ShowEndScenarioConfirmation()
+    {
+        CloseActiveMenu(null, false);
+        if (_endScenarioPanel)
+            _endScenarioPanel.SetActive(true);
+        ApplyGameplayInputLock(true);
+    }
+
+    private void HideEndScenarioConfirmation()
+    {
+        if (_endScenarioPanel)
+            _endScenarioPanel.SetActive(false);
+        ApplyGameplayInputLock(IsAnyGameplayMenuOpen());
+    }
+
+    private void ConfirmEndScenario()
+    {
+        if (!session)
+        {
+            ShowHudMessage("No training session is loaded.");
+            HideEndScenarioConfirmation();
+            return;
+        }
+
+        TssResultsHandoff.Capture(session);
+        SceneManager.LoadScene("Results");
     }
 
     private void CloseOpenUi()

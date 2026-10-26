@@ -545,11 +545,19 @@ public sealed class TssNetworkSessionSnapshot
     public readonly Dictionary<string, NetworkDeviceState> Devices = new(StringComparer.OrdinalIgnoreCase);
     public readonly Dictionary<string, EndpointNetworkState> Endpoints = new(StringComparer.OrdinalIgnoreCase);
     public readonly HashSet<string> Evidence = new(StringComparer.OrdinalIgnoreCase);
+    public readonly TssWirelessAccessPointState AccessPoint = new();
+    public bool ProviderDemarcConnected;
     public TssNetworkSessionSnapshot(TssNetworkSessionState state)
     {
         foreach (var device in state.Devices) Devices[device.Key] = device.Clone();
         foreach (var endpoint in state.Endpoints) Endpoints[endpoint.Key] = endpoint.Clone();
         foreach (var item in state.Evidence) Evidence.Add(item);
+        AccessPoint.UplinkConnected = state.AccessPoint.UplinkConnected;
+        AccessPoint.Configured = state.AccessPoint.Configured;
+        AccessPoint.Ssid = state.AccessPoint.Ssid;
+        AccessPoint.AssociatedEndpointKey = state.AccessPoint.AssociatedEndpointKey;
+        AccessPoint.AssociatedSsid = state.AccessPoint.AssociatedSsid;
+        ProviderDemarcConnected = state.ProviderDemarcConnected;
     }
 }
 

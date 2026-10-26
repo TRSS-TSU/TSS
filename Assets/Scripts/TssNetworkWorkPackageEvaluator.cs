@@ -5,6 +5,7 @@ using System.Linq;
 public sealed class TssWorkPackageResult
 {
     public readonly List<TssWorkPackageCondition> UnmetCategories = new();
+    public readonly List<TssWorkPackageCondition> Conditions = new();
     public readonly HashSet<string> AttemptedCategories = new(StringComparer.OrdinalIgnoreCase);
     public readonly TssNetworkCompletionSnapshot CompletionSnapshot;
     public IReadOnlyList<string> UnmetConditions => UnmetCategories.ConvertAll(x => x.Label);
@@ -15,7 +16,13 @@ public sealed class TssWorkPackageResult
         if (snapshot != null)
             AttemptedCategories.Add("*");
     }
-    public void Add(string id, string label) => UnmetCategories.Add(new TssWorkPackageCondition(id, label));
+    public void Add(string id, string label)
+    {
+        var condition = new TssWorkPackageCondition(id, label, false);
+        Conditions.Add(condition);
+        UnmetCategories.Add(condition);
+    }
+    public void Pass(string id, string label) => Conditions.Add(new TssWorkPackageCondition(id, label, true));
     public void Attempt(string id) => AttemptedCategories.Add(id);
     public bool WasAttempted(string id, bool prefix = false)
     {
@@ -32,7 +39,8 @@ public sealed class TssWorkPackageCondition
 {
     public readonly string Id;
     public readonly string Label;
-    public TssWorkPackageCondition(string id, string label) { Id = id; Label = label; }
+    public readonly bool IsComplete;
+    public TssWorkPackageCondition(string id, string label, bool isComplete = false) { Id = id; Label = label; IsComplete = isComplete; }
 }
 
 public sealed class TssNetworkWorkPackageEvaluator
@@ -48,10 +56,10 @@ public sealed class TssNetworkWorkPackageEvaluator
         _session = session;
     }
 
-    public TssWorkPackageResult EvaluateLayer2()
+    public TssWorkPackageResult EvaluateLayer2(bool useCompletionHistory = true)
     {
         if (_state == null) return new TssWorkPackageResult();
-        if (_state.CompletionSnapshots.TryGetValue("WP2", out var snapshot)) return new TssWorkPackageResult(snapshot);
+        if (useCompletionHistory && _state.CompletionSnapshots.TryGetValue("WP2", out var snapshot)) return new TssWorkPackageResult(snapshot);
         var result = new TssWorkPackageResult();
         var an1 = Find("AN-1"); var an2 = Find("AN-2");
         CheckSwitch(an1, "AN-1", result); CheckSwitch(an2, "AN-2", result);
@@ -60,14 +68,14 @@ public sealed class TssNetworkWorkPackageEvaluator
         CheckTrunks(an1, an2, result);
         CheckCableTypes(result);
         CheckUnusedPorts(an1, an2, result);
-        if (result.Complete) result = new TssWorkPackageResult(_state.SaveCompletionSnapshot("WP2"));
+        if (useCompletionHistory && result.Complete) result = new TssWorkPackageResult(_state.SaveCompletionSnapshot("WP2"));
         return result;
     }
 
-    public TssWorkPackageResult EvaluateLayer3()
+    public TssWorkPackageResult EvaluateLayer3(bool useCompletionHistory = true)
     {
         if (_state == null) return new TssWorkPackageResult();
-        if (_state.CompletionSnapshots.TryGetValue("WP3", out var snapshot)) return new TssWorkPackageResult(snapshot);
+        if (useCompletionHistory && _state.CompletionSnapshots.TryGetValue("WP3", out var snapshot)) return new TssWorkPackageResult(snapshot);
         var result = new TssWorkPackageResult();
         var router = Find("CN-1");
         if (router == null) { result.Add("WP3.Router", "Router configuration is unavailable."); return result; }
@@ -82,14 +90,14 @@ public sealed class TssNetworkWorkPackageEvaluator
         if (!hasDefault) result.Add("WP3.DefaultRoute", "Provider routing is incomplete.");
         CheckEndpointEvidence(result);
         CheckSaved(router, "WP3.Save", result);
-        if (result.Complete) result = new TssWorkPackageResult(_state.SaveCompletionSnapshot("WP3"));
+        if (useCompletionHistory && result.Complete) result = new TssWorkPackageResult(_state.SaveCompletionSnapshot("WP3"));
         return result;
     }
 
-    public TssWorkPackageResult EvaluateLayer4()
+    public TssWorkPackageResult EvaluateLayer4(bool useCompletionHistory = true)
     {
         if (_state == null) return new TssWorkPackageResult();
-        if (_state.CompletionSnapshots.TryGetValue("WP4", out var snapshot)) return new TssWorkPackageResult(snapshot);
+        if (useCompletionHistory && _state.CompletionSnapshots.TryGetValue("WP4", out var snapshot)) return new TssWorkPackageResult(snapshot);
 
         var result = new TssWorkPackageResult();
         CheckWp4Condition(_state.AccessPoint.UplinkConnected, "WP4.APUplink", "AP uplink is not connected.", result);
@@ -116,7 +124,7 @@ public sealed class TssNetworkWorkPackageEvaluator
                 "WP4.RedWolf", "RedWolf page evidence is incomplete.", result);
         }
 
-        if (result.Complete) result = new TssWorkPackageResult(_state.SaveCompletionSnapshot("WP4"));
+        if (useCompletionHistory && result.Complete) result = new TssWorkPackageResult(_state.SaveCompletionSnapshot("WP4"));
         return result;
     }
 
@@ -125,6 +133,7 @@ public sealed class TssNetworkWorkPackageEvaluator
         if (device == null) { result.Add("WP2." + name + ".Device", name + " configuration is unavailable."); return; }
         CheckHardening(device, "WP2." + name + ".Hardening", result);
         if (!device.Evidence.Contains("show vlan brief") || !device.Evidence.Contains("show interfaces trunk")) result.Add("WP2." + name + ".Evidence", name + " verification was not typed.");
+        else result.Pass("WP2." + name + ".Evidence", name + " verification typed.");
         CheckSaved(device, "WP2." + name + ".Save", result);
     }
 
@@ -135,6 +144,7 @@ public sealed class TssNetworkWorkPackageEvaluator
         var p = _state.Profile;
         if (p == null || !device.PasswordEncryption || !device.DomainLookupDisabled || device.EnableSecret != p.EnableSecret || device.ConsolePassword != p.ConsolePassword || device.VtyPassword != p.VtyPassword || device.Motd != p.Motd)
             result.Add(id, "Required device hardening is incomplete.");
+        else result.Pass(id, "Required device hardening is complete.");
     }
 
     private void CheckVlans(NetworkDeviceState device, string name, TssWorkPackageResult result)
@@ -143,6 +153,7 @@ public sealed class TssNetworkWorkPackageEvaluator
             result.Attempt("WP2." + name + ".Vlans");
         if (device == null || !ActiveVlan(device, _state.Profile.ManagementVlan, _state.Profile.ManagementVlanName) || !ActiveVlan(device, _state.Profile.ReceptionVlan, _state.Profile.ReceptionVlanName) || !ActiveVlan(device, _state.Profile.DataVlan, _state.Profile.DataVlanName) || !ActiveVlan(device, _state.Profile.NativeVlan, _state.Profile.NativeVlanName) || !ActiveVlan(device, _state.Profile.DeadVlan, _state.Profile.DeadVlanName))
             result.Add("WP2." + name + ".Vlans", name + " VLAN database is incomplete.");
+        else result.Pass("WP2." + name + ".Vlans", name + " VLAN database is complete.");
     }
 
     private void CheckAccessPorts(NetworkDeviceState an1, NetworkDeviceState an2, TssWorkPackageResult result)
@@ -154,6 +165,7 @@ public sealed class TssNetworkWorkPackageEvaluator
                 result.Attempt("WP2.Access." + required.interfaceName);
             if (device == null || !device.Interfaces.TryGetValue(required.interfaceName, out var port) || port.IsTrunk || !port.AdminUp || !port.CarrierUp || port.AccessVlan != VlanFor(required.endpointId))
                 result.Add("WP2.Access." + required.interfaceName, "Required endpoint-facing access ports are incomplete.");
+            else result.Pass("WP2.Access." + required.interfaceName, required.interfaceName + " access port is correct.");
         }
     }
 
@@ -165,6 +177,7 @@ public sealed class TssNetworkWorkPackageEvaluator
                 result.Attempt("WP2.Trunks");
             if (pair.Item1 == null || !pair.Item1.Interfaces.TryGetValue(pair.Item2, out var port) || !port.IsTrunk || !port.AdminUp || !port.CarrierUp || port.NativeVlan != _state.Profile.NativeVlan || !port.AllowedVlans.Contains(_state.Profile.ManagementVlan) || !port.AllowedVlans.Contains(_state.Profile.ReceptionVlan) || !port.AllowedVlans.Contains(_state.Profile.DataVlan))
                 result.Add("WP2.Trunks", "Required trunks are incomplete.");
+            else result.Pass("WP2.Trunks", pair.Item1.ExpectedRole + " " + pair.Item2 + " trunk is correct.");
         }
     }
 
@@ -177,13 +190,16 @@ public sealed class TssNetworkWorkPackageEvaluator
         foreach (var status in session.GetCableTypeStatuses())
         {
             var id = "WP2.CableTypes." + (string.IsNullOrWhiteSpace(status.ConnectionId) ? "Required" : status.ConnectionId);
+            var endpoints = status.EndpointAId + " to " + status.EndpointBId;
             if (status.IsConnected)
                 result.Attempt("WP2.CableTypes");
 
             if (status.IsCorrect && status.IsConnected)
+            {
+                result.Pass(id, endpoints + " uses the required cable type.");
                 continue;
+            }
 
-            var endpoints = status.EndpointAId + " to " + status.EndpointBId;
             result.Add(id, status.IsConnected
                 ? $"{endpoints} uses {status.ActualCableType}; required {status.RequiredCableType}."
                 : $"{endpoints} is not connected with the required {status.RequiredCableType} cable.");
@@ -195,6 +211,8 @@ public sealed class TssNetworkWorkPackageEvaluator
         var complete = CheckUnusedPorts(an1, 8, 24, _state.Profile.DeadVlan) && CheckUnusedPorts(an2, 5, 24, _state.Profile.DeadVlan);
         if (complete)
             result.Attempt("WP2.UnusedPorts");
+        if (complete)
+            result.Pass("WP2.UnusedPorts", "Unused switch ports are parked and shut.");
         else
             result.Add("WP2.UnusedPorts", "Unused switch ports must use the dead VLAN and be shut down.");
     }
@@ -221,13 +239,16 @@ public sealed class TssNetworkWorkPackageEvaluator
         if (router.Interfaces.ContainsKey("Fa0/1"))
             result.Attempt("WP3.Wan");
         if (!HasInterface(router, "Fa0/0", false, null, null)) result.Add("WP3.ParentInterface", "Router parent interface is incomplete.");
+        else result.Pass("WP3.ParentInterface", "Router parent interface is correct.");
         foreach (var pair in new[] { (_state.Profile.ManagementVlan, _state.Profile.ManagementNetwork + ".1"), (_state.Profile.ReceptionVlan, _state.Profile.ReceptionNetwork + ".1"), (_state.Profile.DataVlan, _state.Profile.DataNetwork + ".1") })
         {
             var found = false;
             foreach (var iface in router.Interfaces.Values) if (iface.Dot1qVlan == pair.Item1 && iface.Address == pair.Item2 && iface.Mask == "255.255.255.0" && iface.AdminUp && iface.CarrierUp) { found = true; break; }
             if (!found) result.Add("WP3.Subinterfaces", "Router subinterfaces are incomplete.");
+            else result.Pass("WP3.Subinterfaces", "Router subinterface is correct.");
         }
         if (!HasInterface(router, "Fa0/1", false, _state.Profile.WanCustomerAddress, "255.255.255.252")) result.Add("WP3.Wan", "Provider-facing WAN configuration is incomplete.");
+        else result.Pass("WP3.Wan", "Provider-facing WAN configuration is correct.");
     }
 
     private bool HasInterface(NetworkDeviceState device, string name, bool trunk, string address, string mask)
@@ -244,6 +265,7 @@ public sealed class TssNetworkWorkPackageEvaluator
             foreach (var endpoint in _state.Endpoints) if (endpoint.Evidence.Contains(requirement.evidenceId) && _state.Evidence.Contains(endpoint.Key + ":" + requirement.evidenceId)) { found = true; break; }
             foreach (var endpoint in _state.Endpoints) if (endpoint.AttemptedEvidence.Contains(requirement.evidenceId)) { result.Attempt("WP3.EndpointEvidence." + requirement.evidenceId); break; }
             if (!found) result.Add("WP3.EndpointEvidence." + requirement.evidenceId, "Required endpoint diagnostics are incomplete.");
+            else result.Pass("WP3.EndpointEvidence." + requirement.evidenceId, requirement.description ?? requirement.evidenceId + " verified.");
         }
     }
 
@@ -252,6 +274,7 @@ public sealed class TssNetworkWorkPackageEvaluator
         if (device != null && device.Evidence.Contains("save"))
             result.Attempt(id);
         if (!device.Evidence.Contains("save") || device.StartupSnapshot == null || !Equivalent(device, device.StartupSnapshot)) result.Add(id, device.Hostname + " configuration has not been saved.");
+        else result.Pass(id, device.Hostname + " configuration is saved.");
     }
 
     private bool ActiveVlan(NetworkDeviceState device, int vlan, string name)
@@ -269,6 +292,8 @@ public sealed class TssNetworkWorkPackageEvaluator
     {
         if (condition)
             result.Attempt(id);
+        if (condition)
+            result.Pass(id, id + " verified.");
         else
             result.Add(id, label);
     }

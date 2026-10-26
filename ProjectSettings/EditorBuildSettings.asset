@@ -11,6 +11,9 @@ EditorBuildSettings:
   - enabled: 1
     path: Assets/Scenes/TSS.unity
     guid: 99c9720ab356a0642a771bea13969a05
+  - enabled: 1
+    path: Assets/Scenes/Results.unity
+    guid: b916ffd5a9274d54894c0211ff994207
   m_configObjects:
     com.unity.adaptivePerformance.basic.provider_settings: {fileID: 11400000, guid: 8a53bdee31f3f6b419c3d0bbbac70ec7, type: 2}
     com.unity.adaptiveperformance.loader_settings: {fileID: 11400000, guid: 9bdd1802e4ef3bf41ba51a3a769bf55b, type: 2}

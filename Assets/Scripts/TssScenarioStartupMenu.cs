@@ -30,6 +30,7 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
 
     private async void Start()
     {
+        TssResultsHandoff.Clear();
         if (!session)
             session = FindFirstObjectByType<TssTrainingSession>();
 

@@ -826,6 +826,11 @@ public sealed class TssTrainingSession : MonoBehaviour
         return states;
     }
 
+    public bool IsTerminationCorrectForResults(string connectionId, string endpointId)
+    {
+        return IsTerminationCorrect(connectionId, endpointId);
+    }
+
     public bool IsFirstSelectedEndpoint(TssPortEndpoint endpoint)
     {
         return endpoint && _selectedCableEndpoint == endpoint;
