@@ -1,8 +1,10 @@
 {
   "format": "tss-scenario",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "scenarioId": "BALANCED_12_PIECE_LAB",
   "displayName": "Default 12 Piece Lab",
+  "facilityId": "TSS_MAIN",
+  "catalogId": "TSS_MAIN_CATALOG",
   "sceneName": "TSS",
   "inventory": [
     {

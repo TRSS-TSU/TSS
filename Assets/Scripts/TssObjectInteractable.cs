@@ -376,7 +376,7 @@ public sealed class TssObjectInteractable : MonoBehaviour
 
         foreach (var hit in hits)
         {
-            if (hit.collider && hit.collider.transform.IsChildOf(transform))
+            if (hit.collider && (hit.collider.transform == transform || hit.collider.transform.IsChildOf(transform)))
             {
                 SetHovered(true);
                 return;

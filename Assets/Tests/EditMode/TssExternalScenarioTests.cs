@@ -62,6 +62,38 @@ public sealed class TssExternalScenarioTests
         finally { TssScenarioLaunchState.ReleaseRuntime(runtime); }
     }
 
+    [Test]
+    public void LegacyVersionOneScenarioNormalizesToTssFacility()
+    {
+        var data = BaselineData();
+        data.schemaVersion = TssExternalScenarioData.LegacyVersion;
+        data.facilityId = null;
+        data.catalogId = null;
+        TssExternalScenarioLoader.NormalizeLegacy(data);
+
+        Assert.AreEqual(TssExternalScenarioData.Version, data.schemaVersion);
+        Assert.AreEqual(TssExternalScenarioData.DefaultFacilityId, data.facilityId);
+        Assert.AreEqual(TssExternalScenarioData.DefaultCatalogId, data.catalogId);
+        Assert.IsTrue(TssExternalScenarioLoader.TryCreate(data, catalog, out var runtime, out var errors), string.Join("\n", errors));
+        TssScenarioLaunchState.ReleaseRuntime(runtime);
+    }
+
+    [Test]
+    public void FacilityAndCatalogIdentityMustMatchCatalog()
+    {
+        var data = BaselineData();
+        data.facilityId = "OTHER_FACILITY";
+        Assert.IsFalse(TssExternalScenarioLoader.TryCreate(data, catalog, out var runtime, out var errors));
+        Assert.IsNull(runtime);
+        StringAssert.Contains("facilityId", string.Join("\n", errors));
+
+        data = BaselineData();
+        data.catalogId = "OTHER_CATALOG";
+        Assert.IsFalse(TssExternalScenarioLoader.TryCreate(data, catalog, out runtime, out errors));
+        Assert.IsNull(runtime);
+        StringAssert.Contains("catalogId", string.Join("\n", errors));
+    }
+
     [TestCase("equipment")]
     [TestCase("cable")]
     [TestCase("permanentCable")]
@@ -129,6 +161,26 @@ public sealed class TssExternalScenarioTests
         var filtered = TssExternalScenarioLoader.ParseManifest(JsonUtility.ToJson(manifest), warnings);
         Assert.AreEqual(2, filtered.scenarios.Length);
         Assert.AreEqual(2, warnings.Count);
+    }
+
+    [Test]
+    public void DuplicateManifestFilenamesExcludeBothEntries()
+    {
+        var manifest = JsonUtility.FromJson<TssScenarioManifest>(File.ReadAllText(Path.Combine(Application.streamingAssetsPath, "Scenarios/manifest.json")));
+        manifest.scenarios[1].jsonFile = manifest.scenarios[0].jsonFile;
+        var warnings = new List<string>();
+        var filtered = TssExternalScenarioLoader.ParseManifest(JsonUtility.ToJson(manifest), warnings);
+        Assert.AreEqual(2, filtered.scenarios.Length);
+        Assert.AreEqual(2, warnings.Count);
+    }
+
+    [Test]
+    public void VariableLengthManifestIsAccepted()
+    {
+        var manifest = JsonUtility.FromJson<TssScenarioManifest>(File.ReadAllText(Path.Combine(Application.streamingAssetsPath, "Scenarios/manifest.json")));
+        manifest.scenarios = manifest.scenarios.Take(1).ToArray();
+        var parsed = TssExternalScenarioLoader.ParseManifest(JsonUtility.ToJson(manifest), new List<string>());
+        Assert.AreEqual(1, parsed.scenarios.Length);
     }
 
     [TestCase("../outside.json")]

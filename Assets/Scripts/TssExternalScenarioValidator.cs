@@ -11,11 +11,20 @@ public static class TssExternalScenarioValidator
     {
         var errors = catalog ? catalog.Validate() : new List<string> { "Scenario catalog is missing." };
         if (data == null) { errors.Add("Scenario JSON is empty."); return errors; }
-        if (data.format != TssExternalScenarioData.Format || data.schemaVersion != TssExternalScenarioData.Version)
+        var supportedVersion = data.schemaVersion == TssExternalScenarioData.LegacyVersion || data.schemaVersion == TssExternalScenarioData.Version;
+        if (data.format != TssExternalScenarioData.Format || !supportedVersion)
             errors.Add("Unsupported scenario format or schemaVersion.");
+        var facilityId = data.schemaVersion == TssExternalScenarioData.LegacyVersion && string.IsNullOrWhiteSpace(data.facilityId)
+            ? TssExternalScenarioData.DefaultFacilityId : data.facilityId;
+        var catalogId = data.schemaVersion == TssExternalScenarioData.LegacyVersion && string.IsNullOrWhiteSpace(data.catalogId)
+            ? TssExternalScenarioData.DefaultCatalogId : data.catalogId;
         Required(data.scenarioId, "scenarioId", errors);
         Required(data.displayName, "displayName", errors);
-        if (!catalog || data.sceneName != catalog.sceneName) errors.Add("Only the catalog's TSS scene is supported.");
+        Required(facilityId, "facilityId", errors);
+        Required(catalogId, "catalogId", errors);
+        if (!catalog || data.sceneName != catalog.sceneName) errors.Add("Scenario sceneName does not match the catalog.");
+        if (catalog && facilityId != catalog.facilityId) errors.Add("Scenario facilityId does not match the catalog.");
+        if (catalog && catalogId != catalog.catalogId) errors.Add("Scenario catalogId does not match the catalog.");
         if (!catalog || errors.Count > 0) return errors;
 
         CheckEnum(data.defaultPlayerCableType, "defaultPlayerCableType", errors);
@@ -104,8 +113,8 @@ public static class TssExternalScenarioValidator
             if (!cable) errors.Add("Unknown permanent cableId: " + row.cableId);
             else if (cable.cableType != row.cableType) errors.Add("Permanent cable type does not match " + row.cableId);
             CheckEnum(row.cableType, "cableType", errors);
-            Known(row.patchPanelEndpointId, catalog.endpointIds, "permanent endpoint", errors);
-            Known(row.wallportEndpointId, catalog.endpointIds, "permanent endpoint", errors);
+            Known(row.patchPanelEndpointId, endpoints, "permanent endpoint", errors);
+            Known(row.wallportEndpointId, endpoints, "permanent endpoint", errors);
             if (row.patchPanelEndpointId == row.wallportEndpointId) errors.Add("A connection cannot connect an endpoint to itself.");
             if (row.requiresPunchDownTermination)
             {

@@ -28,6 +28,8 @@ public static class TssExternalScenarioTools
         try
         {
             var roots = preview.GetRootGameObjects();
+            catalog.facilityId = TssExternalScenarioData.DefaultFacilityId;
+            catalog.catalogId = TssExternalScenarioData.DefaultCatalogId;
             catalog.sceneName = "TSS";
             catalog.rackIds = roots.SelectMany(x => x.GetComponentsInChildren<RackMountController>(true)).Select(x => x.RackId).OrderBy(x => x).ToArray();
             catalog.stationIds = roots.SelectMany(x => x.GetComponentsInChildren<EndpointPlacementStation>(true)).Select(x => x.StationId).OrderBy(x => x).ToArray();
@@ -48,7 +50,7 @@ public static class TssExternalScenarioTools
         var source = AssetDatabase.LoadAssetAtPath<TssScenarioDefinition>(BaselinePath);
         var catalog = AssetDatabase.LoadAssetAtPath<TssScenarioCatalog>(CatalogPath);
         if (!source || !catalog) throw new InvalidOperationException("Baseline scenario/catalog is missing.");
-        var manifest = new TssScenarioManifest { format = TssScenarioManifest.Format, schemaVersion = 1, scenarios = new TssScenarioManifestEntry[4] };
+        var manifest = new TssScenarioManifest { format = TssScenarioManifest.Format, schemaVersion = TssExternalScenarioData.Version, scenarios = new TssScenarioManifestEntry[4] };
         var files = new[] { "balanced-lab.json", "installation-practice.json", "network-verification.json", "wireless-readiness.json" };
         var titles = new[] { source.displayName, "Installation Practice", "Network Verification", "Wireless Readiness" };
         var descriptions = new[] { "Original balanced facility exercise.", "Extra equipment and cables; start with the second rack.", "Alternate VLAN bounds and additional endpoint diagnostics.", "Wireless-focused binder and readiness checks with spare equipment." };
@@ -97,7 +99,7 @@ public static class TssExternalScenarioTools
             var errors = TssExternalScenarioValidator.Validate(data, catalog);
             if (errors.Count > 0) throw new InvalidDataException(files[index] + ":\n" + string.Join("\n", errors));
             File.WriteAllText(Path.Combine(folder, files[index]), JsonUtility.ToJson(data, true));
-            manifest.scenarios[index] = new TssScenarioManifestEntry { scenarioId = data.scenarioId, displayName = data.displayName, jsonFile = files[index], sceneName = data.sceneName, description = descriptions[index] };
+            manifest.scenarios[index] = new TssScenarioManifestEntry { scenarioId = data.scenarioId, displayName = data.displayName, facilityId = data.facilityId, catalogId = data.catalogId, jsonFile = files[index], sceneName = data.sceneName, description = descriptions[index] };
         }
         File.WriteAllText(Path.Combine(folder, "manifest.json"), JsonUtility.ToJson(manifest, true));
         AssetDatabase.Refresh();

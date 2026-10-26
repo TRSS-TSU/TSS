@@ -943,22 +943,22 @@ MonoBehaviour:
   - id: WP1
     label: WP1
     clip: {fileID: 32900000, guid: 8e0faf6d94e59204c91211b9ed675433, type: 3}
-    url: 
+    url: clip1.mp4
     missingMessage: WP1 video preview will be available when its clip is supplied.
   - id: WP2
     label: WP2
     clip: {fileID: 32900000, guid: 0a0eccb048e4e7d44b358e488fd8cbf1, type: 3}
-    url: 
+    url: clip2.mp4
     missingMessage: WP2 video preview will be available when its clip is supplied.
   - id: WP3
     label: WP3
     clip: {fileID: 32900000, guid: 00e860bd8e212984cba201bb326b4806, type: 3}
-    url: 
+    url: clip3.mp4
     missingMessage: WP3 video preview will be available when its clip is supplied.
   - id: WP4
     label: WP4
     clip: {fileID: 32900000, guid: 2328f671530e01f409c4458475625507, type: 3}
-    url: 
+    url: clip4.mp4
     missingMessage: WP4 video preview will be available when its clip is supplied.
   selectorButtons:
   - {fileID: 8026009321244370947}

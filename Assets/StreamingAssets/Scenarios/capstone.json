@@ -1,8 +1,10 @@
 {
   "format": "tss-scenario",
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "scenarioId": "CAPSTONE",
   "displayName": "Capstone",
+  "facilityId": "TSS_MAIN",
+  "catalogId": "TSS_MAIN_CATALOG",
   "sceneName": "TSS",
   "inventory": [
     {

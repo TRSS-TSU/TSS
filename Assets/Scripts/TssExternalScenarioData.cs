@@ -1,15 +1,20 @@
 using System;
 
-// Version 1 reuses only reference-free authored rows; Unity assets are represented by stable IDs.
+// External scenarios use reference-free authored rows; Unity assets are represented by stable IDs.
 [Serializable]
 public sealed class TssExternalScenarioData
 {
     public const string Format = "tss-scenario";
-    public const int Version = 1;
+    public const int LegacyVersion = 1;
+    public const int Version = 2;
+    public const string DefaultFacilityId = "TSS_MAIN";
+    public const string DefaultCatalogId = "TSS_MAIN_CATALOG";
     public string format;
     public int schemaVersion;
     public string scenarioId;
     public string displayName;
+    public string facilityId;
+    public string catalogId;
     public string sceneName;
     public TssExternalEquipmentItem[] inventory;
     public TssExternalCableItem[] cableInventory;
@@ -66,6 +71,8 @@ public sealed class TssScenarioManifestEntry
 {
     public string scenarioId;
     public string displayName;
+    public string facilityId;
+    public string catalogId;
     public string jsonFile;
     public string sceneName;
     public string description;

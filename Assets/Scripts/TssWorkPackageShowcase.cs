@@ -94,6 +94,10 @@ public sealed class TssWorkPackageShowcase : MonoBehaviour
         }
 
         videoPlayer.Stop();
+        #if UNITY_WEBGL && !UNITY_EDITOR
+        videoPlayer.source = VideoSource.Url;
+        videoPlayer.url = BuildWebVideoUrl(entry.url);
+        #else
         if (entry.clip)
         {
             videoPlayer.source = VideoSource.VideoClip;
@@ -102,11 +106,20 @@ public sealed class TssWorkPackageShowcase : MonoBehaviour
         else
         {
             videoPlayer.source = VideoSource.Url;
-            videoPlayer.url = entry.url;
+            videoPlayer.url = BuildWebVideoUrl(entry.url);
         }
+        #endif
 
         HideMissing();
         videoPlayer.Prepare();
+    }
+
+    private static string BuildWebVideoUrl(string value)
+    {
+        if (value.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || value.StartsWith("https://", StringComparison.OrdinalIgnoreCase))
+            return value;
+
+        return Application.streamingAssetsPath.TrimEnd('/', '\\') + "/" + value.TrimStart('/', '\\');
     }
 
     private void OnPrepared(VideoPlayer source)

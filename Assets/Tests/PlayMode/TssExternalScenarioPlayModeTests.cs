@@ -143,6 +143,8 @@ public sealed class TssExternalScenarioPlayModeTests
         Assert.AreSame(session, TssTrainingSession.Instance);
         Assert.AreEqual("TSS Scenario Runtime", session.name);
         Assert.AreEqual(data.scenarioId, session.Scenario.scenarioId);
+        Assert.AreEqual(data.facilityId, session.Scenario.facilityId);
+        Assert.AreEqual(data.catalogId, session.Scenario.catalogId);
         Assert.AreEqual(external, session.Scenario.IsExternalRuntime);
         Assert.AreEqual("SMITH-17", session.StudentId);
         var catalog = Resources.Load<TssScenarioCatalog>(TssScenarioCatalog.ResourcePath);

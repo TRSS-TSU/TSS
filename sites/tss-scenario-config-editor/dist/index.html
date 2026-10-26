@@ -7,58 +7,88 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header><div><p class="eyebrow">TSS2 · LOCAL AUTHORING</p><h1>Scenario Config Editor</h1><p class="subtitle">Start with the instructor-facing values. Use Advanced JSON only for facility-specific scenario details.</p></div><div id="status" aria-live="polite">Load a scenario pack to begin.</div></header>
+  <header class="app-header">
+    <div class="brand">
+      <p class="eyebrow">TSS2 · LOCAL AUTHORING</p>
+      <h1>Scenario Config Editor</h1>
+      <p class="subtitle">Build a training scenario one section at a time. Your edits stay in this browser until you download them.</p>
+    </div>
+    <div id="status" role="status" aria-live="polite">Load or import a scenario package to begin.</div>
+  </header>
+
   <main>
-    <section class="toolbar" aria-label="Scenario controls">
-      <button id="loadWorkspace">Load shipped samples</button>
-      <label class="file">Import manifest + scenarios<input id="importFiles" type="file" accept="application/json,.json" multiple></label>
-      <label>Scenario <select id="scenarioSelect" disabled></select></label>
-      <button id="validate" disabled>Validate</button>
-      <button id="downloadScenario" disabled>Download scenario</button>
-      <button id="downloadManifest" disabled>Download manifest</button>
+    <section class="toolbar" aria-label="Scenario package controls">
+      <div class="package-actions">
+        <button id="loadWorkspace" class="primary">Load shipped samples</button>
+        <label class="file-button">Import manifest + scenarios<input id="importFiles" type="file" accept="application/json,.json" multiple></label>
+      </div>
+      <label class="scenario-picker">Current scenario<select id="scenarioSelect" disabled><option>Load a package first</option></select></label>
     </section>
-    <section id="guidedAuthoring" class="guided" aria-label="Guided scenario authoring" hidden>
-      <article class="form-card">
-        <div class="card-heading"><p class="step">1 · BASICS</p><h2>Scenario Basics</h2><p>These values control how this scenario is identified in the local package and Main Menu.</p></div>
-        <div class="form-grid basics-grid">
-          <label>Scenario ID<input id="basicScenarioId" pattern="[A-Za-z0-9_-]+" autocomplete="off"></label>
-          <label>Menu label<input id="basicDisplayName" autocomplete="off"></label>
-          <label class="full">Instructor description<textarea id="basicDescription" rows="2" placeholder="Optional planning note for this menu entry"></textarea></label>
-          <label>Unity scene<input id="basicSceneName" value="TSS" disabled></label>
-          <p class="field-help">Changing the ID updates the matching manifest entry and download filename.</p>
-        </div>
-      </article>
-      <article class="form-card network-card">
-        <div class="card-heading"><p class="step">2 · NETWORK TRAINING VALUES</p><h2>What students must configure</h2><p>These fields drive the binder, AP workflow, CLI expectations, and evaluation for this scenario.</p></div>
-        <div class="form-grid network-grid">
-          <label>Circuit ID<input id="networkCircuitId" autocomplete="off"></label>
-          <label>Wireless SSID<input id="networkSsid" autocomplete="off"></label>
-          <label>Wi-Fi passphrase<input id="networkWifiPassphrase" autocomplete="off"></label>
-          <label>Wireless channel<select id="networkWirelessChannel"><option value="1">1</option><option value="6">6</option><option value="11">11</option></select></label>
-          <label>AP administrator password<input id="networkApAdminPassword" autocomplete="off"></label>
-          <label>Enable secret<input id="networkEnableSecret" autocomplete="off"></label>
-          <label>Console password<input id="networkConsolePassword" autocomplete="off"></label>
-          <label>VTY password<input id="networkVtyPassword" autocomplete="off"></label>
-          <label class="full">Login banner / MOTD<textarea id="networkMotd" rows="2"></textarea></label>
-        </div>
-      </article>
+
+    <section id="emptyState" class="empty-state">
+      <div class="empty-icon" aria-hidden="true">✦</div>
+      <h2>Start with a scenario package</h2>
+      <p>Load the shipped examples to explore how instructor settings shape the student’s training experience, or import a package you already have.</p>
+      <button class="primary" type="button" onclick="document.getElementById('loadWorkspace').click()">Load shipped samples</button>
     </section>
-    <section class="workspace">
-      <aside>
-        <h2>Validation</h2><ul id="errors"><li>Nothing loaded.</li></ul>
-        <h2>Authoring boundary</h2><p>The editor writes the JSON package. Unity remains the final authority for facility IDs, equipment, ports, and launch validation.</p>
-        <button id="clearDraft" class="quiet">Clear saved draft</button>
-      </aside>
-      <section class="editor">
-        <details id="advancedJson">
-          <summary><span>3 · ADVANCED JSON</span><small>Placements, equipment, cables, binder structure, roles, and evidence</small></summary>
-          <label for="json">Full scenario JSON</label><textarea id="json" spellcheck="false" disabled></textarea>
-        </details>
+
+    <section id="workspace" hidden>
+      <nav class="section-nav" aria-label="Scenario configuration sections" role="tablist">
+        <button id="tab-basics" class="nav-tab active" role="tab" aria-selected="true" aria-controls="panel-basics" data-section="basics"><span class="nav-number">01</span><span>Basics</span></button>
+        <button id="tab-network" class="nav-tab" role="tab" aria-selected="false" aria-controls="panel-network" data-section="network"><span class="nav-number">02</span><span>Network Training</span></button>
+        <button id="tab-facility" class="nav-tab" role="tab" aria-selected="false" aria-controls="panel-facility" data-section="facility"><span class="nav-number">03</span><span>Facility &amp; Equipment</span></button>
+        <button id="tab-binder" class="nav-tab" role="tab" aria-selected="false" aria-controls="panel-binder" data-section="binder"><span class="nav-number">04</span><span>Binder Content</span></button>
+        <button id="tab-review" class="nav-tab" role="tab" aria-selected="false" aria-controls="panel-review" data-section="review"><span class="nav-number">05</span><span>Review</span></button>
+        <button id="tab-advanced" class="nav-tab" role="tab" aria-selected="false" aria-controls="panel-advanced" data-section="advanced"><span class="nav-number">06</span><span>Advanced JSON</span></button>
+      </nav>
+
+      <section id="panel-basics" class="section-panel" role="tabpanel" aria-labelledby="tab-basics">
+        <div class="section-heading"><p class="step">SECTION 01</p><h2>Basics</h2><p>Identify this scenario in the package and in the student’s scenario menu. These values do not change the facility layout.</p></div>
+        <div class="form-card"><div class="form-grid basics-grid">
+          <label>Scenario ID <span class="hint">Stable package identifier</span><input id="basicScenarioId" pattern="[A-Za-z0-9_-]+" autocomplete="off"></label>
+          <label>Menu label <span class="hint">Name students see</span><input id="basicDisplayName" autocomplete="off"></label>
+          <label class="full">Instructor description <span class="hint">A short note shown with the scenario package</span><textarea id="basicDescription" rows="3" placeholder="What is the purpose or focus of this scenario?"></textarea></label>
+          <label>Facility ID <span class="hint">Must match a facility supported by Unity</span><input id="basicFacilityId" autocomplete="off"></label>
+          <label>Catalog ID <span class="hint">Must match a catalog supported by Unity</span><input id="basicCatalogId" autocomplete="off"></label>
+          <label>Unity scene <span class="hint">The current editor supports TSS</span><input id="basicSceneName" value="TSS" disabled></label>
+          <p class="field-help full">Changing the scenario ID updates its manifest entry and downloaded filename. Unity checks facility and catalog compatibility when the package is launched.</p>
+        </div></div>
       </section>
-      <aside class="preview"><h2>Binder preview</h2><p class="preview-help">Instructor-authored network tokens are shown with their current values.</p><div id="binder"><p>Load a scenario to preview its authored binder content.</p></div></aside>
+
+      <section id="panel-network" class="section-panel" role="tabpanel" aria-labelledby="tab-network" hidden>
+        <div class="section-heading"><p class="step">SECTION 02</p><h2>Network Training</h2><p>Set the network rules, device roles, and evidence students use to complete the lab. Per-student addresses, VLAN assignments, and credentials may be generated during the training run.</p></div>
+        <div id="networkFields" class="structured-fields"></div>
+      </section>
+
+      <section id="panel-facility" class="section-panel" role="tabpanel" aria-labelledby="tab-facility" hidden>
+        <div class="section-heading"><p class="step">SECTION 03</p><h2>Facility &amp; Equipment</h2><p>Describe the equipment available, rack and endpoint placements students must complete, and the cabling relationships used by the lab. IDs must refer to items Unity knows about.</p></div>
+        <div id="facilityFields" class="structured-fields"></div>
+      </section>
+
+      <section id="panel-binder" class="section-panel" role="tabpanel" aria-labelledby="tab-binder" hidden>
+        <div class="section-heading"><p class="step">SECTION 04</p><h2>Binder Content</h2><p>Edit the seven student-facing reference sections. Text may include supported tokens such as <code>{ScenarioId}</code> and <code>{Ssid}</code>; the preview below resolves instructor-authored values.</p></div>
+        <div id="binderFields" class="structured-fields"></div>
+        <section class="preview-card"><div class="preview-heading"><div><p class="step">LIVE PREVIEW</p><h3>Student binder preview</h3></div><p>Preview updates as you edit. Runtime-generated values remain placeholders when the browser does not know them.</p></div><div id="binder"></div></section>
+      </section>
+
+      <section id="panel-review" class="section-panel" role="tabpanel" aria-labelledby="tab-review" hidden>
+        <div class="section-heading"><p class="step">SECTION 05</p><h2>Review &amp; Export</h2><p>Check package structure and scenario consistency, then download the updated files. Browser validation helps catch authoring issues; Unity remains the final authority for facility compatibility and launch validation.</p></div>
+        <div class="review-layout">
+          <section class="form-card"><div class="card-title-row"><div><h3>Package checks</h3><p class="muted">These checks do not replace Unity validation.</p></div><button id="validate" class="primary">Validate package</button></div><ul id="errors" class="validation-list"><li>Validation has not been run.</li></ul></section>
+          <section class="form-card"><h3>Download files</h3><p class="muted">Export the scenario JSON and matching manifest, then place them in the scenario package.</p><div class="download-actions"><button id="downloadScenario">Download scenario JSON</button><button id="downloadManifest">Download manifest</button></div><button id="clearDraft" class="quiet">Clear saved browser draft</button></section>
+        </div>
+      </section>
+
+      <section id="panel-advanced" class="section-panel" role="tabpanel" aria-labelledby="tab-advanced" hidden>
+        <div class="section-heading"><p class="step">SECTION 06</p><h2>Advanced JSON</h2><p>Inspect or edit the complete scenario document. Use this when working with fields not covered by the guided forms. Valid JSON edits sync back to the other sections; incomplete JSON is held until it can be parsed.</p></div>
+        <div class="form-card"><label for="json" class="json-label">Full scenario JSON <span class="hint">Schema and property names are preserved</span></label><textarea id="json" spellcheck="false" disabled></textarea></div>
+      </section>
+
+      <footer class="workspace-footer"><span>Drafts are saved in this browser.</span><span>Unity is the final package validator.</span></footer>
     </section>
   </main>
-  <template id="binderTemplate"><article><h3></h3><strong></strong><p></p><dl></dl></article></template>
+
+  <template id="binderTemplate"><article class="binder-preview-section"><h4></h4><strong></strong><p></p><dl></dl></article></template>
   <script src="app.js"></script>
 </body>
 </html>

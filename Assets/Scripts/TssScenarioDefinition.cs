@@ -7,6 +7,8 @@ public sealed class TssScenarioDefinition : ScriptableObject
     public bool IsExternalRuntime { get; internal set; }
     public string scenarioId;
     public string displayName;
+    public string facilityId = TssExternalScenarioData.DefaultFacilityId;
+    public string catalogId = TssExternalScenarioData.DefaultCatalogId;
     public string sceneName = "SampleScene";
     public ScenarioInventoryItem[] inventory;
     public ScenarioCableInventoryItem[] cableInventory;

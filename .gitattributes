@@ -24,4 +24,4 @@
 *.blend1 binary
 *.pdf binary
 *.docx binary
-Assets/Video[[:space:]]Clips/*.mp4 filter=lfs diff=lfs merge=lfs -text
+Assets/StreamingAssets/*.mp4 filter=lfs diff=lfs merge=lfs -text

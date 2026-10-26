@@ -6,6 +6,8 @@ using UnityEngine;
 public sealed class TssScenarioCatalog : ScriptableObject
 {
     public const string ResourcePath = "TssScenarioCatalog";
+    public string facilityId = TssExternalScenarioData.DefaultFacilityId;
+    public string catalogId = TssExternalScenarioData.DefaultCatalogId;
     public EquipmentDefinition[] equipment;
     public TssCableDefinition[] cables;
     public string sceneName;
@@ -29,7 +31,9 @@ public sealed class TssScenarioCatalog : ScriptableObject
                 errors.Add("Catalog has a missing or duplicate cable ID.");
         if (equipment == null || equipment.Length == 0 || cables == null || cables.Length == 0)
             errors.Add("Catalog requires equipment and cables.");
-        if (sceneName != "TSS" || rackIds == null || stationIds == null || endpointIds == null)
+        if (string.IsNullOrWhiteSpace(facilityId)) errors.Add("Catalog facilityId is required.");
+        if (string.IsNullOrWhiteSpace(catalogId)) errors.Add("Catalog catalogId is required.");
+        if (string.IsNullOrWhiteSpace(sceneName) || sceneName != "TSS" || rackIds == null || stationIds == null || endpointIds == null)
             errors.Add("Catalog requires the TSS facility identifiers.");
         foreach (var group in new[] { rackIds, stationIds, endpointIds })
         {

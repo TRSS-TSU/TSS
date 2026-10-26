@@ -12,6 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ef5fe23e66b83444fb50eb1cecd3d417, type: 3}
   m_Name: TssScenarioCatalog
   m_EditorClassIdentifier: TSS.Runtime::TssScenarioCatalog
+  facilityId: TSS_MAIN
+  catalogId: TSS_MAIN_CATALOG
   equipment:
   - {fileID: 11400000, guid: 5e7c315dbcf497f4582444351c43ff5a, type: 2}
   - {fileID: 11400000, guid: 9f73692d4caf61749a4b7bf4e3e4f26e, type: 2}
