@@ -501,9 +501,37 @@
     {
       "fromEndpoint": "AN-1",
       "fromPort": "Port 1",
+      "toEndpoint": "Patch Panel 1",
+      "toPort": "Port 48",
+      "cableType": "Crossover"
+    },
+    {
+      "fromEndpoint": "Patch Panel 1",
+      "fromPort": "Port 48",
+      "toEndpoint": "Patch Panel 2",
+      "toPort": "Port 48",
+      "cableType": "Structural"
+    },
+    {
+      "fromEndpoint": "Patch Panel 2",
+      "fromPort": "Port 48",
       "toEndpoint": "AN-2",
       "toPort": "Port 1",
-      "cableType": "Crossover"
+      "cableType": "Straight"
+    },
+    {
+      "fromEndpoint": "CN-1",
+      "fromPort": "Port 1",
+      "toEndpoint": "Patch Panel 1",
+      "toPort": "Port 18",
+      "cableType": "Straight"
+    },
+    {
+      "fromEndpoint": "Patch Panel 1",
+      "fromPort": "Port 18",
+      "toEndpoint": "Carrier Demarc",
+      "toPort": "Port 1",
+      "cableType": "Structural"
     },
     {
       "fromEndpoint": "IT1",

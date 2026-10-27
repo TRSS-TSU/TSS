@@ -215,6 +215,20 @@ public sealed class TssCableRouteProvider : MonoBehaviour
             return node ? new[] { new RouteEntryContext(node) } : System.Array.Empty<RouteEntryContext>();
         }
 
+        if (endpointId.StartsWith("WallPort:", System.StringComparison.Ordinal))
+        {
+            // Wallports can terminate either the normal room tray or a dedicated device riser.
+            // Keep both nearest candidates; SelectRoute discards disconnected paths.
+            var candidates = new List<RouteEntryContext>();
+            var normal = Nearest(endpoint.CableAnchorPosition, candidate => candidate.role != TssCableRouteNodeRole.StationDrop);
+            var stationDrop = Nearest(endpoint.CableAnchorPosition, candidate => candidate.role == TssCableRouteNodeRole.StationDrop);
+            if (normal)
+                candidates.Add(new RouteEntryContext(normal));
+            if (stationDrop && stationDrop != normal)
+                candidates.Add(new RouteEntryContext(stationDrop));
+            return candidates.ToArray();
+        }
+
         return System.Array.Empty<RouteEntryContext>();
     }
 

@@ -1620,6 +1620,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1795229686196435612, guid: 7be212de44e33c545a67156bf9c9d66b, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 50
+      objectReference: {fileID: 0}
     - target: {fileID: 6982436924994364847, guid: 7be212de44e33c545a67156bf9c9d66b, type: 3}
       propertyPath: m_Name
       value: WorkPackageShowcase

@@ -605,41 +605,6 @@ public sealed class TssTrainingSession : MonoBehaviour
             }
         }
 
-        foreach (var connection in _physicalConnections)
-        {
-            if (connection.IsPermanent || !IsCableTypeCorrect(connection))
-                continue;
-
-            var deviceEndpoint = IsConfiguredPermanentEndpoint(connection.EndpointAId)
-                ? connection.EndpointBId
-                : IsConfiguredPermanentEndpoint(connection.EndpointBId)
-                    ? connection.EndpointAId
-                    : string.Empty;
-            var infrastructureEndpoint = deviceEndpoint == connection.EndpointAId
-                ? connection.EndpointBId
-                : deviceEndpoint == connection.EndpointBId
-                    ? connection.EndpointAId
-                    : string.Empty;
-            if (string.IsNullOrWhiteSpace(deviceEndpoint)
-                || string.IsNullOrWhiteSpace(infrastructureEndpoint))
-                continue;
-
-            foreach (var permanent in _physicalConnections)
-            {
-                if (!permanent.IsPermanent)
-                    continue;
-
-                var farEndpoint = ConnectedOtherEndpoint(permanent, infrastructureEndpoint);
-                if (string.IsNullOrWhiteSpace(farEndpoint))
-                    continue;
-
-                if (!paths.Any(path =>
-                    (path.EndpointAId == deviceEndpoint && path.EndpointBId == farEndpoint)
-                    || (path.EndpointAId == farEndpoint && path.EndpointBId == deviceEndpoint)))
-                    paths.Add(new TssPhysicalPathRecord(deviceEndpoint, farEndpoint));
-            }
-        }
-
         return paths;
     }
 
@@ -651,19 +616,6 @@ public sealed class TssTrainingSession : MonoBehaviour
         foreach (var path in GetEffectivePhysicalPaths())
         {
             if (path.EndpointAId == endpointId || path.EndpointBId == endpointId)
-                return true;
-        }
-
-        foreach (var connection in _physicalConnections)
-        {
-            if (connection.IsPermanent
-                || !IsCableTypeCorrect(connection)
-                || (connection.EndpointAId != endpointId && connection.EndpointBId != endpointId))
-                continue;
-
-            var otherEndpointId = ConnectedOtherEndpoint(connection, endpointId);
-            if (IsConfiguredPermanentEndpoint(otherEndpointId)
-                && HasPhysicalPath(endpointId, otherEndpointId, false))
                 return true;
         }
 
@@ -683,18 +635,36 @@ public sealed class TssTrainingSession : MonoBehaviour
                 if (!endpoint.EndpointId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                for (var port = 1; port <= 4; port++)
+                foreach (var device in NetworkState?.Devices ?? Array.Empty<NetworkDeviceState>())
                 {
-                    var wallport = $"WallPort:Reception:Port{port:00}";
-                    var patchPanel = $"PatchPanel:Rack01:Port{port:00}";
-                    var switchport = "Rack:Rack01:U35:Fa07";
-                    if (HasCorrectPlayerConnection(endpoint.EndpointId, wallport)
-                        && HasPermanentConnection(wallport, patchPanel)
-                        && HasCorrectPlayerConnection(patchPanel, switchport))
-                        return true;
+                    if (!IsOperationalAccessSwitch(device))
+                        continue;
+
+                    foreach (var iface in device.Interfaces.Values)
+                        if (iface != null && iface.AdminUp && iface.CarrierUp
+                            && !string.IsNullOrWhiteSpace(iface.EndpointId)
+                            && HasPhysicalPath(endpoint.EndpointId, iface.EndpointId, true))
+                            return true;
                 }
             }
         }
+
+        return false;
+    }
+
+    private static bool IsOperationalAccessSwitch(NetworkDeviceState device)
+    {
+        if (device == null
+            || (!string.Equals(device.ExpectedRole, "AN-1", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(device.ExpectedRole, "AN-2", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(device.Hostname, "AN-1", StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(device.Hostname, "AN-2", StringComparison.OrdinalIgnoreCase)))
+            return false;
+
+        foreach (var iface in device.Interfaces.Values)
+            if (iface != null && iface.Name.StartsWith("Fa0/", StringComparison.OrdinalIgnoreCase)
+                && int.TryParse(iface.Name.Substring(4), out var port) && port >= 1 && port <= 24)
+                return true;
 
         return false;
     }

@@ -369,11 +369,11 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
 
         ConfigureAccessPointCard(false);
         var reachable = new TssNetworkReachabilityEvaluator(network).Evaluate(_deviceKey, network.Profile.ApManagementAddress);
-        if (!network.AccessPoint.UplinkConnected || !network.IsAccessPointSwitchPortReady() || !reachable.Success)
+        if (!network.AccessPoint.UplinkConnected || !reachable.Success)
         {
             if (applyFeedbackText)
             {
-                applyFeedbackText.text = !network.AccessPoint.UplinkConnected ? "Layer 1: connect the AP uplink first." : !network.IsAccessPointSwitchPortReady() ? "Layer 2: AP switchport Fa0/7 is not ready." : reachable.Diagnostic;
+                applyFeedbackText.text = !network.AccessPoint.UplinkConnected ? "Layer 1: connect the AP uplink first." : reachable.Diagnostic;
                 applyFeedbackText.color = new Color(1f, 0.45f, 0.45f, 1f);
             }
             return;

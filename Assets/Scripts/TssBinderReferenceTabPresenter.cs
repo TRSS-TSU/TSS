@@ -187,6 +187,118 @@ public sealed class TssBinderReferenceTabPresenter : MonoBehaviour
             var cells = row.GetComponentsInChildren<Text>(true);
             for (var cell = 0; cell < rows[i].Length && cell < cells.Length; cell++)
                 cells[cell].text = rows[i][cell] ?? string.Empty;
+
+            if (cells.Length > 1)
+            {
+                cells[1].rectTransform.offsetMin = new Vector2(8f, 4f);
+                cells[1].rectTransform.offsetMax = new Vector2(-8f, -4f);
+            }
+
+            if (rows[i].Length > 1 && string.Equals(rows[i][0], "Login banner", StringComparison.OrdinalIgnoreCase))
+            {
+                AddCopyToCliButton(row.transform, cells.Length > 0 ? cells[0] : null, cells.Length > 1 ? cells[1] : null);
+                var layout = row.GetComponent<LayoutElement>();
+                if (cells.Length > 1)
+                {
+                    cells[1].verticalOverflow = VerticalWrapMode.Overflow;
+                    Canvas.ForceUpdateCanvases();
+                    var preferredHeight = Mathf.Max(100f, cells[1].preferredHeight + 24f);
+                    if (layout)
+                    {
+                        layout.minHeight = preferredHeight;
+                        layout.preferredHeight = preferredHeight;
+                    }
+                }
+            }
         }
+
+        if (tableContent is RectTransform contentRect)
+        {
+            LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
+            if (contentRect.parent is RectTransform viewportRect)
+            {
+                LayoutRebuilder.ForceRebuildLayoutImmediate(viewportRect);
+                if (viewportRect.parent is RectTransform scrollRect)
+                    LayoutRebuilder.ForceRebuildLayoutImmediate(scrollRect);
+            }
+        }
+    }
+
+    private static void AddCopyToCliButton(Transform row, Text label, Text value)
+    {
+        if (!row || !label || !value)
+            return;
+
+        var cell = label.transform.parent;
+        if (!cell)
+            return;
+
+        var cellLayout = cell.GetComponent<LayoutElement>();
+        if (cellLayout)
+            cellLayout.preferredWidth = 0f;
+
+        var layout = cell.GetComponent<VerticalLayoutGroup>() ?? cell.gameObject.AddComponent<VerticalLayoutGroup>();
+        layout.padding = new RectOffset(16, 16, 8, 8);
+        layout.spacing = 6f;
+        layout.childAlignment = TextAnchor.MiddleLeft;
+        layout.childControlWidth = true;
+        layout.childControlHeight = true;
+        layout.childForceExpandWidth = true;
+        layout.childForceExpandHeight = false;
+
+        var labelLayout = label.GetComponent<LayoutElement>() ?? label.gameObject.AddComponent<LayoutElement>();
+        labelLayout.minHeight = 34f;
+        labelLayout.preferredHeight = 34f;
+        label.rectTransform.anchorMin = new Vector2(0f, 0.5f);
+        label.rectTransform.anchorMax = new Vector2(1f, 0.5f);
+        label.rectTransform.sizeDelta = new Vector2(0f, 34f);
+        label.transform.SetAsFirstSibling();
+
+        var buttonRow = new GameObject("CopyToCliButtonRow", typeof(RectTransform), typeof(HorizontalLayoutGroup), typeof(LayoutElement));
+        buttonRow.transform.SetParent(cell, false);
+        var buttonRowLayout = buttonRow.GetComponent<LayoutElement>();
+        buttonRowLayout.minHeight = 48f;
+        buttonRowLayout.preferredHeight = 48f;
+        var buttonRowGroup = buttonRow.GetComponent<HorizontalLayoutGroup>();
+        buttonRowGroup.childAlignment = TextAnchor.MiddleLeft;
+        buttonRowGroup.childControlWidth = false;
+        buttonRowGroup.childControlHeight = true;
+        buttonRowGroup.childForceExpandWidth = false;
+        buttonRowGroup.childForceExpandHeight = false;
+
+        var buttonObject = new GameObject("CopyToCliButton", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
+        buttonObject.transform.SetParent(buttonRow.transform, false);
+        buttonObject.GetComponent<RectTransform>().sizeDelta = new Vector2(180f, 0f);
+        var buttonImage = buttonObject.GetComponent<Image>();
+        buttonImage.color = new Color(0.82f, 0.38f, 0.04f, 1f);
+        var button = buttonObject.GetComponent<Button>();
+        button.targetGraphic = buttonImage;
+        var buttonLayout = buttonObject.GetComponent<LayoutElement>();
+        buttonLayout.minWidth = 180f;
+        buttonLayout.preferredWidth = 180f;
+        buttonLayout.flexibleWidth = 0f;
+        buttonLayout.minHeight = 48f;
+        buttonLayout.preferredHeight = 48f;
+
+        var buttonTextObject = new GameObject("Text", typeof(RectTransform), typeof(Text));
+        buttonTextObject.transform.SetParent(buttonObject.transform, false);
+        var buttonText = buttonTextObject.GetComponent<Text>();
+        buttonText.font = label.font;
+        buttonText.fontSize = 26;
+        buttonText.alignment = TextAnchor.MiddleCenter;
+        buttonText.color = Color.white;
+        buttonText.text = "Copy to CLI";
+        var buttonTextRect = buttonText.rectTransform;
+        buttonTextRect.anchorMin = Vector2.zero;
+        buttonTextRect.anchorMax = Vector2.one;
+        buttonTextRect.offsetMin = Vector2.zero;
+        buttonTextRect.offsetMax = Vector2.zero;
+
+        var command = "banner motd #" + value.text;
+        button.onClick.AddListener(() =>
+        {
+            if (TssTerminalSessionPresenter.Active == null || !TssTerminalSessionPresenter.Active.TrySetCommandInput(command))
+                Debug.Log("TssBinderReferenceTabPresenter: Open a device terminal before copying a value to the CLI.");
+        });
     }
 }

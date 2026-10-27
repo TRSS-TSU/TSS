@@ -383,12 +383,6 @@ public sealed class TssNetworkSessionState
             error = "Layer 1: connect the AP uplink through the structured path first.";
             return false;
         }
-        if (!IsAccessPointSwitchPortReady())
-        {
-            error = "Layer 2: place AN-1 Fa0/7 in the Reception VLAN and bring it up.";
-            return false;
-        }
-
         var reachability = new TssNetworkReachabilityEvaluator(this).Evaluate(sourceKey, Profile.ApManagementAddress);
         if (!reachability.Success)
         {

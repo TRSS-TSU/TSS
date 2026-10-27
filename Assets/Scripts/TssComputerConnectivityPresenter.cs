@@ -74,20 +74,24 @@ public sealed class TssComputerConnectivityPresenter : MonoBehaviour, ITssEndpoi
             var connected = session.IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId);
             if (session.NetworkState != null)
             {
-                var layer1 = connected && session.NetworkState.IsEndpointLogicalLayer1Available(session, endpoint.EndpointId);
-                var layer2 = layer1 && session.NetworkState.IsEndpointLogicalLayer2Available(session, endpoint.EndpointId);
                 var separator = endpoint.EndpointId.LastIndexOf(':');
                 var key = separator > 0 ? endpoint.EndpointId.Substring(0, separator) : endpoint.EndpointId;
                 if (session.NetworkState.TryGetEndpoint(key, out var state))
                 {
-                    var result = new TssNetworkReachabilityEvaluator(session.NetworkState).Evaluate(key, state.Gateway);
-                    var layer3 = layer2 && session.NetworkState.IsEndpointLayer3Operational(endpoint.EndpointId);
-                    var wanReachable = layer3 && result.Success;
-                    ApplyLayerStates(layer1, layer2, layer3, wanReachable);
+                    var evaluator = new TssNetworkReachabilityEvaluator(session.NetworkState);
+                    var gatewayProbe = evaluator.Evaluate(key, state.Gateway);
+                    var providerProbe = gatewayProbe.Success
+                        ? evaluator.Evaluate(key, session.NetworkState.Profile.WanProviderAddress)
+                        : default;
+                    var layer1 = gatewayProbe.FailedLayer != 1;
+                    var layer2 = layer1 && gatewayProbe.FailedLayer != 2;
+                    var layer3 = layer2 && gatewayProbe.Success;
+                    var providerReachable = layer3 && providerProbe.Success;
+                    ApplyLayerStates(layer1, layer2, layer3, providerReachable);
                     return;
                 }
 
-                ApplyLayerStates(layer1, layer2, false, false);
+                ApplyLayerStates(false, false, false, false);
                 return;
             }
 

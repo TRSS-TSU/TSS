@@ -10,7 +10,7 @@ public static class TssScenarioAssessmentCoordinator
         var scenario = session ? session.Scenario : null;
         var workPackages = new List<TssAssessmentWorkPackage>
         {
-            AssessPlacement(scenario, session),
+            AssessPhysical(session),
             AssessNetwork(2, session),
             AssessNetwork(3, session),
             AssessNetwork(4, session)
@@ -23,26 +23,16 @@ public static class TssScenarioAssessmentCoordinator
             workPackages);
     }
 
-    private static TssAssessmentWorkPackage AssessPlacement(TssScenarioDefinition scenario, TssTrainingSession session)
+    private static TssAssessmentWorkPackage AssessPhysical(TssTrainingSession session)
     {
         var passed = new List<string>();
         var unmet = new List<string>();
-        if (!scenario || !session)
+        var result = new TssPhysicalWorkPackageEvaluator(session).Evaluate();
+        foreach (var condition in result.Conditions)
         {
-            unmet.Add("No scenario or training session is loaded.");
-            return new TssAssessmentWorkPackage(1, false, passed, unmet);
+            if (condition.IsComplete) passed.Add(condition.Label);
+            else unmet.Add(condition.Label);
         }
-
-        foreach (var status in TssPlacementEvaluator.EvaluateRequirements(scenario, session.Installed, session.EndpointPlacements))
-        {
-            var label = $"{status.RequiredName} at {status.Location}";
-            if (status.IsComplete) passed.Add(label);
-            else unmet.Add($"Place {status.RequiredName} at {status.Location}.");
-        }
-
-        if (passed.Count == 0 && unmet.Count == 0)
-            unmet.Add("No placement requirements are defined for this scenario.");
-
         return new TssAssessmentWorkPackage(1, unmet.Count == 0, passed, unmet);
     }
 
@@ -56,7 +46,7 @@ public static class TssScenarioAssessmentCoordinator
             return new TssAssessmentWorkPackage(workPackage, false, passed, unmet);
         }
 
-        var evaluator = new TssNetworkWorkPackageEvaluator(session.NetworkState, session);
+        var evaluator = new TssNetworkWorkPackageEvaluator(session.NetworkState);
         var result = workPackage switch
         {
             2 => evaluator.EvaluateLayer2(false),
@@ -75,6 +65,18 @@ public static class TssScenarioAssessmentCoordinator
 
         return new TssAssessmentWorkPackage(workPackage, unmet.Count == 0, passed, unmet);
     }
+}
+
+public static class TssWorkPackageTitles
+{
+    public static string Get(int workPackage) => workPackage switch
+    {
+        1 => "WP1 — Physical Installation",
+        2 => "WP2 — Layer 2",
+        3 => "WP3 — Layer 3",
+        4 => "WP4 — Wireless",
+        _ => $"WORK PACKAGE {workPackage}"
+    };
 }
 
 public sealed class TssScenarioAssessment

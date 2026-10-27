@@ -309,44 +309,66 @@ public sealed class TssCliCommandProcessor
     {
         var isRouter = category == EquipmentCategory.Router;
         var execCommands = isRouter
-            ? new[] { "show ip interface brief\tDisplay interface status", "show interfaces\tDisplay interface details", "show ip route | show route\tDisplay the routing table", "ping <ip>\tTest reachability" }
-            : new[] { "show ip interface brief\tDisplay interface status", "show interfaces\tDisplay interface details", "show interfaces trunk\tDisplay active trunks", "show vlan brief\tDisplay VLANs and ports", "show mac address-table\tDisplay learned MACs", "ping <ip>\tTest reachability" };
+            ? new[] { "show ip interface brief\tSummarize interface addresses and status", "show interfaces\tDisplay interface details", "show ip route\tDisplay connected and default routes", "ping <address>\tTest reachability" }
+            : new[] { "show interfaces\tDisplay interface details", "show vlan brief\tDisplay VLANs and assigned ports", "show interfaces trunk\tVerify trunks, allowed VLANs, and native VLAN", "ping <address>\tTest reachability" };
         var interfaceCommands = isRouter
-            ? new[] { "ip address <address> <mask> | ip add <address> <mask>\tAssign an IPv4 address", "no shutdown | shutdown\tEnable or disable the interface", "encapsulation dot1q <vlan>\tAssociate a VLAN with a router subinterface" }
-            : new[] { "switchport trunk encapsulation dot1q | no switchport trunk encapsulation dot1q\tEnable or clear 802.1Q encapsulation", "switchport mode trunk | switchport mode tr | swi mo tr | sw mo tr | no switchport mode trunk | no sw mo tr\tCreate or clear a trunk interface", "switchport mode access | no switchport mode access | swi mo acc | no swi mo acc\tSet or clear an access interface", "switchport access vlan <id> | no switchport access vlan | sw acc vl <id> | no sw acc vl\tAssign or clear the access VLAN", "switchport trunk allowed vlan <id>[,<id>] | no switchport trunk allowed vlan\tSet or clear allowed trunk VLANs", "switchport trunk native vlan <id> | no switchport trunk native vlan\tSet or clear the native VLAN", "ip address <address> <mask> | ip add <address> <mask> | no ip address | no ip add\tAssign or clear an IPv4 address", "no shutdown | shutdown\tEnable or disable the interface" };
+            ? new[] { "encapsulation dot1q <vlan>\tAssociate a VLAN with a router subinterface", "ip address <address> <mask>\tAssign an IPv4 address", "shutdown\tSet the interface administrative state" }
+            : new[] { "switchport mode access\tSet an access port", "switchport access vlan <id>\tAssign the access VLAN", "switchport mode trunk\tSet a trunk port", "switchport trunk allowed vlan <list>\tSet VLANs carried by the trunk", "switchport trunk native vlan <id>\tSet the trunk's untagged VLAN", "shutdown\tSet the port administrative state" };
 
         var sb = new StringBuilder((isRouter ? "ROUTER" : "SWITCH") + " COMMAND REFERENCE\n\n");
         sb.AppendLine("  COMMAND".PadRight(36) + " | WHAT IT DOES");
         AppendReferenceSection(sb, "User / Privileged EXEC", new[]
         {
-            "enable | en | disable\tEnter or leave privileged mode",
-            "show running-config | show run\tDisplay the active configuration",
-            "show startup-config | show start\tDisplay the saved configuration",
-            "configure terminal | conf t\tEnter global configuration",
-            "copy running-config startup-config | write memory\tSave the configuration",
-            "exit | clear\tLeave the session or clear output"
+            "enable\tEnter privileged EXEC mode",
+            "configure terminal\tEnter global configuration mode",
+            "show running-config\tDisplay the active configuration",
+            "show startup-config\tDisplay the saved configuration",
+            "copy running-config startup-config\tSave the configuration",
+            "exit\tLeave the current mode",
+            "end\tReturn to privileged EXEC mode",
+            "do <EXEC command>\tRun an EXEC command from configuration mode"
         });
         AppendReferenceSection(sb, "EXEC show and test commands", execCommands);
         AppendReferenceSection(sb, "Global configuration", new[]
         {
-            "hostname <name> | no hostname\tSet or reset the device name",
-            "enable password <value> | no enable password\tSet or clear the legacy privileged password",
-            "enable secret <value> | no enable secret\tSet or clear the preferred privileged password",
-            "ip domain-lookup | no ip domain-lookup\tEnable or disable DNS lookup",
-            "service password-encryption | no service password-encryption\tEnable or disable password encryption",
-            "banner motd <delimiter>text<delimiter> | no banner motd\tSet or clear the login banner",
-            isRouter ? "interface Fa0/0 | interface Fa0/0.<vlan>\tSelect a physical interface or subinterface" : "interface Fa0/1 | interface range Fa0/2 - Fa0/4\tSelect a port or port range",
-            "ip route <network> <mask> <next-hop> | no ip route <network> <mask> <next-hop>\tAdd or remove a static route",
-            "line console 0 | line vty 0 4\tSelect a terminal line",
-            "exit | end\tLeave configuration mode"
+            "hostname <name>\tSet the device name",
+            "enable secret <password>\tSet the privileged-mode password",
+            "service password-encryption\tEncrypt configured line passwords",
+            "ip domain-lookup\tSet DNS lookup state",
+            "banner motd #<text>#\tSet the DoD warning banner",
+            "line console 0\tSelect the console line",
+            "line vty 0 4\tSelect remote terminal lines"
         });
         if (!isRouter)
-            AppendReferenceSection(sb, "Switch VLAN configuration", new[] { "vlan <id> | no vlan <id>\tCreate/select or remove a VLAN" });
+        {
+            AppendReferenceSection(sb, "Switch VLAN configuration", new[]
+            {
+                "vlan <id>\tCreate or select a VLAN",
+                "name <name>\tName the selected VLAN",
+                "state suspend\tSuspend the selected VLAN"
+            });
+            AppendReferenceSection(sb, "Switchport selection", new[]
+            {
+                "interface Fa0/<port>\tSelect one switchport",
+                "interface range Fa0/<first> - Fa0/<last>\tSelect a continuous port range"
+            });
+        }
+        else
+        {
+            AppendReferenceSection(sb, "Router interface selection", new[]
+            {
+                "interface Fa0/0\tSelect the switched-network uplink",
+                "interface Fa0/0.<vlan>\tCreate or select a VLAN subinterface",
+                "interface Fa0/1\tSelect the provider-facing WAN interface",
+                "ip route 0.0.0.0 0.0.0.0 <next-hop>\tSet the provider default route"
+            });
+        }
         AppendReferenceSection(sb, "Interface configuration", interfaceCommands);
-        AppendReferenceSection(sb, "Line configuration", new[] { "password <value> | no password\tSet or clear the line password", "login | no login\tRequire or clear line login" });
-        if (!isRouter)
-            AppendReferenceSection(sb, "VLAN configuration", new[] { "name <name> | no name\tName or reset the selected VLAN", "state suspend | no state suspend\tSuspend or resume the selected VLAN" });
-        sb.Append("In configuration modes: do <exec command>\tRun an EXEC command");
+        AppendReferenceSection(sb, "Line configuration", new[]
+        {
+            "password <password>\tSet the selected line password",
+            "login\tRequire the selected line password"
+        });
         return sb.ToString();
     }
 
@@ -386,7 +408,17 @@ public sealed class TssCliCommandProcessor
         if (!string.IsNullOrWhiteSpace(d.EnableSecret)) sb.AppendLine("enable secret <configured>");
         if (d.PasswordEncryption) sb.AppendLine("service password-encryption");
         if (d.DomainLookupDisabled) sb.AppendLine("no ip domain-lookup");
-        if (!string.IsNullOrWhiteSpace(d.Motd)) sb.AppendLine("banner motd #" + d.Motd + "#");
+        if (!string.IsNullOrWhiteSpace(d.Motd))
+        {
+            sb.AppendLine("!");
+            var motd = d.Motd.Trim();
+            const string legacyPrefix = "banner motd #";
+            if (motd.StartsWith(legacyPrefix, StringComparison.OrdinalIgnoreCase))
+                motd = motd.Substring(legacyPrefix.Length);
+            if (motd.EndsWith("#", StringComparison.Ordinal))
+                motd = motd[..^1];
+            sb.AppendLine(motd);
+        }
         sb.AppendLine("!");
         foreach (var i in d.Interfaces.Values.OrderBy(x => InterfaceOrderKey(x.Name), StringComparer.OrdinalIgnoreCase))
         {

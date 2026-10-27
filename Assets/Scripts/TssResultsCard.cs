@@ -10,7 +10,7 @@ public sealed class TssResultsCard : MonoBehaviour
 
     public void Bind(TssAssessmentWorkPackage result)
     {
-        if (title) title.text = $"WORK PACKAGE {result.WorkPackage}";
+        if (title) title.text = TssWorkPackageTitles.Get(result.WorkPackage);
         if (status)
         {
             status.text = result.IsComplete ? "PASS" : "INCOMPLETE";

@@ -92,10 +92,10 @@ public sealed class TssCableScheduleTabPresenter : MonoBehaviour
                 row.transform.SetSiblingIndex(notes.GetSiblingIndex());
             row.SetActive(true);
             var rowCells = row.GetComponentsInChildren<Text>(true);
-            SetRowCell(rowCells, 0, entry.fromEndpoint);
-            SetRowCell(rowCells, 1, entry.fromPort);
-            SetRowCell(rowCells, 2, entry.toEndpoint);
-            SetRowCell(rowCells, 3, entry.toPort);
+            SetRowCell(rowCells, 0, DisplayName(entry.fromEndpoint));
+            SetRowCell(rowCells, 1, DisplayPort(entry.fromPort));
+            SetRowCell(rowCells, 2, DisplayName(entry.toEndpoint));
+            SetRowCell(rowCells, 3, DisplayPort(entry.toPort));
             SetRowCell(rowCells, 4, entry.cableType);
             ApplyRowStyle(row, prefabRowStyles, i);
         }
@@ -153,6 +153,16 @@ public sealed class TssCableScheduleTabPresenter : MonoBehaviour
             text.text = value ?? string.Empty;
         }
     }
+
+    private static string DisplayName(string value)
+    {
+        return (value ?? string.Empty)
+            .Replace("Mount", "Wallport")
+            .Replace("Patch1", "Patch Panel 1")
+            .Replace("Patch2", "Patch Panel 2");
+    }
+
+    private static string DisplayPort(string value) => (value ?? string.Empty).Replace("Punch", "Port");
 
     private string ResolveDynamicValue(int row, int column, string fallback, TssNetworkRunProfile profile)
     {

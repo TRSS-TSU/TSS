@@ -550,7 +550,9 @@ public sealed class RackMountController : MonoBehaviour
 
     private void PositionHoverLabel(int u)
     {
-        TssRuntimeUi.Instance?.ShowRackSlotHover(u);
+        var held = TssTrainingSession.Instance ? TssTrainingSession.Instance.HeldItem : null;
+        var rear = held && held.useRearRackPlacement && !IsDualSidedRackEquipment(held);
+        TssRuntimeUi.Instance?.ShowRackSlotHover(u, rear);
     }
 
     private void ClearHoveredSlot()

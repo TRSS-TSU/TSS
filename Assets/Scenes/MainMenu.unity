@@ -170,6 +170,50 @@ MonoBehaviour:
   scenarioMenuCanvasPrefab: {fileID: 2219538347250863404, guid: 8eb1309a14b22724eaf82d4743347628, type: 3}
   scenarioButtonPrefab: {fileID: 1297116939038653213, guid: 5c74f0e1ffe8e0848bc197e98622fe8f, type: 3}
   scenarioMenuCanvasInstance: {fileID: 7898028383004603693}
+--- !u!1 &1262778052
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1262778054}
+  - component: {fileID: 1262778053}
+  m_Layer: 0
+  m_Name: Cable Office 2 Wallport Port 2 to Office 2 Printer Eth01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1262778053
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1262778052}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d7f8cccf7c54d84b31d9895575c2fc9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssCableVisual
+--- !u!4 &1262778054
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1262778052}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1279493785
 GameObject:
   m_ObjectHideFlags: 0
@@ -307,6 +351,50 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!1 &1669351629
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1669351631}
+  - component: {fileID: 1669351630}
+  m_Layer: 0
+  m_Name: Cable Patch2 Port 6 to AN-2 Port 4
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1669351630
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1669351629}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8d7f8cccf7c54d84b31d9895575c2fc9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssCableVisual
+--- !u!4 &1669351631
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1669351629}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1888199267
 GameObject:
   m_ObjectHideFlags: 0
@@ -780,3 +868,5 @@ SceneRoots:
   - {fileID: 1888199268}
   - {fileID: 1279493788}
   - {fileID: 2106256648}
+  - {fileID: 1669351631}
+  - {fileID: 1262778054}

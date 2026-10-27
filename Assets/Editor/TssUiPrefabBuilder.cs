@@ -59,7 +59,7 @@ public static class TssUiPrefabBuilder
         rt.sizeDelta = new Vector2(380f, 440f);
         root.GetComponent<Image>().color = Surface;
 
-        var title = AddText(root.transform, "Title", "WP1 PLACEMENT", 18, TextAnchor.MiddleLeft);
+        var title = AddText(root.transform, "Title", "WP1 — PHYSICAL INSTALLATION", 18, TextAnchor.MiddleLeft);
         title.color = Amber;
         var titleRect = title.rectTransform;
         titleRect.anchorMin = new Vector2(0f, 1f);

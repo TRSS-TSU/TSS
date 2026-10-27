@@ -19,6 +19,8 @@ public enum CiscoCliMode
 
 public sealed class TssTerminalSessionPresenter : MonoBehaviour
 {
+    public static TssTerminalSessionPresenter Active { get; private set; }
+
     [Header("Header Elements")]
     [SerializeField] private Text titleText;
     [SerializeField] private Text subheaderText;
@@ -68,8 +70,12 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
     private string _historyDraft = string.Empty;
     private bool _isPagingShowOutput;
     private bool _morePromptVisible;
+    private bool _isEnteringBannerText;
+    private char _bannerDelimiter;
     private const int ShowPageLineCount = 8;
     private const string MorePrompt = "\n--More-- Press SPACE for more --\n";
+    private const float NormalInputHeight = 24f;
+    private const float BannerInputHeight = 240f;
 
     public CiscoCliMode CliMode => _cliMode;
 
@@ -85,12 +91,30 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         // ponytail: legacy fields stay serialized so unrebuilt scene instances remain loadable.
     }
 
+    private void OnEnable()
+    {
+        Active = this;
+    }
+
     private void OnDisable()
     {
+        if (Active == this)
+            Active = null;
         if (_notificationSession)
             _notificationSession.StateChanged -= OnNetworkStateChanged;
         _notificationSession = null;
         _observedNetworkDevice = null;
+    }
+
+    public bool TrySetCommandInput(string value)
+    {
+        if (!commandInput || !gameObject.activeInHierarchy)
+            return false;
+
+        commandInput.text += value ?? string.Empty;
+        commandInput.caretPosition = commandInput.text.Length;
+        commandInput.ActivateInputField();
+        return true;
     }
 
     private void Update()
@@ -150,6 +174,9 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         _historyDraft = string.Empty;
         _isPagingShowOutput = false;
         _morePromptVisible = false;
+        _isEnteringBannerText = false;
+        _bannerDelimiter = '\0';
+        SetBannerEntryMode(false);
         SetCommandEntryVisible(true);
 
         var isRouter = state.Category == EquipmentCategory.Router;
@@ -302,7 +329,31 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             return;
 
         var cmd = commandInput.text;
+
+        if (_isEnteringBannerText)
+        {
+            var delimiter = _bannerDelimiter;
+            var bannerText = (cmd ?? string.Empty).TrimEnd('\r', '\n');
+            if (string.IsNullOrWhiteSpace(bannerText) || !bannerText.EndsWith(delimiter.ToString(), StringComparison.Ordinal))
+            {
+                if (!cmd.EndsWith("\n", StringComparison.Ordinal))
+                    commandInput.text = cmd + "\n";
+                commandInput.ActivateInputField();
+                return;
+            }
+
+            commandInput.text = string.Empty;
+            _isEnteringBannerText = false;
+            _bannerDelimiter = '\0';
+            SetBannerEntryMode(false);
+            ExecuteCommand("banner motd " + delimiter + bannerText);
+            StartCoroutine(ScrollToBottomNextFrame());
+            return;
+        }
+
         commandInput.text = string.Empty;
+        if (TryBeginBannerTextEntry(cmd))
+            return;
 
         if (string.IsNullOrEmpty(cmd))
         {
@@ -315,6 +366,55 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
 
         ExecuteCommand(cmd.Trim());
         StartCoroutine(ScrollToBottomNextFrame());
+    }
+
+    private bool TryBeginBannerTextEntry(string command)
+    {
+        var value = (command ?? string.Empty).Trim();
+        if (!value.StartsWith("banner motd ", StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var rest = value.Substring(12).Trim();
+        if (rest.Length == 0)
+            return false;
+
+        var delimiter = rest[0];
+        if (rest.Length > 1 && rest.EndsWith(delimiter.ToString(), StringComparison.Ordinal))
+            return false;
+
+        _isEnteringBannerText = true;
+        _bannerDelimiter = delimiter;
+        commandInput.text = rest.Length == 1 ? string.Empty : rest.Substring(1);
+        RememberCommand(value);
+        AppendToConsole($"{GetCurrentPrompt()} {value}\n");
+        AppendToConsole($"Enter TEXT message. End with the character '{_bannerDelimiter}'.\n");
+        if (promptText)
+            promptText.text = "...";
+        SetBannerEntryMode(true);
+        commandInput.ActivateInputField();
+        StartCoroutine(ScrollToBottomNextFrame());
+        return true;
+    }
+
+    private void SetBannerEntryMode(bool enabled)
+    {
+        if (commandInput)
+        {
+            commandInput.lineType = enabled ? InputField.LineType.MultiLineNewline : InputField.LineType.SingleLine;
+            if (commandInput.textComponent)
+            {
+                commandInput.textComponent.horizontalOverflow = enabled ? HorizontalWrapMode.Wrap : HorizontalWrapMode.Overflow;
+                commandInput.textComponent.verticalOverflow = enabled ? VerticalWrapMode.Overflow : VerticalWrapMode.Truncate;
+            }
+        }
+
+        if (inputBar)
+        {
+            var layout = inputBar.GetComponent<LayoutElement>();
+            if (layout)
+                layout.minHeight = layout.preferredHeight = enabled ? BannerInputHeight : NormalInputHeight;
+        }
+        Canvas.ForceUpdateCanvases();
     }
 
     public void ExecuteCommand(string cmd)

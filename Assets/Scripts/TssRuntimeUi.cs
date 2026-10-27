@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using StarterAssets;
+using TMPro;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -43,6 +44,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
     private Text _heldText;
     private Image _heldCableImage;
     private Text _rackSlotHoverText;
+    private TMP_Text _playerNameText;
+    private TMP_Text _playerNumberText;
     private Text _objectiveText;
     private Text _contextText;
     private Text _progressText;
@@ -321,6 +324,10 @@ public sealed class TssRuntimeUi : MonoBehaviour
             _rackSlotHoverText = _hudRoot.Find("RackSlotHoverText")?.GetComponent<Text>();
             if (_rackSlotHoverText && !_rackSlotHoverText.font)
                 _rackSlotHoverText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+
+            var playerTexts = _hudRoot.GetComponentsInChildren<TMP_Text>(true);
+            _playerNameText = playerTexts.FirstOrDefault(text => text && text.gameObject.name == "PlayerNameText");
+            _playerNumberText = playerTexts.FirstOrDefault(text => text && text.gameObject.name == "PlayerNumberText");
         }
         var heldTextTransform = rootInstance.transform.Find("HUD/HeldText");
         if (heldTextTransform)
@@ -507,6 +514,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
             _heldCableImage.gameObject.SetActive(sprite != null);
         }
 
+        RefreshPlayerIdentity();
+
         if (_cancelHeldButton)
             _cancelHeldButton.SetActive(session.HeldItem != null || session.HeldCable != null);
 
@@ -514,6 +523,22 @@ public sealed class TssRuntimeUi : MonoBehaviour
         RefreshCasePanel();
         RefreshSopPanel();
         RefreshDebugPanel();
+    }
+
+    private void RefreshPlayerIdentity()
+    {
+        if (!session)
+            return;
+
+        var studentId = session.StudentId ?? string.Empty;
+        var separator = studentId.LastIndexOf('-');
+        var playerName = separator > 0 ? studentId.Substring(0, separator) : studentId;
+        var playerNumber = separator >= 0 && separator < studentId.Length - 1 ? studentId.Substring(separator + 1) : string.Empty;
+
+        if (_playerNameText)
+            _playerNameText.text = playerName;
+        if (_playerNumberText)
+            _playerNumberText.text = playerNumber;
     }
 
     public void ShowHudMessage(string message)
@@ -526,7 +551,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
         RefreshHudAdditions();
     }
 
-    public void ShowRackSlotHover(int u)
+    public void ShowRackSlotHover(int u, bool rear = false)
     {
         if (!_rackSlotHoverText && _hudRoot)
             _rackSlotHoverText = _hudRoot.Find("RackSlotHoverText")?.GetComponent<Text>();
@@ -537,7 +562,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (!_rackSlotHoverText)
             return;
 
-        _rackSlotHoverText.text = $"U{u:00}";
+        _rackSlotHoverText.text = rear ? $"REAR U{u:00}" : $"FRONT U{u:00}";
         _rackSlotHoverText.gameObject.SetActive(true);
     }
 
@@ -911,7 +936,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
     {
         var completePlacements = 0;
         var totalPlacements = 0;
-        foreach (var status in TssPlacementEvaluator.EvaluateAttemptRequirements(
+        foreach (var status in TssPlacementEvaluator.EvaluateRequirements(
                      session.Scenario,
                      session.Installed,
                      session.EndpointPlacements))
@@ -1007,7 +1032,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
     {
         completePlacements = 0;
         totalPlacements = 0;
-        foreach (var status in TssPlacementEvaluator.EvaluateAttemptRequirements(
+        foreach (var status in TssPlacementEvaluator.EvaluateRequirements(
                      session.Scenario,
                      session.Installed,
                      session.EndpointPlacements))
@@ -1038,7 +1063,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
         builder.AppendLine($"Complete: {complete}/{total}");
         builder.AppendLine();
 
-        foreach (var status in TssPlacementEvaluator.EvaluateAttemptRequirements(
+        foreach (var status in TssPlacementEvaluator.EvaluateRequirements(
                      session.Scenario,
                      session.Installed,
                      session.EndpointPlacements))
@@ -1115,70 +1140,89 @@ public sealed class TssRuntimeUi : MonoBehaviour
             return "No training session.";
 
         if (workPackage == 1)
-            return PlacementPanelText();
+            return PhysicalWorkPackageChecklistText();
 
         if (session.NetworkState == null)
         {
             if (workPackage == 4)
                 return StaticWorkPackageChecklist(
-                    "Access point installed at the designated ceiling mount",
-                    "AP uplink landed through the patch panel",
-                    "AP switchport placed in the correct VLAN",
-                    "Guest SSID secured and verified from the test laptop");
+                    "Place the access point at its scenario location",
+                    "Land the AP uplink through the patch panel",
+                    "Assign the AP switchport to the required VLAN",
+                    "Configure and verify the guest wireless service");
 
-            return StaticWorkPackageChecklist(
-                workPackage == 2 ? "Switches hardened and configured" : "Router hardened and configured",
-                workPackage == 2 ? "VLANs, access ports, and trunks verified" : "Inter-VLAN gateways and WAN verified",
-                "Required connectivity evidence verified",
-                "Configuration saved");
+            return workPackage == 2
+                ? StaticWorkPackageChecklist(
+                    "Harden the scenario's access switches",
+                    "Build the scenario VLAN databases",
+                    "Configure the required access ports and trunks",
+                    "Save both switch configurations")
+                : StaticWorkPackageChecklist(
+                    "Harden the scenario router",
+                    "Configure inter-VLAN gateways and the provider WAN",
+                    "Verify endpoint connectivity to the provider",
+                    "Save the router configuration");
         }
 
-        var evaluator = new TssNetworkWorkPackageEvaluator(session.NetworkState, session);
+        var evaluator = new TssNetworkWorkPackageEvaluator(session.NetworkState);
         var result = workPackage == 2
-            ? evaluator.EvaluateLayer2()
+            ? evaluator.EvaluateLayer2(false)
             : workPackage == 3
                 ? evaluator.EvaluateLayer3()
                 : evaluator.EvaluateLayer4();
 
+        if (workPackage == 2)
+            return Layer2ChecklistText(result);
+
         var builder = new StringBuilder();
         var complete = 0;
-        var total = workPackage == 2 ? 7 : workPackage == 3 ? 6 : 7;
+        var total = workPackage == 3 ? 6 : 7;
+        builder.AppendLine(TssWorkPackageTitles.Get(workPackage));
         builder.AppendLine($"Complete: {complete}/{total}");
         builder.AppendLine();
 
-        if (workPackage == 2)
+        if (workPackage == 3)
         {
-            AppendChecklistLine(builder, result, "AN-1 hardened", "WP2.AN-1.Hardening", ref complete);
-            AppendChecklistLine(builder, result, "AN-2 hardened", "WP2.AN-2.Hardening", ref complete);
-            AppendChecklistLine(builder, result, "VLAN database built on both switches", "WP2.AN-1.Vlans", ref complete, "WP2.AN-2.Vlans");
-            AppendChecklistLine(builder, result, "Access ports assigned to the correct VLAN", "WP2.Access.", ref complete, prefix: true);
-            AppendChecklistLine(builder, result, "Required trunks established", "WP2.Trunks", ref complete, prefix: true);
-            AppendChecklistLine(builder, result, "Both switch configurations saved", "WP2.AN-1.Save", ref complete, "WP2.AN-2.Save");
-            AppendChecklistLine(builder, result, "Unused ports parked in the dead VLAN and shut", "WP2.UnusedPorts", ref complete);
-        }
-        else if (workPackage == 3)
-        {
-            AppendChecklistLine(builder, result, "Router hardened", "WP3.Hardening", ref complete);
-            AppendChecklistLine(builder, result, "Inter-VLAN gateways configured", "WP3.Subinterfaces", ref complete);
-            AppendChecklistLine(builder, result, "Carrier WAN interface configured", "WP3.Wan", ref complete);
-            AppendChecklistLine(builder, result, "Default route points to the provider", "WP3.DefaultRoute", ref complete);
-            AppendChecklistLine(builder, result, "Endpoint connectivity verified", "WP3.EndpointEvidence.", ref complete, prefix: true);
-            AppendChecklistLine(builder, result, "Router configuration saved", "WP3.Save", ref complete);
+            AppendChecklistLine(builder, result, "Harden CN-1", "WP3.Hardening", ref complete);
+            AppendChecklistLine(builder, result, "Configure the scenario's inter-VLAN gateways", "WP3.Subinterfaces", ref complete);
+            AppendChecklistLine(builder, result, "Configure the provider WAN interface", "WP3.Wan", ref complete);
+            AppendChecklistLine(builder, result, "Point the default route at the provider", "WP3.DefaultRoute", ref complete);
+            AppendChecklistLine(builder, result, "Verify required endpoint connectivity", "WP3.EndpointEvidence.", ref complete, prefix: true);
+            AppendChecklistLine(builder, result, "Save the CN-1 configuration", "WP3.Save", ref complete);
         }
         else
         {
-            AppendChecklistLine(builder, result, "AP uplink is connected", "WP4.APUplink", ref complete);
-            AppendChecklistLine(builder, result, "AP switchport is in the Reception VLAN", "WP4.SwitchPort", ref complete);
-            AppendChecklistLine(builder, result, "Guest wireless settings are configured", "WP4.APConfig", ref complete);
-            AppendChecklistLine(builder, result, "Test laptop is associated over Wi-Fi", "WP4.LaptopAssociation", ref complete);
-            AppendChecklistLine(builder, result, "Test laptop received the DHCP lease", "WP4.Dhcp", ref complete);
-            AppendChecklistLine(builder, result, "Laptop diagnostics reached the provider", "WP4.Diagnostics", ref complete);
-            AppendChecklistLine(builder, result, "RedWolf page loaded", "WP4.RedWolf", ref complete);
+            AppendChecklistLine(builder, result, "Connect the AP uplink", "WP4.APUplink", ref complete);
+            AppendChecklistLine(builder, result, "Place the AP switchport in the Reception VLAN", "WP4.SwitchPort", ref complete);
+            AppendChecklistLine(builder, result, "Configure the scenario's guest wireless settings", "WP4.APConfig", ref complete);
+            AppendChecklistLine(builder, result, "Associate TestLaptop over Wi-Fi", "WP4.LaptopAssociation", ref complete);
+            AppendChecklistLine(builder, result, "Obtain the TestLaptop DHCP lease", "WP4.Dhcp", ref complete);
+            AppendChecklistLine(builder, result, "Run the required TestLaptop diagnostics", "WP4.Diagnostics", ref complete);
+            AppendChecklistLine(builder, result, "Load the RedWolf page", "WP4.RedWolf", ref complete);
         }
 
         var text = builder.ToString();
-        var firstLineEnd = text.IndexOf('\n');
-        return firstLineEnd < 0 ? text : $"Complete: {complete}/{total}{text.Substring(firstLineEnd)}";
+        var titleEnd = text.IndexOf('\n');
+        var checklist = titleEnd < 0 ? string.Empty : text.Substring(titleEnd + 1);
+        var firstLineEnd = checklist.IndexOf('\n');
+        return firstLineEnd < 0 ? text : $"{TssWorkPackageTitles.Get(workPackage)}\nComplete: {complete}/{total}{checklist.Substring(firstLineEnd)}";
+    }
+
+    private static string Layer2ChecklistText(TssWorkPackageResult result)
+    {
+        var builder = new StringBuilder();
+        var conditions = result?.Conditions ?? new List<TssWorkPackageCondition>();
+        var complete = conditions.Count(x => x.IsComplete);
+        builder.AppendLine(TssWorkPackageTitles.Get(2));
+        builder.AppendLine($"Complete: {complete}/{conditions.Count}");
+        builder.AppendLine();
+        foreach (var condition in conditions)
+        {
+            builder.Append(condition.IsComplete ? "[x] " : "[ ] ");
+            builder.AppendLine(condition.Label);
+            builder.AppendLine();
+        }
+        return builder.ToString();
     }
 
     private static string StaticWorkPackageChecklist(params string[] items)
@@ -1191,6 +1235,42 @@ public sealed class TssRuntimeUi : MonoBehaviour
         return builder.ToString();
     }
 
+    private string PhysicalWorkPackageChecklistText()
+    {
+        var result = new TssPhysicalWorkPackageEvaluator(session).Evaluate();
+        var builder = new StringBuilder();
+        var complete = 0;
+        var total = 0;
+        builder.AppendLine(TssWorkPackageTitles.Get(1));
+        builder.AppendLine($"Complete: {complete}/{total}");
+        builder.AppendLine();
+        if (result.Conditions.Any(x => x.Id.StartsWith("WP1.Placement.")))
+        {
+            total++;
+            AppendChecklistLine(builder, result, "Place all required rack and endpoint equipment", "WP1.Placement.", ref complete, prefix: true);
+        }
+        if (result.Conditions.Any(x => x.Id.StartsWith("WP1.CableTypes.")))
+        {
+            total++;
+            AppendChecklistLine(builder, result, "Install all required player cable runs with the specified types", "WP1.CableTypes.", ref complete, prefix: true);
+        }
+        if (result.Conditions.Any(x => x.Id.StartsWith("WP1.PermanentConnections.")))
+        {
+            total++;
+            AppendChecklistLine(builder, result, "Complete all permanent infrastructure connections", "WP1.PermanentConnections.", ref complete, prefix: true);
+        }
+        if (result.Conditions.Any(x => x.Id == "WP1.Terminations"))
+        {
+            total++;
+            AppendChecklistLine(builder, result, "Terminate every required permanent run", "WP1.Terminations", ref complete);
+        }
+        var text = builder.ToString();
+        var titleEnd = text.IndexOf('\n');
+        var checklist = titleEnd < 0 ? string.Empty : text.Substring(titleEnd + 1);
+        var firstLineEnd = checklist.IndexOf('\n');
+        return firstLineEnd < 0 ? text : $"{TssWorkPackageTitles.Get(1)}\nComplete: {complete}/{total}{checklist.Substring(firstLineEnd)}";
+    }
+
     private static void AppendChecklistLine(StringBuilder builder, TssWorkPackageResult result, string label, string id, ref int complete, params string[] additionalIds)
     {
         var isComplete = IsChecklistItemComplete(result, id);
@@ -1201,6 +1281,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
             complete++;
         builder.Append(isComplete ? "[x] " : "[ ] ");
         builder.AppendLine(label);
+        builder.AppendLine();
     }
 
     private static void AppendChecklistLine(StringBuilder builder, TssWorkPackageResult result, string label, string id, ref int complete, bool prefix)
@@ -1210,12 +1291,14 @@ public sealed class TssRuntimeUi : MonoBehaviour
             complete++;
         builder.Append(isComplete ? "[x] " : "[ ] ");
         builder.AppendLine(label);
+        builder.AppendLine();
     }
 
     private static void AppendUncheckedLine(StringBuilder builder, string label)
     {
         builder.Append("[ ] ");
         builder.AppendLine(label);
+        builder.AppendLine();
     }
 
     private static bool IsChecklistItemComplete(TssWorkPackageResult result, string id, bool prefix = false)
@@ -1223,7 +1306,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (result == null)
             return false;
 
-        return result.WasAttempted(id, prefix);
+        return result.IsComplete(id, prefix);
     }
 
     private int RequiredTerminationCount()
@@ -1567,14 +1650,10 @@ private void RefreshSopPanel()
         if (!_debugPanel || !_debugPanel.activeSelf || !session || !_debugText)
             return;
 
-        var result = TssPlacementEvaluator.Evaluate(
-            session.Scenario,
-            session.Installed,
-            session.EndpointPlacements
-        );
-        var placementText = result.IsComplete
-            ? "WP1 equipment placement complete."
-            : string.Join("\n", result.Messages);
+        var result = new TssPhysicalWorkPackageEvaluator(session).Evaluate();
+        var placementText = result.Complete
+            ? "WP1 physical installation complete."
+            : string.Join("\n", result.UnmetConditions);
         var cableText = PhysicalConnectionText(session);
         _debugText.text = string.IsNullOrWhiteSpace(cableText)
             ? placementText

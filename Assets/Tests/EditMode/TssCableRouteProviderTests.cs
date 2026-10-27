@@ -113,6 +113,35 @@ public sealed class TssCableRouteProviderTests
     }
 
     [Test]
+    public void WallPortAvoidsUnrelatedStationDrop()
+    {
+        var root = new GameObject("RouteRoot");
+        var printerPort = Endpoint("Printer", "Endpoint:ReceptionDesk:EQ_PRINTER:2:Eth01", new Vector3(0f, 1f, 0f), EquipmentInterfaceFace.Front);
+        var wallPort = Endpoint("Reception Wall Port", "WallPort:Reception:Port02", new Vector3(5f, 1f, 0f), EquipmentInterfaceFace.Front);
+
+        try
+        {
+            var printerNode = Node("PrinterNode", root.transform, new Vector3(0f, 1f, 1f));
+            printerNode.stationId = "ReceptionDesk";
+            var normal = Node("ReceptionTray", root.transform, new Vector3(4f, 1f, 1f));
+            var unrelatedDrop = StationNode("UnrelatedDrop", root.transform, "LobbyTable01", new Vector3(5f, 1f, 0f));
+            Link(printerNode, normal);
+            var provider = root.AddComponent<TssCableRouteProvider>();
+
+            var route = provider.GetRoute(printerPort, wallPort);
+
+            Assert.Contains(normal.transform.position, route);
+            Assert.IsFalse(System.Array.Exists(route, point => point == unrelatedDrop.transform.position));
+        }
+        finally
+        {
+            Object.DestroyImmediate(root);
+            Object.DestroyImmediate(printerPort.transform.root.gameObject);
+            Object.DestroyImmediate(wallPort.transform.root.gameObject);
+        }
+    }
+
+    [Test]
     public void SameRackOppositeSideUsesBothAuthoredEdges()
     {
         var root = new GameObject("RouteRoot");

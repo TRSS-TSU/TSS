@@ -257,10 +257,70 @@ public sealed class TssPlacementEvaluatorTests
         Assert.IsTrue(session.TryUsePort(patch, out _));
         Assert.IsTrue(session.TryUsePort(switchPort, out _));
         Assert.AreEqual(0, session.GetEffectivePhysicalPaths().Count);
+        Assert.IsFalse(session.IsEndpointOnEffectivePhysicalPath(switchPort.EndpointId));
+
+        var logicalState = new TssDeviceLogicalState("Rack:Rack01:U36", EquipmentCategory.Switch, "Switch");
+        logicalState.RefreshPhysicalConnectivity(new[] { switchPort }, session);
+        Assert.IsFalse(logicalState.Interfaces[0].IsPhysicalLinkUp);
 
         Object.DestroyImmediate(patch.gameObject);
         Object.DestroyImmediate(switchPort.gameObject);
         Object.DestroyImmediate(go);
+    }
+
+    [Test]
+    public void EffectivePathsReportOnlyDeviceLeavesThroughPermanentInfrastructure()
+    {
+        var go = new GameObject("Session");
+        var session = go.AddComponent<TssTrainingSession>();
+        var scenario = CreateScenario();
+        var cable = Cable(TssCableType.StraightThrough);
+        var patch = EndpointObject("Patch").AddComponent<TssPortEndpoint>();
+        var wall = EndpointObject("Wall").AddComponent<TssPortEndpoint>();
+        var switchPort = EndpointObject("SwitchPort").AddComponent<TssPortEndpoint>();
+        var accessPoint = EndpointObject("AccessPoint").AddComponent<TssPortEndpoint>();
+
+        try
+        {
+            patch.Configure("PatchPanel:Rack01:Port03", Port("Port 03"));
+            wall.Configure("WallPort:Reception:Port03", Port("Reception Port 03"));
+            switchPort.Configure("Rack:Rack01:U37:Fa14", Port("FastEthernet 0/14"));
+            accessPoint.Configure("Endpoint:AP-1:Eth01", Port("Ethernet Port 01"));
+            scenario.cableInventory = new[] { new ScenarioCableInventoryItem { cable = cable, quantity = 2 } };
+            scenario.permanentConnections = new[]
+            {
+                new ScenarioPermanentCableConnection
+                {
+                    connectionId = "Infrastructure003",
+                    patchPanelEndpointId = patch.EndpointId,
+                    wallportEndpointId = wall.EndpointId
+                }
+            };
+
+            session.BeginScenario(scenario);
+            Assert.IsTrue(session.TryCheckoutCable(cable, out _));
+            Assert.IsTrue(session.TryUsePort(accessPoint, out _));
+            Assert.IsTrue(session.TryUsePort(wall, out _));
+            Assert.IsTrue(session.TryCheckoutCable(cable, out _));
+            Assert.IsTrue(session.TryUsePort(patch, out _));
+            Assert.IsTrue(session.TryUsePort(switchPort, out _));
+
+            var paths = session.GetEffectivePhysicalPaths();
+            Assert.AreEqual(1, paths.Count);
+            Assert.IsTrue(
+                (paths[0].EndpointAId == accessPoint.EndpointId && paths[0].EndpointBId == switchPort.EndpointId)
+                || (paths[0].EndpointAId == switchPort.EndpointId && paths[0].EndpointBId == accessPoint.EndpointId));
+        }
+        finally
+        {
+            Object.DestroyImmediate(patch.gameObject);
+            Object.DestroyImmediate(wall.gameObject);
+            Object.DestroyImmediate(switchPort.gameObject);
+            Object.DestroyImmediate(accessPoint.gameObject);
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(cable);
+            Object.DestroyImmediate(scenario);
+        }
     }
 
     [Test]

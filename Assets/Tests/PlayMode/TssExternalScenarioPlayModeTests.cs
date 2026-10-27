@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -109,6 +110,25 @@ public sealed class TssExternalScenarioPlayModeTests
         Assert.IsNull(TssScenarioLaunchState.ConsumeSelectedScenario(out _));
         File.WriteAllText(scenarioPath, originalScenario);
         yield return LaunchFallback();
+    }
+
+    [UnityTest]
+    public IEnumerator Layer2ChecklistDisplaysSeparateCriteria()
+    {
+        var result = new TssWorkPackageResult();
+        result.Pass("WP2.AN-1.Hardening", "AN-1 hardening is complete.");
+        result.Add("WP2.Access:AN-1:Fa0/2", "AN-1 Fa0/2 access port is incomplete.");
+        result.Pass("WP2.Trunk:AN-1:Fa0/1", "AN-1 Fa0/1 trunk is correct.");
+        result.Add("WP2.UnusedPorts:AN-1", "AN-1 unused ports must use the dead VLAN and be shut down.");
+        var checklistMethod = typeof(TssRuntimeUi).GetMethod("Layer2ChecklistText", BindingFlags.Static | BindingFlags.NonPublic);
+        var checklist = (string)checklistMethod.Invoke(null, new object[] { result });
+
+        StringAssert.Contains("WP2 — Layer 2", checklist);
+        StringAssert.Contains("AN-1 Fa0/2 access port", checklist);
+        StringAssert.Contains("AN-1 Fa0/1 trunk", checklist);
+        StringAssert.Contains("AN-1 unused ports", checklist);
+        StringAssert.Contains("Complete: 2/4", checklist);
+        yield return null;
     }
 
     private static IEnumerator OpenMenu()
@@ -235,8 +255,10 @@ public sealed class TssExternalScenarioPlayModeTests
             Assert.IsTrue(session.TryUsePort(endpointB, out message), message);
         }
         Assert.IsTrue(session.GetCableTypeStatuses().All(x => x.IsConnected && x.IsCorrect));
-        var layer2 = new TssNetworkWorkPackageEvaluator(session.NetworkState, session).EvaluateLayer2();
-        Assert.IsFalse(layer2.UnmetCategories.Any(x => x.Id.StartsWith("WP2.CableTypes.")));
+        var physical = new TssPhysicalWorkPackageEvaluator(session).Evaluate();
+        Assert.IsTrue(physical.Conditions.Where(x => x.Id.StartsWith("WP1.CableTypes.")).All(x => x.IsComplete));
+        var layer2 = new TssNetworkWorkPackageEvaluator(session.NetworkState).EvaluateLayer2();
+        Assert.IsFalse(layer2.Conditions.Any(x => x.Id.StartsWith("WP2.CableTypes.") || x.Id == "WP2.Terminations"));
         Assert.AreEqual(authoredRequirements, JsonUtility.ToJson(TssExternalScenarioLoader.Export(session.Scenario)), "Resolving installed ports must not mutate the scenario.");
     }
 

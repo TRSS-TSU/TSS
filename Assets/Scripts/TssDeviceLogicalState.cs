@@ -138,7 +138,9 @@ public sealed class TssDeviceLogicalState
                 SpeedDuplex = "100 Mbps Full"
             };
 
-            if (session != null && !string.IsNullOrWhiteSpace(endpoint.EndpointId))
+            if (session != null
+                && !string.IsNullOrWhiteSpace(endpoint.EndpointId)
+                && session.IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId))
             {
                 foreach (var conn in session.PhysicalConnections)
                 {

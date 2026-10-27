@@ -277,11 +277,12 @@ public sealed class TssDeviceSessionTests
             session.BeginScenario(scenario);
             var processor = new TssCliCommandProcessor(session, "Switch", EquipmentCategory.Switch, "Switch");
             var switchReference = TssCliCommandProcessor.BuildCommandReference(EquipmentCategory.Switch);
-            StringAssert.Contains("interface Fa0/1 | interface range Fa0/2 - Fa0/4", switchReference);
-            StringAssert.Contains("switchport trunk encapsulation dot1q", switchReference);
+            StringAssert.Contains("interface Fa0/<port>", switchReference);
+            StringAssert.Contains("interface range Fa0/<first> - Fa0/<last>", switchReference);
             StringAssert.Contains("switchport mode trunk", switchReference);
-            StringAssert.Contains("switchport trunk allowed vlan <id>[,<id>]", switchReference);
+            StringAssert.Contains("switchport trunk allowed vlan <list>", switchReference);
             StringAssert.Contains("switchport trunk native vlan <id>", switchReference);
+            AssertReferenceUsesSinglePositiveCommands(switchReference);
             Assert.IsTrue(processor.Execute("enable").Accepted);
             Assert.IsTrue(processor.Execute("configure terminal").Accepted);
             Assert.IsTrue(processor.Execute("hostname SW-CLI").Accepted);
@@ -368,11 +369,13 @@ public sealed class TssDeviceSessionTests
             session.BeginScenario(scenario);
             var processor = new TssCliCommandProcessor(session, "Router", EquipmentCategory.Router, "Router");
             var routerReference = TssCliCommandProcessor.BuildCommandReference(EquipmentCategory.Router);
-            StringAssert.Contains("interface Fa0/0 | interface Fa0/0.<vlan>", routerReference);
+            StringAssert.Contains("interface Fa0/0", routerReference);
+            StringAssert.Contains("interface Fa0/0.<vlan>", routerReference);
             StringAssert.Contains("encapsulation dot1q <vlan>", routerReference);
-            StringAssert.Contains("ip route <network> <mask> <next-hop>", routerReference);
-            StringAssert.Contains("show ip route | show route", routerReference);
+            StringAssert.Contains("ip route 0.0.0.0 0.0.0.0 <next-hop>", routerReference);
+            StringAssert.Contains("show ip route", routerReference);
             StringAssert.DoesNotContain("VLAN configuration", routerReference);
+            AssertReferenceUsesSinglePositiveCommands(routerReference);
             Assert.IsTrue(processor.Execute("enable").Accepted);
             Assert.IsFalse(processor.Execute("show vlan").Accepted);
             Assert.IsFalse(processor.Execute("show interfaces trunk").Accepted);
@@ -648,7 +651,7 @@ public sealed class TssDeviceSessionTests
         an1.Vlans[profile.NativeVlan] = profile.NativeVlanName;
         an1.Vlans[profile.DeadVlan] = profile.DeadVlanName + " (suspended)";
 
-        for (var port = 8; port <= 24; port++)
+        for (var port = 7; port <= 24; port++)
             an1.Interfaces["Fa0/" + port] = new NetworkInterfaceState { Name = "Fa0/" + port, AccessVlan = profile.DeadVlan, AdminUp = false };
         for (var port = 5; port <= 24; port++)
             an2.Interfaces["Fa0/" + port] = new NetworkInterfaceState { Name = "Fa0/" + port, AccessVlan = profile.DeadVlan, AdminUp = false };
@@ -656,8 +659,8 @@ public sealed class TssDeviceSessionTests
         var result = new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2();
 
         Assert.IsFalse(result.UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Vlans"));
-        Assert.IsFalse(result.UnmetCategories.Exists(x => x.Id == "WP2.UnusedPorts"));
-        Assert.IsTrue(result.WasAttempted("WP2.UnusedPorts"));
+        Assert.IsFalse(result.UnmetCategories.Exists(x => x.Id == "WP2.UnusedPorts:AN-1"));
+        Assert.IsFalse(result.UnmetCategories.Exists(x => x.Id == "WP2.UnusedPorts:AN-2"));
     }
 
     [Test]
@@ -1257,5 +1260,19 @@ public sealed class TssDeviceSessionTests
 
         Assert.IsNotNull(r1Tray, "Rack 01 must have preinstalled cable tray at U30-U31");
         Assert.IsNotNull(r2Tray, "Rack 02 must have preinstalled cable tray at U30-U31");
+    }
+
+    private static void AssertReferenceUsesSinglePositiveCommands(string reference)
+    {
+        foreach (var line in reference.Split('\n'))
+        {
+            var separator = line.IndexOf(" | ", StringComparison.Ordinal);
+            if (separator < 0)
+                continue;
+
+            var command = line.Substring(0, separator).Trim();
+            Assert.IsFalse(command.Contains("|"), command);
+            Assert.IsFalse(command.StartsWith("no ", StringComparison.OrdinalIgnoreCase), command);
+        }
     }
 }

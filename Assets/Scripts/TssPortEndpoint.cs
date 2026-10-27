@@ -11,6 +11,7 @@ public sealed class TssPortEndpoint : MonoBehaviour
     [SerializeField] private Color selectableTint = new(0.1f, 0.9f, 0.45f, 1f);
     [SerializeField] private Color hoverTint = new(0.2f, 0.65f, 1f, 1f);
     [SerializeField] private Color selectedTint = new(1f, 0.85f, 0.15f, 1f);
+    [SerializeField] private Renderer[] highlightRenderers;
     [SerializeField, Range(0f, 1f)] private float highlightBlend = 0.55f;
     [SerializeField, Min(0f)] private float highlightTransitionSpeed = 12f;
 
@@ -111,6 +112,9 @@ public sealed class TssPortEndpoint : MonoBehaviour
     private void CacheMaterials()
     {
         _renderers = GetComponentsInChildren<Renderer>(true);
+        if (_renderers.Length == 0 && highlightRenderers != null)
+            _renderers = System.Array.FindAll(highlightRenderers, renderer => renderer);
+
         _materials = new Material[_renderers.Length][];
         _baseColors = new Color[_renderers.Length][];
         _targetColors = new Color[_renderers.Length][];
