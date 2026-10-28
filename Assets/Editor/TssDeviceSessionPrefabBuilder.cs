@@ -263,7 +263,7 @@ public static class TssDeviceSessionPrefabBuilder
         csf.horizontalFit = ContentSizeFitter.FitMode.Unconstrained;
 
         // Child 1: ConsoleOutputText defaults to Cisco Switch bootup text
-        var consoleText = MakeText(scrollContent.transform, "ConsoleOutputText", TssTerminalSessionPresenter.GetDefaultSwitchBootBanner(), 13, TextAnchor.UpperLeft);
+        var consoleText = MakeText(scrollContent.transform, "ConsoleOutputText", TssTerminalSessionPresenter.GetDefaultSwitchBootBanner() + EditorPreviewConsole, 13, TextAnchor.UpperLeft);
         consoleText.color = AccentGreen;
         consoleText.lineSpacing = 1.15f;
         consoleText.supportRichText = true;
@@ -322,7 +322,7 @@ public static class TssDeviceSessionPrefabBuilder
         sbRt.anchoredPosition = Vector2.zero;
         sbRt.sizeDelta = new Vector2(260f, 0f);
 
-        var sbTitle = MakeText(sidebar.transform, "SidebarTitle", "COMMAND REFERENCE", 13, TextAnchor.MiddleLeft);
+        var sbTitle = MakeText(sidebar.transform, "SidebarTitle", "Switch Command Reference", 13, TextAnchor.MiddleLeft);
         AnchorTop(sbTitle.rectTransform, 32f);
         sbTitle.rectTransform.offsetMin = new Vector2(12f, 0f);
         sbTitle.color = AccentAmber;
@@ -410,6 +410,25 @@ public static class TssDeviceSessionPrefabBuilder
         Object.DestroyImmediate(root);
         return prefab;
     }
+
+    private const string EditorPreviewConsole =
+        "\nAN-1#show running-config\n" +
+        "version 15.0\nhostname AN-1\nservice password-encryption\nno ip domain-lookup\n!\ninterface Fa0/1\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30\n switchport trunk native vlan 99\n!\ninterface Vlan1\n ip address 10.24.10.2 255.255.255.0\n!\nend\n" +
+        "\nAN-1#show vlan brief\n" +
+        "10 Management active\n20 Reception active\n30 Data active\n99 Native active\n999 Dead_Vlan suspended\n" +
+        "\nCN-1#show ip interface brief\n" +
+        "Interface                  IP-Address      Status                Protocol\n" +
+        "Fa0/0                     unassigned      up                    up\n" +
+        "Fa0/0.10                  10.24.10.1      up                    up\n" +
+        "Fa0/0.20                  10.24.20.1      up                    up\n" +
+        "Fa0/0.30                  10.24.30.1      up                    up\n" +
+        "Fa0/1                     203.0.113.2     up                    up\n" +
+        "\nCN-1#show route\n" +
+        "Codes: C - connected, S - static\n" +
+        "C    10.24.10.0/24 is directly connected, Fa0/0.10\n" +
+        "C    10.24.20.0/24 is directly connected, Fa0/0.20\n" +
+        "C    10.24.30.0/24 is directly connected, Fa0/0.30\n" +
+        "S*   0.0.0.0/0 [1/0] via 203.0.113.1\n";
 
     private static GameObject BuildDesktopSessionCanvasPrefab(string canvasName)
     {

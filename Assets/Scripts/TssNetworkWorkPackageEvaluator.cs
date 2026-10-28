@@ -148,9 +148,26 @@ public sealed class TssNetworkWorkPackageEvaluator
         }
 
         CheckHardening(device, "WP2." + name + ".Hardening", result, name);
+        CheckManagementSvi(device, name, result);
         if (!device.Evidence.Contains("show vlan brief") || !device.Evidence.Contains("show interfaces trunk")) result.Add("WP2." + name + ".Evidence", name + " verification was not typed.");
         else result.Pass("WP2." + name + ".Evidence", name + " verification typed.");
         CheckSaved(device, "WP2." + name + ".Save", result);
+    }
+
+    private void CheckManagementSvi(NetworkDeviceState device, string name, TssWorkPackageResult result)
+    {
+        var id = "WP2." + name + ".ManagementSvi";
+        var expectedAddress = _state.Profile?.ManagementNetwork + ".2";
+        var valid = device != null
+            && string.Equals(device.ManagementAddress, expectedAddress, StringComparison.OrdinalIgnoreCase)
+            && string.Equals(device.ManagementMask, "255.255.255.0", StringComparison.OrdinalIgnoreCase);
+        if (device != null && device.Svis.TryGetValue(1, out var svi))
+            valid = valid && svi.AdminUp
+                && string.Equals(svi.Address, expectedAddress, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(svi.Mask, "255.255.255.0", StringComparison.OrdinalIgnoreCase);
+
+        if (valid) result.Pass(id, name + " VLAN 1 management interface is correct.");
+        else result.Add(id, name + " VLAN 1 management interface is incomplete.");
     }
 
     private void CheckHardening(NetworkDeviceState device, string id, TssWorkPackageResult result, string expectedHostname = null)

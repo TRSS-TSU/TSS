@@ -15,9 +15,7 @@ public static class TssResultsSceneBuilder
     public static void Build()
     {
         PatchRuntimeCanvas();
-        var card = AssetDatabase.LoadAssetAtPath<GameObject>(CardPath);
-        if (!card)
-            card = BuildCardPrefab();
+        var card = BuildCardPrefab();
         BuildResultsScene(card);
         AddToBuildSettings();
         AssetDatabase.SaveAssets();
@@ -65,22 +63,37 @@ public static class TssResultsSceneBuilder
         rect.anchorMin = new Vector2(0f, 1f);
         rect.anchorMax = new Vector2(1f, 1f);
         rect.pivot = new Vector2(.5f, 1f);
-        rect.sizeDelta = new Vector2(0f, 280f);
+        rect.sizeDelta = new Vector2(1840f, 650f);
         var layout = root.AddComponent<LayoutElement>();
-        layout.minHeight = 280f;
-        layout.preferredHeight = 280f;
+        layout.minWidth = 1840f;
+        layout.preferredWidth = 1840f;
+        layout.minHeight = 650f;
+        layout.preferredHeight = 650f;
 
         var card = root.AddComponent<TssResultsCard>();
-        var title = CreateText(root.transform, "Title", "WORK PACKAGE", new Vector2(-270f, -28f), new Vector2(430f, 42f), 28, TextAnchor.MiddleLeft, new Color(.95f, .72f, .28f));
-        var status = CreateText(root.transform, "Status", "INCOMPLETE", new Vector2(270f, -28f), new Vector2(220f, 42f), 24, TextAnchor.MiddleRight, Color.white);
-        var detail = CreateText(root.transform, "Detail", string.Empty, new Vector2(0f, -145f), new Vector2(900f, 220f), 19, TextAnchor.UpperLeft, new Color(.88f, .92f, .88f));
-        detail.horizontalOverflow = HorizontalWrapMode.Wrap;
-        detail.verticalOverflow = VerticalWrapMode.Overflow;
+        var title = CreateText(root.transform, "Title", "WORK PACKAGE", new Vector2(-650f, -28f), new Vector2(1200f, 42f), 30, TextAnchor.MiddleLeft, new Color(.95f, .72f, .28f));
+        var status = CreateText(root.transform, "Status", "INCOMPLETE", new Vector2(650f, -28f), new Vector2(300f, 42f), 24, TextAnchor.MiddleRight, Color.white);
+        var detailViewport = CreatePanel(root.transform, "DetailViewport", Vector2.zero, new Vector2(1780f, 560f), new Color(.02f, .04f, .05f, .35f));
+        var detailViewportRect = detailViewport.GetComponent<RectTransform>();
+        detailViewportRect.anchorMin = new Vector2(.5f, 0f);
+        detailViewportRect.anchorMax = new Vector2(.5f, 0f);
+        detailViewportRect.pivot = new Vector2(.5f, 0f);
+        detailViewportRect.anchoredPosition = new Vector2(0f, 12f);
+        detailViewport.AddComponent<Mask>().showMaskGraphic = true;
+        var completedViewport = CreatePanel(detailViewport.transform, "CompletedViewport", new Vector2(-445f, 0f), new Vector2(830f, 520f), new Color(.03f, .08f, .06f, .9f));
+        var completed = CreateText(completedViewport.transform, "CompletedDetail", string.Empty, Vector2.zero, new Vector2(790f, 980f), 25, TextAnchor.UpperLeft, new Color(.45f, 1f, .62f));
+        completed.rectTransform.anchorMin = new Vector2(.5f, 1f); completed.rectTransform.anchorMax = new Vector2(.5f, 1f); completed.rectTransform.pivot = new Vector2(.5f, 1f); completed.rectTransform.anchoredPosition = new Vector2(0f, -14f); completed.horizontalOverflow = HorizontalWrapMode.Wrap; completed.verticalOverflow = VerticalWrapMode.Overflow;
+        var completedScroll = completedViewport.AddComponent<ScrollRect>(); completedScroll.viewport = completedViewport.GetComponent<RectTransform>(); completedScroll.content = completed.rectTransform; completedScroll.horizontal = false; completedScroll.vertical = true; completedScroll.movementType = ScrollRect.MovementType.Clamped;
+        var unmetViewport = CreatePanel(detailViewport.transform, "UnmetViewport", new Vector2(445f, 0f), new Vector2(830f, 520f), new Color(.1f, .07f, .04f, .9f));
+        var unmet = CreateText(unmetViewport.transform, "UnmetDetail", string.Empty, Vector2.zero, new Vector2(790f, 980f), 25, TextAnchor.UpperLeft, new Color(1f, .75f, .35f));
+        unmet.rectTransform.anchorMin = new Vector2(.5f, 1f); unmet.rectTransform.anchorMax = new Vector2(.5f, 1f); unmet.rectTransform.pivot = new Vector2(.5f, 1f); unmet.rectTransform.anchoredPosition = new Vector2(0f, -14f); unmet.horizontalOverflow = HorizontalWrapMode.Wrap; unmet.verticalOverflow = VerticalWrapMode.Overflow;
+        var unmetScroll = unmetViewport.AddComponent<ScrollRect>(); unmetScroll.viewport = unmetViewport.GetComponent<RectTransform>(); unmetScroll.content = unmet.rectTransform; unmetScroll.horizontal = false; unmetScroll.vertical = true; unmetScroll.movementType = ScrollRect.MovementType.Clamped;
 
         var serialized = new SerializedObject(card);
         serialized.FindProperty("title").objectReferenceValue = title;
         serialized.FindProperty("status").objectReferenceValue = status;
-        serialized.FindProperty("detail").objectReferenceValue = detail;
+        serialized.FindProperty("completedDetail").objectReferenceValue = completed;
+        serialized.FindProperty("unmetDetail").objectReferenceValue = unmet;
         serialized.ApplyModifiedPropertiesWithoutUndo();
         PrefabUtility.SaveAsPrefabAsset(root, CardPath);
         Object.DestroyImmediate(root);
@@ -108,31 +121,67 @@ public static class TssResultsSceneBuilder
         var summary = CreateText(canvas.transform, "OverallSummary", string.Empty, Vector2.zero, new Vector2(1200f, 42f), 25, TextAnchor.MiddleRight, Color.white);
         AnchorTopRight(summary.rectTransform, new Vector2(-50f, -164f));
 
-        var contentRoot = CreatePanel(canvas.transform, "ResultsContent", Vector2.zero, new Vector2(1880f, 760f), new Color(0f, 0f, 0f, 0f));
-        AnchorTopCenter(contentRoot.GetComponent<RectTransform>(), new Vector2(0f, -220f));
-        var content = new GameObject("Content", typeof(RectTransform), typeof(GridLayoutGroup));
-        content.transform.SetParent(contentRoot.transform, false);
-        var contentRect = (RectTransform)content.transform;
-        contentRect.anchorMin = new Vector2(0f, 1f);
-        contentRect.anchorMax = new Vector2(1f, 1f);
-        contentRect.pivot = new Vector2(.5f, 1f);
-        contentRect.sizeDelta = new Vector2(0f, 0f);
-        var grid = content.GetComponent<GridLayoutGroup>();
-        grid.cellSize = new Vector2(450f, 280f);
-        grid.spacing = new Vector2(14f, 14f);
-        grid.padding = new RectOffset(12, 12, 12, 12);
-        grid.childAlignment = TextAnchor.UpperCenter;
-        grid.constraint = GridLayoutGroup.Constraint.FixedColumnCount;
-        grid.constraintCount = 4;
+        var contentRoot = CreatePanel(canvas.transform, "ResultsContent", Vector2.zero, new Vector2(1840f, 700f), new Color(.02f, .04f, .05f, 1f));
+        AnchorTopCenter(contentRoot.GetComponent<RectTransform>(), new Vector2(0f, -205f));
+        contentRoot.AddComponent<Mask>().showMaskGraphic = true;
+        var content = CreatePanel(contentRoot.transform, "PanelPages", Vector2.zero, new Vector2(9200f, 650f), new Color(0f, 0f, 0f, 0f));
+        var contentRect = content.GetComponent<RectTransform>();
+        contentRect.anchorMin = new Vector2(0f, .5f);
+        contentRect.anchorMax = new Vector2(0f, .5f);
+        contentRect.pivot = new Vector2(0f, .5f);
+        contentRect.anchoredPosition = Vector2.zero;
+        var contentLayout = content.AddComponent<HorizontalLayoutGroup>();
+        contentLayout.spacing = 0f;
+        contentLayout.childAlignment = TextAnchor.UpperLeft;
+        contentLayout.childForceExpandWidth = false;
+        contentLayout.childForceExpandHeight = false;
         AddLayoutSamples(cardPrefab, content.transform);
-        Canvas.ForceUpdateCanvases();
-        LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
 
         var noResults = CreatePanel(canvas.transform, "NoResultsState", Vector2.zero, new Vector2(1200f, 220f), new Color(.08f, .12f, .12f, .98f));
         AnchorTopCenter(noResults.GetComponent<RectTransform>(), new Vector2(0f, -360f));
         CreateText(noResults.transform, "Message", "No results available", Vector2.zero, new Vector2(1000f, 80f), 34, TextAnchor.MiddleCenter, Color.white);
         var mainMenu = CreateButton(canvas.transform, "MainMenuButton", "MAIN MENU", Vector2.zero, new Vector2(260f, 56f), new Color(.18f, .55f, .28f));
         AnchorBottomCenter(mainMenu.GetComponent<RectTransform>(), new Vector2(0f, 30f));
+
+        var deviceViewer = CreatePanel(content.transform, "DeviceConfigurationReview", new Vector2(1840f, 650f), new Color(.08f, .12f, .12f, .98f));
+        var deviceElement = deviceViewer.AddComponent<LayoutElement>();
+        deviceElement.minWidth = 1840f;
+        deviceElement.preferredWidth = 1840f;
+        deviceElement.minHeight = 650f;
+        deviceElement.preferredHeight = 650f;
+        CreateText(deviceViewer.transform, "Title", "SWITCH/ROUTER CONFIGURATION REVIEW", new Vector2(0f, -38f), new Vector2(1700f, 58f), 28, TextAnchor.MiddleCenter, new Color(.95f, .72f, .28f));
+        CreateText(deviceViewer.transform, "Info", "Informational - does not affect results", new Vector2(0f, -82f), new Vector2(1700f, 24f), 15, TextAnchor.MiddleCenter, new Color(.7f, .8f, .78f));
+        var tabsViewport = CreatePanel(deviceViewer.transform, "DeviceTabsViewport", Vector2.zero, new Vector2(1700f, 48f), new Color(.02f, .04f, .05f, 1f));
+        var tabsViewportRect = tabsViewport.GetComponent<RectTransform>();
+        tabsViewportRect.anchorMin = new Vector2(.5f, 1f);
+        tabsViewportRect.anchorMax = new Vector2(.5f, 1f);
+        tabsViewportRect.pivot = new Vector2(.5f, 1f);
+        tabsViewportRect.anchoredPosition = new Vector2(0f, -106f);
+        tabsViewport.AddComponent<Mask>().showMaskGraphic = true;
+        var tabs = new GameObject("DeviceTabs", typeof(RectTransform), typeof(HorizontalLayoutGroup)); tabs.transform.SetParent(tabsViewport.transform, false);
+        var tabsRect = (RectTransform)tabs.transform; tabsRect.anchorMin = new Vector2(0f, 1f); tabsRect.anchorMax = new Vector2(0f, 1f); tabsRect.pivot = new Vector2(0f, 1f); tabsRect.anchoredPosition = Vector2.zero; tabsRect.sizeDelta = new Vector2(0f, 44f);
+        var tabLayout = tabs.GetComponent<HorizontalLayoutGroup>(); tabLayout.spacing = 8f; tabLayout.childForceExpandWidth = false;
+        AddPreviewDeviceTab(tabs.transform, "SWITCH - AN-1", true);
+        AddPreviewDeviceTab(tabs.transform, "SWITCH - AN-2", false);
+        AddPreviewDeviceTab(tabs.transform, "ROUTER - CN-1", false);
+        var tabsScroll = tabsViewport.AddComponent<ScrollRect>(); tabsScroll.viewport = tabsViewportRect; tabsScroll.content = tabsRect; tabsScroll.horizontal = true; tabsScroll.vertical = false; tabsScroll.movementType = ScrollRect.MovementType.Clamped;
+        var viewport = CreatePanel(deviceViewer.transform, "ConfigurationViewport", Vector2.zero, new Vector2(1700f, 515f), new Color(.02f, .04f, .05f, 1f));
+        var viewportRect = viewport.GetComponent<RectTransform>(); viewportRect.anchorMin = new Vector2(.5f, 0f); viewportRect.anchorMax = new Vector2(.5f, 0f); viewportRect.pivot = new Vector2(.5f, 0f); viewportRect.anchoredPosition = new Vector2(0f, 12f);
+        viewport.AddComponent<Mask>().showMaskGraphic = true;
+        var config = CreateText(viewport.transform, "ConfigurationText", PreviewSwitchConfiguration, new Vector2(0f, 0f), new Vector2(1640f, 1000f), 15, TextAnchor.UpperLeft, Color.white); config.horizontalOverflow = HorizontalWrapMode.Wrap; config.verticalOverflow = VerticalWrapMode.Overflow; config.supportRichText = true;
+        var scroll = viewport.AddComponent<ScrollRect>(); scroll.viewport = viewportRect; scroll.content = config.rectTransform; scroll.horizontal = false; scroll.vertical = true; scroll.movementType = ScrollRect.MovementType.Clamped;
+
+        var panelScroll = contentRoot.AddComponent<ScrollRect>();
+        panelScroll.viewport = contentRoot.GetComponent<RectTransform>();
+        panelScroll.content = contentRect;
+        panelScroll.horizontal = true;
+        panelScroll.vertical = false;
+        panelScroll.movementType = ScrollRect.MovementType.Clamped;
+        panelScroll.inertia = true;
+        var previousPanel = CreateButton(contentRoot.transform, "PreviousPanelButton", "‹", new Vector2(18f, -350f), new Vector2(54f, 80f), new Color(.12f, .18f, .2f, .9f));
+        AnchorLeftCenter(previousPanel.GetComponent<RectTransform>(), new Vector2(18f, 0f));
+        var nextPanel = CreateButton(contentRoot.transform, "NextPanelButton", "›", new Vector2(-18f, -350f), new Vector2(54f, 80f), new Color(.12f, .18f, .2f, .9f));
+        AnchorRightCenter(nextPanel.GetComponent<RectTransform>(), new Vector2(-18f, 0f));
 
         var view = canvas.AddComponent<TssResultsView>();
         var serialized = new SerializedObject(view);
@@ -143,6 +192,12 @@ public static class TssResultsSceneBuilder
         serialized.FindProperty("workPackageContainer").objectReferenceValue = content.transform;
         serialized.FindProperty("resultCardPrefab").objectReferenceValue = cardPrefab;
         serialized.FindProperty("mainMenuButton").objectReferenceValue = mainMenu;
+        serialized.FindProperty("deviceConfigurationRoot").objectReferenceValue = deviceViewer;
+        serialized.FindProperty("deviceTabContainer").objectReferenceValue = tabs.transform;
+        serialized.FindProperty("deviceConfigurationText").objectReferenceValue = config;
+        serialized.FindProperty("panelScroll").objectReferenceValue = panelScroll;
+        serialized.FindProperty("previousPanelButton").objectReferenceValue = previousPanel;
+        serialized.FindProperty("nextPanelButton").objectReferenceValue = nextPanel;
         serialized.ApplyModifiedPropertiesWithoutUndo();
 
 #if ENABLE_INPUT_SYSTEM
@@ -158,7 +213,7 @@ public static class TssResultsSceneBuilder
 
     private static void AddLayoutSamples(GameObject cardPrefab, Transform parent)
     {
-        var titles = new[] { "WORK PACKAGE 1", "WORK PACKAGE 2", "WORK PACKAGE 3", "WORK PACKAGE 4" };
+        var titles = new[] { "WP1 — LAYER 1 PHYSICAL", "WP1 — LAYER 2 DATA LINK", "WP3 — LAYER 3 NETWORK", "WP4 — WIRELESS" };
         var statuses = new[] { "INCOMPLETE", "PASS", "INCOMPLETE", "PASS" };
         var details = new[]
         {
@@ -170,20 +225,60 @@ public static class TssResultsSceneBuilder
 
         for (var i = 0; i < titles.Length; i++)
         {
-            var sample = (GameObject)PrefabUtility.InstantiatePrefab(cardPrefab, parent);
+            var page = CreatePanel(parent, "WorkPackagePage" + (i + 1), new Vector2(1840f, 650f), new Color(.08f, .12f, .12f, .98f));
+            var pageElement = page.AddComponent<LayoutElement>();
+            pageElement.minWidth = 1840f;
+            pageElement.preferredWidth = 1840f;
+            pageElement.minHeight = 650f;
+            pageElement.preferredHeight = 650f;
+            var sample = (GameObject)PrefabUtility.InstantiatePrefab(cardPrefab, page.transform);
+            var sampleRect = (RectTransform)sample.transform;
+            sampleRect.anchorMin = Vector2.zero;
+            sampleRect.anchorMax = Vector2.one;
+            sampleRect.offsetMin = Vector2.zero;
+            sampleRect.offsetMax = Vector2.zero;
             sample.name = titles[i].Replace(' ', '_') + "_Sample";
             var title = sample.transform.Find("Title")?.GetComponent<Text>();
             var status = sample.transform.Find("Status")?.GetComponent<Text>();
-            var detail = sample.transform.Find("Detail")?.GetComponent<Text>();
+            var completed = sample.transform.Find("DetailViewport/CompletedViewport/CompletedDetail")?.GetComponent<Text>();
+            var unmet = sample.transform.Find("DetailViewport/UnmetViewport/UnmetDetail")?.GetComponent<Text>();
             if (title) title.text = titles[i];
             if (status)
             {
                 status.text = statuses[i];
                 status.color = statuses[i] == "PASS" ? new Color(.35f, 1f, .55f) : new Color(1f, .65f, .25f);
             }
-            if (detail) detail.text = details[i];
+            if (completed) completed.text = previewCompleted[i];
+            if (unmet) unmet.text = previewUnmet[i];
         }
     }
+
+    private static void AddPreviewDeviceTab(Transform parent, string label, bool active)
+    {
+        var buttonObject = CreateButton(parent, label, label, Vector2.zero, new Vector2(260f, 42f), active ? new Color(.18f, .55f, .28f) : new Color(.12f, .18f, .2f));
+        var text = buttonObject.GetComponentInChildren<Text>();
+        if (text) text.fontSize = 17;
+    }
+
+    private const string PreviewSwitchConfiguration =
+        "===== SHOW RUNNING-CONFIG =====\n" +
+        "version 15.0\n!\nhostname AN-1\nservice password-encryption\nno ip domain-lookup\n!\ninterface Fa0/1\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30\n switchport trunk native vlan 99\n!\ninterface Fa0/7\n switchport mode access\n switchport access vlan 20\n shutdown\n!\ninterface Vlan1\n ip address 10.24.10.2 255.255.255.0\n!\nline vty 0 4\n login\n!\nend\n\n===== SHOW VLAN BRIEF =====\nVLAN Name                             Status    Ports\n---- -------------------------------- --------- -------------------------------\n1    default                          active    \n10   Management                       active    \n20   Reception                        active    Fa0/7\n30   Data                             active    \n99   Native                           active    \n999  Dead_Vlan                        suspended\n\n===== SHOW INTERFACES TRUNK =====\nFa0/1 on 802.1q trunking\nNative vlan: 99\nVlans allowed on trunk: 10,20,30\n\n===== SHOW IP INTERFACE BRIEF =====\nInterface                  IP-Address      Status                Protocol\nVlan1                      10.24.10.2      up                    up\nFa0/1                      unassigned      up                    up\nFa0/7                      unassigned      administratively down down\n\n===== SHOW MAC ADDRESS-TABLE =====\nMac Address Table\n(no dynamic entries until endpoints are reachable)\n";
+
+    private static readonly string[] previewCompleted =
+    {
+        "VERIFIED AT EXIT\n\n[PASS] AN-1 installed at Rack01 U35-U38.\n[PASS] IT1 placed at ITDesk.\n[PASS] Cable terminations recorded.",
+        "VERIFIED AT EXIT\n\n[PASS] AN-1 VLAN database is complete.\n[PASS] Required access ports are correct.\n[PASS] Required trunks are correct.\n[PASS] VLAN 1 management interface is correct.",
+        "VERIFIED AT EXIT\n\n[PASS] Router parent interface is correct.\n[PASS] Router subinterfaces are correct.\n[PASS] Provider-facing WAN configuration is correct.",
+        "VERIFIED AT EXIT\n\n[PASS] AP uplink connected.\n[PASS] Test laptop associated to the guest AP.\n[PASS] Expected DHCP lease received."
+    };
+
+    private static readonly string[] previewUnmet =
+    {
+        "ACTIONABLE REMAINING CRITERIA\n\n[ ] Place TestLaptop at LobbyTable01.",
+        "REMAINING CRITERIA\n\nNone.",
+        "ACTIONABLE REMAINING CRITERIA\n\n[ ] Save the router configuration.\n[ ] Record provider route evidence.",
+        "REMAINING CRITERIA\n\nNone."
+    };
 
     private static void AddToBuildSettings()
     {
@@ -264,6 +359,20 @@ public static class TssResultsSceneBuilder
     {
         rect.anchorMin = rect.anchorMax = new Vector2(.5f, 0f);
         rect.pivot = new Vector2(.5f, 0f);
+        rect.anchoredPosition = position;
+    }
+
+    private static void AnchorLeftCenter(RectTransform rect, Vector2 position)
+    {
+        rect.anchorMin = rect.anchorMax = new Vector2(0f, .5f);
+        rect.pivot = new Vector2(0f, .5f);
+        rect.anchoredPosition = position;
+    }
+
+    private static void AnchorRightCenter(RectTransform rect, Vector2 position)
+    {
+        rect.anchorMin = rect.anchorMax = new Vector2(1f, .5f);
+        rect.pivot = new Vector2(1f, .5f);
         rect.anchoredPosition = position;
     }
 }

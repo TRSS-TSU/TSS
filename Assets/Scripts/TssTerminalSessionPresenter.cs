@@ -186,6 +186,9 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             categoryBadgeText.text = isRouter ? "ROUTER (LAYER 3)" : "SWITCH (LAYER 2)";
         if (categoryBadgeText)
             categoryBadgeText.color = isRouter ? new Color(1f, 0.72f, 0.2f, 1f) : new Color(0.25f, 0.9f, 1f, 1f);
+        var sidebarTitle = GetComponentsInChildren<Text>(true).FirstOrDefault(text => text.name == "SidebarTitle");
+        if (sidebarTitle)
+            sidebarTitle.text = isRouter ? "Router Command Reference" : "Switch Command Reference";
 
         var activeLinks = 0;
         foreach (var iface in state.Interfaces)
@@ -1055,54 +1058,40 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
 
     public static string GetDefaultSwitchBootBanner()
     {
-        return "Booting Cisco IOS Software (c2960-lanbasek9-mz.150-2.SE4.bin)...\n" +
-               "Base Ethernet MAC Address: 00:50:79:6A:3B:12\n" +
-               "Xmodem file system is available.\n" +
-               "Initializing Flash...\n" +
-               "flashfs[0]: 558 files, 19 directories\n" +
-               "flashfs[0]: 0 orphaned files, 0 orphaned directories\n" +
-               "flashfs[0]: Total bytes: 32514048\n" +
-               "flashfs[0]: Bytes used: 11634176\n" +
-               "flashfs[0]: Bytes available: 20879872\n" +
-               "...done Initializing Flash.\n\n" +
-               "Loading \"flash:/c2960-lanbasek9-mz.150-2.SE4.bin\"...\n" +
-               "######################################################################### [OK]\n\n" +
-               "Cisco IOS Software, C2960 Software (C2960-LANBASEK9-M), Version 15.0(2)SE4\n" +
-               "Technical Support: http://www.cisco.com/techsupport\n" +
-               "Copyright (c) 1986-2013 by Cisco Systems, Inc.\n" +
-               "Compiled Wed 26-Jun-13 02:49 by prod_rel_team\n\n" +
-               "Cisco WS-C2960-24TT-L processor with 65536K bytes of memory.\n" +
-               "Processor board ID FOC1437W02D\n" +
-               "Last reset from power-on\n" +
-               "24 FastEthernet interfaces\n" +
-               "2 Gigabit Ethernet interfaces\n" +
-               "The password-recovery mechanism is enabled.\n\n" +
-               "512K bytes of flash-simulated non-volatile configuration memory.\n" +
-               "Base Ethernet MAC Address       : 00:50:79:6A:3B:12\n" +
-               "Motherboard assembly number     : 73-9832-06\n" +
-               "Model number                    : WS-C2960-24TT-L\n" +
-               "System serial number            : FOC1437W02D\n\n" +
-               "%LINK-5-CHANGED: Interface Vlan1, changed state to up\n" +
-               "%LINEPROTO-5-UPDOWN: Line protocol on Interface Vlan1, changed state to up\n\n" +
-               "Press RETURN to get started!\n\n";
+        return BuildSwitchBootBanner("Switch", "00:50:79:6A:3B:12");
     }
 
     public static string GetSwitchBootBanner(TssDeviceLogicalState state)
     {
+        return BuildSwitchBootBanner(state.DeviceName, state.MacAddress);
+    }
+
+    private static string BuildSwitchBootBanner(string deviceName, string macAddress)
+    {
         return $"Booting Cisco IOS Software (c2960-lanbasek9-mz.150-2.SE4.bin)...\n" +
-               $"Base Ethernet MAC Address: {state.MacAddress}\n" +
+               $"Base Ethernet MAC Address: {macAddress}\n" +
                $"Xmodem file system is available.\n" +
                $"Initializing Flash...\n" +
                $"flashfs[0]: 558 files, 19 directories\n" +
+               $"flashfs[0]: 0 orphaned files, 0 orphaned directories\n" +
                $"flashfs[0]: Total bytes: 32514048\n" +
                $"flashfs[0]: Bytes used: 11634176\n" +
                $"flashfs[0]: Bytes available: 20879872\n" +
-               $"done Initializing Flash.\n\n" +
+               $"...done Initializing Flash.\n\n" +
                $"Loading \"flash:/c2960-lanbasek9-mz.150-2.SE4.bin\"...\n" +
                $"######################################################################### [OK]\n\n" +
                $"Cisco IOS Software, C2960 Software (C2960-LANBASEK9-M), Version 15.0(2)SE4\n" +
-               $"Device: {state.DeviceName} (Catalyst 2960 Series FastEthernet/Gigabit)\n" +
-               $"Base Ethernet MAC Address: {state.MacAddress}\n" +
+               $"Technical Support: http://www.cisco.com/techsupport\n" +
+               $"Copyright (c) 1986-2013 by Cisco Systems, Inc.\n" +
+               $"Compiled Wed 26-Jun-13 02:49 by prod_rel_team\n\n" +
+               $"Cisco WS-C2960-24TT-L processor with 65536K bytes of memory.\n" +
+               $"Device: {deviceName} (Catalyst 2960 Series FastEthernet/Gigabit)\n" +
+               $"24 FastEthernet interfaces\n" +
+               $"2 Gigabit Ethernet interfaces\n" +
+               $"The password-recovery mechanism is enabled.\n\n" +
+               $"512K bytes of flash-simulated non-volatile configuration memory.\n" +
+               $"Base Ethernet MAC Address       : {macAddress}\n" +
+               $"Model number                    : WS-C2960-24TT-L\n\n" +
                $"Spanning Tree Protocol enabled on default VLAN 1\n\n" +
                $"%LINK-5-CHANGED: Interface Vlan1, changed state to up\n" +
                $"%LINEPROTO-5-UPDOWN: Line protocol on Interface Vlan1, changed state to up\n\n" +

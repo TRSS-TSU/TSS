@@ -72,7 +72,7 @@ public static class TssWorkPackageTitles
     public static string Get(int workPackage) => workPackage switch
     {
         1 => "WP1 — Physical Installation",
-        2 => "WP2 — Layer 2",
+        2 => "WP1 — Layer 2 Data Link",
         3 => "WP3 — Layer 3",
         4 => "WP4 — Wireless",
         _ => $"WORK PACKAGE {workPackage}"
@@ -143,6 +143,7 @@ public sealed class TssResultsSnapshot
     public readonly List<TssPhysicalConnectionSnapshot> PhysicalConnections = new();
     public readonly List<TssTerminationSnapshot> Terminations = new();
     public readonly TssNetworkStateSnapshot NetworkState;
+    public readonly List<TssDeviceConfigurationSnapshot> DeviceConfigurations = new();
 
     private TssResultsSnapshot(TssTrainingSession session, TssScenarioAssessment assessment)
     {
@@ -169,6 +170,81 @@ public sealed class TssResultsSnapshot
         foreach (var item in session.GetTerminationModuleStates())
             Terminations.Add(new TssTerminationSnapshot(item, session.IsTerminationCorrectForResults(item.connectionId, item.endpointId)));
         NetworkState = TssNetworkStateSnapshot.Copy(session.NetworkState);
+        BuildDeviceConfigurations(session, assessment);
+    }
+
+    private void BuildDeviceConfigurations(TssTrainingSession session, TssScenarioAssessment assessment)
+    {
+        var byKey = new Dictionary<string, TssDeviceConfigurationSnapshot>(StringComparer.OrdinalIgnoreCase);
+        var bindings = session.Scenario?.networkScenario?.roleBindings ?? Array.Empty<NetworkRoleBinding>();
+        foreach (var binding in bindings)
+        {
+            if (binding == null || !IsConfigurable(binding.category)) continue;
+            var key = binding.deviceKey ?? string.Empty;
+            var installed = session.Installed.FirstOrDefault(x => x.Equipment && x.Equipment.category == binding.category &&
+                (TssTrainingSession.GetRackOwnerPrefix(x.RackId, x.StartingU).Equals(key, StringComparison.OrdinalIgnoreCase) || x.DeviceName.Equals(binding.role, StringComparison.OrdinalIgnoreCase)));
+            var actualKey = installed.Equipment ? TssTrainingSession.GetRackOwnerPrefix(installed.RackId, installed.StartingU) : key;
+            var device = session.NetworkState?.Devices.FirstOrDefault(x => x.Key.Equals(actualKey, StringComparison.OrdinalIgnoreCase) || string.Equals(x.ExpectedRole, binding.role, StringComparison.OrdinalIgnoreCase));
+            AddDevice(byKey, actualKey, binding.category, binding.role, device?.Hostname ?? installed.DeviceName ?? binding.displayName ?? binding.role,
+                installed.Equipment ? installed.RackId + " U" + installed.StartingU : string.Empty, installed.Equipment, device);
+            if (byKey.TryGetValue(actualKey, out var expected)) expected.ExpectedOrder = Math.Min(expected.ExpectedOrder, Array.IndexOf(bindings, binding));
+        }
+        foreach (var installed in session.Installed)
+        {
+            if (!installed.Equipment || !IsConfigurable(installed.Equipment.category)) continue;
+            var key = TssTrainingSession.GetRackOwnerPrefix(installed.RackId, installed.StartingU);
+            var device = session.NetworkState?.Devices.FirstOrDefault(x => x.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
+            AddDevice(byKey, key, installed.Equipment.category, ExpectedRoleFor(bindings, key, device), device?.Hostname ?? installed.DeviceName,
+                installed.RackId + " U" + installed.StartingU, true, device);
+        }
+        foreach (var device in session.NetworkState?.Devices ?? Array.Empty<NetworkDeviceState>())
+        {
+            if (!IsConfigurable(device.Category)) continue;
+            AddDevice(byKey, device.Key, device.Category, ExpectedRoleFor(bindings, device.Key, device), device.Hostname, string.Empty, false, device);
+        }
+        DeviceConfigurations.AddRange(byKey.Values.OrderBy(x => x.ExpectedOrder).ThenBy(x => CategoryOrder(x.Category)).ThenBy(x => x.StableKey, StringComparer.OrdinalIgnoreCase));
+        foreach (var device in DeviceConfigurations)
+            AddConfigurationWarnings(device, assessment);
+    }
+
+    private static void AddConfigurationWarnings(TssDeviceConfigurationSnapshot device, TssScenarioAssessment assessment)
+    {
+        if (device == null || assessment == null || !device.HasTerminalState) return;
+        foreach (var workPackage in assessment.WorkPackages)
+        {
+            if (workPackage.WorkPackage == 2 && device.Category != EquipmentCategory.Switch) continue;
+            if (workPackage.WorkPackage == 3 && device.Category != EquipmentCategory.Router) continue;
+            if (workPackage.WorkPackage != 2 && workPackage.WorkPackage != 3) continue;
+            foreach (var criterion in workPackage.UnmetCriteria ?? Array.Empty<string>())
+            {
+                if (workPackage.WorkPackage == 2 && !MentionsDevice(criterion, device)) continue;
+                device.PossibleIncorrectConfiguration.Add(criterion);
+            }
+        }
+    }
+
+    private static bool MentionsDevice(string criterion, TssDeviceConfigurationSnapshot device)
+    {
+        return (!string.IsNullOrWhiteSpace(device.ExpectedRole) && criterion.IndexOf(device.ExpectedRole, StringComparison.OrdinalIgnoreCase) >= 0)
+            || (!string.IsNullOrWhiteSpace(device.Hostname) && criterion.IndexOf(device.Hostname, StringComparison.OrdinalIgnoreCase) >= 0)
+            || (!string.IsNullOrWhiteSpace(device.StableKey) && criterion.IndexOf(device.StableKey, StringComparison.OrdinalIgnoreCase) >= 0);
+    }
+
+    private static void AddDevice(Dictionary<string, TssDeviceConfigurationSnapshot> byKey, string key, EquipmentCategory category, string role, string hostname, string location, bool installed, NetworkDeviceState device)
+    {
+        if (string.IsNullOrWhiteSpace(key)) return;
+        if (!byKey.TryGetValue(key, out var item)) byKey[key] = item = new TssDeviceConfigurationSnapshot(key, category, role, hostname, location, installed, device != null, device?.Clone());
+        else { item.IsInstalled |= installed; if (device != null) { item.HasTerminalState = true; item.Configuration = device.Clone(); item.Hostname = device.Hostname; } }
+    }
+
+    private static bool IsConfigurable(EquipmentCategory category) => category is EquipmentCategory.Switch or EquipmentCategory.Router;
+    private static int CategoryOrder(EquipmentCategory category) => category == EquipmentCategory.Switch ? 0 : 1;
+    private static string ExpectedRoleFor(NetworkRoleBinding[] bindings, string key, NetworkDeviceState device)
+    {
+        foreach (var binding in bindings)
+            if (binding != null && (string.Equals(binding.deviceKey, key, StringComparison.OrdinalIgnoreCase) || string.Equals(binding.role, device?.ExpectedRole, StringComparison.OrdinalIgnoreCase)))
+                return binding.role ?? string.Empty;
+        return string.Empty;
     }
 
     public static TssResultsSnapshot Create(TssTrainingSession session, TssScenarioAssessment assessment) => new(session, assessment);
@@ -289,6 +365,24 @@ public sealed class TssInventorySnapshot
     public EquipmentCategory Category;
     public int Quantity, Remaining;
     public TssInventorySnapshot(string id, string displayName, EquipmentCategory category, int quantity, int remaining) { EquipmentId = id; DisplayName = displayName; Category = category; Quantity = quantity; Remaining = remaining; }
+}
+
+public sealed class TssDeviceConfigurationSnapshot
+{
+    public readonly string StableKey;
+    public readonly EquipmentCategory Category;
+    public readonly string ExpectedRole;
+    public string Hostname;
+    public readonly string Location;
+    public bool IsInstalled;
+    public bool HasTerminalState;
+    public NetworkDeviceState Configuration;
+    public readonly List<string> PossibleIncorrectConfiguration = new();
+    public int ExpectedOrder = int.MaxValue;
+    public TssDeviceConfigurationSnapshot(string key, EquipmentCategory category, string role, string hostname, string location, bool installed, bool recorded, NetworkDeviceState configuration)
+    { StableKey = key; Category = category; ExpectedRole = role ?? string.Empty; Hostname = hostname ?? string.Empty; Location = location ?? string.Empty; IsInstalled = installed; HasTerminalState = recorded; Configuration = configuration; }
+    public string Label => (ExpectedRole.Length > 0 ? (IsInstalled && !string.Equals(ExpectedRole, Hostname, StringComparison.OrdinalIgnoreCase) ? ExpectedRole + " / " + Hostname : ExpectedRole) : Hostname);
+    public string StateMessage => !IsInstalled ? "Device was not installed; no configuration is available." : !HasTerminalState ? "No terminal configuration was recorded for this device." : string.Empty;
 }
 
 public sealed class TssCableInventorySnapshot

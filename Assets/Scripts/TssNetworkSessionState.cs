@@ -577,6 +577,7 @@ public sealed class NetworkDeviceState
     public bool VtyLoginRequired;
     public readonly Dictionary<int, string> Vlans = new();
     public readonly Dictionary<string, NetworkInterfaceState> Interfaces = new(StringComparer.OrdinalIgnoreCase);
+    public readonly Dictionary<int, NetworkInterfaceState> Svis = new();
     public readonly List<NetworkRouteState> Routes = new();
     public readonly HashSet<string> Evidence = new(StringComparer.OrdinalIgnoreCase);
     public NetworkDeviceState StartupSnapshot;
@@ -612,6 +613,7 @@ public sealed class NetworkDeviceState
         };
         foreach (var vlan in Vlans) copy.Vlans[vlan.Key] = vlan.Value;
         foreach (var pair in Interfaces) copy.Interfaces[pair.Key] = pair.Value.Clone();
+        foreach (var pair in Svis) copy.Svis[pair.Key] = pair.Value.Clone();
         foreach (var route in Routes) copy.Routes.Add(new NetworkRouteState { Network = route.Network, Mask = route.Mask, NextHop = route.NextHop });
         foreach (var item in Evidence) copy.Evidence.Add(item);
         copy.StartupSnapshot = StartupSnapshot?.Clone();
@@ -622,6 +624,7 @@ public sealed class NetworkDeviceState
 public sealed class NetworkInterfaceState
 {
     public string Name;
+    public string Description;
     public string EndpointId;
     public bool AdminUp;
     public bool CarrierUp;
