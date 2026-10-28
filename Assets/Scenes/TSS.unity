@@ -2573,6 +2573,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!1 &69119721
@@ -4754,6 +4755,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!1 &117938679
@@ -9244,68 +9246,6 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 264911340}
   m_SourcePrefab: {fileID: 100100000, guid: ddfc1292959bce64f8c5c758157712f1, type: 3}
---- !u!1001 &216728931
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 1498349556}
-    m_Modifications:
-    - target: {fileID: 3778322566192714001, guid: 8c62e0f64b2956748ab5f5ece60bc90c, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 12.703
-      objectReference: {fileID: 0}
-    - target: {fileID: 3778322566192714001, guid: 8c62e0f64b2956748ab5f5ece60bc90c, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: -0.45000005
-      objectReference: {fileID: 0}
-    - target: {fileID: 3778322566192714001, guid: 8c62e0f64b2956748ab5f5ece60bc90c, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -9.05
-      objectReference: {fileID: 0}
-    - target: {fileID: 3778322566192714001, guid: 8c62e0f64b2956748ab5f5ece60bc90c, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3778322566192714001, guid: 8c62e0f64b2956748ab5f5ece60bc90c, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3778322566192714001, guid: 8c62e0f64b2956748ab5f5ece60bc90c, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3778322566192714001, guid: 8c62e0f64b2956748ab5f5ece60bc90c, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3778322566192714001, guid: 8c62e0f64b2956748ab5f5ece60bc90c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3778322566192714001, guid: 8c62e0f64b2956748ab5f5ece60bc90c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3778322566192714001, guid: 8c62e0f64b2956748ab5f5ece60bc90c, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 8667673312399118122, guid: 8c62e0f64b2956748ab5f5ece60bc90c, type: 3}
-      propertyPath: m_Name
-      value: Table_Coffee_01
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: 8c62e0f64b2956748ab5f5ece60bc90c, type: 3}
---- !u!4 &216728932 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 3778322566192714001, guid: 8c62e0f64b2956748ab5f5ece60bc90c, type: 3}
-  m_PrefabInstance: {fileID: 216728931}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &217898742
 GameObject:
   m_ObjectHideFlags: 0
@@ -14853,6 +14793,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!1 &388874567
@@ -20444,6 +20385,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!1 &540124669
@@ -35079,6 +35021,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!4 &874503433 stripped
@@ -44190,6 +44133,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!1 &1134743619
@@ -53470,6 +53414,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!23 &1342949743
@@ -58179,6 +58124,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!4 &1440180627 stripped
@@ -61121,7 +61067,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 216728932}
+  - {fileID: 1975446370}
   - {fileID: 498381465}
   - {fileID: 1045817863}
   m_Father: {fileID: 250352196}
@@ -61728,6 +61674,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!1 &1506769126
@@ -79298,6 +79245,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!1001 &1918040660
@@ -81707,6 +81655,68 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1971122212}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1001 &1975446369
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1498349556}
+    m_Modifications:
+    - target: {fileID: 4373113010075231513, guid: 3932a164f0adc96438db7b041f083516, type: 3}
+      propertyPath: m_Name
+      value: CoffeeTable
+      objectReference: {fileID: 0}
+    - target: {fileID: 9215571831597753523, guid: 3932a164f0adc96438db7b041f083516, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 12.703
+      objectReference: {fileID: 0}
+    - target: {fileID: 9215571831597753523, guid: 3932a164f0adc96438db7b041f083516, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.088
+      objectReference: {fileID: 0}
+    - target: {fileID: 9215571831597753523, guid: 3932a164f0adc96438db7b041f083516, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -9.05
+      objectReference: {fileID: 0}
+    - target: {fileID: 9215571831597753523, guid: 3932a164f0adc96438db7b041f083516, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9215571831597753523, guid: 3932a164f0adc96438db7b041f083516, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9215571831597753523, guid: 3932a164f0adc96438db7b041f083516, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9215571831597753523, guid: 3932a164f0adc96438db7b041f083516, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9215571831597753523, guid: 3932a164f0adc96438db7b041f083516, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9215571831597753523, guid: 3932a164f0adc96438db7b041f083516, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9215571831597753523, guid: 3932a164f0adc96438db7b041f083516, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 3932a164f0adc96438db7b041f083516, type: 3}
+--- !u!4 &1975446370 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 9215571831597753523, guid: 3932a164f0adc96438db7b041f083516, type: 3}
+  m_PrefabInstance: {fileID: 1975446369}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1977289496
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -83736,6 +83746,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!1 &2019287266

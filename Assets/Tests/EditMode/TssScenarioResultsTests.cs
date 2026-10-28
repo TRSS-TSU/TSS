@@ -6,6 +6,29 @@ using Object = UnityEngine.Object;
 public sealed class TssScenarioResultsTests
 {
     [Test]
+    public void SwitchResultsReviewUsesUnconfiguredDefaultsAndNumericPorts()
+    {
+        var profile = TssNetworkRunProfile.Create(42, null);
+        var device = new NetworkDeviceState("AN1", EquipmentCategory.Switch, "AN-1", profile) { ExpectedRole = "AN-1" };
+        foreach (var port in new[] { 10, 2, 7, 8, 9 })
+            device.Interfaces["Fa0/" + port] = new NetworkInterfaceState { Name = "Fa0/" + port, AdminUp = true };
+
+        Assert.IsEmpty(device.ManagementAddress);
+        var vlanOutput = TssCliCommandProcessor.BuildResultsShowOutput(device, "show vlan brief");
+        Assert.Less(vlanOutput.IndexOf("Fa0/2", System.StringComparison.Ordinal), vlanOutput.IndexOf("Fa0/10", System.StringComparison.Ordinal));
+
+        var review = TssCliCommandProcessor.BuildResultsShowReview(device, new[]
+        {
+            "AN-1 VLAN 1 management interface is incomplete.",
+            "AN-1 unused ports must use the dead VLAN and be shut down."
+        });
+        StringAssert.DoesNotContain("SHOW INTERFACES =====", review);
+        StringAssert.DoesNotContain("SHOW MAC ADDRESS-TABLE =====", review);
+        StringAssert.DoesNotContain("<color=#FF4D4D>!</color>", review);
+        StringAssert.Contains("<color=#FF4D4D>Fa0/7", review);
+    }
+
+    [Test]
     public void ExitRecheckIgnoresHistoricalNetworkCompletionSnapshots()
     {
         var state = new TssNetworkSessionState(TssNetworkRunProfile.Create(42, new NetworkScenarioConfig()));

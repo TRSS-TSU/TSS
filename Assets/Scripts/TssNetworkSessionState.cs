@@ -591,9 +591,8 @@ public sealed class NetworkDeviceState
     {
         Key = key; Category = category; Hostname = string.IsNullOrWhiteSpace(name) ? category.ToString() : name.Trim();
         MacAddress = profile != null ? TssNetworkRunProfile.MacFor(profile.Seed, key) : string.Empty;
-        ManagementAddress = category == EquipmentCategory.Router || profile == null
-            ? string.Empty
-            : profile.ManagementNetwork + ".2";
+        // A switch SVI is unconfigured until the student enters its IP address.
+        ManagementAddress = string.Empty;
         DefaultGateway = category == EquipmentCategory.Router || profile == null
             ? string.Empty
             : profile.ManagementNetwork + ".1";

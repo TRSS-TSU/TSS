@@ -13,6 +13,7 @@ public sealed class TssResultsView : MonoBehaviour
     [SerializeField] private Transform workPackageContainer;
     [SerializeField] private GameObject resultCardPrefab;
     [SerializeField] private Button mainMenuButton;
+    [SerializeField] private Mask resultsMask;
     [SerializeField] private GameObject deviceConfigurationRoot;
     [SerializeField] private Transform deviceTabContainer;
     [SerializeField] private Text deviceConfigurationText;
@@ -28,6 +29,7 @@ public sealed class TssResultsView : MonoBehaviour
 
     private void Awake()
     {
+        if (resultsMask) resultsMask.enabled = true;
         if (mainMenuButton)
             mainMenuButton.onClick.AddListener(ReturnToMainMenu);
         if (previousPanelButton) previousPanelButton.onClick.AddListener(() => ShowPanel(_panelIndex - 1));
@@ -141,7 +143,8 @@ public sealed class TssResultsView : MonoBehaviour
         if (deviceConfigurationText)
         {
             deviceConfigurationText.supportRichText = true;
-            deviceConfigurationText.text = TssCliCommandProcessor.BuildResultsShowReview(device.Configuration, device.PossibleIncorrectConfiguration);
+            var starting = device.IsStartingConfiguration ? "<color=#FFFFFF>STARTING CONFIGURATION — NO TERMINAL CHANGES RECORDED</color>\n\n" : string.Empty;
+            deviceConfigurationText.text = starting + TssCliCommandProcessor.BuildResultsShowReview(device.Configuration, device.PossibleIncorrectConfiguration);
         }
     }
 

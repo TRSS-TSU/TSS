@@ -204,12 +204,39 @@ public sealed class TssResultsSnapshot
         }
         DeviceConfigurations.AddRange(byKey.Values.OrderBy(x => x.ExpectedOrder).ThenBy(x => CategoryOrder(x.Category)).ThenBy(x => x.StableKey, StringComparer.OrdinalIgnoreCase));
         foreach (var device in DeviceConfigurations)
+        {
+            if (device.IsInstalled && !device.HasTerminalState)
+            {
+                device.Configuration = CreateStartingConfiguration(device, session.NetworkState?.Profile);
+                device.HasTerminalState = device.Configuration != null;
+                device.IsStartingConfiguration = device.HasTerminalState;
+            }
             AddConfigurationWarnings(device, assessment);
+        }
+    }
+
+    private static NetworkDeviceState CreateStartingConfiguration(TssDeviceConfigurationSnapshot snapshot, TssNetworkRunProfile profile)
+    {
+        if (snapshot == null || profile == null) return null;
+        var device = new NetworkDeviceState(snapshot.StableKey, snapshot.Category, snapshot.Hostname, profile) { ExpectedRole = snapshot.ExpectedRole };
+        if (snapshot.Category == EquipmentCategory.Switch)
+        {
+            for (var port = 1; port <= 24; port++)
+                device.Interfaces["Fa0/" + port] = new NetworkInterfaceState { Name = "Fa0/" + port, AdminUp = true, CarrierUp = false, AccessVlan = 1 };
+        }
+        else if (snapshot.Category == EquipmentCategory.Router)
+        {
+            device.Interfaces["Fa0/0"] = new NetworkInterfaceState { Name = "Fa0/0", AdminUp = false, CarrierUp = false };
+            device.Interfaces["Fa0/1"] = new NetworkInterfaceState { Name = "Fa0/1", AdminUp = false, CarrierUp = false };
+        }
+        return device;
     }
 
     private static void AddConfigurationWarnings(TssDeviceConfigurationSnapshot device, TssScenarioAssessment assessment)
     {
         if (device == null || assessment == null || !device.HasTerminalState) return;
+        if (device.IsInstalled && string.IsNullOrWhiteSpace(device.ExpectedRole))
+            device.PossibleIncorrectConfiguration.Add("Extra device is not part of the expected scenario roster.");
         foreach (var workPackage in assessment.WorkPackages)
         {
             if (workPackage.WorkPackage == 2 && device.Category != EquipmentCategory.Switch) continue;
@@ -376,13 +403,14 @@ public sealed class TssDeviceConfigurationSnapshot
     public readonly string Location;
     public bool IsInstalled;
     public bool HasTerminalState;
+    public bool IsStartingConfiguration;
     public NetworkDeviceState Configuration;
     public readonly List<string> PossibleIncorrectConfiguration = new();
     public int ExpectedOrder = int.MaxValue;
     public TssDeviceConfigurationSnapshot(string key, EquipmentCategory category, string role, string hostname, string location, bool installed, bool recorded, NetworkDeviceState configuration)
     { StableKey = key; Category = category; ExpectedRole = role ?? string.Empty; Hostname = hostname ?? string.Empty; Location = location ?? string.Empty; IsInstalled = installed; HasTerminalState = recorded; Configuration = configuration; }
     public string Label => (ExpectedRole.Length > 0 ? (IsInstalled && !string.Equals(ExpectedRole, Hostname, StringComparison.OrdinalIgnoreCase) ? ExpectedRole + " / " + Hostname : ExpectedRole) : Hostname);
-    public string StateMessage => !IsInstalled ? "Device was not installed; no configuration is available." : !HasTerminalState ? "No terminal configuration was recorded for this device." : string.Empty;
+    public string StateMessage => !IsInstalled ? "This scenario device is not racked/installed or configured." : !HasTerminalState ? "No terminal configuration was recorded for this device." : string.Empty;
 }
 
 public sealed class TssCableInventorySnapshot
