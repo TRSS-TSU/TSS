@@ -98,6 +98,9 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
     private GameObject _debugPanel;
     private Text _debugText;
+    private GameObject _developerPanel;
+    private Text _developerOutput;
+    private string _developerStatus = "Ready";
 
     private EquipmentCaseStation _openCase;
     private object _activeMenuOwner;
@@ -217,6 +220,11 @@ public sealed class TssRuntimeUi : MonoBehaviour
     public void ShowCaseMenu(EquipmentCaseStation station)
     {
         ShowCasePanel(station);
+    }
+
+    public void ShowEndScenarioMenu()
+    {
+        ShowEndScenarioConfirmation();
     }
 
     public void HideCasePanel(EquipmentCaseStation station)
@@ -370,6 +378,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
         }
 
         BuildHudAdditions();
+        BuildDeveloperPanel();
 
         var debugBtnTransform = rootInstance.transform.Find("HUD/DebugButton");
         if (debugBtnTransform)
@@ -523,6 +532,95 @@ public sealed class TssRuntimeUi : MonoBehaviour
         RefreshCasePanel();
         RefreshSopPanel();
         RefreshDebugPanel();
+        RefreshDeveloperPanel();
+    }
+
+    private void BuildDeveloperPanel()
+    {
+        if (!_hudRoot || _developerPanel)
+            return;
+
+        _developerPanel = new GameObject("DeveloperAutomationPanel", typeof(RectTransform), typeof(Image));
+        _developerPanel.transform.SetParent(_hudRoot, false);
+        var panelRect = (RectTransform)_developerPanel.transform;
+        panelRect.anchorMin = new Vector2(0f, 0f);
+        panelRect.anchorMax = new Vector2(0f, 0f);
+        panelRect.pivot = new Vector2(0f, 0f);
+        panelRect.anchoredPosition = new Vector2(24f, 24f);
+        panelRect.sizeDelta = new Vector2(620f, 330f);
+        _developerPanel.GetComponent<Image>().color = new Color(0.06f, 0.08f, 0.07f, 0.96f);
+
+        CreateDeveloperText("Title", "DEVELOPER AUTOMATION", new Vector2(20f, -16f), new Vector2(580f, 34f), 24, new Color(0.95f, 0.65f, 0.18f, 1f));
+        CreateDeveloperButton("PlaceAllButton", "PLACE ALL EQUIPMENT", new Vector2(20f, -58f), () => RunDeveloperAction("Equipment", new TssScenarioAutomation(session).PlaceAllEquipment));
+        CreateDeveloperButton("ConnectAllButton", "CONNECT ALL CABLES", new Vector2(310f, -58f), () => RunDeveloperAction("Cables", new TssScenarioAutomation(session).ConnectAllCables));
+        CreateDeveloperButton("TerminateAllButton", "TERMINATE ALL", new Vector2(20f, -112f), () => RunDeveloperAction("Terminations", new TssScenarioAutomation(session).TerminateAll));
+        CreateDeveloperButton("RunAllButton", "RUN ALL", new Vector2(310f, -112f), () => RunDeveloperAction("Run all", new TssScenarioAutomation(session).RunAll));
+        _developerOutput = CreateDeveloperText("Output", string.Empty, new Vector2(20f, -168f), new Vector2(580f, 145f), 15, new Color(0.88f, 0.94f, 0.88f, 1f));
+    }
+
+    private Text CreateDeveloperText(string objectName, string value, Vector2 position, Vector2 size, int fontSize, Color color)
+    {
+        var go = new GameObject(objectName, typeof(RectTransform), typeof(Text));
+        go.transform.SetParent(_developerPanel.transform, false);
+        var rect = (RectTransform)go.transform;
+        rect.anchorMin = new Vector2(0f, 1f);
+        rect.anchorMax = new Vector2(0f, 1f);
+        rect.pivot = new Vector2(0f, 1f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = size;
+        var text = go.GetComponent<Text>();
+        text.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        text.fontSize = fontSize;
+        text.color = color;
+        text.alignment = TextAnchor.UpperLeft;
+        text.horizontalOverflow = HorizontalWrapMode.Wrap;
+        text.verticalOverflow = VerticalWrapMode.Overflow;
+        text.text = value;
+        return text;
+    }
+
+    private void CreateDeveloperButton(string objectName, string label, Vector2 position, UnityEngine.Events.UnityAction action)
+    {
+        var go = new GameObject(objectName, typeof(RectTransform), typeof(Image), typeof(Button));
+        go.transform.SetParent(_developerPanel.transform, false);
+        var rect = (RectTransform)go.transform;
+        rect.anchorMin = new Vector2(0f, 1f);
+        rect.anchorMax = new Vector2(0f, 1f);
+        rect.pivot = new Vector2(0f, 1f);
+        rect.anchoredPosition = position;
+        rect.sizeDelta = new Vector2(270f, 44f);
+        go.GetComponent<Image>().color = new Color(0.15f, 0.34f, 0.22f, 1f);
+        var button = go.GetComponent<Button>();
+        button.onClick.AddListener(action);
+        CreateDeveloperText(label, label, Vector2.zero, rect.sizeDelta, 15, Color.white).transform.SetParent(go.transform, false);
+        var text = go.transform.Find(label)?.GetComponent<Text>();
+        if (text)
+        {
+            text.rectTransform.anchorMin = Vector2.zero;
+            text.rectTransform.anchorMax = Vector2.one;
+            text.rectTransform.offsetMin = Vector2.zero;
+            text.rectTransform.offsetMax = Vector2.zero;
+            text.alignment = TextAnchor.MiddleCenter;
+        }
+    }
+
+    private void RunDeveloperAction(string label, Func<TssScenarioAutomation.Result> action)
+    {
+        if (!session)
+        {
+            _developerStatus = "No training session found.";
+            RefreshDeveloperPanel();
+            return;
+        }
+
+        _developerStatus = $"{label}:\n{action().ToString()}";
+        Refresh();
+    }
+
+    private void RefreshDeveloperPanel()
+    {
+        if (_developerOutput)
+            _developerOutput.text = _developerStatus + "\n\n" + HudProgressText();
     }
 
     private void RefreshPlayerIdentity()

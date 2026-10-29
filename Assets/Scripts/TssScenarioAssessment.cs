@@ -49,7 +49,7 @@ public static class TssScenarioAssessmentCoordinator
         var evaluator = new TssNetworkWorkPackageEvaluator(session.NetworkState);
         var result = workPackage switch
         {
-            2 => evaluator.EvaluateLayer2(false),
+            2 => evaluator.EvaluateLayer2(),
             3 => evaluator.EvaluateLayer3(false),
             _ => evaluator.EvaluateLayer4(false)
         };
@@ -72,7 +72,7 @@ public static class TssWorkPackageTitles
     public static string Get(int workPackage) => workPackage switch
     {
         1 => "WP1 — Physical Installation",
-        2 => "WP1 — Layer 2 Data Link",
+        2 => "WP2 — Layer 2 Data Link",
         3 => "WP3 — Layer 3",
         4 => "WP4 — Wireless",
         _ => $"WORK PACKAGE {workPackage}"

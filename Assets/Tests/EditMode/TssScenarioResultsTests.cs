@@ -202,6 +202,80 @@ public sealed class TssScenarioResultsTests
         CollectionAssert.AreEquivalent(new[] { "WP2" }, state.CompletionSnapshots.Keys);
     }
 
+    [Test]
+    public void SavedWp2CompletionSurvivesApUplinkChangesInResults()
+    {
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig
+        {
+            enableLayer23Simulation = true,
+            requiredPorts = new[]
+            {
+                new NetworkRequiredPort { deviceRole = "AN-1", interfaceName = "Fa0/2", endpointId = "IT1" },
+                new NetworkRequiredPort { deviceRole = "AN-2", interfaceName = "Fa0/2", endpointId = "Data1" }
+            }
+        };
+        var sessionObject = new GameObject("CapstoneResultsSession");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        session.BeginScenario(scenario, "STUDENT-1");
+
+        try
+        {
+            ConfigureCompleteLayer2State(session.NetworkState);
+            Assert.IsTrue(new TssNetworkWorkPackageEvaluator(session.NetworkState).EvaluateLayer2().Complete);
+
+            session.NetworkState.SetAccessPointUplink(true);
+            var an1 = session.NetworkState.GetOrCreateDevice("AN1", EquipmentCategory.Switch, "AN-1");
+            an1.Interfaces["Fa0/7"] = AccessPort("Fa0/7", session.NetworkState.Profile.ReceptionVlan);
+            an1.Interfaces["Fa0/7"].CarrierUp = true;
+            session.NetworkState.AccessPoint.Configured = true;
+            var laptop = session.NetworkState.GetOrCreateEndpoint("TestLaptop", "TestLaptop", EquipmentCategory.Laptop);
+            laptop.UseDhcp = true;
+            laptop.Address = session.NetworkState.Profile.TestLaptopAddress;
+            laptop.Layer1Connected = laptop.Layer2Connected = true;
+            laptop.Evidence.UnionWith(new[] { "ipconfig", "TestLaptop-provider", "redwolf" });
+            session.NetworkState.AccessPoint.AssociatedEndpointKey = laptop.Key;
+            session.NetworkState.AccessPoint.AssociatedSsid = session.NetworkState.Profile.Ssid;
+
+            var assessment = TssScenarioAssessmentCoordinator.Assess(session);
+            Assert.IsTrue(assessment.WorkPackages[1].IsComplete);
+            Assert.IsTrue(assessment.WorkPackages[3].IsComplete);
+        }
+        finally
+        {
+            Object.DestroyImmediate(sessionObject);
+            Object.DestroyImmediate(scenario);
+        }
+    }
+
+    [Test]
+    public void ResultsKeepsIncompleteWp2LiveWhenNoCompletionSnapshotExists()
+    {
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        var sessionObject = new GameObject("IncompleteResultsSession");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        session.BeginScenario(scenario, "STUDENT-1");
+
+        try
+        {
+            var assessment = TssScenarioAssessmentCoordinator.Assess(session);
+            Assert.IsFalse(assessment.WorkPackages[1].IsComplete);
+            Assert.IsFalse(session.NetworkState.CompletionSnapshots.ContainsKey("WP2"));
+        }
+        finally
+        {
+            Object.DestroyImmediate(sessionObject);
+            Object.DestroyImmediate(scenario);
+        }
+    }
+
+    [Test]
+    public void Layer2ResultsTitleUsesWp2Prefix()
+    {
+        Assert.AreEqual("WP2 — Layer 2 Data Link", TssWorkPackageTitles.Get(2));
+    }
+
     private static TssNetworkSessionState CompleteLayer2State(out NetworkDeviceState an1, out NetworkDeviceState an2)
     {
         var config = new NetworkScenarioConfig
@@ -218,6 +292,18 @@ public sealed class TssScenarioResultsTests
         };
         var profile = TssNetworkRunProfile.Create(100, config);
         var state = new TssNetworkSessionState(profile);
+        ConfigureCompleteLayer2State(state, out an1, out an2);
+        return state;
+    }
+
+    private static void ConfigureCompleteLayer2State(TssNetworkSessionState state)
+    {
+        ConfigureCompleteLayer2State(state, out _, out _);
+    }
+
+    private static void ConfigureCompleteLayer2State(TssNetworkSessionState state, out NetworkDeviceState an1, out NetworkDeviceState an2)
+    {
+        var profile = state.Profile;
         an1 = state.GetOrCreateDevice("AN1", EquipmentCategory.Switch, "AN-1");
         an2 = state.GetOrCreateDevice("AN2", EquipmentCategory.Switch, "AN-2");
         ConfigureSwitch(an1, profile);
@@ -232,7 +318,6 @@ public sealed class TssScenarioResultsTests
         ParkUnusedPorts(an2, 5, profile);
         an1.StartupSnapshot = an1.Clone();
         an2.StartupSnapshot = an2.Clone();
-        return state;
     }
 
     private static void ConfigureSwitch(NetworkDeviceState device, TssNetworkRunProfile profile)

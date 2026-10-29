@@ -230,6 +230,32 @@ public sealed class TssCableRouteProviderTests
         }
     }
 
+    [Test]
+    public void CyclicRoutePredecessorsAreRejected()
+    {
+        var root = new GameObject("RouteRoot");
+
+        try
+        {
+            var first = Node("First", root.transform, Vector3.zero);
+            var second = Node("Second", root.transform, Vector3.one);
+            var previous = new System.Collections.Generic.Dictionary<TssCableRouteNode, TssCableRouteNode>
+            {
+                [first] = second,
+                [second] = first
+            };
+            var rebuild = typeof(TssCableRouteProvider).GetMethod("RebuildPath", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static);
+
+            var route = (System.Collections.Generic.List<TssCableRouteNode>)rebuild.Invoke(null, new object[] { previous, first });
+
+            Assert.IsEmpty(route);
+        }
+        finally
+        {
+            Object.DestroyImmediate(root);
+        }
+    }
+
     private static TssCableRouteNode RackNode(string name, Transform parent, string rackId, TssCableRouteNodeRole role, TssCableRouteSide side, Vector3 position)
     {
         var node = Node(name, parent, position);

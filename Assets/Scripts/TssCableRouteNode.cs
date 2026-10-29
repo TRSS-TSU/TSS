@@ -27,7 +27,7 @@ public sealed class TssCableRouteNode : MonoBehaviour
     private void OnDrawGizmos()
     {
         Gizmos.color = new Color(0.15f, 0.85f, 1f, 0.85f);
-        Gizmos.DrawSphere(transform.position, 0.08f);
+        Gizmos.DrawSphere(transform.position, 0.006f);
 
         if (neighbors == null)
             return;
@@ -43,6 +43,6 @@ public sealed class TssCableRouteNode : MonoBehaviour
     private void OnDrawGizmosSelected()
     {
         Gizmos.color = Color.yellow;
-        Gizmos.DrawWireSphere(transform.position, 0.1f);
+        Gizmos.DrawWireSphere(transform.position, 0.02f);
     }
 }

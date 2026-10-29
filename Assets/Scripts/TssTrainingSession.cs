@@ -11,6 +11,7 @@ public sealed class TssTrainingSession : MonoBehaviour
     [SerializeField] private TssScenarioDefinition fallbackScenario;
     [SerializeField] private Transform carryAnchor;
     [SerializeField] private GameObject scenarioMenuHost;
+    [SerializeField] private GameObject endpointConnectorPrefab;
 
     private readonly Dictionary<EquipmentDefinition, int> _remaining = new();
     private readonly Dictionary<TssCableDefinition, int> _remainingCables = new();
@@ -19,6 +20,7 @@ public sealed class TssTrainingSession : MonoBehaviour
     private readonly List<TssPhysicalConnectionRecord> _physicalConnections = new();
     private readonly Dictionary<string, TssTerminationModuleState> _terminationStates = new();
     private readonly Dictionary<string, bool> _terminationResults = new();
+    private readonly CableLaneAllocator _cableLaneAllocator = new();
     private GameObject _carryVisual;
     private TssPortEndpoint _selectedCableEndpoint;
     private int _nextConnectionNumber = 1;
@@ -112,8 +114,15 @@ public sealed class TssTrainingSession : MonoBehaviour
 
     public void NotifyNetworkStateChanged()
     {
-        RefreshInterfaceCarriers();
-        RefreshPlacedDesktopConnectivity();
+        var effectiveEndpoints = new HashSet<string>();
+        foreach (var path in GetEffectivePhysicalPaths())
+        {
+            effectiveEndpoints.Add(path.EndpointAId);
+            effectiveEndpoints.Add(path.EndpointBId);
+        }
+
+        RefreshInterfaceCarriers(effectiveEndpoints);
+        RefreshPlacedDesktopConnectivity(effectiveEndpoints);
         StateChanged?.Invoke();
     }
 
@@ -123,7 +132,7 @@ public sealed class TssTrainingSession : MonoBehaviour
         if (Instance == this) Instance = null;
     }
 
-    private void RefreshPlacedDesktopConnectivity()
+    private void RefreshPlacedDesktopConnectivity(HashSet<string> effectiveEndpoints)
     {
         if (NetworkState == null)
             return;
@@ -144,14 +153,14 @@ public sealed class TssTrainingSession : MonoBehaviour
                 if (!endpoint || !endpoint.EndpointId.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                state.Layer1Connected = IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId);
+                state.Layer1Connected = effectiveEndpoints.Contains(endpoint.EndpointId);
                 state.Layer2Connected = state.Layer1Connected;
                 break;
             }
         }
     }
 
-    private void RefreshInterfaceCarriers()
+    private void RefreshInterfaceCarriers(HashSet<string> effectiveEndpoints)
     {
         if (NetworkState == null)
             return;
@@ -165,7 +174,7 @@ public sealed class TssTrainingSession : MonoBehaviour
 
             iface.CarrierUp = device.Category == EquipmentCategory.Router && iface.Name == "Fa0/1"
                 ? IsProviderDemarcConnected(iface.EndpointId)
-                : IsEndpointOnEffectivePhysicalPath(iface.EndpointId);
+                : effectiveEndpoints.Contains(iface.EndpointId);
         }
 
         foreach (var device in NetworkState.Devices)
@@ -228,7 +237,7 @@ public sealed class TssTrainingSession : MonoBehaviour
         return true;
     }
 
-    public bool TryCheckoutCable(TssCableDefinition cable, out string message)
+    public bool TryCheckoutCable(TssCableDefinition cable, out string message, bool notifyStateChanged = true)
     {
         if (!Scenario)
         {
@@ -253,7 +262,8 @@ public sealed class TssTrainingSession : MonoBehaviour
         _selectedCableEndpoint = null;
         CreateCableCarryVisual(cable);
         message = $"Carrying {cable.displayName}";
-        StateChanged?.Invoke();
+        if (notifyStateChanged)
+            StateChanged?.Invoke();
         return true;
     }
 
@@ -482,7 +492,7 @@ public sealed class TssTrainingSession : MonoBehaviour
         return fallbackScenario;
     }
 
-    public bool TryUsePort(TssPortEndpoint endpoint, out string message)
+    public bool TryUsePort(TssPortEndpoint endpoint, out string message, bool notifyStateChanged = true)
     {
         if (!endpoint)
         {
@@ -515,7 +525,8 @@ public sealed class TssTrainingSession : MonoBehaviour
         {
             _selectedCableEndpoint = endpoint;
             message = $"Selected {endpoint.DisplayLabel}";
-            StateChanged?.Invoke();
+            if (notifyStateChanged)
+                StateChanged?.Invoke();
             return true;
         }
 
@@ -523,16 +534,18 @@ public sealed class TssTrainingSession : MonoBehaviour
         {
             _selectedCableEndpoint = null;
             message = "Cleared first port.";
-            StateChanged?.Invoke();
+            if (notifyStateChanged)
+                StateChanged?.Invoke();
             return false;
         }
 
         if (!ConnectsTo(_selectedCableEndpoint, endpoint, out message))
             return false;
 
-        var visual = TssCableVisual.Create(HeldCable, _selectedCableEndpoint, endpoint);
+        var connectionId = $"Cable{_nextConnectionNumber++:000}";
+        var visual = TssCableVisual.Create(HeldCable, _selectedCableEndpoint, endpoint, connectionId, _cableLaneAllocator, endpointConnectorPrefab);
         var record = new TssPhysicalConnectionRecord(
-            $"Cable{_nextConnectionNumber++:000}",
+            connectionId,
             HeldCable,
             HeldCable.cableType,
             _selectedCableEndpoint.EndpointId,
@@ -543,7 +556,8 @@ public sealed class TssTrainingSession : MonoBehaviour
         _selectedCableEndpoint = null;
         ClearCarryVisual();
         message = $"Connected {record.EndpointAId} to {record.EndpointBId}";
-        NotifyNetworkStateChanged();
+        if (notifyStateChanged)
+            NotifyNetworkStateChanged();
         return true;
     }
 
@@ -568,6 +582,12 @@ public sealed class TssTrainingSession : MonoBehaviour
 
     public List<TssPhysicalPathRecord> GetEffectivePhysicalPaths()
     {
+        var endpoints = FindObjectsByType<TssPortEndpoint>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        var validConnections = new List<TssPhysicalConnectionRecord>();
+        foreach (var connection in _physicalConnections)
+            if (IsCableTypeCorrect(connection, endpoints))
+                validConnections.Add(connection);
+
         var permanentEndpoints = new HashSet<string>();
         var playerEndpoints = new HashSet<string>();
         foreach (var connection in _physicalConnections)
@@ -599,8 +619,8 @@ public sealed class TssTrainingSession : MonoBehaviour
             for (var j = i + 1; j < leaves.Count; j++)
             {
                 // ponytail: direct device-to-device player cables are effective without a permanent segment.
-                if (HasPhysicalPath(leaves[i], leaves[j], true)
-                    || HasEffectiveConnection(leaves[i], leaves[j]))
+                if (HasPhysicalPath(leaves[i], leaves[j], true, validConnections)
+                    || HasConnection(validConnections, leaves[i], leaves[j]))
                     paths.Add(new TssPhysicalPathRecord(leaves[i], leaves[j]));
             }
         }
@@ -677,18 +697,20 @@ public sealed class TssTrainingSession : MonoBehaviour
 
     public bool IsCableTypeCorrect(TssPhysicalConnectionRecord connection)
     {
-        return connection.IsPermanent || connection.CableType == RequiredCableType(connection.EndpointAId, connection.EndpointBId);
+        var endpoints = FindObjectsByType<TssPortEndpoint>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        return IsCableTypeCorrect(connection, endpoints);
     }
 
     public IReadOnlyList<TssCableTypeStatus> GetCableTypeStatuses()
     {
         var statuses = new List<TssCableTypeStatus>();
+        var endpoints = FindObjectsByType<TssPortEndpoint>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (var connection in _physicalConnections)
         {
             if (connection.IsPermanent)
                 continue;
 
-            var required = RequiredCableType(connection.EndpointAId, connection.EndpointBId);
+            var required = RequiredCableType(connection.EndpointAId, connection.EndpointBId, endpoints);
             statuses.Add(new TssCableTypeStatus(
                 connection.ConnectionId,
                 connection.EndpointAId,
@@ -703,8 +725,8 @@ public sealed class TssTrainingSession : MonoBehaviour
         {
             if (requirement == null)
                 continue;
-            var endpointA = ResolveRequiredRackEndpoint(requirement.endpointAId);
-            var endpointB = ResolveRequiredRackEndpoint(requirement.endpointBId);
+            var endpointA = ResolveRequiredRackEndpoint(requirement.endpointAId, endpoints);
+            var endpointB = ResolveRequiredRackEndpoint(requirement.endpointBId, endpoints);
             if (HasPlayerConnection(endpointA, endpointB))
                 continue;
 
@@ -742,7 +764,7 @@ public sealed class TssTrainingSession : MonoBehaviour
         return results.Count > 0;
     }
 
-    public bool SetTerminationModuleState(TssTerminationModuleState state, bool isElectricallyCorrect, out string message)
+    public bool SetTerminationModuleState(TssTerminationModuleState state, bool isElectricallyCorrect, out string message, bool notifyStateChanged = true)
     {
         if (!TryGetTerminationLink(state, out var link, out message))
             return false;
@@ -772,7 +794,8 @@ public sealed class TssTrainingSession : MonoBehaviour
         _terminationResults[key] = isElectricallyCorrect && TssT568BValidator.IsElectricallyCorrect(state);
         ReconcilePermanentConnection(state.connectionId);
         message = "Termination state saved.";
-        StateChanged?.Invoke();
+        if (notifyStateChanged)
+            StateChanged?.Invoke();
         return true;
     }
 
@@ -927,6 +950,7 @@ public sealed class TssTrainingSession : MonoBehaviour
         }
 
         _physicalConnections.Clear();
+        _cableLaneAllocator.Clear();
     }
 
     private bool ConnectsTo(TssPortEndpoint first, TssPortEndpoint second, out string message)
@@ -1152,6 +1176,16 @@ public sealed class TssTrainingSession : MonoBehaviour
 
     private bool HasPhysicalPath(string endpointAId, string endpointBId, bool requirePermanent)
     {
+        var endpoints = FindObjectsByType<TssPortEndpoint>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        var validConnections = new List<TssPhysicalConnectionRecord>();
+        foreach (var connection in _physicalConnections)
+            if (IsCableTypeCorrect(connection, endpoints))
+                validConnections.Add(connection);
+        return HasPhysicalPath(endpointAId, endpointBId, requirePermanent, validConnections);
+    }
+
+    private bool HasPhysicalPath(string endpointAId, string endpointBId, bool requirePermanent, IReadOnlyList<TssPhysicalConnectionRecord> connections)
+    {
         if (string.IsNullOrWhiteSpace(endpointAId) || string.IsNullOrWhiteSpace(endpointBId))
             return false;
 
@@ -1166,11 +1200,8 @@ public sealed class TssTrainingSession : MonoBehaviour
         while (queue.Count > 0)
         {
             var node = queue.Dequeue();
-            foreach (var connection in _physicalConnections)
+            foreach (var connection in connections)
             {
-                if (!IsCableTypeCorrect(connection))
-                    continue;
-
                 var other = ConnectedOtherEndpoint(connection, node.EndpointId);
                 if (string.IsNullOrEmpty(other))
                     continue;
@@ -1188,20 +1219,28 @@ public sealed class TssTrainingSession : MonoBehaviour
         return false;
     }
 
-    private TssCableType RequiredCableType(string endpointAId, string endpointBId)
+    private bool IsCableTypeCorrect(TssPhysicalConnectionRecord connection, TssPortEndpoint[] endpoints)
+    {
+        return connection.IsPermanent || connection.CableType == RequiredCableType(connection.EndpointAId, connection.EndpointBId, endpoints);
+    }
+
+    private TssCableType RequiredCableType(string endpointAId, string endpointBId, TssPortEndpoint[] endpoints)
     {
         foreach (var requirement in Scenario?.cableTypeRequirements ?? System.Array.Empty<ScenarioCableTypeRequirement>())
         {
-            if (requirement != null && EndpointPairMatches(ResolveRequiredRackEndpoint(requirement.endpointAId), ResolveRequiredRackEndpoint(requirement.endpointBId), endpointAId, endpointBId))
+            if (requirement != null && EndpointPairMatches(ResolveRequiredRackEndpoint(requirement.endpointAId, endpoints), ResolveRequiredRackEndpoint(requirement.endpointBId, endpoints), endpointAId, endpointBId))
                 return requirement.requiredCableType;
         }
 
         return Scenario ? Scenario.defaultPlayerCableType : TssCableType.StraightThrough;
     }
 
-    private string ResolveRequiredRackEndpoint(string endpointId)
+    private string ResolveRequiredRackEndpoint(string endpointId, TssPortEndpoint[] endpoints)
     {
         if (string.IsNullOrEmpty(endpointId)) return endpointId;
+        foreach (var endpoint in endpoints)
+            if (endpoint && string.Equals(endpoint.DeviceName, endpointId.Trim(), StringComparison.OrdinalIgnoreCase))
+                return endpoint.EndpointId;
         // A role's authored U identifies its port; allowed placement ranges can move that device.
         // Resolve only scenario requirements. Never rewrite physical endpoint IDs or authored data.
         foreach (var binding in Scenario?.networkScenario?.roleBindings ?? Array.Empty<NetworkRoleBinding>())
@@ -1223,6 +1262,14 @@ public sealed class TssTrainingSession : MonoBehaviour
             }
         }
         return endpointId;
+    }
+
+    private static bool HasConnection(IReadOnlyList<TssPhysicalConnectionRecord> connections, string endpointAId, string endpointBId)
+    {
+        foreach (var connection in connections)
+            if (EndpointPairMatches(connection.EndpointAId, connection.EndpointBId, endpointAId, endpointBId))
+                return true;
+        return false;
     }
 
     private bool HasPlayerConnection(string endpointAId, string endpointBId)

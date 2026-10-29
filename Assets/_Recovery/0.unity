@@ -439,8 +439,6 @@ MonoBehaviour:
   placedInteractionTriggerSize: {x: 1.5, y: 1.2, z: 1.5}
   printerPlacedInteractionTriggerCenter: {x: 0, y: 0.35, z: 0}
   printerPlacedInteractionTriggerSize: {x: 0.75, y: 0.7, z: 0.75}
-  hoverTint: {r: 0.2, g: 0.75, b: 1, a: 1}
-  hoverBlend: 0.35
 --- !u!1 &17581079
 GameObject:
   m_ObjectHideFlags: 0
@@ -2294,6 +2292,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!1 &69119721
@@ -4373,6 +4372,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!1 &117938679
@@ -12816,6 +12816,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!1 &388874567
@@ -15463,8 +15464,6 @@ MonoBehaviour:
   placedInteractionTriggerSize: {x: 1.5, y: 1.2, z: 1.5}
   printerPlacedInteractionTriggerCenter: {x: 0, y: 0.35, z: 0}
   printerPlacedInteractionTriggerSize: {x: 0.75, y: 0.7, z: 0.75}
-  hoverTint: {r: 0, g: 1, b: 0.013408661, a: 1}
-  hoverBlend: 1
 --- !u!65 &471809026
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -17194,8 +17193,6 @@ MonoBehaviour:
   placedInteractionTriggerSize: {x: 1.5, y: 1.2, z: 1.5}
   printerPlacedInteractionTriggerCenter: {x: 0, y: 0.35, z: 0}
   printerPlacedInteractionTriggerSize: {x: 0.75, y: 0.7, z: 0.75}
-  hoverTint: {r: 0, g: 1, b: 0.013408661, a: 1}
-  hoverBlend: 1
 --- !u!65 &521638002
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -17820,6 +17817,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!1 &540124669
@@ -19005,6 +19003,10 @@ MonoBehaviour:
   mainCamera: {fileID: 1106324773}
   transitionSeconds: 0.75
   firstPersonFieldOfView: 50
+  rackFirstPersonOrthographic: 1
+  rackFirstPersonOrthographicSize: 0.14
+  rackFirstPersonNearClipPlane: -0.36
+  rackFirstPersonFarClipPlane: 8
   playerController: {fileID: 624814065}
   playerInput: {fileID: 624814067}
   fallbackInteractionRange: 2.75
@@ -19732,8 +19734,6 @@ MonoBehaviour:
   placedInteractionTriggerSize: {x: 1.5, y: 1.2, z: 1.5}
   printerPlacedInteractionTriggerCenter: {x: 0, y: 0.35, z: 0}
   printerPlacedInteractionTriggerSize: {x: 0.75, y: 0.7, z: 0.75}
-  hoverTint: {r: 0, g: 1, b: 0.013408661, a: 1}
-  hoverBlend: 1
 --- !u!65 &587267024
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -21296,6 +21296,8 @@ MonoBehaviour:
   desktopPcElbowSideOffset: 0.18
   desktopPcElbowForwardOffset: -0.04
   desktopPcElbowHeightOffset: -0.14
+  laptopHandSide: 0.1
+  laptopElbowSideOffset: 0.28
   blendSpeed: 12
 --- !u!95 &624814070 stripped
 Animator:
@@ -25332,8 +25334,6 @@ MonoBehaviour:
   placedInteractionTriggerSize: {x: 1.5, y: 1.2, z: 1.5}
   printerPlacedInteractionTriggerCenter: {x: 0, y: 0.35, z: 0}
   printerPlacedInteractionTriggerSize: {x: 0.75, y: 0.7, z: 0.75}
-  hoverTint: {r: 0, g: 1, b: 0.013408661, a: 1}
-  hoverBlend: 1
 --- !u!65 &734188635
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -25667,8 +25667,6 @@ MonoBehaviour:
   placedInteractionTriggerSize: {x: 1.5, y: 1.2, z: 1.5}
   printerPlacedInteractionTriggerCenter: {x: 0, y: 0.35, z: 0}
   printerPlacedInteractionTriggerSize: {x: 0.75, y: 0.7, z: 0.75}
-  hoverTint: {r: 0, g: 1, b: 0.013408661, a: 1}
-  hoverBlend: 1
 --- !u!65 &740722452
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -28173,6 +28171,10 @@ MonoBehaviour:
   mainCamera: {fileID: 1106324773}
   transitionSeconds: 0.75
   firstPersonFieldOfView: 50
+  rackFirstPersonOrthographic: 1
+  rackFirstPersonOrthographicSize: 0.14
+  rackFirstPersonNearClipPlane: -0.36
+  rackFirstPersonFarClipPlane: 8
   playerController: {fileID: 624814065}
   playerInput: {fileID: 624814067}
   fallbackInteractionRange: 2.75
@@ -29963,6 +29965,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!4 &874503433 stripped
@@ -30039,8 +30042,6 @@ MonoBehaviour:
   placedInteractionTriggerSize: {x: 1.5, y: 1.2, z: 1.5}
   printerPlacedInteractionTriggerCenter: {x: 0, y: 0.35, z: 0}
   printerPlacedInteractionTriggerSize: {x: 0.75, y: 0.7, z: 0.75}
-  hoverTint: {r: 0, g: 1, b: 0.013408661, a: 1}
-  hoverBlend: 1
 --- !u!65 &875534245
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -37119,6 +37120,10 @@ MonoBehaviour:
   mainCamera: {fileID: 1106324773}
   transitionSeconds: 0.75
   firstPersonFieldOfView: 50
+  rackFirstPersonOrthographic: 1
+  rackFirstPersonOrthographicSize: 0.14
+  rackFirstPersonNearClipPlane: -0.36
+  rackFirstPersonFarClipPlane: 8
   playerController: {fileID: 624814065}
   playerInput: {fileID: 624814067}
   fallbackInteractionRange: 2.75
@@ -37659,6 +37664,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!1 &1134743619
@@ -39191,13 +39197,14 @@ MonoBehaviour:
   mountRoot: {fileID: 1860291913}
   u1Anchor: {fileID: 582757111}
   uSpacingMeters: 0.04445
-  installedLocalOffset: {x: 0.002, y: 0, z: 0}
+  frontInstalledLocalOffset: {x: 0.002, y: 0, z: 0}
   rearInstalledLocalOffset: {x: 0.002, y: 0, z: -0.56}
   installedLocalEuler: {x: 0, y: 0, z: 0}
   slotLocalOffset: {x: 0, y: 0, z: 0}
   rearSlotLocalOffset: {x: 0, y: 0, z: -0.56}
   slotLocalSize: {x: 0.56, y: 0.036, z: 0.08}
   validSlotColor: {r: 0.2, g: 1, b: 0.35, a: 0.55}
+  hoveredSlotColor: {r: 0.1, g: 0.45, b: 1, a: 0.8}
 --- !u!65 &1175195002
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -40030,8 +40037,6 @@ MonoBehaviour:
   placedInteractionTriggerSize: {x: 1.5, y: 1.2, z: 1.5}
   printerPlacedInteractionTriggerCenter: {x: 0, y: 0.35, z: 0}
   printerPlacedInteractionTriggerSize: {x: 0.75, y: 0.7, z: 0.75}
-  hoverTint: {r: 0, g: 1, b: 0.013408661, a: 1}
-  hoverBlend: 1
 --- !u!65 &1209077461
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -40892,8 +40897,6 @@ MonoBehaviour:
   placedInteractionTriggerSize: {x: 1.5, y: 1.2, z: 1.5}
   printerPlacedInteractionTriggerCenter: {x: 0, y: 0.35, z: 0}
   printerPlacedInteractionTriggerSize: {x: 0.75, y: 0.7, z: 0.75}
-  hoverTint: {r: 0, g: 1, b: 0.013408661, a: 1}
-  hoverBlend: 1
 --- !u!65 &1226277835
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -42344,8 +42347,6 @@ MonoBehaviour:
   placedInteractionTriggerSize: {x: 1.5, y: 1.2, z: 1.5}
   printerPlacedInteractionTriggerCenter: {x: 0, y: 0.35, z: 0}
   printerPlacedInteractionTriggerSize: {x: 0.75, y: 0.7, z: 0.75}
-  hoverTint: {r: 0, g: 1, b: 0.013408661, a: 1}
-  hoverBlend: 1
 --- !u!65 &1263603224
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -43041,6 +43042,10 @@ MonoBehaviour:
   mainCamera: {fileID: 1106324773}
   transitionSeconds: 0.75
   firstPersonFieldOfView: 50
+  rackFirstPersonOrthographic: 1
+  rackFirstPersonOrthographicSize: 0.14
+  rackFirstPersonNearClipPlane: -0.36
+  rackFirstPersonFarClipPlane: 8
   playerController: {fileID: 624814065}
   playerInput: {fileID: 624814067}
   fallbackInteractionRange: 2.75
@@ -44493,6 +44498,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 127240255801683963, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1304179056}
+    - targetCorrespondingSourceObject: {fileID: 3230061336109553428, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
 --- !u!4 &1304179055 stripped
 Transform:
@@ -45945,6 +45953,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!23 &1342949743
@@ -49646,6 +49655,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!4 &1440180627 stripped
@@ -52481,6 +52491,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!1 &1506769126
@@ -55527,6 +55538,7 @@ MonoBehaviour:
   fallbackScenario: {fileID: 11400000, guid: 03ef307cb63959b4994c6dc2e5f93aca, type: 2}
   carryAnchor: {fileID: 695401739}
   scenarioMenuHost: {fileID: 0}
+  endpointConnectorPrefab: {fileID: 0}
 --- !u!114 &1611195658
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -57042,8 +57054,6 @@ MonoBehaviour:
   placedInteractionTriggerSize: {x: 1.5, y: 1.2, z: 1.5}
   printerPlacedInteractionTriggerCenter: {x: 0, y: 0.35, z: 0}
   printerPlacedInteractionTriggerSize: {x: 0.75, y: 0.7, z: 0.75}
-  hoverTint: {r: 0, g: 1, b: 0.013408661, a: 1}
-  hoverBlend: 1
 --- !u!65 &1635438965
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -57774,6 +57784,10 @@ MonoBehaviour:
   mainCamera: {fileID: 1106324773}
   transitionSeconds: 0.75
   firstPersonFieldOfView: 50
+  rackFirstPersonOrthographic: 1
+  rackFirstPersonOrthographicSize: 0.14
+  rackFirstPersonNearClipPlane: -0.36
+  rackFirstPersonFarClipPlane: 8
   playerController: {fileID: 624814065}
   playerInput: {fileID: 624814067}
   fallbackInteractionRange: 2.75
@@ -58716,6 +58730,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!23 &1686524381
@@ -61540,6 +61555,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 127240255801683963, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1742957417}
+    - targetCorrespondingSourceObject: {fileID: 3230061336109553428, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
 --- !u!4 &1742957416 stripped
 Transform:
@@ -62563,8 +62581,6 @@ MonoBehaviour:
   placedInteractionTriggerSize: {x: 1.5, y: 1.2, z: 1.5}
   printerPlacedInteractionTriggerCenter: {x: 0, y: 0.35, z: 0}
   printerPlacedInteractionTriggerSize: {x: 0.75, y: 0.7, z: 0.75}
-  hoverTint: {r: 0, g: 1, b: 0.013408661, a: 1}
-  hoverBlend: 1
 --- !u!65 &1774753400
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -64569,13 +64585,14 @@ MonoBehaviour:
   mountRoot: {fileID: 1294134192}
   u1Anchor: {fileID: 1826773062}
   uSpacingMeters: 0.04445
-  installedLocalOffset: {x: 0.002, y: 0, z: 0}
+  frontInstalledLocalOffset: {x: 0.002, y: 0, z: 0}
   rearInstalledLocalOffset: {x: 0.002, y: 0, z: -0.56}
   installedLocalEuler: {x: 0, y: 0, z: 0}
   slotLocalOffset: {x: 0, y: 0, z: 0}
   rearSlotLocalOffset: {x: 0, y: 0, z: -0.56}
   slotLocalSize: {x: 0.56, y: 0.036, z: 0.08}
   validSlotColor: {r: 0.2, g: 1, b: 0.35, a: 0.55}
+  hoveredSlotColor: {r: 0.1, g: 0.45, b: 1, a: 0.8}
 --- !u!65 &1838875867
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -66931,8 +66948,6 @@ MonoBehaviour:
   placedInteractionTriggerSize: {x: 1.5, y: 1.2, z: 1.5}
   printerPlacedInteractionTriggerCenter: {x: 0, y: 0.35, z: 0}
   printerPlacedInteractionTriggerSize: {x: 0.75, y: 0.7, z: 0.75}
-  hoverTint: {r: 0, g: 1, b: 0.013408661, a: 1}
-  hoverBlend: 1
 --- !u!65 &1915179274
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -66980,6 +66995,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!1001 &1918040660
@@ -70868,6 +70884,7 @@ MonoBehaviour:
   selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
   hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
   selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
   highlightBlend: 0.55
   highlightTransitionSpeed: 12
 --- !u!1 &2019287266

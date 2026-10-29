@@ -195,6 +195,10 @@ public sealed class TssDeviceFirstPersonControls : MonoBehaviour
         var ctx = _cachedContext;
         if (ctx.Rack != null)
         {
+            // ponytail: returning a disconnected cable is the smallest safe handoff before moving rack equipment.
+            if (TssTrainingSession.Instance && TssTrainingSession.Instance.HeldCable)
+                TssTrainingSession.Instance.ReturnHeldCable(out _);
+
             ctx.Rack.PickupInstalled(ctx.StartingU);
             OnReturnClicked();
         }

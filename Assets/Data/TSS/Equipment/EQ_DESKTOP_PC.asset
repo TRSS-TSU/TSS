@@ -19,7 +19,7 @@ MonoBehaviour:
   rackPrefab: {fileID: 0}
   carryPrefab: {fileID: 8754142908855366041, guid: 3e20fca3c99e79e478de1650318e27f1, type: 3}
   useRearRackPlacement: 0
-  rackLocalOffset: {x: 0, y: 0, z: 0}
+  rackLocalOffset: {x: 0, y: -0.0225, z: 0}
   rackLocalEuler: {x: 0, y: 0, z: 0}
   rackLocalScale: {x: 1, y: 1, z: 1}
   carryLocalOffset: {x: 0, y: 0.3, z: 0.1}

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public sealed class TssCableRouteProvider : MonoBehaviour
@@ -10,6 +11,28 @@ public sealed class TssCableRouteProvider : MonoBehaviour
     private void Awake()
     {
         EnsureRouteNodes();
+    }
+
+    [ContextMenu("Refresh Route Nodes")]
+    public void RefreshRouteNodes()
+    {
+        routeNodes = GetComponentsInChildren<TssCableRouteNode>(true);
+#if UNITY_EDITOR
+        UnityEditor.EditorUtility.SetDirty(this);
+#endif
+    }
+
+    [ContextMenu("Audit Route Topology")]
+    public void AuditRouteTopology()
+    {
+        EnsureRouteNodes();
+        Debug.Log(TssCableRouteTopologyAudit.Report(routeNodes));
+    }
+
+    public string GetRouteTopologyAuditReport()
+    {
+        EnsureRouteNodes();
+        return TssCableRouteTopologyAudit.Report(routeNodes);
     }
 
     public Vector3[] GetRoute(TssPortEndpoint startEndpoint, TssPortEndpoint endEndpoint)
@@ -28,6 +51,52 @@ public sealed class TssCableRouteProvider : MonoBehaviour
         }
 
         return GetRoute(startEndpoint.CableAnchorPosition, endEndpoint.CableAnchorPosition, EntryCandidates(startEndpoint), EntryCandidates(endEndpoint));
+    }
+
+    public TssCableRouteResult GetRouteResult(TssPortEndpoint startEndpoint, TssPortEndpoint endEndpoint)
+    {
+        if (!startEndpoint || !endEndpoint)
+            return TssCableRouteResult.Invalid(startEndpoint ? startEndpoint.EndpointId : string.Empty, endEndpoint ? endEndpoint.EndpointId : string.Empty, TssCableRouteKind.Unknown, "Missing route endpoint.");
+        if (startEndpoint == endEndpoint || string.Equals(startEndpoint.EndpointId, endEndpoint.EndpointId, System.StringComparison.Ordinal))
+            return TssCableRouteResult.Invalid(startEndpoint.EndpointId, endEndpoint.EndpointId, TssCableRouteKind.Unknown, "Route endpoints must be distinct.");
+
+        EnsureRouteNodes();
+        if (routeNodes == null || routeNodes.Length == 0)
+            return TssCableRouteResult.Invalid(startEndpoint.EndpointId, endEndpoint.EndpointId, TssCableRouteKind.Unknown, "No authored route nodes are available.");
+
+        if (TryRackId(startEndpoint.EndpointId, out var startRackId)
+            && TryRackId(endEndpoint.EndpointId, out var endRackId)
+            && !string.Equals(startRackId, endRackId, System.StringComparison.OrdinalIgnoreCase))
+        {
+            return TssCableRouteResult.Invalid(
+                startEndpoint.EndpointId,
+                endEndpoint.EndpointId,
+                TssCableRouteKind.CrossRack,
+                "Cross-rack student cable corridor is not enabled for the rounded renderer.",
+                new TssCableRouteBoundary(TssCableRouteBoundaryKind.UnsupportedCrossRack, string.Empty, string.Empty, true));
+        }
+
+        var kind = TssCableRouteKind.Unknown;
+        if (TryRackId(startEndpoint.EndpointId, out startRackId) && TryRackId(endEndpoint.EndpointId, out endRackId))
+            kind = startEndpoint.InterfaceFace != endEndpoint.InterfaceFace ? TssCableRouteKind.FrontToRear : TssCableRouteKind.SameRack;
+        else if (startEndpoint.EndpointId.StartsWith("Endpoint:", System.StringComparison.Ordinal)
+            || endEndpoint.EndpointId.StartsWith("Endpoint:", System.StringComparison.Ordinal))
+            kind = TssCableRouteKind.StationDrop;
+
+        var selection = SelectRoute(
+            startEndpoint.CableAnchorPosition,
+            endEndpoint.CableAnchorPosition,
+            EntryCandidates(startEndpoint),
+            EntryCandidates(endEndpoint));
+        if (!selection.IsValid)
+            return TssCableRouteResult.Invalid(startEndpoint.EndpointId, endEndpoint.EndpointId, kind, "No valid authored graph route was found.");
+
+        var points = BuildGraphRenderPoints(startEndpoint.CableAnchorPosition, endEndpoint.CableAnchorPosition, selection);
+        if (points.Length < 2 || points.Any(point => !IsFinite(point)))
+            return TssCableRouteResult.Invalid(startEndpoint.EndpointId, endEndpoint.EndpointId, kind, "The authored route produced non-finite render points.");
+
+        var edges = BuildRouteEdges(selection.Middle);
+        return TssCableRouteResult.Valid(startEndpoint.EndpointId, endEndpoint.EndpointId, kind, selection.Middle.ToArray(), edges, points);
     }
 
     public Vector3[] GetRoute(Vector3 start, Vector3 end)
@@ -62,17 +131,70 @@ public sealed class TssCableRouteProvider : MonoBehaviour
             AddOrthogonal(points, route.StartPoint, route.EndPoint);
         }
 
-        AddOrthogonal(points, route.EndPoint, end);
+        AddEndpointApproach(points, route.EndPoint, end);
         AddIfUseful(points, end);
         return points.ToArray();
+    }
+
+    private static Vector3[] BuildGraphRenderPoints(Vector3 start, Vector3 end, RouteSelection route)
+    {
+        var points = new List<Vector3>(route.Middle.Count + 8) { start };
+        AddOrthogonal(points, start, route.StartPoint);
+        if (route.Middle.Count > 0)
+        {
+            foreach (var node in route.Middle)
+                if (node)
+                    AddIfUseful(points, node.transform.position);
+        }
+        else
+        {
+            AddOrthogonal(points, route.StartPoint, route.EndPoint);
+        }
+
+        AddEndpointApproach(points, route.EndPoint, end);
+        AddIfUseful(points, end);
+        return points.ToArray();
+    }
+
+    private static IReadOnlyList<TssCableRouteEdge> BuildRouteEdges(IReadOnlyList<TssCableRouteNode> nodes)
+    {
+        if (nodes == null || nodes.Count < 2)
+            return System.Array.Empty<TssCableRouteEdge>();
+
+        var edges = new List<TssCableRouteEdge>(nodes.Count - 1);
+        for (var i = 0; i < nodes.Count - 1; i++)
+        {
+            var from = nodes[i];
+            var to = nodes[i + 1];
+            if (!from || !to)
+                continue;
+
+            var fromKey = StableNodeKey(from);
+            var toKey = StableNodeKey(to);
+            var reciprocal = (to.neighbors ?? System.Array.Empty<TssCableRouteNode>()).Contains(from);
+            var key = reciprocal && string.CompareOrdinal(fromKey, toKey) > 0
+                ? $"{toKey}<->{fromKey}"
+                : reciprocal
+                    ? $"{fromKey}<->{toKey}"
+                    : $"{fromKey}->{toKey}";
+            edges.Add(new TssCableRouteEdge(from, to, key, reciprocal));
+        }
+
+        return edges;
+    }
+
+    private static string StableNodeKey(TssCableRouteNode node)
+    {
+        var path = NodePath(node.transform);
+        return string.IsNullOrWhiteSpace(path) ? node.name : path;
     }
 
     private Vector3[] GetRackBackboneStubRoute(TssPortEndpoint startEndpoint, TssPortEndpoint endEndpoint, string startRackId, string endRackId)
     {
         var startEntries = EntryCandidates(startEndpoint);
         var endEntries = EntryCandidates(endEndpoint);
-        var startStub = GetStubRoute(startEndpoint.CableAnchorPosition, startEntries, TrayCandidates(startRackId, PreferredSide(startEntries)));
-        var endStub = GetStubRoute(endEndpoint.CableAnchorPosition, endEntries, TrayCandidates(endRackId, PreferredSide(endEntries)));
+        var startStub = GetStubRoute(startEndpoint.CableAnchorPosition, startEntries, TrayCandidates(startRackId, PreferredSide(startEntries, startEndpoint.CableAnchorPosition)));
+        var endStub = GetStubRoute(endEndpoint.CableAnchorPosition, endEntries, TrayCandidates(endRackId, PreferredSide(endEntries, endEndpoint.CableAnchorPosition)));
         if (startStub.Length == 0 || endStub.Length == 0)
             return GetRoute(startEndpoint.CableAnchorPosition, endEndpoint.CableAnchorPosition, EntryCandidates(startEndpoint), EntryCandidates(endEndpoint));
 
@@ -87,8 +209,8 @@ public sealed class TssCableRouteProvider : MonoBehaviour
     {
         var startEntries = EntryCandidates(startEndpoint);
         var endEntries = EntryCandidates(endEndpoint);
-        var startStub = GetStubRoute(startEndpoint.CableAnchorPosition, startEntries, TrayCandidates(rackId, PreferredSide(startEntries)));
-        var endStub = GetStubRoute(endEndpoint.CableAnchorPosition, endEntries, TrayCandidates(rackId, PreferredSide(endEntries)));
+        var startStub = GetStubRoute(startEndpoint.CableAnchorPosition, startEntries, TrayCandidates(rackId, PreferredSide(startEntries, startEndpoint.CableAnchorPosition)));
+        var endStub = GetStubRoute(endEndpoint.CableAnchorPosition, endEntries, TrayCandidates(rackId, PreferredSide(endEntries, endEndpoint.CableAnchorPosition)));
         if (startStub.Length == 0 || endStub.Length == 0)
             return GetRoute(startEndpoint.CableAnchorPosition, endEndpoint.CableAnchorPosition, EntryCandidates(startEndpoint), EntryCandidates(endEndpoint));
 
@@ -141,12 +263,27 @@ public sealed class TssCableRouteProvider : MonoBehaviour
                 var startPoint = startContext.Point;
                 var endPoint = endContext.Point;
                 var cost = OrthogonalDistance(start, startPoint) + OrthogonalDistance(endPoint, end) + PathDistance(middle, startPoint, endPoint);
+                if (IsNonNearestEntry(startContext, starts, start) || IsNonNearestEntry(endContext, ends, end))
+                    cost += 10f;
                 if (!best.IsValid || cost < best.Cost)
                     best = new RouteSelection(startPoint, endPoint, middle, cost);
             }
         }
 
         return best;
+    }
+
+    private static bool IsNonNearestEntry(RouteEntryContext context, RouteEntryContext[] candidates, Vector3 point)
+    {
+        if (candidates == null || candidates.Length < 2)
+            return false;
+
+        var distance = (context.Point - point).sqrMagnitude;
+        foreach (var candidate in candidates)
+            if ((candidate.Point - point).sqrMagnitude + 0.000001f < distance)
+                return true;
+
+        return false;
     }
 
     private RouteEntryContext[] NormalizeCandidates(RouteEntryContext[] candidates, Vector3 point)
@@ -177,7 +314,14 @@ public sealed class TssCableRouteProvider : MonoBehaviour
 
     private static void AddOrthogonal(List<Vector3> points, Vector3 start, Vector3 end)
     {
-        AddIfUseful(points, new Vector3(end.x, start.y, start.z));
+        AddIfUseful(points, new Vector3(start.x, start.y, end.z));
+        AddIfUseful(points, new Vector3(end.x, start.y, end.z));
+        AddIfUseful(points, end);
+    }
+
+    private static void AddEndpointApproach(List<Vector3> points, Vector3 start, Vector3 end)
+    {
+        AddIfUseful(points, new Vector3(start.x, end.y, start.z));
         AddIfUseful(points, new Vector3(end.x, end.y, start.z));
         AddIfUseful(points, end);
     }
@@ -186,6 +330,11 @@ public sealed class TssCableRouteProvider : MonoBehaviour
     {
         if (points.Count == 0 || (points[^1] - point).sqrMagnitude > 0.0001f)
             points.Add(point);
+    }
+
+    private static bool IsFinite(Vector3 point)
+    {
+        return float.IsFinite(point.x) && float.IsFinite(point.y) && float.IsFinite(point.z);
     }
 
     private RouteEntryContext[] EntryCandidates(TssPortEndpoint endpoint)
@@ -232,9 +381,23 @@ public sealed class TssCableRouteProvider : MonoBehaviour
         return System.Array.Empty<RouteEntryContext>();
     }
 
-    private static TssCableRouteSide PreferredSide(RouteEntryContext[] candidates)
+    private static TssCableRouteSide PreferredSide(RouteEntryContext[] candidates, Vector3 point)
     {
-        return candidates != null && candidates.Length > 0 ? candidates[0].Side : TssCableRouteSide.Any;
+        if (candidates == null || candidates.Length == 0)
+            return TssCableRouteSide.Any;
+
+        var bestSide = candidates[0].Side;
+        var bestDist = (candidates[0].Point - point).sqrMagnitude;
+        for (var i = 1; i < candidates.Length; i++)
+        {
+            var dist = (candidates[i].Point - point).sqrMagnitude;
+            if (dist < bestDist)
+            {
+                bestDist = dist;
+                bestSide = candidates[i].Side;
+            }
+        }
+        return bestSide;
     }
 
     private RouteEntryContext[] TrayCandidates(string rackId, TssCableRouteSide side)
@@ -401,12 +564,16 @@ public sealed class TssCableRouteProvider : MonoBehaviour
             if (current == end)
                 return RebuildPath(previous, end);
 
-            foreach (var neighbor in current.neighbors)
+            foreach (var neighbor in current.neighbors ?? System.Array.Empty<TssCableRouteNode>())
             {
                 if (!neighbor)
                     continue;
 
-                var nextDistance = distance[current] + Vector3.Distance(current.transform.position, neighbor.transform.position);
+                var edgeDistance = Vector3.Distance(current.transform.position, neighbor.transform.position);
+                if (!float.IsFinite(edgeDistance))
+                    continue;
+
+                var nextDistance = distance[current] + edgeDistance;
                 if (distance.TryGetValue(neighbor, out var knownDistance) && nextDistance >= knownDistance)
                     continue;
 
@@ -423,8 +590,13 @@ public sealed class TssCableRouteProvider : MonoBehaviour
     private static List<TssCableRouteNode> RebuildPath(Dictionary<TssCableRouteNode, TssCableRouteNode> previous, TssCableRouteNode end)
     {
         var path = new List<TssCableRouteNode> { end };
+        var seen = new HashSet<TssCableRouteNode> { end };
         while (previous.TryGetValue(path[0], out var parent))
+        {
+            if (!seen.Add(parent))
+                return new List<TssCableRouteNode>();
             path.Insert(0, parent);
+        }
         return path;
     }
 

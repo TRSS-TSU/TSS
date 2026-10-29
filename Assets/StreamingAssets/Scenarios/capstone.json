@@ -73,6 +73,48 @@
       "endpointAId": "Rack:Rack01:U30:Fa01",
       "endpointBId": "PatchPanel:Rack01:Port18",
       "requiredCableType": 0
+    },
+    {
+      "requirementId": "IT1ToAN1",
+      "endpointAId": "IT1",
+      "endpointBId": "Rack:Rack01:U35:Fa02",
+      "requiredCableType": 0
+    },
+    {
+      "requirementId": "IT2ToAN1",
+      "endpointAId": "IT2",
+      "endpointBId": "Rack:Rack01:U35:Fa05",
+      "requiredCableType": 0
+    },
+    {
+      "requirementId": "Reception1ToWallport01",
+      "endpointAId": "Reception1",
+      "endpointBId": "WallPort:Reception:Port01",
+      "requiredCableType": 0
+    },
+    {
+      "requirementId": "Reception2ToWallport02",
+      "endpointAId": "Reception2",
+      "endpointBId": "WallPort:Reception:Port02",
+      "requiredCableType": 0
+    },
+    {
+      "requirementId": "Data1ToWallport01",
+      "endpointAId": "Data1",
+      "endpointBId": "WallPort:Floor02:Office01:Wallport01:Port01",
+      "requiredCableType": 0
+    },
+    {
+      "requirementId": "Data2ToWallport01",
+      "endpointAId": "Data2",
+      "endpointBId": "WallPort:Floor02:Office02:Wallport01:Port01",
+      "requiredCableType": 0
+    },
+    {
+      "requirementId": "Data3ToWallport02",
+      "endpointAId": "Data3",
+      "endpointBId": "WallPort:Floor02:Office02:Wallport01:Port02",
+      "requiredCableType": 0
     }
   ],
   "permanentConnections": [

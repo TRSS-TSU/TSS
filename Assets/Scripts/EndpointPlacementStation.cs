@@ -202,20 +202,32 @@ public sealed class EndpointPlacementStation : MonoBehaviour
 
     private void PlaceHeld(string deviceName)
     {
-        var equipment = TssTrainingSession.Instance ? TssTrainingSession.Instance.HeldItem : null;
-        var anchor = GetFreeAnchor(equipment);
-        if (!anchor || !TssTrainingSession.Instance)
-            return;
-
-        if (!TssTrainingSession.Instance.TryPlaceHeldEndpoint(this, deviceName, out var record, out var message))
+        if (!TryPlaceHeldForDeveloper(deviceName, out _, out var message))
         {
             TssRuntimeUi.Instance?.ShowHudMessage(message);
             return;
         }
+        TssRuntimeUi.Instance?.ShowHudMessage(message);
+    }
+
+    public bool TryPlaceHeldForDeveloper(string deviceName, out EndpointPlacementRecord record, out string message)
+    {
+        record = default;
+        var session = TssTrainingSession.Instance;
+        var equipment = session ? session.HeldItem : null;
+        var anchor = GetFreeAnchor(equipment);
+        if (!anchor || !session)
+        {
+            message = "No placement anchor is available.";
+            return false;
+        }
+
+        if (!session.TryPlaceHeldEndpoint(this, deviceName, out record, out message))
+            return false;
 
         CreatePlacedVisual(anchor, record);
-        TssTrainingSession.Instance.NotifyStateChanged();
-        TssRuntimeUi.Instance?.ShowHudMessage(message);
+        session.NotifyStateChanged();
+        return true;
     }
 
     private void CreatePlacedVisual(Transform anchor, EndpointPlacementRecord record)

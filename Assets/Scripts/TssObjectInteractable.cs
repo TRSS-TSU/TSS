@@ -21,6 +21,11 @@ public sealed class TssObjectInteractable : MonoBehaviour
     [SerializeField] private Camera mainCamera;
     [SerializeField] private float transitionSeconds = 0.75f;
     [SerializeField] private float firstPersonFieldOfView = 50f;
+    [Header("Rack Equipment First Person")]
+    [SerializeField] private bool rackFirstPersonOrthographic = true;
+    [SerializeField] private float rackFirstPersonOrthographicSize = 0.14f;
+    [SerializeField] private float rackFirstPersonNearClipPlane = -0.36f;
+    [SerializeField] private float rackFirstPersonFarClipPlane = 8f;
 
     [Header("Player")]
     [SerializeField] private ThirdPersonController playerController;
@@ -51,6 +56,11 @@ public sealed class TssObjectInteractable : MonoBehaviour
     private bool _isFirstPerson;
     private bool _playerInRange;
     private bool _isHovered;
+    private bool _rackCameraModeApplied;
+    private bool _previousOrthographic;
+    private float _previousOrthographicSize;
+    private float _previousNearClipPlane;
+    private float _previousFarClipPlane;
 
     private void Awake()
     {
@@ -120,6 +130,7 @@ public sealed class TssObjectInteractable : MonoBehaviour
 
         _transition = null;
         _isFirstPerson = false;
+        RestoreRackCameraMode();
         HideCanvas();
         SetAvatarVisible(true);
         SetCinemachine(true);
@@ -169,6 +180,7 @@ public sealed class TssObjectInteractable : MonoBehaviour
         _thirdPersonPosition = mainCamera.transform.position;
         _thirdPersonRotation = mainCamera.transform.rotation;
         _thirdPersonFieldOfView = mainCamera.fieldOfView;
+        ApplyRackCameraMode();
 
         SetPlayerControl(false);
         SetAvatarVisible(false);
@@ -193,6 +205,7 @@ public sealed class TssObjectInteractable : MonoBehaviour
             _activeInteractable = null;
 
         _isFirstPerson = false;
+        RestoreRackCameraMode();
         HideCanvas();
         SetAvatarVisible(true);
         StartMove(_thirdPersonPosition, _thirdPersonRotation, _thirdPersonFieldOfView, () =>
@@ -218,6 +231,7 @@ public sealed class TssObjectInteractable : MonoBehaviour
 
         _transition = null;
         _isFirstPerson = false;
+        RestoreRackCameraMode();
         HideCanvas();
         SetHovered(false);
     }
@@ -228,6 +242,34 @@ public sealed class TssObjectInteractable : MonoBehaviour
             StopCoroutine(_transition);
 
         _transition = StartCoroutine(MoveCamera(position, rotation, fieldOfView, after));
+    }
+
+    private void ApplyRackCameraMode()
+    {
+        if (_rackCameraModeApplied || !rackFirstPersonOrthographic || !GetComponentInParent<RackMountController>(true))
+            return;
+
+        _previousOrthographic = mainCamera.orthographic;
+        _previousOrthographicSize = mainCamera.orthographicSize;
+        _previousNearClipPlane = mainCamera.nearClipPlane;
+        _previousFarClipPlane = mainCamera.farClipPlane;
+        mainCamera.orthographic = true;
+        mainCamera.orthographicSize = rackFirstPersonOrthographicSize;
+        mainCamera.nearClipPlane = rackFirstPersonNearClipPlane;
+        mainCamera.farClipPlane = rackFirstPersonFarClipPlane;
+        _rackCameraModeApplied = true;
+    }
+
+    private void RestoreRackCameraMode()
+    {
+        if (!_rackCameraModeApplied || !mainCamera)
+            return;
+
+        mainCamera.orthographic = _previousOrthographic;
+        mainCamera.orthographicSize = _previousOrthographicSize;
+        mainCamera.nearClipPlane = _previousNearClipPlane;
+        mainCamera.farClipPlane = _previousFarClipPlane;
+        _rackCameraModeApplied = false;
     }
 
     private IEnumerator MoveCamera(Vector3 position, Quaternion rotation, float fieldOfView, System.Action after)

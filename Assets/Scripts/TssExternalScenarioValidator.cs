@@ -100,8 +100,8 @@ public static class TssExternalScenarioValidator
         foreach (var row in Rows(data.cableTypeRequirements, "cableTypeRequirements", errors))
         {
             Unique(row.requirementId, requirements, "requirementId", errors);
-            Known(row.endpointAId, endpoints, "endpointAId", errors);
-            Known(row.endpointBId, endpoints, "endpointBId", errors);
+            KnownCableEndpoint(row.endpointAId, endpoints, names, "endpointAId", errors);
+            KnownCableEndpoint(row.endpointBId, endpoints, names, "endpointBId", errors);
             CheckEnum(row.requiredCableType, "requiredCableType", errors);
         }
         var connections = NewIds();
@@ -242,6 +242,11 @@ public static class TssExternalScenarioValidator
     private static void Known(string value, IEnumerable<string> ids, string field, List<string> errors)
     {
         if (string.IsNullOrWhiteSpace(value) || !ids.Contains(value)) errors.Add("Unknown " + field + ": " + value);
+    }
+    private static void KnownCableEndpoint(string value, IEnumerable<string> endpointIds, IEnumerable<string> placementNames, string field, List<string> errors)
+    {
+        if (string.IsNullOrWhiteSpace(value) || (!endpointIds.Contains(value) && !placementNames.Contains(value)))
+            errors.Add("Unknown " + field + ": " + value);
     }
     private static void CheckEnum<T>(T value, string field, List<string> errors) where T : Enum
     {

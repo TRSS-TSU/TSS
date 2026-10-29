@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using StarterAssets;
 using UnityEngine;
 using UnityEngine.EventSystems;
+using UnityEngine.Serialization;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
 #endif
@@ -17,7 +18,8 @@ public sealed class RackMountController : MonoBehaviour
     [SerializeField] private Transform mountRoot;
     [SerializeField] private Transform u1Anchor;
     [SerializeField] private float uSpacingMeters = 0.04445f;
-    [SerializeField] private Vector3 installedLocalOffset = new(0f, 0f, -0.4f);
+    [FormerlySerializedAs("installedLocalOffset")]
+    [SerializeField] private Vector3 frontInstalledLocalOffset = new(0f, 0f, -0.4f);
     [SerializeField] private Vector3 rearInstalledLocalOffset = new(0f, 0f, -0.56f);
     [SerializeField] private Vector3 installedLocalEuler = Vector3.zero;
     [SerializeField] private Vector3 slotLocalOffset = new(0f, 0f, -0.47f);
@@ -37,6 +39,7 @@ public sealed class RackMountController : MonoBehaviour
     private Material _hoveredSlotMaterial;
     private int _hoveredU;
     private Camera _mainCamera;
+    private static RackMountController _hoverOwner;
 
     public string RackId => rackId;
 
@@ -540,10 +543,15 @@ public sealed class RackMountController : MonoBehaviour
         _hoveredU = u;
         if (!_slots.TryGetValue(u, out var hoveredSlot))
         {
-            TssRuntimeUi.Instance?.HideRackSlotHover();
+            if (_hoverOwner == this)
+            {
+                _hoverOwner = null;
+                TssRuntimeUi.Instance?.HideRackSlotHover();
+            }
             return;
         }
 
+        _hoverOwner = this;
         hoveredSlot.GetComponent<Renderer>().sharedMaterial = _hoveredSlotMaterial;
         PositionHoverLabel(u);
     }
@@ -561,7 +569,11 @@ public sealed class RackMountController : MonoBehaviour
             previousSlot.GetComponent<Renderer>().sharedMaterial = _slotMaterial;
 
         _hoveredU = 0;
-        TssRuntimeUi.Instance?.HideRackSlotHover();
+        if (_hoverOwner == this)
+        {
+            _hoverOwner = null;
+            TssRuntimeUi.Instance?.HideRackSlotHover();
+        }
     }
 
     private static Vector3 GetPointerPosition()
@@ -590,7 +602,7 @@ public sealed class RackMountController : MonoBehaviour
 
     private Vector3 GetInstalledLocalOffset(EquipmentDefinition equipment)
     {
-        return equipment && equipment.useRearRackPlacement && !IsDualSidedRackEquipment(equipment) ? rearInstalledLocalOffset : installedLocalOffset;
+        return equipment && equipment.useRearRackPlacement && !IsDualSidedRackEquipment(equipment) ? rearInstalledLocalOffset : frontInstalledLocalOffset;
     }
 
     private void SetOccupied(EquipmentDefinition equipment, int startingU, int rackUnits, bool occupied)

@@ -68,6 +68,55 @@ public sealed class TssExternalScenarioPlayModeTests
     }
 
     [UnityTest]
+    public IEnumerator CapstoneWp2SnapshotSurvivesWirelessReuseOfFa07()
+    {
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig
+        {
+            enableLayer23Simulation = true,
+            requiredPorts = new[]
+            {
+                new NetworkRequiredPort { deviceRole = "AN-1", interfaceName = "Fa0/2", endpointId = "IT1" },
+                new NetworkRequiredPort { deviceRole = "AN-2", interfaceName = "Fa0/2", endpointId = "Data1" }
+            }
+        };
+        var sessionObject = new GameObject("CapstonePlayModeSession");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        session.BeginScenario(scenario, "STUDENT-1");
+
+        try
+        {
+            ConfigureCompleteLayer2State(session.NetworkState);
+            var layer2 = new TssNetworkWorkPackageEvaluator(session.NetworkState).EvaluateLayer2();
+            Assert.IsTrue(layer2.Complete);
+            Assert.IsNotNull(layer2.CompletionSnapshot);
+
+            session.NetworkState.SetAccessPointUplink(true);
+            var an1 = session.NetworkState.GetOrCreateDevice("AN1", EquipmentCategory.Switch, "AN-1");
+            an1.Interfaces["Fa0/7"] = AccessPort("Fa0/7", session.NetworkState.Profile.ReceptionVlan);
+            an1.Interfaces["Fa0/7"].CarrierUp = true;
+            session.NetworkState.AccessPoint.Configured = true;
+            var laptop = session.NetworkState.GetOrCreateEndpoint("TestLaptop", "TestLaptop", EquipmentCategory.Laptop);
+            laptop.UseDhcp = true;
+            laptop.Address = session.NetworkState.Profile.TestLaptopAddress;
+            laptop.Layer1Connected = laptop.Layer2Connected = true;
+            laptop.Evidence.UnionWith(new[] { "ipconfig", "TestLaptop-provider", "redwolf" });
+            session.NetworkState.AccessPoint.AssociatedEndpointKey = laptop.Key;
+            session.NetworkState.AccessPoint.AssociatedSsid = session.NetworkState.Profile.Ssid;
+
+            var assessment = TssScenarioAssessmentCoordinator.Assess(session);
+            Assert.IsTrue(assessment.WorkPackages[1].IsComplete);
+            Assert.IsTrue(assessment.WorkPackages[3].IsComplete);
+            yield return null;
+        }
+        finally
+        {
+            Object.Destroy(sessionObject);
+            Object.Destroy(scenario);
+        }
+    }
+
+    [UnityTest]
     public IEnumerator MissingManifestLaunchesBuiltInFallback()
     {
         File.Delete(manifestPath);
@@ -261,6 +310,45 @@ public sealed class TssExternalScenarioPlayModeTests
         Assert.IsFalse(layer2.Conditions.Any(x => x.Id.StartsWith("WP2.CableTypes.") || x.Id == "WP2.Terminations"));
         Assert.AreEqual(authoredRequirements, JsonUtility.ToJson(TssExternalScenarioLoader.Export(session.Scenario)), "Resolving installed ports must not mutate the scenario.");
     }
+
+    private static void ConfigureCompleteLayer2State(TssNetworkSessionState state)
+    {
+        var profile = state.Profile;
+        var an1 = state.GetOrCreateDevice("AN1", EquipmentCategory.Switch, "AN-1");
+        var an2 = state.GetOrCreateDevice("AN2", EquipmentCategory.Switch, "AN-2");
+        foreach (var device in new[] { an1, an2 })
+        {
+            device.EnableSecret = profile.EnableSecret;
+            device.ConsolePassword = profile.ConsolePassword;
+            device.VtyPassword = profile.VtyPassword;
+            device.Motd = profile.Motd;
+            device.PasswordEncryption = device.DomainLookupDisabled = device.ConsoleLoginRequired = device.VtyLoginRequired = true;
+            device.Vlans[profile.ManagementVlan] = profile.ManagementVlanName;
+            device.Vlans[profile.ReceptionVlan] = profile.ReceptionVlanName;
+            device.Vlans[profile.DataVlan] = profile.DataVlanName;
+            device.Vlans[profile.NativeVlan] = profile.NativeVlanName;
+            device.Vlans[profile.DeadVlan] = profile.DeadVlanName + " (suspended)";
+            device.Evidence.UnionWith(new[] { "show vlan brief", "show interfaces trunk", "save" });
+        }
+        an1.Interfaces["Fa0/2"] = AccessPort("Fa0/2", profile.ManagementVlan);
+        an2.Interfaces["Fa0/2"] = AccessPort("Fa0/2", profile.DataVlan);
+        an1.Interfaces["Fa0/1"] = Trunk("Fa0/1", profile);
+        an1.Interfaces["Fa0/6"] = Trunk("Fa0/6", profile);
+        an2.Interfaces["Fa0/1"] = Trunk("Fa0/1", profile);
+        for (var port = 7; port <= 24; port++) an1.Interfaces["Fa0/" + port] = ParkedPort("Fa0/" + port, profile);
+        for (var port = 5; port <= 24; port++) an2.Interfaces["Fa0/" + port] = ParkedPort("Fa0/" + port, profile);
+    }
+
+    private static NetworkInterfaceState AccessPort(string name, int vlan) => new() { Name = name, AdminUp = true, AccessVlan = vlan };
+    private static NetworkInterfaceState ParkedPort(string name, TssNetworkRunProfile profile) => new() { Name = name, AccessVlan = profile.DeadVlan };
+    private static NetworkInterfaceState Trunk(string name, TssNetworkRunProfile profile) => new()
+    {
+        Name = name,
+        AdminUp = true,
+        IsTrunk = true,
+        NativeVlan = profile.NativeVlan,
+        AllowedVlans = new System.Collections.Generic.HashSet<int> { profile.ManagementVlan, profile.ReceptionVlan, profile.DataVlan }
+    };
 
     private static IEnumerator WaitUntil(Func<bool> condition)
     {
