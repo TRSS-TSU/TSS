@@ -618,6 +618,51 @@ public sealed class TssPlacementEvaluatorTests
     }
 
     [Test]
+    public void RouterWanCarrierRequiresDemarcPath()
+    {
+        var root = new GameObject("Provider Demarc Missing Path");
+        var session = root.AddComponent<TssTrainingSession>();
+        var scenario = CreateScenario();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        scenario.permanentConnections = new[]
+        {
+            new ScenarioPermanentCableConnection
+            {
+                connectionId = "ProviderDemarc",
+                patchPanelEndpointId = "PatchPanel:Rack01:Port18",
+                wallportEndpointId = "Demarc:Provider:Port01"
+            }
+        };
+
+        var routerPort = EndpointObject("Router Fa0/1").AddComponent<TssPortEndpoint>();
+        var patchPort = EndpointObject("Patch Port 18").AddComponent<TssPortEndpoint>();
+        var demarcPort = EndpointObject("Provider Demarc").AddComponent<TssPortEndpoint>();
+        routerPort.Configure("Rack:Rack01:U32:Fa01", Port("Fa01"));
+        patchPort.Configure("PatchPanel:Rack01:Port18", Port("Port18"));
+        demarcPort.Configure("Demarc:Provider:Port01", Port("Port01"));
+
+        try
+        {
+            session.BeginScenario(scenario);
+            var router = session.NetworkState.GetOrCreateDevice("Rack:Rack01:U32", EquipmentCategory.Router, "CN-1");
+            router.Interfaces["Fa0/1"] = new NetworkInterfaceState { Name = "Fa0/1", EndpointId = routerPort.EndpointId, AdminUp = true };
+
+            session.NotifyNetworkStateChanged();
+
+            Assert.IsFalse(session.IsProviderDemarcConnected(routerPort.EndpointId));
+            Assert.IsFalse(router.Interfaces["Fa0/1"].CarrierUp);
+        }
+        finally
+        {
+            Object.DestroyImmediate(routerPort.gameObject);
+            Object.DestroyImmediate(patchPort.gameObject);
+            Object.DestroyImmediate(demarcPort.gameObject);
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(root);
+        }
+    }
+
+    [Test]
     public void RenamingInstalledRackDeviceInvalidatesEffectivePathCache()
     {
         var root = new GameObject("Rack Cache Invalidation");
