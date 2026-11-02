@@ -21,7 +21,7 @@ public sealed class TssCableSplineReadinessTests
     }
 
     [Test]
-    public void CurveBuilderRoundsFiniteRouteAndPreservesExactEndpoints()
+    public void CurveBuilderPreservesAuthoredRoutePointsAndExactEndpoints()
     {
         var route = TssCableRouteResult.Valid(
             "A",
@@ -34,6 +34,10 @@ public sealed class TssCableSplineReadinessTests
 
         Assert.IsTrue(CableCurveBuilder.TryBuild(route, reservation, CableVisualSettings.Defaults(), out var samples, out var failure), failure);
         Assert.GreaterOrEqual(samples.Length, 2);
+        Assert.AreEqual(3, samples.Length);
+        Assert.AreEqual(Vector3.zero, samples[0]);
+        Assert.AreEqual(new Vector3(1f, 0f, 0f), samples[1]);
+        Assert.AreEqual(new Vector3(1f, 0f, 1f), samples[2]);
         Assert.AreEqual(Vector3.zero, samples[0]);
         Assert.AreEqual(new Vector3(1f, 0f, 1f), samples[samples.Length - 1]);
         Assert.IsFalse(System.Array.Exists(samples, point => !float.IsFinite(point.x) || !float.IsFinite(point.y) || !float.IsFinite(point.z)));

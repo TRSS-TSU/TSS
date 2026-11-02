@@ -113,6 +113,38 @@ public sealed class TssCableRouteProviderTests
     }
 
     [Test]
+    public void RackEndpointToPlacedIt1UsesItsPlacementStationRoute()
+    {
+        var routeRoot = new GameObject("RouteRoot");
+        var stationRoot = new GameObject("ITDesk");
+        var station = stationRoot.AddComponent<EndpointPlacementStation>();
+        var rackPort = Endpoint("Rack Switch", "Rack:Rack01:U35:Fa02", new Vector3(0f, 2f, 0f), EquipmentInterfaceFace.Front);
+        var it1Port = EndpointUnder(stationRoot.transform, "IT1", "IT1:Eth01", new Vector3(5f, 1f, 0f), EquipmentInterfaceFace.Front);
+
+        try
+        {
+            var rack = RackNode("RackFront", routeRoot.transform, "Rack01", TssCableRouteNodeRole.RackFront, TssCableRouteSide.Left, new Vector3(-1f, 4f, 0f));
+            var drop = StationNode("ITDeskDrop", routeRoot.transform, "ITDesk", new Vector3(5f, 4f, 0f));
+            Link(rack, drop);
+            var provider = routeRoot.AddComponent<TssCableRouteProvider>();
+
+            var route = provider.GetRouteResult(rackPort, it1Port);
+
+            Assert.IsTrue(route.IsValid, route.FailureReason);
+            Assert.IsTrue(ContainsPoint(route.RenderPoints, rack.transform.position));
+            Assert.IsTrue(ContainsPoint(route.RenderPoints, drop.transform.position));
+            Assert.AreEqual(rackPort.CableAnchorPosition, route.RenderPoints[0]);
+            Assert.AreEqual(it1Port.CableAnchorPosition, route.RenderPoints[route.RenderPoints.Count - 1]);
+        }
+        finally
+        {
+            Object.DestroyImmediate(routeRoot);
+            Object.DestroyImmediate(stationRoot);
+            Object.DestroyImmediate(rackPort.transform.root.gameObject);
+        }
+    }
+
+    [Test]
     public void WallPortAvoidsUnrelatedStationDrop()
     {
         var root = new GameObject("RouteRoot");
@@ -298,6 +330,18 @@ public sealed class TssCableRouteProviderTests
         return endpoint;
     }
 
+    private static TssPortEndpoint EndpointUnder(Transform parent, string parentName, string endpointId, Vector3 position, EquipmentInterfaceFace face)
+    {
+        var root = new GameObject(parentName);
+        root.transform.SetParent(parent);
+        var child = new GameObject("Port");
+        child.transform.SetParent(root.transform);
+        child.transform.position = position;
+        var endpoint = child.AddComponent<TssPortEndpoint>();
+        endpoint.Configure(endpointId, new EquipmentInterface { name = "Eth01", interfaceFace = face });
+        return endpoint;
+    }
+
     private static void AssertRouteIsOrthogonal(Vector3[] route)
     {
         for (var i = 1; i < route.Length; i++)
@@ -311,6 +355,14 @@ public sealed class TssCableRouteProviderTests
                 + (Mathf.Abs(delta.z) > 0.0001f ? 1 : 0);
             Assert.LessOrEqual(changedAxes, 1, $"Segment {i - 1}->{i} is diagonal.");
         }
+    }
+
+    private static bool ContainsPoint(System.Collections.Generic.IReadOnlyList<Vector3> points, Vector3 expected)
+    {
+        for (var i = 0; i < points.Count; i++)
+            if (points[i] == expected)
+                return true;
+        return false;
     }
 
     private static bool IsBreak(Vector3 point)

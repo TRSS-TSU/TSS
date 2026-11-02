@@ -390,7 +390,7 @@ public sealed class TssCableRouteProvider : MonoBehaviour
             return new[] { new RouteEntryContext(node) };
         }
 
-        if (TryStationId(endpointId, out var stationId))
+        if (TryStationId(endpoint, out var stationId))
         {
             var node = Nearest(endpoint.CableAnchorPosition, candidate => MatchesStation(candidate, stationId) && MatchesRole(candidate, TssCableRouteNodeRole.StationDrop))
                 ?? Nearest(endpoint.CableAnchorPosition, candidate => MatchesStation(candidate, stationId));
@@ -521,6 +521,19 @@ public sealed class TssCableRouteProvider : MonoBehaviour
         return !string.IsNullOrWhiteSpace(endpointId)
             && endpointId.StartsWith(prefix, System.StringComparison.Ordinal)
             && TrySegment(endpointId, prefix.Length, out stationId);
+    }
+
+    private static bool TryStationId(TssPortEndpoint endpoint, out string stationId)
+    {
+        stationId = string.Empty;
+        var placementStation = endpoint ? endpoint.GetComponentInParent<EndpointPlacementStation>(true) : null;
+        if (placementStation && !string.IsNullOrWhiteSpace(placementStation.StationId))
+        {
+            stationId = placementStation.StationId.Trim();
+            return true;
+        }
+
+        return TryStationId(endpoint ? endpoint.EndpointId : null, out stationId);
     }
 
     private static bool TrySegment(string value, int start, out string segment)
