@@ -124,8 +124,10 @@ public sealed class TssCableRouteProviderTests
         try
         {
             var rack = RackNode("RackFront", routeRoot.transform, "Rack01", TssCableRouteNodeRole.RackFront, TssCableRouteSide.Left, new Vector3(-1f, 4f, 0f));
-            var drop = StationNode("ITDeskDrop", routeRoot.transform, "ITDesk", new Vector3(5f, 4f, 0f));
-            Link(rack, drop);
+            var drop = StationNode("ITDeskDevice", routeRoot.transform, "ITDesk", new Vector3(5f, 4f, 0f));
+            var boundary = Node("ITDeskBoundary", routeRoot.transform, new Vector3(-1f, 4f, 0.1f));
+            boundary.stationId = "ITDesk";
+            Link(drop, boundary);
             var provider = routeRoot.AddComponent<TssCableRouteProvider>();
 
             var route = provider.GetRouteResult(rackPort, it1Port);
@@ -133,8 +135,20 @@ public sealed class TssCableRouteProviderTests
             Assert.IsTrue(route.IsValid, route.FailureReason);
             Assert.IsTrue(ContainsPoint(route.RenderPoints, rack.transform.position));
             Assert.IsTrue(ContainsPoint(route.RenderPoints, drop.transform.position));
+            Assert.AreEqual(3, route.OrderedNodes.Count);
+            Assert.AreEqual(rack, route.OrderedNodes[0]);
+            Assert.AreEqual(boundary, route.OrderedNodes[1]);
+            Assert.AreEqual(drop, route.OrderedNodes[2]);
             Assert.AreEqual(rackPort.CableAnchorPosition, route.RenderPoints[0]);
             Assert.AreEqual(it1Port.CableAnchorPosition, route.RenderPoints[route.RenderPoints.Count - 1]);
+
+            var reverseRoute = provider.GetRouteResult(it1Port, rackPort);
+            Assert.IsTrue(reverseRoute.IsValid, reverseRoute.FailureReason);
+            Assert.AreEqual(drop, reverseRoute.OrderedNodes[0]);
+            Assert.AreEqual(boundary, reverseRoute.OrderedNodes[1]);
+            Assert.AreEqual(rack, reverseRoute.OrderedNodes[2]);
+            Assert.AreEqual(it1Port.CableAnchorPosition, reverseRoute.RenderPoints[0]);
+            Assert.AreEqual(rackPort.CableAnchorPosition, reverseRoute.RenderPoints[reverseRoute.RenderPoints.Count - 1]);
         }
         finally
         {

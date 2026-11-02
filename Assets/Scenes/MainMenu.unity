@@ -119,6 +119,144 @@ NavMeshSettings:
     debug:
       m_Flags: 0
   m_NavMeshData: {fileID: 0}
+--- !u!1 &257288353
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 257288355}
+  - component: {fileID: 257288354}
+  m_Layer: 0
+  m_Name: Connector Transform Smoke Wallport
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &257288354
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 257288353}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: WallPort:Smoke:Port01
+  displayLabel: 
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
+--- !u!4 &257288355
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 257288353}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 0.055, y: 0.05, z: 0.02}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &328130803
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 328130805}
+  - component: {fileID: 328130804}
+  m_Layer: 0
+  m_Name: Group2SmokeITDeskDrop
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &328130804
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 328130803}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75c835e7e9eb4aa686d5f93426f77df2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssCableRouteNode
+  neighbors:
+  - {fileID: 1089727905}
+  rackId: 
+  stationId: ITDesk
+  role: 3
+  side: 0
+--- !u!4 &328130805
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 328130803}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 5, y: 4, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1048762950}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &418380494
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 418380495}
+  m_Layer: 0
+  m_Name: IT1
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &418380495
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 418380494}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1659255044}
+  m_Father: {fileID: 990037117}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &506805739
 GameObject:
   m_ObjectHideFlags: 0
@@ -170,6 +308,260 @@ MonoBehaviour:
   scenarioMenuCanvasPrefab: {fileID: 2219538347250863404, guid: 8eb1309a14b22724eaf82d4743347628, type: 3}
   scenarioButtonPrefab: {fileID: 1297116939038653213, guid: 5c74f0e1ffe8e0848bc197e98622fe8f, type: 3}
   scenarioMenuCanvasInstance: {fileID: 7898028383004603693}
+--- !u!1 &657282810
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 657282812}
+  - component: {fileID: 657282811}
+  m_Layer: 0
+  m_Name: Connector Transform Smoke Rack
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &657282811
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 657282810}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Rack:Rack01:U01:Fa01
+  displayLabel: 
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
+--- !u!4 &657282812
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 657282810}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &990037115
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 990037117}
+  - component: {fileID: 990037116}
+  m_Layer: 0
+  m_Name: ITDesk
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &990037116
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 990037115}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cbc231c786c12cd48b57018a33dc488e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::EndpointPlacementStation
+  stationId: 
+  acceptedCategories: 06000000070000000800000009000000
+  placementAnchors: []
+  desktopPlacementAnchors: []
+  printerPlacementAnchors: []
+  accessPointPlacementAnchors: []
+  laptopPlacementAnchors: []
+  placedParent: {fileID: 0}
+  nameSignPrefab: {fileID: 0}
+  nameSignLocalOffset: {x: 0, y: 1, z: 0.76}
+  nameSignLocalEuler: {x: 0, y: -90, z: 0}
+  nameSignPanelSize: {x: 1.17, y: 0.39, z: 0.05}
+  printerNameSignLocalOffset: {x: 0, y: 1, z: 0.76}
+  printerNameSignLocalEuler: {x: 0, y: -90, z: 0}
+  printerNameSignPanelSize: {x: 1.17, y: 0.39, z: 0.05}
+  nameSignPanelColor: {r: 0.9, g: 0.9, b: 0.82, a: 1}
+  nameSignTextColor: {r: 0, g: 0, b: 0, a: 1}
+  nameSignTextSize: 1.6
+  placedInteractionTriggerCenter: {x: 0, y: 0.6, z: 0}
+  placedInteractionTriggerSize: {x: 1.5, y: 1.2, z: 1.5}
+  printerPlacedInteractionTriggerCenter: {x: 0, y: 0.35, z: 0}
+  printerPlacedInteractionTriggerSize: {x: 0.75, y: 0.7, z: 0.75}
+--- !u!4 &990037117
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 990037115}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 418380495}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1048762948
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1048762950}
+  - component: {fileID: 1048762949}
+  m_Layer: 0
+  m_Name: Group2SmokeRouteRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1048762949
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1048762948}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 10d0b13b82994fc69b7f9c74b58a2b91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssCableRouteProvider
+  routeNodes:
+  - {fileID: 1089727905}
+  - {fileID: 328130804}
+--- !u!4 &1048762950
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1048762948}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1089727906}
+  - {fileID: 328130805}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1089727904
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1089727906}
+  - component: {fileID: 1089727905}
+  m_Layer: 0
+  m_Name: Group2SmokeRackNode
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1089727905
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1089727904}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 75c835e7e9eb4aa686d5f93426f77df2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssCableRouteNode
+  neighbors:
+  - {fileID: 328130804}
+  rackId: Rack01
+  stationId: 
+  role: 1
+  side: 1
+--- !u!4 &1089727906
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1089727904}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -1, y: 4, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1048762950}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1213617325
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1213617326}
+  m_Layer: 0
+  m_Name: Group2SmokeRackPort
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1213617326
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1213617325}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 1657307248}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1279493785
 GameObject:
   m_ObjectHideFlags: 0
@@ -307,6 +699,118 @@ MonoBehaviour:
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
   m_Version: 2
+--- !u!1 &1657307247
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1657307248}
+  - component: {fileID: 1657307249}
+  m_Layer: 0
+  m_Name: Port
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1657307248
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1657307247}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 0, y: 2, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1213617326}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1657307249
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1657307247}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: Rack:Rack01:U35:Fa02
+  displayLabel: Fa02
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
+--- !u!1 &1659255043
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1659255044}
+  - component: {fileID: 1659255045}
+  m_Layer: 0
+  m_Name: Port
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1659255044
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1659255043}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 5, y: 1, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 418380495}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1659255045
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1659255043}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 04d46b5dc07644a9837677546def4b56, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: TSS.Runtime::TssPortEndpoint
+  endpointId: IT1:Eth01
+  displayLabel: Eth01
+  deviceName: 
+  connectorType: RJ45
+  supportedCableTypes: 
+  interfaceFace: 0
+  selectableTint: {r: 0.1, g: 0.9, b: 0.45, a: 1}
+  hoverTint: {r: 0.2, g: 0.65, b: 1, a: 1}
+  selectedTint: {r: 1, g: 0.85, b: 0.15, a: 1}
+  highlightRenderers: []
+  highlightBlend: 0.55
+  highlightTransitionSpeed: 12
 --- !u!1 &1888199267
 GameObject:
   m_ObjectHideFlags: 0
@@ -780,3 +1284,8 @@ SceneRoots:
   - {fileID: 1888199268}
   - {fileID: 1279493788}
   - {fileID: 2106256648}
+  - {fileID: 257288355}
+  - {fileID: 657282812}
+  - {fileID: 1048762950}
+  - {fileID: 990037117}
+  - {fileID: 1213617326}

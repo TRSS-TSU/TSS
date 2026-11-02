@@ -31,14 +31,20 @@ public sealed class TssPortEndpoint : MonoBehaviour
     public EquipmentInterfaceFace InterfaceFace => interfaceFace;
     public Vector3 CableAnchorPosition => GetCableAnchorPosition();
 
-    public Vector3 CableConnectorDirection(Vector3 routeDirection)
+    public Quaternion CableConnectorRotation(Vector3 routeDirection)
     {
-        if (EndpointId.StartsWith("WallPort:", System.StringComparison.Ordinal))
-            return transform.forward;
+        var forward = routeDirection;
+        if (forward.sqrMagnitude <= 0.000001f)
+            forward = transform.forward;
+        if (forward.sqrMagnitude <= 0.000001f)
+            forward = Vector3.forward;
+        forward.Normalize();
 
-        return interfaceFace == EquipmentInterfaceFace.Front ? Vector3.back
-            : interfaceFace == EquipmentInterfaceFace.Rear ? Vector3.forward
-            : routeDirection;
+        var up = transform.up;
+        if (up.sqrMagnitude <= 0.000001f || Mathf.Abs(Vector3.Dot(forward, up.normalized)) > 0.999f)
+            up = Mathf.Abs(Vector3.Dot(forward, Vector3.up)) > 0.95f ? Vector3.right : Vector3.up;
+
+        return Quaternion.LookRotation(forward, up);
     }
 
     public Vector3 CableConnectorScale(float cableRadius)

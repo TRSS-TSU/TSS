@@ -99,47 +99,31 @@ public sealed class TssCableVisual : MonoBehaviour
         _startConnector = CreateEndpointConnector(
             prefab,
             endpointA.CableAnchorPosition,
-            ConnectorDirection(endpointA, routePoints[1] - routePoints[0]),
+            endpointA.CableConnectorRotation(routePoints[1] - routePoints[0]),
             endpointA.CableConnectorScale(cable.radiusMeters),
             "Start Connector"
         );
         _endConnector = CreateEndpointConnector(
             prefab,
             endpointB.CableAnchorPosition,
-            -ConnectorDirection(
-                endpointB,
-                routePoints[routePoints.Length - 2] - routePoints[routePoints.Length - 1]
-            ),
+            endpointB.CableConnectorRotation(routePoints[routePoints.Length - 2] - routePoints[routePoints.Length - 1]),
             endpointB.CableConnectorScale(cable.radiusMeters),
             "End Connector"
         );
     }
 
-    private static Vector3 ConnectorDirection(TssPortEndpoint endpoint, Vector3 routeDirection)
-    {
-        return endpoint.CableConnectorDirection(routeDirection);
-    }
-
     private GameObject CreateEndpointConnector(
         GameObject prefab,
         Vector3 position,
-        Vector3 direction,
+        Quaternion rotation,
         Vector3 scale,
         string label
     )
     {
-        if (direction.sqrMagnitude <= 0.000001f)
-            direction = Vector3.forward;
-
-        var normalizedDirection = direction.normalized;
-        var up =
-            Mathf.Abs(Vector3.Dot(normalizedDirection, Vector3.up)) > 0.95f
-                ? Vector3.forward
-                : Vector3.up;
         var connector = Instantiate(
             prefab,
             position,
-            Quaternion.LookRotation(normalizedDirection, up),
+            rotation,
             transform
         );
         connector.name = label;

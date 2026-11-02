@@ -38,6 +38,7 @@ public sealed class RackMountController : MonoBehaviour
     private Material _slotMaterial;
     private Material _hoveredSlotMaterial;
     private int _hoveredU;
+    private int _selectedU;
     private Camera _mainCamera;
     private static RackMountController _hoverOwner;
 
@@ -71,6 +72,7 @@ public sealed class RackMountController : MonoBehaviour
         if (_session)
             _session.StateChanged -= HandleSessionStateChanged;
         _session = null;
+        _selectedU = 0;
         ClearHoveredSlot();
     }
 
@@ -236,7 +238,7 @@ public sealed class RackMountController : MonoBehaviour
             return;
 
         var held = TssTrainingSession.Instance ? TssTrainingSession.Instance.HeldItem : null;
-        if (IsFrontSlotBlocked(held, startingU) || _reserved.Contains(startingU))
+        if (!CanInstall(held, startingU))
             return;
 
         if (!TssTrainingSession.Instance)
@@ -245,32 +247,39 @@ public sealed class RackMountController : MonoBehaviour
         if (!held)
             return;
 
+        var selectedU = startingU;
         if (TssRuntimeUi.Instance)
         {
-            TssRuntimeUi.Instance.ShowNamePrompt($"Name {held.displayName}", string.Empty, deviceName =>
+            TssRuntimeUi.Instance.ShowNamePrompt($"Name {held.displayName} — {RackId} U{selectedU}", string.Empty, deviceName =>
             {
-                if (TssTrainingSession.Instance.TryInstallHeld(this, startingU, deviceName, out var message))
+                var session = TssTrainingSession.Instance;
+                var message = "Training session is unavailable.";
+                if (session && session.TryInstallHeld(this, selectedU, deviceName, out message))
                 {
-                    SetInstalledDeviceName(startingU, deviceName);
+                    SetInstalledDeviceName(selectedU, deviceName);
                     TssRuntimeUi.Instance.ShowHudMessage(message);
                 }
                 else
                 {
                     TssRuntimeUi.Instance.ShowHudMessage(message);
                 }
-            });
+                ClearSelectedU();
+            }, this, ClearSelectedU);
+            SetSelectedU(selectedU);
             return;
         }
 
-        if (TssTrainingSession.Instance.TryInstallHeld(this, startingU, string.Empty, out var fallbackMessage))
+        SetSelectedU(selectedU);
+        if (TssTrainingSession.Instance.TryInstallHeld(this, selectedU, string.Empty, out var fallbackMessage))
         {
-            SetInstalledDeviceName(startingU, string.Empty);
+            SetInstalledDeviceName(selectedU, string.Empty);
             TssRuntimeUi.Instance?.ShowHudMessage(fallbackMessage);
         }
         else
         {
             TssRuntimeUi.Instance?.ShowHudMessage(fallbackMessage);
         }
+        ClearSelectedU();
     }
 
     public void SetInstalledDeviceName(int startingU, string name)
@@ -410,6 +419,9 @@ public sealed class RackMountController : MonoBehaviour
 
     private void HandleSessionStateChanged()
     {
+        if (_selectedU != 0 && (!_session || !_session.HeldItem || !CanInstall(_session.HeldItem, _selectedU)))
+            _selectedU = 0;
+
         ApplyScenarioConfig();
         foreach (var item in _installedItems)
         {
@@ -498,14 +510,22 @@ public sealed class RackMountController : MonoBehaviour
         {
             pair.Value.transform.localPosition = GetSlotLocalPosition(held, pair.Key);
             pair.Value.SetActive(IsPlayerInRange() && CanInstall(held, pair.Key));
+            pair.Value.GetComponent<Renderer>().sharedMaterial = _slotMaterial;
         }
 
-        if (_hoveredU != 0 && (!_slots.TryGetValue(_hoveredU, out var hoveredSlot) || !hoveredSlot.activeSelf))
+        if (_selectedU != 0 && _slots.TryGetValue(_selectedU, out var selectedSlot) && selectedSlot.activeSelf)
+            selectedSlot.GetComponent<Renderer>().sharedMaterial = _hoveredSlotMaterial;
+        else if (_hoveredU != 0 && _slots.TryGetValue(_hoveredU, out var hoveredSlot) && hoveredSlot.activeSelf)
+            hoveredSlot.GetComponent<Renderer>().sharedMaterial = _hoveredSlotMaterial;
+        else if (_hoveredU != 0)
             ClearHoveredSlot();
     }
 
     private void UpdateSlotHover()
     {
+        if (_selectedU != 0)
+            return;
+
         var held = TssTrainingSession.Instance ? TssTrainingSession.Instance.HeldItem : null;
         if (!held || !_mainCamera)
         {
@@ -575,6 +595,22 @@ public sealed class RackMountController : MonoBehaviour
             _hoverOwner = null;
             TssRuntimeUi.Instance?.HideRackSlotHover();
         }
+    }
+
+    private void SetSelectedU(int u)
+    {
+        _selectedU = u;
+        ClearHoveredSlot();
+        RefreshHighlights();
+    }
+
+    private void ClearSelectedU()
+    {
+        if (_selectedU == 0)
+            return;
+
+        _selectedU = 0;
+        RefreshHighlights();
     }
 
     private static Vector3 GetPointerPosition()

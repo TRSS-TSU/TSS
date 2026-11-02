@@ -97,7 +97,12 @@ public sealed class TssCableRouteProvider : MonoBehaviour
             EntryCandidates(startEndpoint),
             EntryCandidates(endEndpoint));
         if (!selection.IsValid)
+        {
+            if (TryBuildStationBridgeRoute(startEndpoint, endEndpoint, kind, out var bridgedRoute))
+                return bridgedRoute;
+
             return TssCableRouteResult.Invalid(startEndpoint.EndpointId, endEndpoint.EndpointId, kind, "No valid authored graph route was found.");
+        }
 
         var points = BuildGraphRenderPoints(startEndpoint.CableAnchorPosition, endEndpoint.CableAnchorPosition, selection);
         if (points.Length < 2 || points.Any(point => !IsFinite(point)))
@@ -304,6 +309,137 @@ public sealed class TssCableRouteProvider : MonoBehaviour
         }
 
         return best;
+    }
+
+    private bool TryBuildStationBridgeRoute(
+        TssPortEndpoint startEndpoint,
+        TssPortEndpoint endEndpoint,
+        TssCableRouteKind kind,
+        out TssCableRouteResult route)
+    {
+        // ponytail: bridge disconnected authored components by nearest reachable anchors;
+        // repair serialized cross-component neighbor links later if the topology is finalized.
+        route = null;
+        if (!TryRackId(startEndpoint.EndpointId, out var rackId)
+            && !TryRackId(endEndpoint.EndpointId, out rackId))
+            return false;
+
+        var rackEndpoint = TryRackId(startEndpoint.EndpointId, out _)
+            ? startEndpoint
+            : endEndpoint;
+        var stationEndpoint = rackEndpoint == startEndpoint ? endEndpoint : startEndpoint;
+        if (!TryStationId(stationEndpoint, out var stationId))
+            return false;
+
+        var rackEntries = EntryCandidates(rackEndpoint);
+        var stationEntries = EntryCandidates(stationEndpoint);
+        if (rackEntries == null || stationEntries == null)
+            return false;
+
+        RouteSelection best = default;
+        var bestBridgeDistance = float.PositiveInfinity;
+        foreach (var rackEntry in rackEntries)
+        {
+            if (!rackEntry.Node)
+                continue;
+
+            var rackComponent = ReachableNodes(rackEntry.Node);
+            foreach (var stationEntry in stationEntries)
+            {
+                if (!stationEntry.Node)
+                    continue;
+
+                var stationComponent = ReachableNodes(stationEntry.Node);
+                foreach (var rackBridge in rackComponent)
+                {
+                    if (!rackBridge || !MatchesRack(rackBridge, rackId))
+                        continue;
+
+                    foreach (var stationBridge in stationComponent)
+                    {
+                        if (!stationBridge || !MatchesStation(stationBridge, stationId))
+                            continue;
+
+                        var rackPath = ShortestPath(rackEntry.Node, rackBridge);
+                        var stationPath = ShortestPath(stationBridge, stationEntry.Node);
+                        if (rackPath.Count == 0 || stationPath.Count == 0)
+                            continue;
+
+                        var middle = new List<TssCableRouteNode>(rackPath.Count + stationPath.Count);
+                        middle.AddRange(rackPath);
+                        foreach (var stationNode in stationPath)
+                            if (middle.Count == 0 || middle[middle.Count - 1] != stationNode)
+                                middle.Add(stationNode);
+
+                        var startPoint = rackEntry.Point;
+                        var endPoint = stationEntry.Point;
+                        if (rackEndpoint != startEndpoint)
+                        {
+                            middle.Reverse();
+                            startPoint = stationEntry.Point;
+                            endPoint = rackEntry.Point;
+                        }
+
+                        var bridgeDistance = Vector3.Distance(rackBridge.transform.position, stationBridge.transform.position);
+                        var cost = Vector3.Distance(rackEndpoint.CableAnchorPosition, rackEntry.Point)
+                            + Vector3.Distance(stationEndpoint.CableAnchorPosition, stationEntry.Point)
+                            + bridgeDistance
+                            + PathDistance(rackPath, rackEntry.Point, rackBridge.transform.position)
+                            + PathDistance(stationPath, stationBridge.transform.position, stationEntry.Point);
+                        if (!best.IsValid
+                            || bridgeDistance < bestBridgeDistance - 0.0001f
+                            || (Mathf.Abs(bridgeDistance - bestBridgeDistance) <= 0.0001f && cost < best.Cost))
+                        {
+                            bestBridgeDistance = bridgeDistance;
+                            best = new RouteSelection(startPoint, endPoint, middle, cost);
+                        }
+                    }
+                }
+            }
+        }
+
+        if (!best.IsValid)
+            return false;
+
+        var points = BuildGraphRenderPoints(
+            startEndpoint.CableAnchorPosition,
+            endEndpoint.CableAnchorPosition,
+            best);
+        if (points.Length < 2 || points.Any(point => !IsFinite(point)))
+            return false;
+
+        route = TssCableRouteResult.Valid(
+            startEndpoint.EndpointId,
+            endEndpoint.EndpointId,
+            kind,
+            best.Middle.ToArray(),
+            BuildRouteEdges(best.Middle),
+            points);
+        return true;
+    }
+
+    private static List<TssCableRouteNode> ReachableNodes(TssCableRouteNode origin)
+    {
+        var result = new List<TssCableRouteNode>();
+        if (!origin)
+            return result;
+
+        var pending = new Queue<TssCableRouteNode>();
+        var seen = new HashSet<TssCableRouteNode>();
+        pending.Enqueue(origin);
+        seen.Add(origin);
+        while (pending.Count > 0)
+        {
+            var node = pending.Dequeue();
+            result.Add(node);
+            foreach (var neighbor in node.neighbors ?? System.Array.Empty<TssCableRouteNode>())
+            {
+                if (neighbor && seen.Add(neighbor))
+                    pending.Enqueue(neighbor);
+            }
+        }
+
+        return result;
     }
 
     private static bool IsNonNearestEntry(RouteEntryContext context, RouteEntryContext[] candidates, Vector3 point)

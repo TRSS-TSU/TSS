@@ -108,6 +108,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
     private EquipmentCaseStation _openCase;
     private object _activeMenuOwner;
     private Action<string> _namePromptConfirmed;
+    private Action _namePromptCancelled;
     private Action<string> _renameConfirmed;
     private Action _pickupConfirmed;
     private Action _accessComputerConfirmed;
@@ -260,6 +261,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (owner != null && _activeMenuOwner != owner)
             return;
 
+        var onNamePromptCancelled = _namePromptCancelled;
+
         if (_casePanel)
             _casePanel.SetActive(false);
         if (animateModalPanels)
@@ -275,10 +278,12 @@ public sealed class TssRuntimeUi : MonoBehaviour
         _openCase = null;
         _activeMenuOwner = null;
         _namePromptConfirmed = null;
+        _namePromptCancelled = null;
         _renameConfirmed = null;
         _pickupConfirmed = null;
         _accessComputerConfirmed = null;
         ApplyGameplayInputLock(IsAnyGameplayMenuOpen());
+        onNamePromptCancelled?.Invoke();
     }
 
     public void PushExternalGameplayLock(object owner)
@@ -701,12 +706,14 @@ public sealed class TssRuntimeUi : MonoBehaviour
         string title,
         string initialValue,
         Action<string> onConfirm,
-        object owner = null
+        object owner = null,
+        Action onCancel = null
     )
     {
         CloseActiveMenu(null, false);
         _activeMenuOwner = owner;
         _namePromptConfirmed = onConfirm;
+        _namePromptCancelled = onCancel;
         if (_namePromptTitle)
             _namePromptTitle.text = title;
         if (_namePromptInput)
@@ -1885,16 +1892,25 @@ private void RefreshSopPanel()
     private void ConfirmNamePrompt()
     {
         var onConfirm = _namePromptConfirmed;
-        HideNamePrompt();
+        HideNamePrompt(false);
         onConfirm?.Invoke(_namePromptInput ? _namePromptInput.text : string.Empty);
     }
 
     private void HideNamePrompt()
     {
+        HideNamePrompt(true);
+    }
+
+    private void HideNamePrompt(bool cancelled)
+    {
+        var onCancel = _namePromptCancelled;
         BeginHideNamePrompt();
         _namePromptConfirmed = null;
+        _namePromptCancelled = null;
         ClearOwner(_activeMenuOwner);
         ApplyGameplayInputLock(IsAnyGameplayMenuOpen());
+        if (cancelled)
+            onCancel?.Invoke();
     }
 
     private void BeginHideNamePrompt()

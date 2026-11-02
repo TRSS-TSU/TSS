@@ -1269,6 +1269,72 @@ public sealed class TssDeviceSessionTests
     }
 
     [Test]
+    public void RackSelectionLocksTheMountedUAndCancelReleasesIt()
+    {
+        var sessionObject = new GameObject("RackSession");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        var rackObject = new GameObject("Rack");
+        var rack = rackObject.AddComponent<RackMountController>();
+        var uiObject = new GameObject("RuntimeUi");
+        var ui = uiObject.AddComponent<TssRuntimeUi>();
+        var namePanel = new GameObject("NamePromptPanel");
+        var title = new GameObject("Title").AddComponent<Text>();
+        var prefab = new GameObject("Test Router Prefab");
+        var port = new GameObject("Fa01");
+        port.transform.SetParent(prefab.transform);
+        var equipment = ScriptableObject.CreateInstance<EquipmentDefinition>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+
+        try
+        {
+            equipment.displayName = "Test Router";
+            equipment.category = EquipmentCategory.Router;
+            equipment.rackUnits = 2;
+            equipment.rackPrefab = prefab;
+            equipment.interfaces = new[] { new EquipmentInterface { name = "Fa01", portAnchorPath = "Fa01" } };
+            scenario.inventory = new[] { new ScenarioInventoryItem { equipment = equipment, quantity = 2 } };
+            session.BeginScenario(scenario);
+
+            SetPrivateField(ui, "_namePromptPanel", namePanel);
+            SetPrivateField(ui, "_namePromptTitle", title);
+
+            Assert.IsTrue(session.TryCheckout(equipment, out var checkoutMessage), checkoutMessage);
+            rack.ClickU(10);
+            Assert.AreEqual(10, GetPrivateField<int>(rack, "_selectedU"));
+            Assert.AreEqual("Name Test Router — Rack01 U10", title.text);
+
+            InvokePrivate(ui, "ConfirmNamePrompt");
+
+            Assert.AreEqual(10, session.Installed.Single().StartingU);
+            Assert.IsFalse(rack.CanInstall(equipment, 10));
+            Assert.IsFalse(rack.CanInstall(equipment, 11));
+            var mountedPort = GameObject.Find("Test Router U10").GetComponentInChildren<TssPortEndpoint>();
+            Assert.AreEqual("Rack:Rack01:U10:Fa01", mountedPort.EndpointId);
+
+            Assert.IsTrue(session.TryCheckout(equipment, out checkoutMessage), checkoutMessage);
+            namePanel.SetActive(false);
+            rack.ClickU(12);
+            Assert.AreEqual(12, GetPrivateField<int>(rack, "_selectedU"));
+            InvokePrivate(ui, "HideNamePrompt");
+
+            Assert.AreEqual(0, GetPrivateField<int>(rack, "_selectedU"));
+            Assert.AreEqual(1, session.Installed.Count);
+            Assert.AreSame(equipment, session.HeldItem);
+        }
+        finally
+        {
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(equipment);
+            Object.DestroyImmediate(prefab);
+            Object.DestroyImmediate(namePanel);
+            Object.DestroyImmediate(title.gameObject);
+            Object.DestroyImmediate(uiObject);
+            Object.DestroyImmediate(rackObject);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
     public void PreinstalledCableTraysExistInBothRacks()
     {
         var r1Tray = GameObject.Find("TSS Level/60 Network Devices/Racks/Rack 01/Runtime Installed Equipment/RackCableTray U30-U31");
@@ -1290,5 +1356,20 @@ public sealed class TssDeviceSessionTests
             Assert.IsFalse(command.Contains("|"), command);
             Assert.IsFalse(command.StartsWith("no ", StringComparison.OrdinalIgnoreCase), command);
         }
+    }
+
+    private static void InvokePrivate(object target, string methodName)
+    {
+        target.GetType().GetMethod(methodName, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(target, null);
+    }
+
+    private static void SetPrivateField(object target, string fieldName, object value)
+    {
+        target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic).SetValue(target, value);
+    }
+
+    private static T GetPrivateField<T>(object target, string fieldName)
+    {
+        return (T)target.GetType().GetField(fieldName, BindingFlags.Instance | BindingFlags.NonPublic).GetValue(target);
     }
 }

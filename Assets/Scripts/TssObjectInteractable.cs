@@ -61,6 +61,7 @@ public sealed class TssObjectInteractable : MonoBehaviour
     private float _previousOrthographicSize;
     private float _previousNearClipPlane;
     private float _previousFarClipPlane;
+    private bool _returnNotificationSent;
 
     private void Awake()
     {
@@ -122,6 +123,7 @@ public sealed class TssObjectInteractable : MonoBehaviour
 
     private void OnDisable()
     {
+        var shouldNotifyReturn = _isFirstPerson || _transition != null;
         if (_transition != null)
             StopCoroutine(_transition);
 
@@ -136,6 +138,8 @@ public sealed class TssObjectInteractable : MonoBehaviour
         SetCinemachine(true);
         SetPlayerControl(true);
         SetHovered(false);
+        if (shouldNotifyReturn)
+            NotifyReturnedToThirdPerson();
     }
 
     private void OnTriggerEnter(Collider other)
@@ -177,6 +181,7 @@ public sealed class TssObjectInteractable : MonoBehaviour
         var target = firstPersonView ? firstPersonView : transform;
         _activeInteractable = this;
         _isFirstPerson = true;
+        _returnNotificationSent = false;
         _thirdPersonPosition = mainCamera.transform.position;
         _thirdPersonRotation = mainCamera.transform.rotation;
         _thirdPersonFieldOfView = mainCamera.fieldOfView;
@@ -212,7 +217,7 @@ public sealed class TssObjectInteractable : MonoBehaviour
         {
             SetCinemachine(true);
             SetPlayerControl(true);
-            ReturnedToThirdPerson?.Invoke();
+            NotifyReturnedToThirdPerson();
         });
     }
 
@@ -226,6 +231,7 @@ public sealed class TssObjectInteractable : MonoBehaviour
 
     private void ReleaseFirstPersonForHandoff()
     {
+        var shouldNotifyReturn = _isFirstPerson || _transition != null;
         if (_transition != null)
             StopCoroutine(_transition);
 
@@ -234,6 +240,8 @@ public sealed class TssObjectInteractable : MonoBehaviour
         RestoreRackCameraMode();
         HideCanvas();
         SetHovered(false);
+        if (shouldNotifyReturn)
+            NotifyReturnedToThirdPerson();
     }
 
     private void StartMove(Vector3 position, Quaternion rotation, float fieldOfView, System.Action after = null)
@@ -330,6 +338,9 @@ public sealed class TssObjectInteractable : MonoBehaviour
 
     private void ShowCanvas()
     {
+        if (GetComponent<TssTerminationEntryAdapter>())
+            return;
+
         if (!canvasPrefab && TssDeviceSessionController.Instance)
             canvasPrefab = TssDeviceSessionController.Instance.GetControlsPrefabFor(gameObject);
 
@@ -340,6 +351,15 @@ public sealed class TssObjectInteractable : MonoBehaviour
         var button = _canvasInstance.GetComponentInChildren<Button>(true);
         if (button)
             button.onClick.AddListener(ReturnToThirdPerson);
+    }
+
+    private void NotifyReturnedToThirdPerson()
+    {
+        if (_returnNotificationSent)
+            return;
+
+        _returnNotificationSent = true;
+        ReturnedToThirdPerson?.Invoke();
     }
 
     private void HideCanvas()
