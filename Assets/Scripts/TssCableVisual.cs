@@ -4,6 +4,9 @@ using UnityEngine;
 
 public sealed class TssCableVisual : MonoBehaviour
 {
+    private static readonly int BaseColorProperty = Shader.PropertyToID("_BaseColor");
+    private static readonly int ColorProperty = Shader.PropertyToID("_Color");
+
     public static TssCableVisualMode RendererMode { get; set; } = TssCableVisualMode.RoundedTube;
     public static CableVisualSettings Settings { get; } = CableVisualSettings.Defaults();
 
@@ -101,6 +104,7 @@ public sealed class TssCableVisual : MonoBehaviour
             endpointA.CableAnchorPosition,
             endpointA.CableConnectorRotation(routePoints[1] - routePoints[0]),
             endpointA.CableConnectorScale(cable.radiusMeters),
+            cable.visualMaterial,
             "Start Connector"
         );
         _endConnector = CreateEndpointConnector(
@@ -108,6 +112,7 @@ public sealed class TssCableVisual : MonoBehaviour
             endpointB.CableAnchorPosition,
             endpointB.CableConnectorRotation(routePoints[routePoints.Length - 2] - routePoints[routePoints.Length - 1]),
             endpointB.CableConnectorScale(cable.radiusMeters),
+            cable.visualMaterial,
             "End Connector"
         );
     }
@@ -117,6 +122,7 @@ public sealed class TssCableVisual : MonoBehaviour
         Vector3 position,
         Quaternion rotation,
         Vector3 scale,
+        Material cableMaterial,
         string label
     )
     {
@@ -128,9 +134,56 @@ public sealed class TssCableVisual : MonoBehaviour
         );
         connector.name = label;
         connector.transform.localScale = scale;
+        ApplyCableColorToSphere(connector, cableMaterial);
         foreach (var collider in connector.GetComponentsInChildren<Collider>(true))
             collider.enabled = false;
         return connector;
+    }
+
+    private static void ApplyCableColorToSphere(GameObject connector, Material cableMaterial)
+    {
+        if (!connector || !cableMaterial)
+            return;
+
+        var color = CableDisplayColor(cableMaterial);
+        if (!color.HasValue)
+            return;
+
+        foreach (var renderer in connector.GetComponentsInChildren<Renderer>(true))
+        {
+            if (!renderer || renderer.gameObject.name != "Sphere")
+                continue;
+
+            var block = new MaterialPropertyBlock();
+            renderer.GetPropertyBlock(block);
+            if (renderer.sharedMaterial && renderer.sharedMaterial.HasProperty(BaseColorProperty))
+                block.SetColor(BaseColorProperty, color.Value);
+            else if (renderer.sharedMaterial && renderer.sharedMaterial.HasProperty(ColorProperty))
+                block.SetColor(ColorProperty, color.Value);
+            renderer.SetPropertyBlock(block);
+        }
+    }
+
+    private static Color? CableDisplayColor(Material cableMaterial)
+    {
+        // ponytail: cable textures carry the visible hue, so use their stable material family name.
+        var materialName = cableMaterial.name;
+        if (materialName.IndexOf("orange", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            return new Color(0.95f, 0.34f, 0.03f, 1f);
+        if (materialName.IndexOf("blue", System.StringComparison.OrdinalIgnoreCase) >= 0)
+            return new Color(0.05f, 0.25f, 0.85f, 1f);
+        if (
+            materialName.IndexOf("teal", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+            materialName.IndexOf("green", System.StringComparison.OrdinalIgnoreCase) >= 0 ||
+            materialName.IndexOf("cyan", System.StringComparison.OrdinalIgnoreCase) >= 0
+        )
+            return new Color(0f, 0.55f, 0.4f, 1f);
+
+        if (cableMaterial.HasProperty(BaseColorProperty))
+            return cableMaterial.GetColor(BaseColorProperty);
+        if (cableMaterial.HasProperty(ColorProperty))
+            return cableMaterial.GetColor(ColorProperty);
+        return null;
     }
 
     private bool BuildRounded(
