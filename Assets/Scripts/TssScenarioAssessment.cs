@@ -49,7 +49,7 @@ public static class TssScenarioAssessmentCoordinator
         var evaluator = new TssNetworkWorkPackageEvaluator(session.NetworkState);
         var result = workPackage switch
         {
-            2 => evaluator.EvaluateLayer2(),
+            2 => evaluator.EvaluateLayer2(false),
             3 => evaluator.EvaluateLayer3(false),
             _ => evaluator.EvaluateLayer4(false)
         };

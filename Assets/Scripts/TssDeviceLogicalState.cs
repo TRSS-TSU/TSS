@@ -4,8 +4,6 @@ using UnityEngine;
 
 public sealed class TssDeviceLogicalState
 {
-    private static readonly Dictionary<string, TssDeviceLogicalState> Cache = new();
-
     public string DeviceKey { get; }
     public string DeviceName { get; set; }
     public EquipmentCategory Category { get; }
@@ -157,24 +155,6 @@ public sealed class TssDeviceLogicalState
 
             Interfaces.Add(rec);
         }
-    }
-
-    public static TssDeviceLogicalState GetOrCreate(string deviceKey, EquipmentCategory category, string deviceName)
-    {
-        if (string.IsNullOrWhiteSpace(deviceKey))
-            deviceKey = $"{category}_{deviceName}";
-
-        if (!Cache.TryGetValue(deviceKey, out var state))
-        {
-            state = new TssDeviceLogicalState(deviceKey, category, deviceName);
-            Cache[deviceKey] = state;
-        }
-        else if (!string.IsNullOrWhiteSpace(deviceName))
-        {
-            state.DeviceName = deviceName.Trim();
-        }
-
-        return state;
     }
 
     private static string GenerateMac(string seed)

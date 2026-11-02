@@ -187,7 +187,7 @@ public sealed class TssDeviceSessionController : MonoBehaviour
                 Root = rackTarget.gameObject,
                 DeviceName = !string.IsNullOrWhiteSpace(devName) ? devName : $"{rackId} U{u}",
                 Category = cat,
-                Key = $"{rackId}_U{u}",
+                Key = TssTrainingSession.GetRackOwnerPrefix(rackId, u),
                 Rack = rackTarget.Rack,
                 StartingU = u,
                 Equipment = eq

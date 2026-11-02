@@ -21,6 +21,9 @@ public sealed class TssTrainingSession : MonoBehaviour
     private readonly Dictionary<string, TssTerminationModuleState> _terminationStates = new();
     private readonly Dictionary<string, bool> _terminationResults = new();
     private readonly CableLaneAllocator _cableLaneAllocator = new();
+    private List<TssPhysicalPathRecord> _effectivePhysicalPathsCache;
+    private HashSet<string> _effectiveEndpointCache;
+    private bool _effectivePhysicalPathsCacheValid;
     private GameObject _carryVisual;
     private TssPortEndpoint _selectedCableEndpoint;
     private int _nextConnectionNumber = 1;
@@ -114,12 +117,9 @@ public sealed class TssTrainingSession : MonoBehaviour
 
     public void NotifyNetworkStateChanged()
     {
-        var effectiveEndpoints = new HashSet<string>();
-        foreach (var path in GetEffectivePhysicalPaths())
-        {
-            effectiveEndpoints.Add(path.EndpointAId);
-            effectiveEndpoints.Add(path.EndpointBId);
-        }
+        InvalidateEffectivePhysicalPathsCache();
+        EnsureEffectivePhysicalPathsCache();
+        var effectiveEndpoints = _effectiveEndpointCache;
 
         RefreshInterfaceCarriers(effectiveEndpoints);
         RefreshPlacedDesktopConnectivity(effectiveEndpoints);
@@ -552,6 +552,7 @@ public sealed class TssTrainingSession : MonoBehaviour
             endpoint.EndpointId,
             visual ? visual.gameObject : null);
         _physicalConnections.Add(record);
+        InvalidateEffectivePhysicalPathsCache();
         HeldCable = null;
         _selectedCableEndpoint = null;
         ClearCarryVisual();
@@ -582,6 +583,15 @@ public sealed class TssTrainingSession : MonoBehaviour
 
     public List<TssPhysicalPathRecord> GetEffectivePhysicalPaths()
     {
+        EnsureEffectivePhysicalPathsCache();
+        return new List<TssPhysicalPathRecord>(_effectivePhysicalPathsCache);
+    }
+
+    private void EnsureEffectivePhysicalPathsCache()
+    {
+        if (_effectivePhysicalPathsCacheValid)
+            return;
+
         var endpoints = FindObjectsByType<TssPortEndpoint>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         var validConnections = new List<TssPhysicalConnectionRecord>();
         foreach (var connection in _physicalConnections)
@@ -625,7 +635,20 @@ public sealed class TssTrainingSession : MonoBehaviour
             }
         }
 
-        return paths;
+        _effectivePhysicalPathsCache = paths;
+        _effectiveEndpointCache = new HashSet<string>();
+        foreach (var path in paths)
+        {
+            _effectiveEndpointCache.Add(path.EndpointAId);
+            _effectiveEndpointCache.Add(path.EndpointBId);
+        }
+
+        _effectivePhysicalPathsCacheValid = true;
+    }
+
+    private void InvalidateEffectivePhysicalPathsCache()
+    {
+        _effectivePhysicalPathsCacheValid = false;
     }
 
     public bool IsEndpointOnEffectivePhysicalPath(string endpointId)
@@ -633,13 +656,8 @@ public sealed class TssTrainingSession : MonoBehaviour
         if (string.IsNullOrWhiteSpace(endpointId))
             return false;
 
-        foreach (var path in GetEffectivePhysicalPaths())
-        {
-            if (path.EndpointAId == endpointId || path.EndpointBId == endpointId)
-                return true;
-        }
-
-        return false;
+        EnsureEffectivePhysicalPathsCache();
+        return _effectiveEndpointCache.Contains(endpointId);
     }
 
     public bool IsAccessPointUplinkConnected()
@@ -663,7 +681,7 @@ public sealed class TssTrainingSession : MonoBehaviour
                     foreach (var iface in device.Interfaces.Values)
                         if (iface != null && iface.AdminUp && iface.CarrierUp
                             && !string.IsNullOrWhiteSpace(iface.EndpointId)
-                            && HasPhysicalPath(endpoint.EndpointId, iface.EndpointId, true))
+                            && HasCachedEffectivePath(endpoint.EndpointId, iface.EndpointId))
                             return true;
                 }
             }
@@ -692,7 +710,15 @@ public sealed class TssTrainingSession : MonoBehaviour
     public bool IsProviderDemarcConnected(string routerEndpointId)
     {
         return !string.IsNullOrWhiteSpace(routerEndpointId)
-            && HasPhysicalPath(routerEndpointId, ProviderDemarcEndpointId, true);
+            && HasCachedEffectivePath(routerEndpointId, ProviderDemarcEndpointId);
+    }
+
+    private bool HasCachedEffectivePath(string endpointAId, string endpointBId)
+    {
+        EnsureEffectivePhysicalPathsCache();
+        return _effectivePhysicalPathsCache.Any(path =>
+            (path.EndpointAId == endpointAId && path.EndpointBId == endpointBId)
+            || (path.EndpointAId == endpointBId && path.EndpointBId == endpointAId));
     }
 
     public bool IsCableTypeCorrect(TssPhysicalConnectionRecord connection)
@@ -932,6 +958,7 @@ public sealed class TssTrainingSession : MonoBehaviour
             }
 
             _physicalConnections.RemoveAt(i);
+            InvalidateEffectivePhysicalPathsCache();
             message = $"Disconnected {endpointId}";
             NotifyNetworkStateChanged();
             return true;
@@ -950,6 +977,7 @@ public sealed class TssTrainingSession : MonoBehaviour
         }
 
         _physicalConnections.Clear();
+        InvalidateEffectivePhysicalPathsCache();
         _cableLaneAllocator.Clear();
     }
 
@@ -995,7 +1023,10 @@ public sealed class TssTrainingSession : MonoBehaviour
         {
             var connection = _physicalConnections[i];
             if (connection.IsPermanent && Clean(connection.ConnectionId) == Clean(connectionId))
+            {
                 _physicalConnections.RemoveAt(i);
+                InvalidateEffectivePhysicalPathsCache();
+            }
         }
 
         if (!link.requiresPunchDownTermination || IsPermanentLinkTerminated(link))
@@ -1023,6 +1054,7 @@ public sealed class TssTrainingSession : MonoBehaviour
             wallportId,
             null,
             true));
+        InvalidateEffectivePhysicalPathsCache();
     }
 
     private bool IsPermanentLinkTerminated(ScenarioPermanentCableConnection link)

@@ -42,6 +42,83 @@ public sealed class TssScenarioResultsTests
     }
 
     [Test]
+    public void ResultsAssessmentUsesLiveEvaluationForWp2()
+    {
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig
+        {
+            enableLayer23Simulation = true,
+            requiredPorts = new[]
+            {
+                new NetworkRequiredPort { deviceRole = "AN-1", interfaceName = "Fa0/2", endpointId = "IT1" },
+                new NetworkRequiredPort { deviceRole = "AN-2", interfaceName = "Fa0/2", endpointId = "Data1" }
+            }
+        };
+        var sessionObject = new GameObject("LiveAssessmentSession");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        session.BeginScenario(scenario, "STUDENT-1");
+
+        try
+        {
+            ConfigureCompleteLayer2State(session.NetworkState);
+            var evaluator = new TssNetworkWorkPackageEvaluator(session.NetworkState);
+            foreach (var device in session.NetworkState.Devices)
+            {
+                device.ManagementAddress = session.NetworkState.Profile.ManagementNetwork + ".2";
+                device.ManagementMask = "255.255.255.0";
+                device.Svis[1] = new NetworkInterfaceState
+                {
+                    Name = "Vlan1",
+                    AdminUp = true,
+                    Address = device.ManagementAddress,
+                    Mask = device.ManagementMask
+                };
+                device.StartupSnapshot = device.Clone();
+            }
+            var saved = evaluator.EvaluateLayer2();
+            Assert.IsTrue(saved.Complete, string.Join("\n", saved.UnmetConditions));
+
+            session.NetworkState.Devices.First().Hostname = "BROKEN";
+            var assessment = TssScenarioAssessmentCoordinator.Assess(session);
+
+            Assert.IsFalse(assessment.WorkPackages[1].IsComplete);
+            Assert.IsTrue(assessment.WorkPackages[1].UnmetCriteria.Count > 0);
+        }
+        finally
+        {
+            Object.DestroyImmediate(sessionObject);
+            Object.DestroyImmediate(scenario);
+        }
+    }
+
+    [Test]
+    public void ResultsAssessmentUsesLiveEvaluationForAllNetworkWorkPackages()
+    {
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        var sessionObject = new GameObject("AllLiveAssessmentSession");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        session.BeginScenario(scenario, "STUDENT-1");
+
+        try
+        {
+            session.NetworkState.SaveCompletionSnapshot("WP2");
+            session.NetworkState.SaveCompletionSnapshot("WP3");
+            session.NetworkState.SaveCompletionSnapshot("WP4");
+            var assessment = TssScenarioAssessmentCoordinator.Assess(session);
+
+            Assert.IsFalse(assessment.WorkPackages[1].IsComplete);
+            Assert.IsFalse(assessment.WorkPackages[2].IsComplete);
+            Assert.IsFalse(assessment.WorkPackages[3].IsComplete);
+        }
+        finally
+        {
+            Object.DestroyImmediate(sessionObject);
+            Object.DestroyImmediate(scenario);
+        }
+    }
+
+    [Test]
     public void MissingNetworkStateMakesAssessmentIncomplete()
     {
         var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();

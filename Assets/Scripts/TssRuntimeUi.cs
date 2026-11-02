@@ -29,6 +29,9 @@ public sealed class TssRuntimeUi : MonoBehaviour
     [SerializeField]
     private bool enableDebugValidationPanel;
 
+    [SerializeField]
+    private bool enableDeveloperAutomation;
+
     [Header("UI Prefabs")]
     [SerializeField]
     private GameObject runtimeCanvasPrefab;
@@ -537,7 +540,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
     private void BuildDeveloperPanel()
     {
-        if (!_hudRoot || _developerPanel)
+        if (!enableDeveloperAutomation || !_hudRoot || _developerPanel)
             return;
 
         _developerPanel = new GameObject("DeveloperAutomationPanel", typeof(RectTransform), typeof(Image));
@@ -555,7 +558,31 @@ public sealed class TssRuntimeUi : MonoBehaviour
         CreateDeveloperButton("ConnectAllButton", "CONNECT ALL CABLES", new Vector2(310f, -58f), () => RunDeveloperAction("Cables", new TssScenarioAutomation(session).ConnectAllCables));
         CreateDeveloperButton("TerminateAllButton", "TERMINATE ALL", new Vector2(20f, -112f), () => RunDeveloperAction("Terminations", new TssScenarioAutomation(session).TerminateAll));
         CreateDeveloperButton("RunAllButton", "RUN ALL", new Vector2(310f, -112f), () => RunDeveloperAction("Run all", new TssScenarioAutomation(session).RunAll));
-        _developerOutput = CreateDeveloperText("Output", string.Empty, new Vector2(20f, -168f), new Vector2(580f, 145f), 15, new Color(0.88f, 0.94f, 0.88f, 1f));
+        CreateDeveloperButton("OwnershipButton", "OWNERSHIP", new Vector2(20f, -166f), RunOwnershipDiagnostic);
+        _developerOutput = CreateDeveloperText("Output", string.Empty, new Vector2(20f, -220f), new Vector2(580f, 115f), 15, new Color(0.88f, 0.94f, 0.88f, 1f));
+    }
+
+    private void RunOwnershipDiagnostic()
+    {
+        if (!session || session.NetworkState == null)
+        {
+            _developerStatus = "No network state found.";
+            RefreshDeveloperPanel();
+            return;
+        }
+
+        var bindings = session.Scenario?.networkScenario?.roleBindings ?? Array.Empty<NetworkRoleBinding>();
+        var builder = new StringBuilder("DEVICE OWNERSHIP\n");
+        foreach (var device in session.NetworkState.Devices.OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            var binding = bindings.FirstOrDefault(x => x != null
+                && (string.Equals(x.deviceKey, device.Key, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(x.role, device.ExpectedRole, StringComparison.OrdinalIgnoreCase)));
+            builder.AppendLine($"{device.Key} | ExpectedRole={device.ExpectedRole} | Binding={binding?.role ?? "-"} | {(binding != null ? "MATCH" : "ORPHANED")}");
+        }
+
+        _developerStatus = builder.ToString().TrimEnd();
+        RefreshDeveloperPanel();
     }
 
     private Text CreateDeveloperText(string objectName, string value, Vector2 position, Vector2 size, int fontSize, Color color)

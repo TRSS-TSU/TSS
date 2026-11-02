@@ -1264,6 +1264,28 @@ public sealed class TssDeviceSessionTests
     }
 
     [Test]
+    public void RackInstalledTargetUsesCanonicalOwnerKey()
+    {
+        var rackObject = new GameObject("Rack");
+        var targetObject = new GameObject("RackTarget");
+        var rack = rackObject.AddComponent<RackMountController>();
+        var target = targetObject.AddComponent<RackInstalledEquipmentTarget>();
+        var controller = targetObject.AddComponent<TssDeviceSessionController>();
+        target.Initialize(rack, 12);
+
+        try
+        {
+            var context = controller.ResolveContext(targetObject);
+            Assert.AreEqual(TssTrainingSession.GetRackOwnerPrefix("Rack01", 12), context.Key);
+        }
+        finally
+        {
+            Object.DestroyImmediate(targetObject);
+            Object.DestroyImmediate(rackObject);
+        }
+    }
+
+    [Test]
     public void PreinstalledCableTraysExistInBothRacks()
     {
         var r1Tray = GameObject.Find("TSS Level/60 Network Devices/Racks/Rack 01/Runtime Installed Equipment/RackCableTray U30-U31");
