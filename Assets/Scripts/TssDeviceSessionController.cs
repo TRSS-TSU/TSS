@@ -274,9 +274,7 @@ public sealed class TssDeviceSessionController : MonoBehaviour
                 if (!device.Interfaces.TryGetValue(name, out var iface))
                     device.Interfaces[name] = iface = new NetworkInterfaceState { Name = name, AdminUp = ctx.Category == EquipmentCategory.Switch };
                 iface.EndpointId = endpoint.EndpointId;
-                iface.CarrierUp = ctx.Category == EquipmentCategory.Router && name == "Fa0/1"
-                    ? TssTrainingSession.Instance.IsProviderDemarcConnected(endpoint.EndpointId)
-                    : TssTrainingSession.Instance.IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId);
+                iface.CarrierUp = TssTrainingSession.Instance.IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId);
             }
             network.SetProviderDemarcConnected(ProviderDemarcConnected(network, TssTrainingSession.Instance));
             state = TssDeviceLogicalState.FromNetwork(device, TssTrainingSession.Instance);

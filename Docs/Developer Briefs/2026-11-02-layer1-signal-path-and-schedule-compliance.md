@@ -56,15 +56,30 @@ signal-path predicate that:
 2. Includes a permanent punch-down run only after both ends have valid
    terminations.
 3. Rejects rollover cables for Ethernet signaling.
-4. Evaluates crossover parity over the complete path between the two active
-   Ethernet interfaces, rather than judging each patch cord against a schedule
-   row.
-5. Applies the current MVP device rule: switch-to-switch and router-to-router
-   require an odd crossover parity; switch-to-router requires an even parity.
+4. Accumulates crossover parity over the complete path between the two active
+   Ethernet interfaces — counting every crossover segment, player cords and
+   permanent runs alike — rather than judging each patch cord against a
+   schedule row.
+5. Applies the MDI/MDI-X device rule to the accumulated parity, classifying
+   switches as MDI-X and routers, hosts (desktop PCs), and access points as
+   MDI. A valid Ethernet path requires **even** crossover parity when exactly
+   one endpoint is a switch (unlike faces, e.g. switch-to-router or
+   switch-to-PC) and **odd** parity otherwise (like faces, e.g.
+   switch-to-switch or router-to-router).
 
 This matches the passive nature of patch panels. For example, a crossover cord
 on one side of a straight-through permanent run and straight-through cord on
 the other side produces a crossover end-to-end switch-to-switch connection.
+
+The device classification in rule 5 is not optional scope. This predicate
+replaces `IsCableTypeCorrect(...)` as the filter for the **entire**
+effective-path cache, not only the inter-closet switch link. Desktop runs
+(PC → wallport → permanent run → patch panel → switch) are built by the same
+code and pass today. If the rule omits the host and access-point categories,
+those currently-correct paths lose carrier — a regression against the
+acceptance criterion that existing correct-schedule paths remain unchanged.
+Endpoint device category is available from `networkScenario.roleBindings`
+(role → category → device key) resolved through the endpoint owner prefix.
 
 ## Implementation scope
 
@@ -73,11 +88,24 @@ the other side produces a crossover end-to-end switch-to-switch connection.
 - Preserve `IsCableTypeCorrect(...)` as schedule validation.
 - Build effective physical paths from signal-valid connections instead of
   schedule-valid connections.
+- Add a parity-aware path traversal. The current `HasPhysicalPath(...)` BFS is
+  boolean and carries only `(endpoint, usedPermanent)` state; it does not
+  accumulate cable type and has no rollover handling. The signal-path predicate
+  needs to accumulate crossover parity along the traversed path, reject
+  `Rollover` edges, and resolve which path's parity applies when more than one
+  path connects two leaves (extend the search key with parity, or return the
+  path). This is new traversal logic, not a change to the existing filter call.
+- Look up the device category at each leaf endpoint to apply the MDI/MDI-X rule
+  (rule 5 above).
 - Keep termination gating in `ApplyPermanentConnections()` and
   `ReconcilePermanentConnection()`; no scenario format change is needed.
 - Set generic interface carrier from the signal-path result.
 - Retain `IsProviderDemarcConnected(...)` as the WAN/service authority, rather
-  than using it to suppress physical carrier on router `Fa0/1`.
+  than using it to suppress physical carrier on router `Fa0/1`. Note this is a
+  deliberate scope boundary: `IsProviderDemarcConnected(...)` continues to
+  filter through `IsCableTypeCorrect(...)`, so the wrong-port-but-electrically-
+  valid tolerance introduced here does **not** extend to the router `Fa0/1`
+  demarc path. Service availability remains schedule-coupled by design.
 
 ### `Assets/Scripts/TssDeviceSessionController.cs`
 
@@ -101,6 +129,10 @@ coverage:
 3. Either failed Port 48 termination prevents carrier.
 4. A physically valid but administratively shut interface retains the physical
    path while Layer 2/3 remains unavailable.
+5. A desktop host-to-switch run (unlike faces, even parity, e.g. a
+   straight-through cord into a straight-through permanent run) continues to
+   report carrier. This guards against the host and access-point categories
+   being dropped from the MDI/MDI-X rule and regressing paths that pass today.
 
 ## Behavioral boundary
 
@@ -125,7 +157,10 @@ feedback for shutdown ports, VLAN/trunk errors, and WAN configuration.
 
 ## Rollback
 
-The change is localized to signal-path filtering and carrier assignment. Restore
-the current schedule-bound filter in `TssTrainingSession` and the current
-controller carrier assignment to return to existing behavior; no serialized
-data, scenario JSON, or scene binding changes are involved.
+Behavioral rollback is clean because no serialized data, scenario JSON, or
+scene binding changes are involved: restoring the schedule-bound filter in
+`TssTrainingSession` and the current controller carrier assignment returns the
+simulator to existing behavior. Note, however, that this reverts the new
+parity-aware traversal and leaf-category lookup, not merely a one-line filter
+swap — the added code is larger than a filter substitution even though its
+data footprint is zero.

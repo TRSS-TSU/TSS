@@ -172,9 +172,7 @@ public sealed class TssTrainingSession : MonoBehaviour
                 continue;
             if (string.IsNullOrWhiteSpace(iface.EndpointId)) continue;
 
-            iface.CarrierUp = device.Category == EquipmentCategory.Router && iface.Name == "Fa0/1"
-                ? IsProviderDemarcConnected(iface.EndpointId)
-                : effectiveEndpoints.Contains(iface.EndpointId);
+            iface.CarrierUp = effectiveEndpoints.Contains(iface.EndpointId);
         }
 
         foreach (var device in NetworkState.Devices)
@@ -595,12 +593,6 @@ public sealed class TssTrainingSession : MonoBehaviour
         if (_effectivePhysicalPathsCacheValid)
             return;
 
-        var endpoints = FindObjectsByType<TssPortEndpoint>(FindObjectsInactive.Include, FindObjectsSortMode.None);
-        var validConnections = new List<TssPhysicalConnectionRecord>();
-        foreach (var connection in _physicalConnections)
-            if (IsCableTypeCorrect(connection, endpoints))
-                validConnections.Add(connection);
-
         var permanentEndpoints = new HashSet<string>();
         var playerEndpoints = new HashSet<string>();
         foreach (var connection in _physicalConnections)
@@ -631,9 +623,9 @@ public sealed class TssTrainingSession : MonoBehaviour
         {
             for (var j = i + 1; j < leaves.Count; j++)
             {
-                // ponytail: direct device-to-device player cables are effective without a permanent segment.
-                if (HasPhysicalPath(leaves[i], leaves[j], true, validConnections)
-                    || HasConnection(validConnections, leaves[i], leaves[j]))
+                // ponytail: schedule compliance remains separate from Layer-1 signal viability.
+                if (HasSignalPath(leaves[i], leaves[j], true)
+                    || HasDirectSignalConnection(leaves[i], leaves[j]))
                     paths.Add(new TssPhysicalPathRecord(leaves[i], leaves[j]));
             }
         }
@@ -652,6 +644,86 @@ public sealed class TssTrainingSession : MonoBehaviour
     private void InvalidateEffectivePhysicalPathsCache()
     {
         _effectivePhysicalPathsCacheValid = false;
+    }
+
+    private bool HasDirectSignalConnection(string endpointAId, string endpointBId)
+    {
+        foreach (var connection in _physicalConnections)
+        {
+            if (connection.IsPermanent
+                || connection.CableType == TssCableType.Rollover
+                || !EndpointPairMatches(connection.EndpointAId, connection.EndpointBId, endpointAId, endpointBId))
+                continue;
+
+            return HasSignalParity(endpointAId, endpointBId, connection.CableType == TssCableType.Crossover);
+        }
+
+        return false;
+    }
+
+    private bool HasSignalPath(string endpointAId, string endpointBId, bool requirePermanent)
+    {
+        if (string.IsNullOrWhiteSpace(endpointAId) || string.IsNullOrWhiteSpace(endpointBId) || endpointAId == endpointBId)
+            return false;
+
+        var seen = new HashSet<string>();
+        var queue = new Queue<TssSignalPathSearchNode>();
+        queue.Enqueue(new TssSignalPathSearchNode(endpointAId, false, false));
+        seen.Add($"{endpointAId}|False|False");
+
+        while (queue.Count > 0)
+        {
+            var node = queue.Dequeue();
+            foreach (var connection in _physicalConnections)
+            {
+                if (connection.CableType == TssCableType.Rollover)
+                    continue;
+
+                var other = ConnectedOtherEndpoint(connection, node.EndpointId);
+                if (string.IsNullOrEmpty(other))
+                    continue;
+
+                var usedPermanent = node.UsedPermanent || connection.IsPermanent;
+                var crossoverParity = node.CrossoverParity ^ (connection.CableType == TssCableType.Crossover);
+                if (other == endpointBId && (!requirePermanent || usedPermanent) && HasSignalParity(endpointAId, endpointBId, crossoverParity))
+                    return true;
+
+                var key = $"{other}|{usedPermanent}|{crossoverParity}";
+                if (seen.Add(key))
+                    queue.Enqueue(new TssSignalPathSearchNode(other, usedPermanent, crossoverParity));
+            }
+        }
+
+        return false;
+    }
+
+    private bool HasSignalParity(string endpointAId, string endpointBId, bool crossoverParity)
+    {
+        // Switch ports are MDI-X; router, host, AP, and unknown endpoints are MDI.
+        return crossoverParity == (IsSwitchEndpoint(endpointAId) == IsSwitchEndpoint(endpointBId));
+    }
+
+    private bool IsSwitchEndpoint(string endpointId)
+    {
+        if (string.IsNullOrWhiteSpace(endpointId))
+            return false;
+
+        foreach (var device in NetworkState?.Devices ?? Array.Empty<NetworkDeviceState>())
+            if (device.Category == EquipmentCategory.Switch
+                && device.Interfaces.Values.Any(iface => string.Equals(iface.EndpointId, endpointId, StringComparison.OrdinalIgnoreCase)))
+                return true;
+
+        foreach (var binding in Scenario?.networkScenario?.roleBindings ?? Array.Empty<NetworkRoleBinding>())
+            if (binding != null && binding.category == EquipmentCategory.Switch
+                && endpointId.StartsWith(binding.deviceKey + ":", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+        foreach (var installed in _installed)
+            if (installed.Equipment && installed.Equipment.category == EquipmentCategory.Switch
+                && endpointId.StartsWith(GetRackOwnerPrefix(installed.RackId, installed.StartingU) + ":", StringComparison.OrdinalIgnoreCase))
+                return true;
+
+        return false;
     }
 
     public bool IsEndpointOnEffectivePhysicalPath(string endpointId)
@@ -1401,6 +1473,20 @@ public sealed class TssTrainingSession : MonoBehaviour
         {
             EndpointId = endpointId;
             UsedPermanent = usedPermanent;
+        }
+    }
+
+    private readonly struct TssSignalPathSearchNode
+    {
+        public readonly string EndpointId;
+        public readonly bool UsedPermanent;
+        public readonly bool CrossoverParity;
+
+        public TssSignalPathSearchNode(string endpointId, bool usedPermanent, bool crossoverParity)
+        {
+            EndpointId = endpointId;
+            UsedPermanent = usedPermanent;
+            CrossoverParity = crossoverParity;
         }
     }
 }
