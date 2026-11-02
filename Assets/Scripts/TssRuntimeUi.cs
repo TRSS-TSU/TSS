@@ -122,7 +122,16 @@ public sealed class TssRuntimeUi : MonoBehaviour
     private static readonly int SpeedHash = Animator.StringToHash("Speed");
     private static readonly int MotionSpeedHash = Animator.StringToHash("MotionSpeed");
     private static readonly string[] HudInfoNames = { "Cables", "Permanent", "Effective" };
-    private static readonly string[] BinderTabTitles = { "Naming & Racks", "VLANs", "IP Plan", "Cable Schedule", "Circuit Letter", "Wireless", "Credentials" };
+    private static readonly string[] BinderTabTitles =
+    {
+        "Naming & Racks",
+        "VLANs",
+        "IP Plan",
+        "Cable Schedule",
+        "Circuit Letter",
+        "Wireless",
+        "Credentials",
+    };
     private static readonly Vector2 HudSlidePanelHiddenPosition = new(-1150f, 0f);
     private static readonly Vector2 HudSlidePanelShownPosition = new(20f, 0f);
     private static readonly Vector2 HudRightSlidePanelShownPosition = new(-20f, -101f);
@@ -342,8 +351,12 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 _rackSlotHoverText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
 
             var playerTexts = _hudRoot.GetComponentsInChildren<TMP_Text>(true);
-            _playerNameText = playerTexts.FirstOrDefault(text => text && text.gameObject.name == "PlayerNameText");
-            _playerNumberText = playerTexts.FirstOrDefault(text => text && text.gameObject.name == "PlayerNumberText");
+            _playerNameText = playerTexts.FirstOrDefault(text =>
+                text && text.gameObject.name == "PlayerNameText"
+            );
+            _playerNumberText = playerTexts.FirstOrDefault(text =>
+                text && text.gameObject.name == "PlayerNumberText"
+            );
         }
         var heldTextTransform = rootInstance.transform.Find("HUD/HeldText");
         if (heldTextTransform)
@@ -353,13 +366,17 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
         if (_hudRoot)
         {
-            var cableImageObject = new GameObject("HeldCableSprite", typeof(RectTransform), typeof(Image));
+            var cableImageObject = new GameObject(
+                "HeldCableSprite",
+                typeof(RectTransform),
+                typeof(Image)
+            );
             cableImageObject.transform.SetParent(_hudRoot, false);
             var cableImageRect = (RectTransform)cableImageObject.transform;
             cableImageRect.anchorMin = new Vector2(0f, 1f);
             cableImageRect.anchorMax = new Vector2(0f, 1f);
             cableImageRect.pivot = new Vector2(0f, 1f);
-            cableImageRect.localPosition = new Vector3(-1859.69995f, 958.599976f, 0f);
+            cableImageRect.localPosition = new Vector3(-1860f, 750f, 0f);
             cableImageRect.sizeDelta = new Vector2(44f, 44f);
             cableImageRect.localScale = Vector3.one * 6.66f;
             _heldCableImage = cableImageObject.GetComponent<Image>();
@@ -432,17 +449,23 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 _caseTitleText = titleTransform.GetComponent<Text>();
             _caseItemsContainer = casePanelTransform.Find("ItemsContainer");
 
-            var retBtnTransform = casePanelTransform.Find("Buttons/ReturnHeldButton") ?? casePanelTransform.Find("ReturnHeldButton");
+            var retBtnTransform =
+                casePanelTransform.Find("Buttons/ReturnHeldButton")
+                ?? casePanelTransform.Find("ReturnHeldButton");
             _caseReturnHeldButton = retBtnTransform?.GetComponent<Button>();
             if (_caseReturnHeldButton)
                 _caseReturnHeldButton.onClick.AddListener(CancelHeld);
 
-            var caseCancelBtnTransform = casePanelTransform.Find("Buttons/CancelButton") ?? casePanelTransform.Find("CancelButton");
+            var caseCancelBtnTransform =
+                casePanelTransform.Find("Buttons/CancelButton")
+                ?? casePanelTransform.Find("CancelButton");
             var cancelBtn = caseCancelBtnTransform?.GetComponent<Button>();
             if (cancelBtn)
                 cancelBtn.onClick.AddListener(() => _openCase?.CancelSelection());
 
-            var closeBtnTransform = casePanelTransform.Find("Buttons/CloseButton") ?? casePanelTransform.Find("CloseButton");
+            var closeBtnTransform =
+                casePanelTransform.Find("Buttons/CloseButton")
+                ?? casePanelTransform.Find("CloseButton");
             var closeBtn = closeBtnTransform?.GetComponent<Button>();
             if (closeBtn)
                 closeBtn.onClick.AddListener(() => _openCase?.ClosePanel());
@@ -548,7 +571,11 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (!enableDeveloperAutomation || !_hudRoot || _developerPanel)
             return;
 
-        _developerPanel = new GameObject("DeveloperAutomationPanel", typeof(RectTransform), typeof(Image));
+        _developerPanel = new GameObject(
+            "DeveloperAutomationPanel",
+            typeof(RectTransform),
+            typeof(Image)
+        );
         _developerPanel.transform.SetParent(_hudRoot, false);
         var panelRect = (RectTransform)_developerPanel.transform;
         panelRect.anchorMin = new Vector2(0f, 0f);
@@ -558,13 +585,57 @@ public sealed class TssRuntimeUi : MonoBehaviour
         panelRect.sizeDelta = new Vector2(620f, 330f);
         _developerPanel.GetComponent<Image>().color = new Color(0.06f, 0.08f, 0.07f, 0.96f);
 
-        CreateDeveloperText("Title", "DEVELOPER AUTOMATION", new Vector2(20f, -16f), new Vector2(580f, 34f), 24, new Color(0.95f, 0.65f, 0.18f, 1f));
-        CreateDeveloperButton("PlaceAllButton", "PLACE ALL EQUIPMENT", new Vector2(20f, -58f), () => RunDeveloperAction("Equipment", new TssScenarioAutomation(session).PlaceAllEquipment));
-        CreateDeveloperButton("ConnectAllButton", "CONNECT ALL CABLES", new Vector2(310f, -58f), () => RunDeveloperAction("Cables", new TssScenarioAutomation(session).ConnectAllCables));
-        CreateDeveloperButton("TerminateAllButton", "TERMINATE ALL", new Vector2(20f, -112f), () => RunDeveloperAction("Terminations", new TssScenarioAutomation(session).TerminateAll));
-        CreateDeveloperButton("RunAllButton", "RUN ALL", new Vector2(310f, -112f), () => RunDeveloperAction("Run all", new TssScenarioAutomation(session).RunAll));
-        CreateDeveloperButton("OwnershipButton", "OWNERSHIP", new Vector2(20f, -166f), RunOwnershipDiagnostic);
-        _developerOutput = CreateDeveloperText("Output", string.Empty, new Vector2(20f, -220f), new Vector2(580f, 115f), 15, new Color(0.88f, 0.94f, 0.88f, 1f));
+        CreateDeveloperText(
+            "Title",
+            "DEVELOPER AUTOMATION",
+            new Vector2(20f, -16f),
+            new Vector2(580f, 34f),
+            24,
+            new Color(0.95f, 0.65f, 0.18f, 1f)
+        );
+        CreateDeveloperButton(
+            "PlaceAllButton",
+            "PLACE ALL EQUIPMENT",
+            new Vector2(20f, -58f),
+            () =>
+                RunDeveloperAction(
+                    "Equipment",
+                    new TssScenarioAutomation(session).PlaceAllEquipment
+                )
+        );
+        CreateDeveloperButton(
+            "ConnectAllButton",
+            "CONNECT ALL CABLES",
+            new Vector2(310f, -58f),
+            () => RunDeveloperAction("Cables", new TssScenarioAutomation(session).ConnectAllCables)
+        );
+        CreateDeveloperButton(
+            "TerminateAllButton",
+            "TERMINATE ALL",
+            new Vector2(20f, -112f),
+            () =>
+                RunDeveloperAction("Terminations", new TssScenarioAutomation(session).TerminateAll)
+        );
+        CreateDeveloperButton(
+            "RunAllButton",
+            "RUN ALL",
+            new Vector2(310f, -112f),
+            () => RunDeveloperAction("Run all", new TssScenarioAutomation(session).RunAll)
+        );
+        CreateDeveloperButton(
+            "OwnershipButton",
+            "OWNERSHIP",
+            new Vector2(20f, -166f),
+            RunOwnershipDiagnostic
+        );
+        _developerOutput = CreateDeveloperText(
+            "Output",
+            string.Empty,
+            new Vector2(20f, -220f),
+            new Vector2(580f, 115f),
+            15,
+            new Color(0.88f, 0.94f, 0.88f, 1f)
+        );
     }
 
     private void RunOwnershipDiagnostic()
@@ -576,21 +647,44 @@ public sealed class TssRuntimeUi : MonoBehaviour
             return;
         }
 
-        var bindings = session.Scenario?.networkScenario?.roleBindings ?? Array.Empty<NetworkRoleBinding>();
+        var bindings =
+            session.Scenario?.networkScenario?.roleBindings ?? Array.Empty<NetworkRoleBinding>();
         var builder = new StringBuilder("DEVICE OWNERSHIP\n");
-        foreach (var device in session.NetworkState.Devices.OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase))
+        foreach (
+            var device in session.NetworkState.Devices.OrderBy(
+                x => x.Key,
+                StringComparer.OrdinalIgnoreCase
+            )
+        )
         {
-            var binding = bindings.FirstOrDefault(x => x != null
-                && (string.Equals(x.deviceKey, device.Key, StringComparison.OrdinalIgnoreCase)
-                    || string.Equals(x.role, device.ExpectedRole, StringComparison.OrdinalIgnoreCase)));
-            builder.AppendLine($"{device.Key} | ExpectedRole={device.ExpectedRole} | Binding={binding?.role ?? "-"} | {(binding != null ? "MATCH" : "ORPHANED")}");
+            var binding = bindings.FirstOrDefault(x =>
+                x != null
+                && (
+                    string.Equals(x.deviceKey, device.Key, StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(
+                        x.role,
+                        device.ExpectedRole,
+                        StringComparison.OrdinalIgnoreCase
+                    )
+                )
+            );
+            builder.AppendLine(
+                $"{device.Key} | ExpectedRole={device.ExpectedRole} | Binding={binding?.role ?? "-"} | {(binding != null ? "MATCH" : "ORPHANED")}"
+            );
         }
 
         _developerStatus = builder.ToString().TrimEnd();
         RefreshDeveloperPanel();
     }
 
-    private Text CreateDeveloperText(string objectName, string value, Vector2 position, Vector2 size, int fontSize, Color color)
+    private Text CreateDeveloperText(
+        string objectName,
+        string value,
+        Vector2 position,
+        Vector2 size,
+        int fontSize,
+        Color color
+    )
     {
         var go = new GameObject(objectName, typeof(RectTransform), typeof(Text));
         go.transform.SetParent(_developerPanel.transform, false);
@@ -611,7 +705,12 @@ public sealed class TssRuntimeUi : MonoBehaviour
         return text;
     }
 
-    private void CreateDeveloperButton(string objectName, string label, Vector2 position, UnityEngine.Events.UnityAction action)
+    private void CreateDeveloperButton(
+        string objectName,
+        string label,
+        Vector2 position,
+        UnityEngine.Events.UnityAction action
+    )
     {
         var go = new GameObject(objectName, typeof(RectTransform), typeof(Image), typeof(Button));
         go.transform.SetParent(_developerPanel.transform, false);
@@ -624,7 +723,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
         go.GetComponent<Image>().color = new Color(0.15f, 0.34f, 0.22f, 1f);
         var button = go.GetComponent<Button>();
         button.onClick.AddListener(action);
-        CreateDeveloperText(label, label, Vector2.zero, rect.sizeDelta, 15, Color.white).transform.SetParent(go.transform, false);
+        CreateDeveloperText(label, label, Vector2.zero, rect.sizeDelta, 15, Color.white)
+            .transform.SetParent(go.transform, false);
         var text = go.transform.Find(label)?.GetComponent<Text>();
         if (text)
         {
@@ -663,7 +763,10 @@ public sealed class TssRuntimeUi : MonoBehaviour
         var studentId = session.StudentId ?? string.Empty;
         var separator = studentId.LastIndexOf('-');
         var playerName = separator > 0 ? studentId.Substring(0, separator) : studentId;
-        var playerNumber = separator >= 0 && separator < studentId.Length - 1 ? studentId.Substring(separator + 1) : string.Empty;
+        var playerNumber =
+            separator >= 0 && separator < studentId.Length - 1
+                ? studentId.Substring(separator + 1)
+                : string.Empty;
 
         if (_playerNameText)
             _playerNameText.text = playerName;
@@ -741,7 +844,17 @@ public sealed class TssRuntimeUi : MonoBehaviour
         Action onInspect = null
     )
     {
-        ShowEndpointMenu(title, true, true, onInspect != null, onRename, onPickup, onInspect, null, currentName);
+        ShowEndpointMenu(
+            title,
+            true,
+            true,
+            onInspect != null,
+            onRename,
+            onPickup,
+            onInspect,
+            null,
+            currentName
+        );
     }
 
     public void ShowEndpointMenu(
@@ -987,7 +1100,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
         var canvas = panel.GetComponent<Canvas>() ?? panel.AddComponent<Canvas>();
         canvas.overrideSorting = true;
         canvas.sortingOrder = 600;
-        var raycaster = panel.GetComponent<GraphicRaycaster>() ?? panel.AddComponent<GraphicRaycaster>();
+        var raycaster =
+            panel.GetComponent<GraphicRaycaster>() ?? panel.AddComponent<GraphicRaycaster>();
         raycaster.enabled = true;
     }
 
@@ -1028,19 +1142,25 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
     private string HudObjectiveText()
     {
-        var scenarioName = session.Scenario && !string.IsNullOrWhiteSpace(session.Scenario.displayName)
-            ? session.Scenario.displayName
-            : "No scenario";
+        var scenarioName =
+            session.Scenario && !string.IsNullOrWhiteSpace(session.Scenario.displayName)
+                ? session.Scenario.displayName
+                : "No scenario";
 
-        foreach (var status in TssPlacementEvaluator.EvaluateRequirements(
-                     session.Scenario,
-                     session.Installed,
-                     session.EndpointPlacements))
+        foreach (
+            var status in TssPlacementEvaluator.EvaluateRequirements(
+                session.Scenario,
+                session.Installed,
+                session.EndpointPlacements
+            )
+        )
         {
             if (status.IsComplete)
                 continue;
 
-            var phase = string.IsNullOrWhiteSpace(status.PhaseLabel) ? "Placement" : status.PhaseLabel;
+            var phase = string.IsNullOrWhiteSpace(status.PhaseLabel)
+                ? "Placement"
+                : status.PhaseLabel;
             return $"{scenarioName} | {phase}: {status.RequiredName} at {status.Location}";
         }
 
@@ -1068,10 +1188,13 @@ public sealed class TssRuntimeUi : MonoBehaviour
     {
         var completePlacements = 0;
         var totalPlacements = 0;
-        foreach (var status in TssPlacementEvaluator.EvaluateRequirements(
-                     session.Scenario,
-                     session.Installed,
-                     session.EndpointPlacements))
+        foreach (
+            var status in TssPlacementEvaluator.EvaluateRequirements(
+                session.Scenario,
+                session.Installed,
+                session.EndpointPlacements
+            )
+        )
         {
             totalPlacements++;
             if (status.IsComplete)
@@ -1090,9 +1213,10 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
         var requiredTerminations = RequiredTerminationCount();
         var savedTerminations = session.GetTerminationModuleStates().Count;
-        var terminations = requiredTerminations > 0
-            ? $"Terminations {savedTerminations}/{requiredTerminations}"
-            : "Terminations n/a";
+        var terminations =
+            requiredTerminations > 0
+                ? $"Terminations {savedTerminations}/{requiredTerminations}"
+                : "Terminations n/a";
 
         return $"Placement {completePlacements}/{totalPlacements}   Cables {playerCables}   Permanent {permanent}   Effective paths {session.GetEffectivePhysicalPaths().Count}   {terminations}";
     }
@@ -1145,7 +1269,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
             0 => $"Cables {playerCables}",
             1 => $"Permanent {permanent}",
             2 => $"Effective {effectivePaths}",
-            _ => string.Empty
+            _ => string.Empty,
         };
     }
 
@@ -1156,7 +1280,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
             0 => CablePanelText(false),
             1 => PermanentPanelText(),
             2 => EffectivePathPanelText(),
-            _ => string.Empty
+            _ => string.Empty,
         };
     }
 
@@ -1164,10 +1288,13 @@ public sealed class TssRuntimeUi : MonoBehaviour
     {
         completePlacements = 0;
         totalPlacements = 0;
-        foreach (var status in TssPlacementEvaluator.EvaluateRequirements(
-                     session.Scenario,
-                     session.Installed,
-                     session.EndpointPlacements))
+        foreach (
+            var status in TssPlacementEvaluator.EvaluateRequirements(
+                session.Scenario,
+                session.Installed,
+                session.EndpointPlacements
+            )
+        )
         {
             totalPlacements++;
             if (status.IsComplete)
@@ -1195,12 +1322,17 @@ public sealed class TssRuntimeUi : MonoBehaviour
         builder.AppendLine($"Complete: {complete}/{total}");
         builder.AppendLine();
 
-        foreach (var status in TssPlacementEvaluator.EvaluateRequirements(
-                     session.Scenario,
-                     session.Installed,
-                     session.EndpointPlacements))
+        foreach (
+            var status in TssPlacementEvaluator.EvaluateRequirements(
+                session.Scenario,
+                session.Installed,
+                session.EndpointPlacements
+            )
+        )
         {
-            var phase = string.IsNullOrWhiteSpace(status.PhaseLabel) ? "Placement" : status.PhaseLabel;
+            var phase = string.IsNullOrWhiteSpace(status.PhaseLabel)
+                ? "Placement"
+                : status.PhaseLabel;
             builder.Append(status.IsComplete ? "[x] " : "[ ] ");
             builder.Append(phase);
             builder.Append(": ");
@@ -1224,7 +1356,9 @@ public sealed class TssRuntimeUi : MonoBehaviour
         }
 
         if (builder.Length == 0)
-            return permanent ? "No permanent infrastructure connections." : "No player cable connections.";
+            return permanent
+                ? "No permanent infrastructure connections."
+                : "No player cable connections.";
 
         return builder.ToString();
     }
@@ -1239,12 +1373,16 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
         var requiredTerminations = RequiredTerminationCount();
         var states = session.GetTerminationModuleStates();
-        builder.AppendLine(requiredTerminations > 0
-            ? $"{states.Count}/{requiredTerminations} saved"
-            : "No required terminations");
+        builder.AppendLine(
+            requiredTerminations > 0
+                ? $"{states.Count}/{requiredTerminations} saved"
+                : "No required terminations"
+        );
 
         foreach (var state in states)
-            builder.AppendLine($"{TssPhysicalConnectionPanel.EndpointLabel(state.endpointId, session)} - {state.moduleId}");
+            builder.AppendLine(
+                $"{TssPhysicalConnectionPanel.EndpointLabel(state.endpointId, session)} - {state.moduleId}"
+            );
 
         return builder.ToString();
     }
@@ -1281,27 +1419,29 @@ public sealed class TssRuntimeUi : MonoBehaviour
                     "Place the access point at its scenario location",
                     "Land the AP uplink through the patch panel",
                     "Assign the AP switchport to the required VLAN",
-                    "Configure and verify the guest wireless service");
+                    "Configure and verify the guest wireless service"
+                );
 
             return workPackage == 2
                 ? StaticWorkPackageChecklist(
                     "Harden the scenario's access switches",
                     "Build the scenario VLAN databases",
                     "Configure the required access ports and trunks",
-                    "Save both switch configurations")
+                    "Save both switch configurations"
+                )
                 : StaticWorkPackageChecklist(
                     "Harden the scenario router",
                     "Configure inter-VLAN gateways and the provider WAN",
                     "Verify endpoint connectivity to the provider",
-                    "Save the router configuration");
+                    "Save the router configuration"
+                );
         }
 
         var evaluator = new TssNetworkWorkPackageEvaluator(session.NetworkState);
-        var result = workPackage == 2
-            ? evaluator.EvaluateLayer2()
-            : workPackage == 3
-                ? evaluator.EvaluateLayer3()
-                : evaluator.EvaluateLayer4();
+        var result =
+            workPackage == 2 ? evaluator.EvaluateLayer2()
+            : workPackage == 3 ? evaluator.EvaluateLayer3()
+            : evaluator.EvaluateLayer4();
 
         if (workPackage == 2)
             return Layer2ChecklistText(result);
@@ -1316,28 +1456,103 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (workPackage == 3)
         {
             AppendChecklistLine(builder, result, "Harden CN-1", "WP3.Hardening", ref complete);
-            AppendChecklistLine(builder, result, "Configure the scenario's inter-VLAN gateways", "WP3.Subinterfaces", ref complete);
-            AppendChecklistLine(builder, result, "Configure the provider WAN interface", "WP3.Wan", ref complete);
-            AppendChecklistLine(builder, result, "Point the default route at the provider", "WP3.DefaultRoute", ref complete);
-            AppendChecklistLine(builder, result, "Verify required endpoint connectivity", "WP3.EndpointEvidence.", ref complete, prefix: true);
-            AppendChecklistLine(builder, result, "Save the CN-1 configuration", "WP3.Save", ref complete);
+            AppendChecklistLine(
+                builder,
+                result,
+                "Configure the scenario's inter-VLAN gateways",
+                "WP3.Subinterfaces",
+                ref complete
+            );
+            AppendChecklistLine(
+                builder,
+                result,
+                "Configure the provider WAN interface",
+                "WP3.Wan",
+                ref complete
+            );
+            AppendChecklistLine(
+                builder,
+                result,
+                "Point the default route at the provider",
+                "WP3.DefaultRoute",
+                ref complete
+            );
+            AppendChecklistLine(
+                builder,
+                result,
+                "Verify required endpoint connectivity",
+                "WP3.EndpointEvidence.",
+                ref complete,
+                prefix: true
+            );
+            AppendChecklistLine(
+                builder,
+                result,
+                "Save the CN-1 configuration",
+                "WP3.Save",
+                ref complete
+            );
         }
         else
         {
-            AppendChecklistLine(builder, result, "Connect the AP uplink", "WP4.APUplink", ref complete);
-            AppendChecklistLine(builder, result, "Place the AP switchport in the Reception VLAN", "WP4.SwitchPort", ref complete);
-            AppendChecklistLine(builder, result, "Configure the scenario's guest wireless settings", "WP4.APConfig", ref complete);
-            AppendChecklistLine(builder, result, "Associate TestLaptop over Wi-Fi", "WP4.LaptopAssociation", ref complete);
-            AppendChecklistLine(builder, result, "Obtain the TestLaptop DHCP lease", "WP4.Dhcp", ref complete);
-            AppendChecklistLine(builder, result, "Run the required TestLaptop diagnostics", "WP4.Diagnostics", ref complete);
-            AppendChecklistLine(builder, result, "Load the RedWolf page", "WP4.RedWolf", ref complete);
+            AppendChecklistLine(
+                builder,
+                result,
+                "Connect the AP uplink",
+                "WP4.APUplink",
+                ref complete
+            );
+            AppendChecklistLine(
+                builder,
+                result,
+                "Place the AP switchport in the Reception VLAN",
+                "WP4.SwitchPort",
+                ref complete
+            );
+            AppendChecklistLine(
+                builder,
+                result,
+                "Configure the scenario's guest wireless settings",
+                "WP4.APConfig",
+                ref complete
+            );
+            AppendChecklistLine(
+                builder,
+                result,
+                "Associate TestLaptop over Wi-Fi",
+                "WP4.LaptopAssociation",
+                ref complete
+            );
+            AppendChecklistLine(
+                builder,
+                result,
+                "Obtain the TestLaptop DHCP lease",
+                "WP4.Dhcp",
+                ref complete
+            );
+            AppendChecklistLine(
+                builder,
+                result,
+                "Run the required TestLaptop diagnostics",
+                "WP4.Diagnostics",
+                ref complete
+            );
+            AppendChecklistLine(
+                builder,
+                result,
+                "Load the RedWolf page",
+                "WP4.RedWolf",
+                ref complete
+            );
         }
 
         var text = builder.ToString();
         var titleEnd = text.IndexOf('\n');
         var checklist = titleEnd < 0 ? string.Empty : text.Substring(titleEnd + 1);
         var firstLineEnd = checklist.IndexOf('\n');
-        return firstLineEnd < 0 ? text : $"{TssWorkPackageTitles.Get(workPackage)}\nComplete: {complete}/{total}{checklist.Substring(firstLineEnd)}";
+        return firstLineEnd < 0
+            ? text
+            : $"{TssWorkPackageTitles.Get(workPackage)}\nComplete: {complete}/{total}{checklist.Substring(firstLineEnd)}";
     }
 
     private static string Layer2ChecklistText(TssWorkPackageResult result)
@@ -1379,31 +1594,67 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (result.Conditions.Any(x => x.Id.StartsWith("WP1.Placement.")))
         {
             total++;
-            AppendChecklistLine(builder, result, "Place all required rack and endpoint equipment", "WP1.Placement.", ref complete, prefix: true);
+            AppendChecklistLine(
+                builder,
+                result,
+                "Place all required rack and endpoint equipment",
+                "WP1.Placement.",
+                ref complete,
+                prefix: true
+            );
         }
         if (result.Conditions.Any(x => x.Id.StartsWith("WP1.CableTypes.")))
         {
             total++;
-            AppendChecklistLine(builder, result, "Install all required player cable runs with the specified types", "WP1.CableTypes.", ref complete, prefix: true);
+            AppendChecklistLine(
+                builder,
+                result,
+                "Install all required player cable runs with the specified types",
+                "WP1.CableTypes.",
+                ref complete,
+                prefix: true
+            );
         }
         if (result.Conditions.Any(x => x.Id.StartsWith("WP1.PermanentConnections.")))
         {
             total++;
-            AppendChecklistLine(builder, result, "Complete all permanent infrastructure connections", "WP1.PermanentConnections.", ref complete, prefix: true);
+            AppendChecklistLine(
+                builder,
+                result,
+                "Complete all permanent infrastructure connections",
+                "WP1.PermanentConnections.",
+                ref complete,
+                prefix: true
+            );
         }
         if (result.Conditions.Any(x => x.Id == "WP1.Terminations"))
         {
             total++;
-            AppendChecklistLine(builder, result, "Terminate every required permanent run", "WP1.Terminations", ref complete);
+            AppendChecklistLine(
+                builder,
+                result,
+                "Terminate every required permanent run",
+                "WP1.Terminations",
+                ref complete
+            );
         }
         var text = builder.ToString();
         var titleEnd = text.IndexOf('\n');
         var checklist = titleEnd < 0 ? string.Empty : text.Substring(titleEnd + 1);
         var firstLineEnd = checklist.IndexOf('\n');
-        return firstLineEnd < 0 ? text : $"{TssWorkPackageTitles.Get(1)}\nComplete: {complete}/{total}{checklist.Substring(firstLineEnd)}";
+        return firstLineEnd < 0
+            ? text
+            : $"{TssWorkPackageTitles.Get(1)}\nComplete: {complete}/{total}{checklist.Substring(firstLineEnd)}";
     }
 
-    private static void AppendChecklistLine(StringBuilder builder, TssWorkPackageResult result, string label, string id, ref int complete, params string[] additionalIds)
+    private static void AppendChecklistLine(
+        StringBuilder builder,
+        TssWorkPackageResult result,
+        string label,
+        string id,
+        ref int complete,
+        params string[] additionalIds
+    )
     {
         var isComplete = IsChecklistItemComplete(result, id);
         foreach (var additionalId in additionalIds)
@@ -1416,7 +1667,14 @@ public sealed class TssRuntimeUi : MonoBehaviour
         builder.AppendLine();
     }
 
-    private static void AppendChecklistLine(StringBuilder builder, TssWorkPackageResult result, string label, string id, ref int complete, bool prefix)
+    private static void AppendChecklistLine(
+        StringBuilder builder,
+        TssWorkPackageResult result,
+        string label,
+        string id,
+        ref int complete,
+        bool prefix
+    )
     {
         var isComplete = IsChecklistItemComplete(result, id, prefix);
         if (isComplete)
@@ -1433,7 +1691,11 @@ public sealed class TssRuntimeUi : MonoBehaviour
         builder.AppendLine();
     }
 
-    private static bool IsChecklistItemComplete(TssWorkPackageResult result, string id, bool prefix = false)
+    private static bool IsChecklistItemComplete(
+        TssWorkPackageResult result,
+        string id,
+        bool prefix = false
+    )
     {
         if (result == null)
             return false;
@@ -1456,14 +1718,9 @@ public sealed class TssRuntimeUi : MonoBehaviour
         return count;
     }
 
-private void RefreshSopPanel()
+    private void RefreshSopPanel()
     {
-        if (
-            !_sopPanel
-            || !session
-            || !session.Scenario
-            || !_sopContentContainer
-        )
+        if (!_sopPanel || !session || !session.Scenario || !_sopContentContainer)
             return;
 
         var profile = session.NetworkProfile;
@@ -1494,7 +1751,10 @@ private void RefreshSopPanel()
 
         while (_sopContentContainer.childCount < sectionCount)
         {
-            var row = Instantiate(_sopContentContainer.GetChild(0).gameObject, _sopContentContainer);
+            var row = Instantiate(
+                _sopContentContainer.GetChild(0).gameObject,
+                _sopContentContainer
+            );
             row.name = "SectionRow" + _sopContentContainer.childCount.ToString("00");
         }
 
@@ -1536,14 +1796,23 @@ private void RefreshSopPanel()
             var ipPlanTab = row.GetComponent<TssIpPlanTabPresenter>();
             if (hasBinder && i == 2 && ipPlanTab)
             {
-                ipPlanTab.SetValues(session.Scenario.scenarioId, profile, session.Scenario.binderReference?.ipPlan);
+                ipPlanTab.SetValues(
+                    session.Scenario.scenarioId,
+                    profile,
+                    session.Scenario.binderReference?.ipPlan
+                );
                 continue;
             }
 
             var cableScheduleTab = row.GetComponent<TssCableScheduleTabPresenter>();
             if (hasBinder && i == 3 && cableScheduleTab)
             {
-                cableScheduleTab.SetValues(session.Scenario.scenarioId, profile, session.Scenario.cableSchedule, session.Scenario.binderReference?.cableSchedule);
+                cableScheduleTab.SetValues(
+                    session.Scenario.scenarioId,
+                    profile,
+                    session.Scenario.cableSchedule,
+                    session.Scenario.binderReference?.cableSchedule
+                );
                 continue;
             }
 
@@ -1554,7 +1823,6 @@ private void RefreshSopPanel()
                 continue;
             }
 
-
             var bodyText = row.Find("SectionBody")?.GetComponent<Text>();
             if (bodyText)
             {
@@ -1564,7 +1832,11 @@ private void RefreshSopPanel()
         }
     }
 
-    private static void ApplyBinderReferenceText(Transform row, int index, TssBinderReferenceContent content)
+    private static void ApplyBinderReferenceText(
+        Transform row,
+        int index,
+        TssBinderReferenceContent content
+    )
     {
         if (!row || content == null)
             return;
@@ -1578,7 +1850,7 @@ private void RefreshSopPanel()
             4 => content.circuitLetter?.sectionTitle,
             5 => content.wireless?.sectionTitle,
             6 => content.credentials?.sectionTitle,
-            _ => string.Empty
+            _ => string.Empty,
         };
         if (!string.IsNullOrWhiteSpace(configuredSectionTitle))
         {
@@ -1587,7 +1859,11 @@ private void RefreshSopPanel()
                 sectionTitle.text = configuredSectionTitle;
         }
 
-        if (index == 2 && content.ipPlan != null && !string.IsNullOrWhiteSpace(content.ipPlan.hostAddressesHeading))
+        if (
+            index == 2
+            && content.ipPlan != null
+            && !string.IsNullOrWhiteSpace(content.ipPlan.hostAddressesHeading)
+        )
         {
             var hostHeading = row.Find("HostAddressesHeading")?.GetComponent<Text>();
             if (hostHeading)
@@ -1600,7 +1876,7 @@ private void RefreshSopPanel()
             1 => content.vlans?.intro,
             2 => content.ipPlan?.paragraph,
             3 => content.cableSchedule?.introParagraph,
-            _ => string.Empty
+            _ => string.Empty,
         };
         if (string.IsNullOrWhiteSpace(intro))
             return;
@@ -1659,9 +1935,27 @@ private void RefreshSopPanel()
                     + $"RECEPTION / VLAN {profile.ReceptionVlan}\nNetwork {profile.ReceptionNetwork}.0/24 | gateway {profile.ReceptionNetwork}.1\n"
                     + $"DATA / VLAN {profile.DataVlan}\nNetwork {profile.DataNetwork}.0/24 | gateway {profile.DataNetwork}.1\n\n"
                     + "ENDPOINT ADDRESSES\n"
-                    + string.Join("  ", new[] { "IT1", "IT2" }.Select(key => key + " " + profile.EndpointAddresses[key])) + "\n"
-                    + string.Join("  ", new[] { "Reception1", "Reception2" }.Select(key => key + " " + profile.EndpointAddresses[key])) + "\n"
-                    + string.Join("  ", new[] { "Data1", "Data2", "Data3" }.Select(key => key + " " + profile.EndpointAddresses[key])) + "\n"
+                    + string.Join(
+                        "  ",
+                        new[] { "IT1", "IT2" }.Select(key =>
+                            key + " " + profile.EndpointAddresses[key]
+                        )
+                    )
+                    + "\n"
+                    + string.Join(
+                        "  ",
+                        new[] { "Reception1", "Reception2" }.Select(key =>
+                            key + " " + profile.EndpointAddresses[key]
+                        )
+                    )
+                    + "\n"
+                    + string.Join(
+                        "  ",
+                        new[] { "Data1", "Data2", "Data3" }.Select(key =>
+                            key + " " + profile.EndpointAddresses[key]
+                        )
+                    )
+                    + "\n"
                     + $"AP-1 {profile.ApManagementAddress} | TestLaptop {profile.TestLaptopAddress} (DHCP)\n\n"
                     + "CN-1: Fa0/0.<VLAN> subinterfaces use dot1q and the matching gateway above.";
             case 3:
@@ -1696,7 +1990,8 @@ private void RefreshSopPanel()
         }
     }
 
-    private static string BinderHeading(string title) => $"<color=#E69529><b>{title.ToUpperInvariant()}</b></color>\n\n";
+    private static string BinderHeading(string title) =>
+        $"<color=#E69529><b>{title.ToUpperInvariant()}</b></color>\n\n";
 
     private string SopBody(SopSection section)
     {
@@ -1721,11 +2016,11 @@ private void RefreshSopPanel()
         var tabsRect = _sopTabsContainer as RectTransform;
         var tabContainerWidth = tabsRect ? tabsRect.rect.width : 0f;
         if (tabContainerWidth <= 0f && tabsRect?.parent is RectTransform parentRect)
-            tabContainerWidth = parentRect.rect.width + (tabsRect.sizeDelta.x < 0f ? tabsRect.sizeDelta.x : 0f);
+            tabContainerWidth =
+                parentRect.rect.width + (tabsRect.sizeDelta.x < 0f ? tabsRect.sizeDelta.x : 0f);
 
-        var tabWidth = sectionCount > 0 && tabContainerWidth > 0f
-            ? tabContainerWidth / sectionCount
-            : 78f;
+        var tabWidth =
+            sectionCount > 0 && tabContainerWidth > 0f ? tabContainerWidth / sectionCount : 78f;
         for (var i = 0; i < _sopTabsContainer.childCount; i++)
         {
             var tab = _sopTabsContainer.GetChild(i);
@@ -1827,7 +2122,10 @@ private void RefreshSopPanel()
             if (!rect)
                 continue;
 
-            var target = i == _activeHudSlidePanel ? HudSlidePanelShownPosition : HudSlidePanelHiddenPosition;
+            var target =
+                i == _activeHudSlidePanel
+                    ? HudSlidePanelShownPosition
+                    : HudSlidePanelHiddenPosition;
             rect.anchoredPosition = SmoothSlidePosition(rect.anchoredPosition, target);
         }
 
@@ -1853,9 +2151,7 @@ private void RefreshSopPanel()
         if (!rect)
             return;
 
-        var target = closing
-            ? new Vector2(ModalTravelDistance(rect), 0f)
-            : Vector2.zero;
+        var target = closing ? new Vector2(ModalTravelDistance(rect), 0f) : Vector2.zero;
         var step = ModalTravelDistance(rect) / ModalSlideDuration * Time.unscaledDeltaTime;
         rect.anchoredPosition = Vector2.MoveTowards(rect.anchoredPosition, target, step);
 
@@ -1873,7 +2169,9 @@ private void RefreshSopPanel()
         if (!rect)
             return;
 
-        var target = shown ? HudRightSlidePanelShownPosition : new Vector2(rect.rect.width + 60f, -101f);
+        var target = shown
+            ? HudRightSlidePanelShownPosition
+            : new Vector2(rect.rect.width + 60f, -101f);
         rect.anchoredPosition = SmoothSlidePosition(rect.anchoredPosition, target);
     }
 
