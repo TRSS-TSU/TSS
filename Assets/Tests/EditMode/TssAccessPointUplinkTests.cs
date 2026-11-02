@@ -30,8 +30,18 @@ public sealed class TssAccessPointUplinkTests
 
         var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
         scenario.permanentConnections = permanent;
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
         session.BeginScenario(scenario);
         Assert.AreEqual(4, session.PhysicalConnections.Count);
+        var accessSwitch = session.NetworkState.GetOrCreateDevice("Rack:Rack01:U35", EquipmentCategory.Switch, "AN-1");
+        accessSwitch.ExpectedRole = "AN-1";
+        accessSwitch.Interfaces["Fa0/7"] = new NetworkInterfaceState
+        {
+            Name = "Fa0/7",
+            EndpointId = switchport.EndpointId,
+            AdminUp = true,
+            CarrierUp = true
+        };
         Placements(session).Add(new EndpointPlacementRecord(
             "APPlacement", "ReceptionDesk", Equipment(EquipmentCategory.AccessPoint), "AP-1"));
 
@@ -42,21 +52,25 @@ public sealed class TssAccessPointUplinkTests
                 ClearPlayerConnections(session);
                 PlayerConnections(session).Add(Connection(ap, walls[port]));
                 PlayerConnections(session).Add(Connection(panels[port], switchport));
+                session.NotifyNetworkStateChanged();
                 Assert.IsTrue(session.IsAccessPointUplinkConnected(), $"Port {port + 1} should connect");
             }
 
             ClearPlayerConnections(session);
             PlayerConnections(session).Add(Connection(ap, walls[0]));
             PlayerConnections(session).Add(Connection(panels[1], switchport));
+            session.NotifyNetworkStateChanged();
             Assert.IsFalse(session.IsAccessPointUplinkConnected());
 
             ClearPlayerConnections(session);
             PlayerConnections(session).Add(Connection(ap, walls[0]));
+            session.NotifyNetworkStateChanged();
             Assert.IsFalse(session.IsAccessPointUplinkConnected());
 
             ClearPlayerConnections(session);
             PlayerConnections(session).Add(Connection(ap, walls[0], TssCableType.Crossover));
             PlayerConnections(session).Add(Connection(panels[0], switchport));
+            session.NotifyNetworkStateChanged();
             Assert.IsFalse(session.IsAccessPointUplinkConnected());
         }
         finally

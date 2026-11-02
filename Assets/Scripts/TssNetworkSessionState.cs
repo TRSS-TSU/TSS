@@ -154,8 +154,6 @@ public sealed class TssNetworkSessionState
     private readonly Dictionary<string, NetworkDeviceState> _devices = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, EndpointNetworkState> _endpoints = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, TssNetworkSessionSnapshot> _checkpoints = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, TssNetworkCompletionSnapshot> _completionSnapshots = new(StringComparer.OrdinalIgnoreCase);
-    private int _completionOrder;
     public readonly HashSet<string> Evidence = new(StringComparer.OrdinalIgnoreCase);
     public TssNetworkRunProfile Profile { get; }
     public TssWirelessAccessPointState AccessPoint { get; } = new();
@@ -163,7 +161,6 @@ public sealed class TssNetworkSessionState
     public IEnumerable<NetworkDeviceState> Devices => _devices.Values;
     public IEnumerable<EndpointNetworkState> Endpoints => _endpoints.Values;
     public IReadOnlyDictionary<string, TssNetworkSessionSnapshot> Checkpoints => _checkpoints;
-    public IReadOnlyDictionary<string, TssNetworkCompletionSnapshot> CompletionSnapshots => _completionSnapshots;
     public TssNetworkSessionState(TssNetworkRunProfile profile) { Profile = profile; }
     public NetworkDeviceState GetOrCreateDevice(string key, EquipmentCategory category, string displayName)
     {
@@ -459,7 +456,7 @@ public sealed class TssNetworkSessionState
     }
     public void RemoveDevice(string key) { if (!string.IsNullOrWhiteSpace(key)) _devices.Remove(key); }
     public void RemoveEndpoint(string key) { if (!string.IsNullOrWhiteSpace(key)) _endpoints.Remove(key); }
-    public void Clear() { _devices.Clear(); _endpoints.Clear(); Evidence.Clear(); _checkpoints.Clear(); _completionSnapshots.Clear(); _completionOrder = 0; }
+    public void Clear() { _devices.Clear(); _endpoints.Clear(); Evidence.Clear(); _checkpoints.Clear(); }
     public bool TryPrintTestPage(string printerKey, string sourceKey, out TssReachabilityResult result)
     {
         if (!TryGetEndpoint(printerKey, out var printer))
@@ -512,26 +509,6 @@ public sealed class TssNetworkSessionState
         _checkpoints[name] = new TssNetworkSessionSnapshot(this);
     }
 
-    public TssNetworkCompletionSnapshot SaveCompletionSnapshot(string workPackage)
-    {
-        if (string.IsNullOrWhiteSpace(workPackage)) return null;
-        if (_completionSnapshots.TryGetValue(workPackage, out var existing)) return existing;
-        var snapshot = new TssNetworkCompletionSnapshot(workPackage, Profile?.Seed ?? 0, ++_completionOrder, this);
-        _completionSnapshots[workPackage] = snapshot;
-        return snapshot;
-    }
-}
-
-public sealed class TssNetworkCompletionSnapshot
-{
-    public readonly string WorkPackage;
-    public readonly int ProfileSeed;
-    public readonly int CompletionOrder;
-    public readonly TssNetworkSessionSnapshot State;
-    public TssNetworkCompletionSnapshot(string workPackage, int profileSeed, int completionOrder, TssNetworkSessionState state)
-    {
-        WorkPackage = workPackage; ProfileSeed = profileSeed; CompletionOrder = completionOrder; State = new TssNetworkSessionSnapshot(state);
-    }
 }
 
 public sealed class TssNetworkSessionSnapshot

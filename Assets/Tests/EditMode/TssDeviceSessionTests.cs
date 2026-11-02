@@ -604,18 +604,16 @@ public sealed class TssDeviceSessionTests
     }
 
     [Test]
-    public void NetworkResetClearsEvidenceAndCompletionSnapshots()
+    public void NetworkResetClearsEvidenceAndCheckpoints()
     {
         var state = new TssNetworkSessionState(TssNetworkRunProfile.Create(2, new NetworkScenarioConfig()));
         state.Evidence.Add("show vlan brief");
         state.SaveCheckpoint("before");
-        state.SaveCompletionSnapshot("WP2");
 
         state.Clear();
 
         Assert.IsEmpty(state.Evidence);
         Assert.IsEmpty(state.Checkpoints);
-        Assert.IsEmpty(state.CompletionSnapshots);
     }
 
     [Test]
@@ -632,21 +630,6 @@ public sealed class TssDeviceSessionTests
         Assert.IsTrue(result.UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Hardening"));
         StringAssert.DoesNotContain(profile.ManagementVlan.ToString(), string.Join(" ", result.UnmetConditions));
         StringAssert.DoesNotContain(profile.EnableSecret, string.Join(" ", result.UnmetConditions));
-    }
-
-    [Test]
-    public void CompletionSnapshotIsStickyAfterLaterStateChanges()
-    {
-        var state = new TssNetworkSessionState(TssNetworkRunProfile.Create(4, new NetworkScenarioConfig()));
-        var snapshot = state.SaveCompletionSnapshot("WP2");
-        var device = state.GetOrCreateDevice("AN1", EquipmentCategory.Switch, "AN-1");
-        device.Hostname = "AN-1-reused";
-
-        var evaluator = new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2();
-
-        Assert.IsTrue(evaluator.Complete);
-        Assert.AreSame(snapshot, evaluator.CompletionSnapshot);
-        Assert.AreEqual(4, evaluator.CompletionSnapshot.ProfileSeed);
     }
 
     [Test]

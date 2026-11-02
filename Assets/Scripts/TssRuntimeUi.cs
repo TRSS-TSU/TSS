@@ -1291,7 +1291,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
         var evaluator = new TssNetworkWorkPackageEvaluator(session.NetworkState);
         var result = workPackage == 2
-            ? evaluator.EvaluateLayer2(false)
+            ? evaluator.EvaluateLayer2()
             : workPackage == 3
                 ? evaluator.EvaluateLayer3()
                 : evaluator.EvaluateLayer4();

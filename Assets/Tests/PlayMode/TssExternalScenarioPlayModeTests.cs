@@ -89,7 +89,6 @@ public sealed class TssExternalScenarioPlayModeTests
             ConfigureCompleteLayer2State(session.NetworkState);
             var layer2 = new TssNetworkWorkPackageEvaluator(session.NetworkState).EvaluateLayer2();
             Assert.IsTrue(layer2.Complete);
-            Assert.IsNotNull(layer2.CompletionSnapshot);
 
             session.NetworkState.SetAccessPointUplink(true);
             var an1 = session.NetworkState.GetOrCreateDevice("AN1", EquipmentCategory.Switch, "AN-1");

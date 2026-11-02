@@ -29,15 +29,13 @@ public sealed class TssScenarioResultsTests
     }
 
     [Test]
-    public void ExitRecheckIgnoresHistoricalNetworkCompletionSnapshots()
+    public void Layer2EvaluationUsesCurrentState()
     {
         var state = new TssNetworkSessionState(TssNetworkRunProfile.Create(42, new NetworkScenarioConfig()));
-        state.SaveCompletionSnapshot("WP2");
 
-        var result = new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2(false);
+        var result = new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2();
 
         Assert.IsFalse(result.Complete);
-        Assert.IsNull(result.CompletionSnapshot);
         Assert.IsNotEmpty(result.UnmetCategories);
     }
 
@@ -102,9 +100,6 @@ public sealed class TssScenarioResultsTests
 
         try
         {
-            session.NetworkState.SaveCompletionSnapshot("WP2");
-            session.NetworkState.SaveCompletionSnapshot("WP3");
-            session.NetworkState.SaveCompletionSnapshot("WP4");
             var assessment = TssScenarioAssessmentCoordinator.Assess(session);
 
             Assert.IsFalse(assessment.WorkPackages[1].IsComplete);
@@ -182,7 +177,7 @@ public sealed class TssScenarioResultsTests
     public void Layer2DoesNotProducePhysicalCriteria()
     {
         var state = new TssNetworkSessionState(TssNetworkRunProfile.Create(9, new NetworkScenarioConfig()));
-        var result = new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2(false);
+        var result = new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2();
 
         Assert.IsFalse(result.Conditions.Exists(x => x.Id.StartsWith("WP2.CableTypes.") || x.Id == "WP2.Terminations"));
     }
@@ -203,7 +198,7 @@ public sealed class TssScenarioResultsTests
         an1.Interfaces["Fa0/6"] = Trunk("Fa0/6", profile);
         an2.Interfaces["Fa0/1"] = Trunk("Fa0/1", profile);
 
-        var result = new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2(false);
+        var result = new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2();
 
         Assert.IsFalse(result.UnmetCategories.Exists(x => x.Id == "WP2.Access:AN-1:Fa0/2"));
         Assert.IsFalse(result.UnmetCategories.Exists(x => x.Id.StartsWith("WP2.Trunk:", System.StringComparison.Ordinal)));
@@ -214,27 +209,27 @@ public sealed class TssScenarioResultsTests
     {
         var state = CompleteLayer2State(out var an1, out _);
         an1.Hostname = "WRONG-NAME";
-        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2(false).UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Hardening"));
+        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2().UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Hardening"));
 
         an1.Hostname = "AN-1";
         an1.EnablePassword = "legacy-password";
-        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2(false).UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Hardening"));
+        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2().UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Hardening"));
 
         an1.EnablePassword = string.Empty;
         an1.ConsoleLoginRequired = false;
-        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2(false).UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Hardening"));
+        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2().UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Hardening"));
 
         an1.ConsoleLoginRequired = true;
         an1.VtyLoginRequired = false;
-        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2(false).UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Hardening"));
+        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2().UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Hardening"));
 
         an1.VtyLoginRequired = true;
         an1.Vlans[999] = "Unexpected";
-        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2(false).UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Vlans"));
+        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2().UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Vlans"));
 
         an1.Vlans.Remove(999);
         an1.Vlans[state.Profile.ManagementVlan] += " (suspended)";
-        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2(false).UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Vlans"));
+        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2().UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Vlans"));
     }
 
     [Test]
@@ -243,15 +238,15 @@ public sealed class TssScenarioResultsTests
         var state = CompleteLayer2State(out var an1, out _);
         var trunk = an1.Interfaces["Fa0/1"];
         trunk.AllowedVlans.Add(state.Profile.NativeVlan);
-        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2(false).UnmetCategories.Exists(x => x.Id == "WP2.Trunk:AN-1:Fa0/1"));
+        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2().UnmetCategories.Exists(x => x.Id == "WP2.Trunk:AN-1:Fa0/1"));
 
         trunk.AllowedVlans.Remove(state.Profile.NativeVlan);
         trunk.AllowedVlans.Add(state.Profile.DeadVlan);
-        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2(false).UnmetCategories.Exists(x => x.Id == "WP2.Trunk:AN-1:Fa0/1"));
+        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2().UnmetCategories.Exists(x => x.Id == "WP2.Trunk:AN-1:Fa0/1"));
 
         trunk.AllowedVlans.Remove(state.Profile.DeadVlan);
         an1.Interfaces["Fa0/7"].AdminUp = true;
-        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2(false).UnmetCategories.Exists(x => x.Id == "WP2.UnusedPorts:AN-1"));
+        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2().UnmetCategories.Exists(x => x.Id == "WP2.UnusedPorts:AN-1"));
     }
 
     [Test]
@@ -259,7 +254,7 @@ public sealed class TssScenarioResultsTests
     {
         var state = CompleteLayer2State(out _, out _);
         var evaluator = new TssNetworkWorkPackageEvaluator(state);
-        var result = evaluator.EvaluateLayer2(false);
+        var result = evaluator.EvaluateLayer2();
 
         Assert.IsTrue(result.Complete, string.Join("\n", result.UnmetConditions));
         Assert.IsTrue(result.Conditions.Any(x => x.Id == "WP2.Access:AN-1:Fa0/2"));
@@ -272,11 +267,7 @@ public sealed class TssScenarioResultsTests
         Assert.IsFalse(result.Conditions.Any(x => x.Id.StartsWith("WP2.CableTypes.") || x.Id == "WP2.Terminations"));
 
         state.Devices.SelectMany(device => device.Interfaces.Values).ToList().ForEach(port => port.CarrierUp = true);
-        Assert.IsTrue(evaluator.EvaluateLayer2(false).Complete, "Live carrier changes must not invalidate the saved Layer 2 configuration.");
-
-        var completion = evaluator.EvaluateLayer2();
-        Assert.IsNotNull(completion.CompletionSnapshot);
-        CollectionAssert.AreEquivalent(new[] { "WP2" }, state.CompletionSnapshots.Keys);
+        Assert.IsTrue(evaluator.EvaluateLayer2().Complete, "Live carrier changes must not invalidate Layer 2 configuration.");
     }
 
     [Test]
@@ -326,7 +317,7 @@ public sealed class TssScenarioResultsTests
     }
 
     [Test]
-    public void ResultsKeepsIncompleteWp2LiveWhenNoCompletionSnapshotExists()
+    public void ResultsKeepsIncompleteWp2Live()
     {
         var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
         scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
@@ -338,10 +329,42 @@ public sealed class TssScenarioResultsTests
         {
             var assessment = TssScenarioAssessmentCoordinator.Assess(session);
             Assert.IsFalse(assessment.WorkPackages[1].IsComplete);
-            Assert.IsFalse(session.NetworkState.CompletionSnapshots.ContainsKey("WP2"));
         }
         finally
         {
+            Object.DestroyImmediate(sessionObject);
+            Object.DestroyImmediate(scenario);
+        }
+    }
+
+    [Test]
+    public void HudAndResultsReportCurrentWp3AndWp4State()
+    {
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        var sessionObject = new GameObject("HudLiveAssessmentSession");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        var uiObject = new GameObject("HudLiveAssessmentUi");
+        var ui = uiObject.AddComponent<TssRuntimeUi>();
+        typeof(TssRuntimeUi).GetField("session", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)
+            .SetValue(ui, session);
+        var checklist = typeof(TssRuntimeUi).GetMethod("WorkPackageChecklistText", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+        try
+        {
+            session.BeginScenario(scenario, "STUDENT-1");
+            var wp3Hud = (string)checklist.Invoke(ui, new object[] { 3 });
+            var wp4Hud = (string)checklist.Invoke(ui, new object[] { 4 });
+            var assessment = TssScenarioAssessmentCoordinator.Assess(session);
+
+            StringAssert.Contains("Complete: 0/6", wp3Hud);
+            StringAssert.Contains("Complete: 0/7", wp4Hud);
+            Assert.IsFalse(assessment.WorkPackages[2].IsComplete);
+            Assert.IsFalse(assessment.WorkPackages[3].IsComplete);
+        }
+        finally
+        {
+            Object.DestroyImmediate(uiObject);
             Object.DestroyImmediate(sessionObject);
             Object.DestroyImmediate(scenario);
         }

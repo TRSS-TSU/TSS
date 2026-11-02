@@ -420,6 +420,111 @@ public sealed class TssPlacementEvaluatorTests
         Object.DestroyImmediate(sessionObject);
     }
 
+    [Test]
+    public void ProviderDemarcPathThroughPermanentInfrastructureSetsWanCarrier()
+    {
+        var root = new GameObject("Provider Demarc Path");
+        var session = root.AddComponent<TssTrainingSession>();
+        var scenario = CreateScenario();
+        var cable = Cable(TssCableType.StraightThrough);
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        scenario.cableInventory = new[] { new ScenarioCableInventoryItem { cable = cable, quantity = 1 } };
+        scenario.permanentConnections = new[]
+        {
+            new ScenarioPermanentCableConnection
+            {
+                connectionId = "ProviderDemarc",
+                patchPanelEndpointId = "PatchPanel:Rack01:Port18",
+                wallportEndpointId = "Demarc:Provider:Port01"
+            }
+        };
+
+        var routerPort = EndpointObject("Router Fa0/1").AddComponent<TssPortEndpoint>();
+        var patchPort = EndpointObject("Patch Port 18").AddComponent<TssPortEndpoint>();
+        var demarcPort = EndpointObject("Provider Demarc").AddComponent<TssPortEndpoint>();
+        routerPort.Configure("Rack:Rack01:U32:Fa01", Port("Fa01"));
+        patchPort.Configure("PatchPanel:Rack01:Port18", Port("Port18"));
+        demarcPort.Configure("Demarc:Provider:Port01", Port("Port01"));
+
+        try
+        {
+            session.BeginScenario(scenario);
+            var router = session.NetworkState.GetOrCreateDevice("Rack:Rack01:U32", EquipmentCategory.Router, "CN-1");
+            router.Interfaces["Fa0/1"] = new NetworkInterfaceState { Name = "Fa0/1", EndpointId = routerPort.EndpointId, AdminUp = true };
+
+            Assert.IsTrue(session.TryCheckoutCable(cable, out _));
+            Assert.IsTrue(session.TryUsePort(routerPort, out _));
+            Assert.IsTrue(session.TryUsePort(patchPort, out _));
+
+            Assert.IsTrue(session.IsProviderDemarcConnected(routerPort.EndpointId));
+            session.NotifyNetworkStateChanged();
+            Assert.IsTrue(router.Interfaces["Fa0/1"].CarrierUp);
+        }
+        finally
+        {
+            Object.DestroyImmediate(routerPort.gameObject);
+            Object.DestroyImmediate(patchPort.gameObject);
+            Object.DestroyImmediate(demarcPort.gameObject);
+            Object.DestroyImmediate(cable);
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(root);
+        }
+    }
+
+    [Test]
+    public void RenamingInstalledRackDeviceInvalidatesEffectivePathCache()
+    {
+        var root = new GameObject("Rack Cache Invalidation");
+        var session = root.AddComponent<TssTrainingSession>();
+        var scenario = CreateScenario();
+        var cable = Cable(TssCableType.Crossover);
+        var router = Equipment(EquipmentCategory.Router);
+        scenario.defaultPlayerCableType = TssCableType.StraightThrough;
+        scenario.cableInventory = new[] { new ScenarioCableInventoryItem { cable = cable, quantity = 1 } };
+        scenario.expectedRackPlacements = new[] { Rack("Phase", "Rack01", 32, EquipmentCategory.Router, "CN-1") };
+        scenario.networkScenario = new NetworkScenarioConfig
+        {
+            roleBindings = new[] { new NetworkRoleBinding { role = "CN-1", deviceKey = "Rack:Rack01:U32", category = EquipmentCategory.Router } }
+        };
+        scenario.cableTypeRequirements = new[]
+        {
+            new ScenarioCableTypeRequirement
+            {
+                requirementId = "RouterPeer",
+                endpointAId = "Rack:Rack01:U32:Fa01",
+                endpointBId = "Endpoint:Peer:Eth01",
+                requiredCableType = TssCableType.Crossover
+            }
+        };
+
+        var routerPort = EndpointObject("Router Fa0/1").AddComponent<TssPortEndpoint>();
+        var peerPort = EndpointObject("Peer Eth01").AddComponent<TssPortEndpoint>();
+        routerPort.Configure("Rack:Rack01:U32:Fa01", Port("Fa01"));
+        peerPort.Configure("Endpoint:Peer:Eth01", Port("Eth01"));
+
+        try
+        {
+            session.BeginScenario(scenario);
+            ((List<InstalledEquipmentRecord>)session.Installed).Add(RackRecord("Rack01", router, 32, router.rackUnits, "CN-1"));
+            Assert.IsTrue(session.TryCheckoutCable(cable, out _));
+            Assert.IsTrue(session.TryUsePort(routerPort, out _));
+            Assert.IsTrue(session.TryUsePort(peerPort, out _));
+            Assert.AreEqual(1, session.GetEffectivePhysicalPaths().Count);
+
+            Assert.IsTrue(session.RenameRackInstalled("Rack01", 32, "WrongName"));
+            Assert.AreEqual(0, session.GetEffectivePhysicalPaths().Count);
+        }
+        finally
+        {
+            Object.DestroyImmediate(routerPort.gameObject);
+            Object.DestroyImmediate(peerPort.gameObject);
+            Object.DestroyImmediate(router);
+            Object.DestroyImmediate(cable);
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(root);
+        }
+    }
+
     private static TssScenarioDefinition CreateScenario()
     {
         var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();

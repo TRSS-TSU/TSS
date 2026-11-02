@@ -7,15 +7,8 @@ public sealed class TssWorkPackageResult
     public readonly List<TssWorkPackageCondition> UnmetCategories = new();
     public readonly List<TssWorkPackageCondition> Conditions = new();
     public readonly HashSet<string> AttemptedCategories = new(StringComparer.OrdinalIgnoreCase);
-    public readonly TssNetworkCompletionSnapshot CompletionSnapshot;
     public IReadOnlyList<string> UnmetConditions => UnmetCategories.ConvertAll(x => x.Label);
     public bool Complete => UnmetCategories.Count == 0;
-    public TssWorkPackageResult(TssNetworkCompletionSnapshot snapshot = null)
-    {
-        CompletionSnapshot = snapshot;
-        if (snapshot != null)
-            AttemptedCategories.Add("*");
-    }
     public void Add(string id, string label)
     {
         var condition = new TssWorkPackageCondition(id, label, false);
@@ -26,8 +19,6 @@ public sealed class TssWorkPackageResult
     public void Attempt(string id) => AttemptedCategories.Add(id);
     public bool WasAttempted(string id, bool prefix = false)
     {
-        if (AttemptedCategories.Contains("*"))
-            return true;
         foreach (var attempt in AttemptedCategories)
             if (prefix ? attempt.StartsWith(id, StringComparison.OrdinalIgnoreCase) : attempt.Equals(id, StringComparison.OrdinalIgnoreCase))
                 return true;
@@ -66,10 +57,9 @@ public sealed class TssNetworkWorkPackageEvaluator
     private readonly TssNetworkSessionState _state;
     public TssNetworkWorkPackageEvaluator(TssNetworkSessionState state) => _state = state;
 
-    public TssWorkPackageResult EvaluateLayer2(bool useCompletionHistory = true)
+    public TssWorkPackageResult EvaluateLayer2()
     {
         if (_state == null) return new TssWorkPackageResult();
-        if (useCompletionHistory && _state.CompletionSnapshots.TryGetValue("WP2", out var snapshot)) return new TssWorkPackageResult(snapshot);
         var result = new TssWorkPackageResult();
         var an1 = Find("AN-1"); var an2 = Find("AN-2");
         CheckSwitch(an1, "AN-1", result); CheckSwitch(an2, "AN-2", result);
@@ -77,14 +67,12 @@ public sealed class TssNetworkWorkPackageEvaluator
         CheckAccessPorts(an1, an2, result);
         CheckTrunks(an1, an2, result);
         CheckUnusedPorts(an1, an2, result);
-        if (useCompletionHistory && result.Complete) result = new TssWorkPackageResult(_state.SaveCompletionSnapshot("WP2"));
         return result;
     }
 
-    public TssWorkPackageResult EvaluateLayer3(bool useCompletionHistory = true)
+    public TssWorkPackageResult EvaluateLayer3()
     {
         if (_state == null) return new TssWorkPackageResult();
-        if (useCompletionHistory && _state.CompletionSnapshots.TryGetValue("WP3", out var snapshot)) return new TssWorkPackageResult(snapshot);
         var result = new TssWorkPackageResult();
         var router = Find("CN-1");
         if (router == null) { result.Add("WP3.Router", "Router configuration is unavailable."); return result; }
@@ -99,14 +87,12 @@ public sealed class TssNetworkWorkPackageEvaluator
         if (!hasDefault) result.Add("WP3.DefaultRoute", "Provider routing is incomplete.");
         CheckEndpointEvidence(result);
         CheckSaved(router, "WP3.Save", result);
-        if (useCompletionHistory && result.Complete) result = new TssWorkPackageResult(_state.SaveCompletionSnapshot("WP3"));
         return result;
     }
 
-    public TssWorkPackageResult EvaluateLayer4(bool useCompletionHistory = true)
+    public TssWorkPackageResult EvaluateLayer4()
     {
         if (_state == null) return new TssWorkPackageResult();
-        if (useCompletionHistory && _state.CompletionSnapshots.TryGetValue("WP4", out var snapshot)) return new TssWorkPackageResult(snapshot);
 
         var result = new TssWorkPackageResult();
         CheckWp4Condition(_state.AccessPoint.UplinkConnected, "WP4.APUplink", "AP uplink is not connected.", result);
@@ -133,7 +119,6 @@ public sealed class TssNetworkWorkPackageEvaluator
                 "WP4.RedWolf", "RedWolf page evidence is incomplete.", result);
         }
 
-        if (useCompletionHistory && result.Complete) result = new TssWorkPackageResult(_state.SaveCompletionSnapshot("WP4"));
         return result;
     }
 

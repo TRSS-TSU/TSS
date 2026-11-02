@@ -313,6 +313,7 @@ public sealed class TssTrainingSession : MonoBehaviour
             return false;
 
         _installed.Add(new InstalledEquipmentRecord(rack.RackId, equipment, startingU, equipment.rackUnits, CleanDeviceName(deviceName)));
+        InvalidateEffectivePhysicalPathsCache();
         HeldItem = null;
         ClearCarryVisual();
         ApplyPermanentConnections();
@@ -349,6 +350,7 @@ public sealed class TssTrainingSession : MonoBehaviour
             if (record.RackId == rack.RackId && record.Equipment == equipment && record.StartingU == startingU && record.RackUnits == rackUnits)
             {
                 _installed.RemoveAt(i);
+                InvalidateEffectivePhysicalPathsCache();
                 break;
             }
         }
@@ -434,6 +436,7 @@ public sealed class TssTrainingSession : MonoBehaviour
                 continue;
 
             _installed[i] = record.WithDeviceName(CleanDeviceName(deviceName));
+            InvalidateEffectivePhysicalPathsCache();
             if (NetworkState != null && NetworkState.TryGetDevice(GetRackOwnerPrefix(rackId, startingU), out var device))
                 device.Hostname = _installed[i].DeviceName;
             StateChanged?.Invoke();
@@ -710,7 +713,7 @@ public sealed class TssTrainingSession : MonoBehaviour
     public bool IsProviderDemarcConnected(string routerEndpointId)
     {
         return !string.IsNullOrWhiteSpace(routerEndpointId)
-            && HasCachedEffectivePath(routerEndpointId, ProviderDemarcEndpointId);
+            && HasPhysicalPath(routerEndpointId, ProviderDemarcEndpointId, true);
     }
 
     private bool HasCachedEffectivePath(string endpointAId, string endpointBId)

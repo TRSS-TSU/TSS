@@ -49,9 +49,9 @@ public static class TssScenarioAssessmentCoordinator
         var evaluator = new TssNetworkWorkPackageEvaluator(session.NetworkState);
         var result = workPackage switch
         {
-            2 => evaluator.EvaluateLayer2(false),
-            3 => evaluator.EvaluateLayer3(false),
-            _ => evaluator.EvaluateLayer4(false)
+            2 => evaluator.EvaluateLayer2(),
+            3 => evaluator.EvaluateLayer3(),
+            _ => evaluator.EvaluateLayer4()
         };
 
         foreach (var condition in result.Conditions)
@@ -471,7 +471,6 @@ public sealed class TssNetworkStateSnapshot
     public readonly List<NetworkDeviceState> Devices = new();
     public readonly List<EndpointNetworkState> Endpoints = new();
     public readonly List<string> Evidence = new();
-    public readonly List<TssCompletionHistorySnapshot> CompletionHistory = new();
     public bool ProviderDemarcConnected;
     public bool AccessPointUplinkConnected, AccessPointConfigured;
     public string AccessPointSsid, AssociatedEndpointKey, AssociatedSsid;
@@ -483,32 +482,6 @@ public sealed class TssNetworkStateSnapshot
         foreach (var device in source.Devices) copy.Devices.Add(device.Clone());
         foreach (var endpoint in source.Endpoints) copy.Endpoints.Add(endpoint.Clone());
         copy.Evidence.AddRange(source.Evidence);
-        foreach (var item in source.CompletionSnapshots.Values)
-            copy.CompletionHistory.Add(new TssCompletionHistorySnapshot(item));
         return copy;
-    }
-}
-
-public sealed class TssCompletionHistorySnapshot
-{
-    public string WorkPackage;
-    public int ProfileSeed, CompletionOrder;
-    public bool ProviderDemarcConnected, AccessPointUplinkConnected, AccessPointConfigured;
-    public string AccessPointSsid, AssociatedEndpointKey, AssociatedSsid;
-    public readonly List<NetworkDeviceState> Devices = new();
-    public readonly List<EndpointNetworkState> Endpoints = new();
-    public readonly List<string> Evidence = new();
-    public TssCompletionHistorySnapshot(TssNetworkCompletionSnapshot source)
-    {
-        WorkPackage = source.WorkPackage; ProfileSeed = source.ProfileSeed; CompletionOrder = source.CompletionOrder;
-        ProviderDemarcConnected = source.State.ProviderDemarcConnected;
-        AccessPointUplinkConnected = source.State.AccessPoint.UplinkConnected;
-        AccessPointConfigured = source.State.AccessPoint.Configured;
-        AccessPointSsid = source.State.AccessPoint.Ssid;
-        AssociatedEndpointKey = source.State.AccessPoint.AssociatedEndpointKey;
-        AssociatedSsid = source.State.AccessPoint.AssociatedSsid;
-        foreach (var device in source.State.Devices.Values) Devices.Add(device.Clone());
-        foreach (var endpoint in source.State.Endpoints.Values) Endpoints.Add(endpoint.Clone());
-        Evidence.AddRange(source.State.Evidence);
     }
 }
