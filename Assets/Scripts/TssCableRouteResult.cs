@@ -33,6 +33,14 @@ public readonly struct TssCableRouteEdge
         Key = key;
         IsBidirectional = isBidirectional;
     }
+
+    public TssCableRouteEdge(string key)
+    {
+        From = null;
+        To = null;
+        Key = key ?? string.Empty;
+        IsBidirectional = true;
+    }
 }
 
 public readonly struct TssCableRouteBoundary

@@ -9,10 +9,17 @@ public enum TssCableVisualMode
 [System.Serializable]
 public sealed class CableVisualSettings
 {
-    [Min(0.001f)] public float uniformDiameterMeters = 0.008f;
-    [Range(4, 16)] public int radialSegments = 8;
-    [Min(8)] public int maximumCenterlineSamples = 256;
-    [Min(0f)] public float laneGapMeters = 0.004f;
+    [Min(0.001f)]
+    public float uniformDiameterMeters = 0.005f;
+
+    [Range(4, 16)]
+    public int radialSegments = 4;
+
+    [Min(8)]
+    public int maximumCenterlineSamples = 64;
+
+    [Min(0f)]
+    public float laneGapMeters = 0.00f;
     public bool adaptiveSampling = true;
     public bool legacyFallback = true;
 

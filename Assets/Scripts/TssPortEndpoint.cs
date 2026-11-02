@@ -31,6 +31,28 @@ public sealed class TssPortEndpoint : MonoBehaviour
     public EquipmentInterfaceFace InterfaceFace => interfaceFace;
     public Vector3 CableAnchorPosition => GetCableAnchorPosition();
 
+    public Vector3 CableConnectorDirection(Vector3 routeDirection)
+    {
+        if (EndpointId.StartsWith("WallPort:", System.StringComparison.Ordinal))
+            return transform.forward;
+
+        return interfaceFace == EquipmentInterfaceFace.Front ? Vector3.back
+            : interfaceFace == EquipmentInterfaceFace.Rear ? Vector3.forward
+            : routeDirection;
+    }
+
+    public Vector3 CableConnectorScale(float cableRadius)
+    {
+        var cableScale = Mathf.Max(0.001f, cableRadius * 2f);
+        if (!EndpointId.StartsWith("WallPort:", System.StringComparison.Ordinal))
+            return Vector3.one * cableScale;
+
+        var wallportScale = transform.lossyScale;
+        return wallportScale.sqrMagnitude > 0.000001f
+            ? wallportScale
+            : Vector3.one * cableScale;
+    }
+
     public void SetDeviceName(string name)
     {
         deviceName = string.IsNullOrWhiteSpace(name) ? string.Empty : name.Trim();

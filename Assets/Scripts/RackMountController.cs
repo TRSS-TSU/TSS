@@ -42,6 +42,7 @@ public sealed class RackMountController : MonoBehaviour
     private static RackMountController _hoverOwner;
 
     public string RackId => rackId;
+    public Transform MountRoot => mountRoot ? mountRoot : transform;
 
     private void Awake()
     {

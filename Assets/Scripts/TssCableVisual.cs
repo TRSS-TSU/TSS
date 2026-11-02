@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
 
 public sealed class TssCableVisual : MonoBehaviour
@@ -11,42 +12,71 @@ public sealed class TssCableVisual : MonoBehaviour
     private GameObject _startConnector;
     private GameObject _endConnector;
 
-    public static TssCableVisual Create(TssCableDefinition cable, TssPortEndpoint endpointA, TssPortEndpoint endpointB)
+    public static TssCableVisual Create(
+        TssCableDefinition cable,
+        TssPortEndpoint endpointA,
+        TssPortEndpoint endpointB
+    )
     {
         return Create(cable, endpointA, endpointB, string.Empty, null);
     }
 
-    public static TssCableVisual Create(TssCableDefinition cable, TssPortEndpoint endpointA, TssPortEndpoint endpointB, string connectionId, CableLaneAllocator laneAllocator, GameObject endpointConnectorPrefab = null)
+    public static TssCableVisual Create(
+        TssCableDefinition cable,
+        TssPortEndpoint endpointA,
+        TssPortEndpoint endpointB,
+        string connectionId,
+        CableLaneAllocator laneAllocator,
+        GameObject endpointConnectorPrefab = null
+    )
     {
         if (!cable || !endpointA || !endpointB)
             return null;
 
         var root = new GameObject($"Cable {endpointA.DisplayLabel} to {endpointB.DisplayLabel}");
         var visual = root.AddComponent<TssCableVisual>();
-        var effectiveConnectionId = string.IsNullOrWhiteSpace(connectionId) ? $"Visual-{root.GetInstanceID()}" : connectionId;
+        var effectiveConnectionId = string.IsNullOrWhiteSpace(connectionId)
+            ? $"Visual-{root.GetInstanceID()}"
+            : connectionId;
         visual._connectionId = effectiveConnectionId;
         visual._laneAllocator = laneAllocator;
         var provider = Object.FindFirstObjectByType<TssCableRouteProvider>();
-        var routePoints = provider ? provider.GetRoute(endpointA, endpointB) : new[] { endpointA.CableAnchorPosition, endpointB.CableAnchorPosition };
-        visual.CreateEndpointConnectors(cable, endpointConnectorPrefab, endpointA, endpointB, routePoints);
+        var route = provider ? provider.GetRouteResult(endpointA, endpointB) : null;
+        var routePoints =
+            route != null && route.IsValid ? route.RenderPoints.ToArray()
+            : provider ? provider.GetRoute(endpointA, endpointB)
+            : new[] { endpointA.CableAnchorPosition, endpointB.CableAnchorPosition };
+        visual.CreateEndpointConnectors(
+            cable,
+            endpointConnectorPrefab,
+            endpointA,
+            endpointB,
+            routePoints
+        );
 
         if (RendererMode == TssCableVisualMode.RoundedTube && provider)
         {
-            var route = provider.GetRouteResult(endpointA, endpointB);
             if (route.IsValid && !route.HasRenderContinuityBoundary)
             {
                 var allocator = laneAllocator ?? new CableLaneAllocator();
                 visual._laneAllocator = allocator;
-                var reservation = allocator.Reserve(effectiveConnectionId, ConvertKeys(route.Edges));
+                var reservation = allocator.Reserve(
+                    effectiveConnectionId,
+                    ConvertKeys(route.Edges)
+                );
                 if (visual.BuildRounded(cable, route, reservation))
                     return visual;
 
                 allocator.Release(effectiveConnectionId);
-                Debug.LogWarning($"[TSS Cable] Rounded visual failed for {effectiveConnectionId}; using legacy segments.");
+                Debug.LogWarning(
+                    $"[TSS Cable] Rounded visual failed for {effectiveConnectionId}; using legacy segments."
+                );
             }
             else if (!route.IsValid)
             {
-                Debug.LogWarning($"[TSS Cable] Rounded route unavailable for {effectiveConnectionId}: {route.FailureReason}");
+                Debug.LogWarning(
+                    $"[TSS Cable] Rounded route unavailable for {effectiveConnectionId}: {route.FailureReason}"
+                );
             }
         }
 
@@ -55,43 +85,85 @@ public sealed class TssCableVisual : MonoBehaviour
         return visual;
     }
 
-    private void CreateEndpointConnectors(TssCableDefinition cable, GameObject prefab, TssPortEndpoint endpointA, TssPortEndpoint endpointB, Vector3[] routePoints)
+    private void CreateEndpointConnectors(
+        TssCableDefinition cable,
+        GameObject prefab,
+        TssPortEndpoint endpointA,
+        TssPortEndpoint endpointB,
+        Vector3[] routePoints
+    )
     {
         if (!prefab || !cable || routePoints == null || routePoints.Length < 2)
             return;
 
-        var scale = Mathf.Max(0.001f, cable.radiusMeters * 2f);
-        _startConnector = CreateEndpointConnector(prefab, endpointA.CableAnchorPosition, ConnectorDirection(endpointA, routePoints[1] - routePoints[0]), scale, "Start Connector");
-        _endConnector = CreateEndpointConnector(prefab, endpointB.CableAnchorPosition, -ConnectorDirection(endpointB, routePoints[routePoints.Length - 2] - routePoints[routePoints.Length - 1]), scale, "End Connector");
+        _startConnector = CreateEndpointConnector(
+            prefab,
+            endpointA.CableAnchorPosition,
+            ConnectorDirection(endpointA, routePoints[1] - routePoints[0]),
+            endpointA.CableConnectorScale(cable.radiusMeters),
+            "Start Connector"
+        );
+        _endConnector = CreateEndpointConnector(
+            prefab,
+            endpointB.CableAnchorPosition,
+            -ConnectorDirection(
+                endpointB,
+                routePoints[routePoints.Length - 2] - routePoints[routePoints.Length - 1]
+            ),
+            endpointB.CableConnectorScale(cable.radiusMeters),
+            "End Connector"
+        );
     }
 
     private static Vector3 ConnectorDirection(TssPortEndpoint endpoint, Vector3 routeDirection)
     {
-        return endpoint.InterfaceFace == EquipmentInterfaceFace.Front
-            ? Vector3.back
-            : endpoint.InterfaceFace == EquipmentInterfaceFace.Rear
-                ? Vector3.forward
-                : routeDirection;
+        return endpoint.CableConnectorDirection(routeDirection);
     }
 
-    private GameObject CreateEndpointConnector(GameObject prefab, Vector3 position, Vector3 direction, float scale, string label)
+    private GameObject CreateEndpointConnector(
+        GameObject prefab,
+        Vector3 position,
+        Vector3 direction,
+        Vector3 scale,
+        string label
+    )
     {
         if (direction.sqrMagnitude <= 0.000001f)
             direction = Vector3.forward;
 
         var normalizedDirection = direction.normalized;
-        var up = Mathf.Abs(Vector3.Dot(normalizedDirection, Vector3.up)) > 0.95f ? Vector3.forward : Vector3.up;
-        var connector = Instantiate(prefab, position, Quaternion.LookRotation(normalizedDirection, up), transform);
+        var up =
+            Mathf.Abs(Vector3.Dot(normalizedDirection, Vector3.up)) > 0.95f
+                ? Vector3.forward
+                : Vector3.up;
+        var connector = Instantiate(
+            prefab,
+            position,
+            Quaternion.LookRotation(normalizedDirection, up),
+            transform
+        );
         connector.name = label;
-        connector.transform.localScale = Vector3.one * scale;
+        connector.transform.localScale = scale;
         foreach (var collider in connector.GetComponentsInChildren<Collider>(true))
             collider.enabled = false;
         return connector;
     }
 
-    private bool BuildRounded(TssCableDefinition cable, TssCableRouteResult route, CableLaneReservation reservation)
+    private bool BuildRounded(
+        TssCableDefinition cable,
+        TssCableRouteResult route,
+        CableLaneReservation reservation
+    )
     {
-        if (!CableCurveBuilder.TryBuild(route, reservation, Settings, out var samples, out var failure))
+        if (
+            !CableCurveBuilder.TryBuild(
+                route,
+                reservation,
+                Settings,
+                out var samples,
+                out var failure
+            )
+        )
         {
             Debug.LogWarning($"[TSS Cable] {failure}");
             return false;
@@ -127,8 +199,15 @@ public sealed class TssCableVisual : MonoBehaviour
             segment.name = $"Segment {i + 1:00}";
             segment.transform.SetParent(transform, false);
             segment.transform.position = (points[i] + points[i + 1]) * 0.5f;
-            segment.transform.rotation = Quaternion.FromToRotation(Vector3.up, direction.normalized);
-            segment.transform.localScale = new Vector3(cable.radiusMeters * 2f, length * 0.5f, cable.radiusMeters * 2f);
+            segment.transform.rotation = Quaternion.FromToRotation(
+                Vector3.up,
+                direction.normalized
+            );
+            segment.transform.localScale = new Vector3(
+                cable.radiusMeters * 2f,
+                length * 0.5f,
+                cable.radiusMeters * 2f
+            );
             if (segment.TryGetComponent<Collider>(out var collider))
                 DestroyUnityObject(collider);
             if (cable.visualMaterial && segment.TryGetComponent<Renderer>(out var renderer))
@@ -204,20 +283,20 @@ public sealed class TssCableVisual : MonoBehaviour
 
         var triangleIndex = 0;
         for (var i = 0; i < samples.Length - 1; i++)
-            for (var ring = 0; ring < radialSegments; ring++)
-            {
-                var nextRing = (ring + 1) % radialSegments;
-                var a = i * radialSegments + ring;
-                var b = i * radialSegments + nextRing;
-                var c = (i + 1) * radialSegments + nextRing;
-                var d = (i + 1) * radialSegments + ring;
-                triangles[triangleIndex++] = a;
-                triangles[triangleIndex++] = c;
-                triangles[triangleIndex++] = b;
-                triangles[triangleIndex++] = a;
-                triangles[triangleIndex++] = d;
-                triangles[triangleIndex++] = c;
-            }
+        for (var ring = 0; ring < radialSegments; ring++)
+        {
+            var nextRing = (ring + 1) % radialSegments;
+            var a = i * radialSegments + ring;
+            var b = i * radialSegments + nextRing;
+            var c = (i + 1) * radialSegments + nextRing;
+            var d = (i + 1) * radialSegments + ring;
+            triangles[triangleIndex++] = a;
+            triangles[triangleIndex++] = c;
+            triangles[triangleIndex++] = b;
+            triangles[triangleIndex++] = a;
+            triangles[triangleIndex++] = d;
+            triangles[triangleIndex++] = c;
+        }
 
         for (var ring = 0; ring < radialSegments; ring++)
         {

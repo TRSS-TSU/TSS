@@ -7,10 +7,12 @@ public sealed class TssCableRouteProvider : MonoBehaviour
     public static readonly Vector3 VisualBreak = new(float.NaN, float.NaN, float.NaN);
 
     [SerializeField] private TssCableRouteNode[] routeNodes;
+    private Dictionary<string, RackCableRouteProfile> _rackProfiles;
 
     private void Awake()
     {
         EnsureRouteNodes();
+        RefreshRackProfiles();
     }
 
     [ContextMenu("Refresh Route Nodes")]
@@ -40,6 +42,9 @@ public sealed class TssCableRouteProvider : MonoBehaviour
         if (!startEndpoint || !endEndpoint)
             return new[] { startEndpoint ? startEndpoint.CableAnchorPosition : Vector3.zero, endEndpoint ? endEndpoint.CableAnchorPosition : Vector3.zero };
 
+        if (TryGetRackRoute(startEndpoint, endEndpoint, out var rackRoute))
+            return rackRoute.RenderPoints.ToArray();
+
         EnsureRouteNodes();
         if (TryRackId(startEndpoint.EndpointId, out var startRackId)
             && TryRackId(endEndpoint.EndpointId, out var endRackId))
@@ -59,6 +64,9 @@ public sealed class TssCableRouteProvider : MonoBehaviour
             return TssCableRouteResult.Invalid(startEndpoint ? startEndpoint.EndpointId : string.Empty, endEndpoint ? endEndpoint.EndpointId : string.Empty, TssCableRouteKind.Unknown, "Missing route endpoint.");
         if (startEndpoint == endEndpoint || string.Equals(startEndpoint.EndpointId, endEndpoint.EndpointId, System.StringComparison.Ordinal))
             return TssCableRouteResult.Invalid(startEndpoint.EndpointId, endEndpoint.EndpointId, TssCableRouteKind.Unknown, "Route endpoints must be distinct.");
+
+        if (TryGetRackRoute(startEndpoint, endEndpoint, out var rackRoute))
+            return rackRoute;
 
         EnsureRouteNodes();
         if (routeNodes == null || routeNodes.Length == 0)
@@ -246,6 +254,31 @@ public sealed class TssCableRouteProvider : MonoBehaviour
             routeNodes = GetComponentsInChildren<TssCableRouteNode>(true);
     }
 
+    private void RefreshRackProfiles()
+    {
+        _rackProfiles = new Dictionary<string, RackCableRouteProfile>(System.StringComparer.OrdinalIgnoreCase);
+        foreach (var profile in FindObjectsByType<RackCableRouteProfile>(FindObjectsInactive.Include, FindObjectsSortMode.None))
+            if (profile && profile.IsValid && !_rackProfiles.ContainsKey(profile.RackId))
+                _rackProfiles.Add(profile.RackId, profile);
+    }
+
+    private bool TryGetRackRoute(TssPortEndpoint start, TssPortEndpoint end, out TssCableRouteResult route)
+    {
+        route = null;
+        if (!RackCableRoutePlanner.TryRackId(start ? start.EndpointId : null, out var startRackId)
+            || !RackCableRoutePlanner.TryRackId(end ? end.EndpointId : null, out var endRackId)
+            || !string.Equals(startRackId, endRackId, System.StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        if (_rackProfiles == null || !_rackProfiles.TryGetValue(startRackId, out var profile) || !profile)
+        {
+            RefreshRackProfiles();
+            if (!_rackProfiles.TryGetValue(startRackId, out profile) || !profile)
+                return false;
+        }
+
+        return RackCableRoutePlanner.TryBuild(start, end, profile, out route);
+    }
     private RouteSelection SelectRoute(Vector3 start, Vector3 end, RouteEntryContext[] startCandidates, RouteEntryContext[] endCandidates)
     {
         RouteSelection best = default;
