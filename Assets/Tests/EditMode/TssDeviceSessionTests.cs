@@ -9,6 +9,36 @@ using Object = UnityEngine.Object;
 public sealed class TssDeviceSessionTests
 {
     [Test]
+    public void AuxiliaryLineUsesSeparateStateAndRunningConfigBlocks()
+    {
+        var sessionObject = new GameObject("Session");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        try
+        {
+            typeof(TssTrainingSession).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(session, null);
+            var processor = new TssCliCommandProcessor(session, "Switch", EquipmentCategory.Switch, "Switch");
+            Assert.IsTrue(processor.Execute("enable").Accepted);
+            Assert.IsTrue(processor.Execute("configure terminal").Accepted);
+            processor.Device.Interfaces["Console"] = new NetworkInterfaceState { Name = "Console", AdminUp = true };
+            processor.Device.Interfaces["Aux"] = new NetworkInterfaceState { Name = "Aux", AdminUp = true };
+            Assert.IsTrue(processor.Execute("line console 0").Accepted);
+            Assert.IsTrue(processor.Execute("logging synchronous").Accepted);
+            Assert.IsTrue(processor.Execute("exit").Accepted);
+            Assert.IsTrue(processor.Execute("line aux 0").Accepted);
+            Assert.IsTrue(processor.Execute("password auxpw").Accepted);
+            Assert.IsTrue(processor.Execute("login").Accepted);
+            var config = TssCliCommandProcessor.BuildRunningConfig(processor.Device);
+            StringAssert.Contains("line console 0" + Environment.NewLine + " logging synchronous", config);
+            StringAssert.Contains("line aux 0" + Environment.NewLine + " password auxpw" + Environment.NewLine + " login", config);
+            StringAssert.DoesNotContain("interface Console", config);
+            StringAssert.DoesNotContain("interface Aux", config);
+            Assert.AreEqual("auxpw", processor.Device.AuxPassword);
+            Assert.IsTrue(processor.Device.AuxLoginRequired);
+        }
+        finally { Object.DestroyImmediate(sessionObject); }
+    }
+
+    [Test]
     public void LinkIndicatorResubscribesAfterBeingReenabled()
     {
         var sessionObject = new GameObject("Session");
@@ -1120,6 +1150,14 @@ public sealed class TssDeviceSessionTests
         Assert.AreEqual(1, processor.Device.Routes.Count);
         Assert.IsFalse(processor.Execute("show ip route").Accepted);
         StringAssert.DoesNotContain("S*   0.0.0.0/0 [1/0] via 10.42.17.2", processor.Execute("do show ip route").Output);
+        Assert.IsTrue(processor.Execute("end").Accepted);
+        var canonicalRoutes = processor.Execute("show ip route");
+        var abbreviatedRoutes = processor.Execute("sh ip route");
+        var shortRoutes = processor.Execute("show ip ro");
+        Assert.IsTrue(canonicalRoutes.Accepted);
+        Assert.AreEqual(canonicalRoutes.Output, abbreviatedRoutes.Output);
+        Assert.AreEqual(canonicalRoutes.Output, shortRoutes.Output);
+        Assert.IsFalse(processor.Execute("show route").Accepted);
         Assert.IsTrue(processor.Execute("interface Fa0/1").Accepted);
         Assert.IsTrue(processor.Execute("no shutdown").Accepted);
         Assert.IsTrue(processor.Execute("ip add 10.42.17.1 255.255.255.252").Accepted);
@@ -1137,6 +1175,7 @@ public sealed class TssDeviceSessionTests
         Assert.IsTrue(processor.Execute("no shutdown").Accepted);
         Assert.IsTrue(processor.Execute("exit").Accepted);
         Assert.IsTrue(processor.Execute("interface Fa0/0.123").Accepted);
+        Assert.AreEqual(TssNetworkCliMode.SubinterfaceConfig, processor.Device.Mode);
         Assert.IsTrue(processor.Execute("encapsulation dot1q 123").Accepted);
         Assert.IsTrue(processor.Execute("ip add 10.20.30.1 255.255.255.0").Accepted);
 
@@ -1149,6 +1188,74 @@ public sealed class TssDeviceSessionTests
         var invalid = processor.Execute("ip address 999.1.1.1 255.255.255.0");
         Assert.IsFalse(invalid.Accepted);
         Assert.AreEqual(before, processor.Device.Interfaces["Fa0/0.123"].Address);
+
+        Object.DestroyImmediate(scenario);
+        Object.DestroyImmediate(sessionObject);
+    }
+
+    [Test]
+    public void RouterRouteDisplayIncludesGatewayLocalAndConnectedEntries()
+    {
+        var sessionObject = new GameObject("RouteTableTestSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true, profileSeed = 42 };
+        session.BeginScenario(scenario);
+        var processor = new TssCliCommandProcessor(session, "Router", EquipmentCategory.Router, "CN-1");
+        processor.Device.Interfaces["Fa0/1"] = new NetworkInterfaceState { Name = "Fa0/1", AdminUp = true, CarrierUp = true, Address = "10.42.17.1", Mask = "255.255.255.252" };
+        processor.Device.Routes.Add(new NetworkRouteState { Network = "0.0.0.0", Mask = "0.0.0.0", NextHop = "10.42.17.2" });
+        var output = TssCliCommandProcessor.BuildResultsShowOutput(processor.Device, "show ip route");
+        StringAssert.Contains("Gateway of last resort is 10.42.17.2", output);
+        StringAssert.Contains("C    10.42.17.0/30", output);
+        StringAssert.Contains("L    10.42.17.1/32", output);
+        StringAssert.Contains("S*   0.0.0.0/0 [1/0] via 10.42.17.2", output);
+        Object.DestroyImmediate(sessionObject);
+        Object.DestroyImmediate(scenario);
+    }
+
+    [Test]
+    public void RouterSubinterfaceUsesParentEffectiveStateWithoutInventingShutdownConfig()
+    {
+        var sessionObject = new GameObject("SubinterfaceStateSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true, profileSeed = 44 };
+        session.BeginScenario(scenario);
+        var processor = new TssCliCommandProcessor(session, "Router", EquipmentCategory.Router, "CN-1");
+
+        processor.Execute("enable");
+        processor.Execute("configure terminal");
+        Assert.IsTrue(processor.Execute("interface Fa0/0").Accepted);
+        Assert.IsTrue(processor.Execute("no shutdown").Accepted);
+        Assert.IsTrue(processor.Device.Interfaces["Fa0/0"].AdminUp);
+        Assert.IsTrue(processor.Execute("interface Fa0/0.44").Accepted);
+        Assert.IsTrue(processor.Device.Interfaces["Fa0/0"].AdminUp);
+        processor.Execute("encapsulation dot1q 44");
+        processor.Execute("ip address 192.0.2.1 255.255.255.0");
+        processor.Device.Interfaces["Fa0/0"].CarrierUp = true;
+        processor.Device.Interfaces["Fa0/0.44"].CarrierUp = true;
+        processor.Execute("end");
+
+        StringAssert.Contains("Fa0/0.44", processor.Execute("show ip interface brief").Output);
+        StringAssert.Contains("up", processor.Execute("show ip interface brief").Output);
+        var config = processor.Execute("show running-config").Output;
+        StringAssert.DoesNotContain("interface Fa0/0.44\n shutdown", config);
+
+        processor.Execute("configure terminal");
+        processor.Execute("interface Fa0/0");
+        processor.Execute("shutdown");
+        processor.Execute("end");
+        var down = processor.Execute("show ip interface brief").Output;
+        StringAssert.Contains("Fa0/0.44", down);
+        StringAssert.Contains("administratively down", down);
+        StringAssert.DoesNotContain("interface Fa0/0.44\n shutdown", processor.Execute("show running-config").Output);
+
+        processor.Execute("configure terminal");
+        processor.Execute("interface Fa0/0");
+        processor.Execute("no shutdown");
+        processor.Execute("end");
+        StringAssert.Contains("Fa0/0.44", processor.Execute("show ip interface brief").Output);
+        StringAssert.Contains("up", processor.Execute("show ip interface brief").Output);
 
         Object.DestroyImmediate(scenario);
         Object.DestroyImmediate(sessionObject);

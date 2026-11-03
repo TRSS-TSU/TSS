@@ -43,21 +43,21 @@ public sealed class TssNetworkReachabilityEvaluator
         var sourceInterface = FindSourceInterface(source, sourceDevice);
         if (!source.Layer1Connected)
             return Fail(1, TssReachabilityFaultCategory.PhysicalPathUnavailable, "no usable physical path.", source.Role, destinationRole);
-        if (sourceInterface != null && (!sourceInterface.AdminUp || !sourceInterface.CarrierUp))
+        if (sourceInterface != null && !sourceDevice.IsInterfaceOperational(sourceInterface))
             return Fail(1, TssReachabilityFaultCategory.InterfaceUnavailable, "a participating interface is unavailable.", source.Role, destinationRole);
         if (HasStructuredTopology(sourceDevice))
         {
             var access = FindAccessInterface(FindAccessDevice(source, sourceDevice), source.Role);
-            if (access != null && (!access.AdminUp || !access.CarrierUp))
+            if (access != null && !FindAccessDevice(source, sourceDevice).IsInterfaceOperational(access))
                 return Fail(1, TssReachabilityFaultCategory.InterfaceUnavailable, "a participating interface is unavailable.", source.Role, destinationRole);
             var parent = FindInterface(FindDevice("CN-1"), "Fa0/0");
-            if (parent != null && (!parent.AdminUp || !parent.CarrierUp))
+            if (parent != null && !FindDevice("CN-1").IsInterfaceOperational(parent))
                 return Fail(1, TssReachabilityFaultCategory.InterfaceUnavailable, "a participating interface is unavailable.", source.Role, destinationRole);
             foreach (var trunkName in RequiredTrunks(source.Role))
             {
                 var split = trunkName.IndexOf(':');
                 var trunk = FindInterface(FindDevice(trunkName.Substring(0, split)), trunkName.Substring(split + 1));
-                if (trunk != null && (!trunk.AdminUp || !trunk.CarrierUp))
+                if (trunk != null && !FindDevice(trunkName.Substring(0, split)).IsInterfaceOperational(trunk))
                     return Fail(1, TssReachabilityFaultCategory.InterfaceUnavailable, "a participating interface is unavailable.", source.Role, destinationRole);
             }
         }
@@ -84,7 +84,7 @@ public sealed class TssNetworkReachabilityEvaluator
         if (routerInterface != null)
         {
             Add(hops, routerInterface.Address);
-            if (!routerInterface.AdminUp || !routerInterface.CarrierUp || routerInterface.Dot1qVlan != vlan || routerInterface.Address != source.Gateway || routerInterface.Mask != "255.255.255.0")
+            if (!FindDevice("CN-1").IsInterfaceOperational(routerInterface) || routerInterface.Dot1qVlan != vlan || routerInterface.Address != source.Gateway || routerInterface.Mask != "255.255.255.0")
                 return Fail(3, TssReachabilityFaultCategory.GatewayUnavailable, "router gateway is unavailable.", source.Role, destinationRole, hops.ToArray());
         }
 
@@ -125,7 +125,7 @@ public sealed class TssNetworkReachabilityEvaluator
             var split = trunkName.IndexOf(':');
             var device = FindDevice(trunkName.Substring(0, split));
             var trunk = FindInterface(device, trunkName.Substring(split + 1));
-            if (device == null || trunk == null || !trunk.IsTrunk || !trunk.AdminUp || !trunk.CarrierUp || !trunk.AllowedVlans.Contains(vlan))
+            if (device == null || trunk == null || !trunk.IsTrunk || !device.IsInterfaceOperational(trunk) || !trunk.AllowedVlans.Contains(vlan))
                 return Fail(2, TssReachabilityFaultCategory.VlanNotCarried, "VLAN is not carried across the trunk.", source.Role, destinationRole, hops.ToArray());
             if ((native.HasValue && native.Value != trunk.NativeVlan) || trunk.NativeVlan != profile.NativeVlan)
                 return Fail(2, TssReachabilityFaultCategory.VlanNotCarried, "trunk native VLANs do not agree.", source.Role, destinationRole, hops.ToArray());
@@ -142,7 +142,7 @@ public sealed class TssNetworkReachabilityEvaluator
             return Fail(1, TssReachabilityFaultCategory.PhysicalPathUnavailable, "provider handoff is not connected through the DEMARC.", source.Role, destinationRole, hops.ToArray());
         var router = FindDevice("CN-1");
         var wan = FindInterface(router, "Fa0/1");
-        if (structured && (router == null || wan == null || !wan.AdminUp || !wan.CarrierUp || wan.Address != profile.WanCustomerAddress || wan.Mask != "255.255.255.252"))
+        if (structured && (router == null || wan == null || !router.IsInterfaceOperational(wan) || wan.Address != profile.WanCustomerAddress || wan.Mask != "255.255.255.252"))
             return Fail(3, TssReachabilityFaultCategory.ProviderRouteUnavailable, "provider interface is unavailable.", source.Role, destinationRole, hops.ToArray());
         if (router != null && !HasProviderRoute(router, profile))
             return Fail(3, TssReachabilityFaultCategory.ProviderRouteUnavailable, "provider route is unavailable.", source.Role, destinationRole, hops.ToArray());

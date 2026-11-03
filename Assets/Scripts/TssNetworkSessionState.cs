@@ -145,7 +145,7 @@ public sealed class TssNetworkRunProfile
     }
 }
 
-public enum TssNetworkCliMode { UserExec, PrivilegedExec, GlobalConfig, InterfaceConfig, LineConfig, VlanConfig }
+public enum TssNetworkCliMode { UserExec, PrivilegedExec, GlobalConfig, InterfaceConfig, SubinterfaceConfig, LineConfig, VlanConfig }
 
 
 // Runtime network session state.\n
@@ -180,16 +180,16 @@ public sealed class TssNetworkSessionState
         foreach (var device in _devices.Values)
             foreach (var iface in device.Interfaces.Values)
                 if (string.Equals(iface.EndpointId, endpointId, StringComparison.OrdinalIgnoreCase))
-                    return iface.AdminUp && iface.CarrierUp;
+                    return device.IsInterfaceOperational(iface);
         return !endpointId.StartsWith("Rack:", StringComparison.OrdinalIgnoreCase);
     }
 
     public bool IsEndpointLogicalLayer1Available(TssTrainingSession session, string endpointId)
     {
-        if (!TryGetLogicalInterface(session, endpointId, out _, out var iface))
+        if (!TryGetLogicalInterface(session, endpointId, out var device, out var iface))
             return session && session.IsEndpointOnEffectivePhysicalPath(endpointId);
 
-        return iface.AdminUp && iface.CarrierUp;
+        return device.IsInterfaceOperational(iface);
     }
 
     public bool IsEndpointLogicalLayer2Available(TssTrainingSession session, string endpointId)
@@ -197,7 +197,7 @@ public sealed class TssNetworkSessionState
         if (!TryGetLogicalInterface(session, endpointId, out var device, out var iface))
             return session && session.IsEndpointOnEffectivePhysicalPath(endpointId);
 
-        if (!iface.AdminUp || !iface.CarrierUp)
+        if (!device.IsInterfaceOperational(iface))
             return false;
 
         if (device.Category != EquipmentCategory.Switch)
@@ -211,7 +211,7 @@ public sealed class TssNetworkSessionState
         if (!TryGetInterfaceByEndpoint(endpointId, out var device, out var iface))
             return true;
 
-        if (!iface.AdminUp || !iface.CarrierUp)
+        if (!device.IsInterfaceOperational(iface))
             return false;
 
         if (device.Category != EquipmentCategory.Switch)
@@ -237,16 +237,13 @@ public sealed class TssNetworkSessionState
 
     public bool IsInterfaceIpRoutingAvailable(NetworkDeviceState device, NetworkInterfaceState iface)
     {
-        if (device == null || iface == null || !iface.AdminUp || !iface.CarrierUp
+        if (device == null || iface == null || !device.IsInterfaceOperational(iface)
             || !TssNetworkAddress.IsAddress(iface.Address) || !TssNetworkAddress.IsMask(iface.Mask))
             return false;
 
         if (device.Category == EquipmentCategory.Router && iface.Name.Contains('.'))
         {
-            var separator = iface.Name.IndexOf('.');
-            return iface.Dot1qVlan > 0
-                && device.Interfaces.TryGetValue(iface.Name.Substring(0, separator), out var parent)
-                && parent.AdminUp && parent.CarrierUp;
+            return iface.Dot1qVlan > 0;
         }
 
         return true;
@@ -344,7 +341,7 @@ public sealed class TssNetworkSessionState
         var accessSwitch = FindDeviceByRole("AN-1");
         return accessSwitch != null
             && accessSwitch.Interfaces.TryGetValue("Fa0/7", out var port)
-            && port.AdminUp && port.CarrierUp && !port.IsTrunk
+            && accessSwitch.IsInterfaceOperational(port) && !port.IsTrunk
             && port.AccessVlan == Profile.ReceptionVlan;
     }
 
@@ -362,7 +359,7 @@ public sealed class TssNetworkSessionState
 
         var router = FindDeviceByRole("CN-1");
         if (router == null || !router.Interfaces.TryGetValue("Fa0/1", out var wan)
-            || !wan.AdminUp || !wan.CarrierUp
+            || !router.IsInterfaceOperational(wan)
             || wan.Address != Profile.WanCustomerAddress || wan.Mask != "255.255.255.252")
             return false;
 
@@ -540,6 +537,7 @@ public sealed class NetworkDeviceState
     public string EnablePassword;
     public string EnableSecret;
     public string ConsolePassword;
+    public string AuxPassword;
     public string VtyPassword;
     public string Motd;
     public string MacAddress;
@@ -551,7 +549,10 @@ public sealed class NetworkDeviceState
     public bool PasswordEncryption;
     public bool DomainLookupDisabled;
     public bool ConsoleLoginRequired;
+    public bool AuxLoginRequired;
     public bool VtyLoginRequired;
+    public bool ConsoleLoggingSynchronous;
+    public bool AuxLoggingSynchronous;
     public readonly Dictionary<int, string> Vlans = new();
     public readonly Dictionary<string, NetworkInterfaceState> Interfaces = new(StringComparer.OrdinalIgnoreCase);
     public readonly Dictionary<int, NetworkInterfaceState> Svis = new();
@@ -575,15 +576,28 @@ public sealed class NetworkDeviceState
             : profile.ManagementNetwork + ".1";
         if (category == EquipmentCategory.Switch) Vlans[1] = "default";
     }
+    public bool IsInterfaceAdminUp(NetworkInterfaceState iface)
+    {
+        if (iface == null || !iface.AdminUp) return false;
+        return !IsRouterSubinterface(iface) || Interfaces.TryGetValue(ParentName(iface.Name), out var parent) && parent.AdminUp;
+    }
+    public bool IsInterfaceOperational(NetworkInterfaceState iface)
+    {
+        if (!IsInterfaceAdminUp(iface) || !iface.CarrierUp) return false;
+        return !IsRouterSubinterface(iface) || Interfaces.TryGetValue(ParentName(iface.Name), out var parent) && parent.CarrierUp;
+    }
+    private bool IsRouterSubinterface(NetworkInterfaceState iface) => Category == EquipmentCategory.Router && iface != null && iface.Name.IndexOf('.') >= 0;
+    private static string ParentName(string name) => name.Substring(0, name.IndexOf('.'));
     public NetworkDeviceState Clone()
     {
         var copy = new NetworkDeviceState(Key, Category, Hostname, null)
         {
-            EnablePassword = EnablePassword, EnableSecret = EnableSecret, ConsolePassword = ConsolePassword, VtyPassword = VtyPassword, Motd = Motd,
+            EnablePassword = EnablePassword, EnableSecret = EnableSecret, ConsolePassword = ConsolePassword, AuxPassword = AuxPassword, VtyPassword = VtyPassword, Motd = Motd,
             MacAddress = MacAddress, ManagementAddress = ManagementAddress, ManagementMask = ManagementMask,
             DefaultGateway = DefaultGateway, DnsAddress = DnsAddress, UseDhcp = UseDhcp,
             PasswordEncryption = PasswordEncryption, DomainLookupDisabled = DomainLookupDisabled,
-            ConsoleLoginRequired = ConsoleLoginRequired, VtyLoginRequired = VtyLoginRequired, Mode = Mode,
+            ConsoleLoginRequired = ConsoleLoginRequired, AuxLoginRequired = AuxLoginRequired, VtyLoginRequired = VtyLoginRequired,
+            ConsoleLoggingSynchronous = ConsoleLoggingSynchronous, AuxLoggingSynchronous = AuxLoggingSynchronous, Mode = Mode,
             AwaitingEnablePassword = AwaitingEnablePassword,
             SelectedVlan = SelectedVlan, SelectedLine = SelectedLine, SelectedInterfaces = new List<string>(SelectedInterfaces), ExpectedRole = ExpectedRole
         };
@@ -719,6 +733,12 @@ public static class TssNetworkAddress
         return prefix;
     }
 
+    public static string NetworkAddress(string address, string mask)
+    {
+        if (!IsAddress(address) || !IsMask(mask)) return string.Empty;
+        return FromUInt32(ToUInt32(address) & ToUInt32(mask));
+    }
+
     public static bool IsInSameSubnet(string address, string mask, string candidate)
     {
         if (!IsAddress(address) || !IsMask(mask) || !IsAddress(candidate)) return false;
@@ -731,4 +751,6 @@ public static class TssNetworkAddress
         foreach (var part in value.Split('.')) result = (result << 8) | byte.Parse(part, CultureInfo.InvariantCulture);
         return result;
     }
+
+    private static string FromUInt32(uint value) => $"{value >> 24}.{(value >> 16) & 255}.{(value >> 8) & 255}.{value & 255}";
 }

@@ -33,6 +33,7 @@ public sealed class TssComputerConnectivityPresenterTests
         endpoint.Configure("Endpoint:IT1:Fa0/2", null);
         var presenter = presenterRoot.AddComponent<TssComputerConnectivityPresenter>();
         BindPresenter(presenter, endpoint, monitor, secondaryMonitor);
+        AddEffectivePath(session, presenterRoot.transform, endpoint, accessSwitch);
         typeof(TssComputerConnectivityPresenter).GetMethod("OnEnable", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(presenter, null);
 
         try
@@ -72,6 +73,12 @@ public sealed class TssComputerConnectivityPresenterTests
             router.Routes.Add(new NetworkRouteState { Network = "0.0.0.0", Mask = "0.0.0.0", NextHop = profile.WanProviderAddress });
             session.NotifyNetworkStateChanged();
             AssertScreens(monitor, secondaryMonitor, monitorTextures1.Layer3Connected, monitorTextures2.Layer4Connected);
+
+            ((System.Collections.IList)typeof(TssTrainingSession)
+                .GetField("_physicalConnections", BindingFlags.Instance | BindingFlags.NonPublic)
+                .GetValue(session)).Clear();
+            session.NotifyNetworkStateChanged();
+            AssertScreens(monitor, secondaryMonitor, monitorTextures1.Layer1Disconnected, monitorTextures2.Layer2Disconnected);
         }
         finally
         {
@@ -153,6 +160,20 @@ public sealed class TssComputerConnectivityPresenterTests
         SetPrivateField(presenter, "endpoint", endpoint);
         SetPrivateField(presenter, "monitor", monitor);
         SetPrivateField(presenter, "secondaryMonitor", secondaryMonitor);
+    }
+
+    private static void AddEffectivePath(TssTrainingSession session, Transform parent, TssPortEndpoint endpoint, NetworkDeviceState accessSwitch)
+    {
+        var switchObject = new GameObject("SwitchPort");
+        switchObject.transform.SetParent(parent, false);
+        var switchEndpoint = switchObject.AddComponent<TssPortEndpoint>();
+        switchEndpoint.Configure("AN-1:Fa0/2", null);
+        accessSwitch.Interfaces["Fa0/2"].EndpointId = switchEndpoint.EndpointId;
+        var connections = (System.Collections.IList)typeof(TssTrainingSession)
+            .GetField("_physicalConnections", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(session);
+        connections.Add(new TssPhysicalConnectionRecord("TestCable", null, TssCableType.StraightThrough,
+            endpoint.EndpointId, switchEndpoint.EndpointId, null));
     }
 
     private static void SetPrivateField(object target, string fieldName, object value)

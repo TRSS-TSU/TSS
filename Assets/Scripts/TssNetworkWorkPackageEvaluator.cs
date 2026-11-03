@@ -188,7 +188,7 @@ public sealed class TssNetworkWorkPackageEvaluator
             var id = "WP2.Access:" + required.deviceRole + ":" + required.interfaceName;
             if (device != null && device.Interfaces.ContainsKey(required.interfaceName))
                 result.Attempt(id);
-            if (device == null || !device.Interfaces.TryGetValue(required.interfaceName, out var port) || port.IsTrunk || !port.AdminUp || port.AccessVlan != VlanFor(required.endpointId))
+            if (device == null || !device.Interfaces.TryGetValue(required.interfaceName, out var port) || port.IsTrunk || !device.IsInterfaceOperational(port) || port.AccessVlan != VlanFor(required.endpointId))
                 result.Add(id, required.deviceRole + " " + required.interfaceName + " access port is incomplete.");
             else result.Pass(id, required.deviceRole + " " + required.interfaceName + " access port is correct.");
         }
@@ -202,7 +202,7 @@ public sealed class TssNetworkWorkPackageEvaluator
             if (pair.Item1 != null && pair.Item1.Interfaces.ContainsKey(pair.Item3))
                 result.Attempt(id);
             var expected = new HashSet<int> { _state.Profile.ManagementVlan, _state.Profile.ReceptionVlan, _state.Profile.DataVlan };
-            if (pair.Item1 == null || !pair.Item1.Interfaces.TryGetValue(pair.Item3, out var port) || !port.IsTrunk || !port.AdminUp || port.NativeVlan != _state.Profile.NativeVlan || !port.AllowedVlans.SetEquals(expected))
+            if (pair.Item1 == null || !pair.Item1.Interfaces.TryGetValue(pair.Item3, out var port) || !port.IsTrunk || !pair.Item1.IsInterfaceOperational(port) || port.NativeVlan != _state.Profile.NativeVlan || !port.AllowedVlans.SetEquals(expected))
                 result.Add(id, pair.Item2 + " " + pair.Item3 + " trunk is incomplete.");
             else result.Pass(id, pair.Item2 + " " + pair.Item3 + " trunk is correct.");
         }
@@ -236,7 +236,7 @@ public sealed class TssNetworkWorkPackageEvaluator
         foreach (var pair in new[] { (_state.Profile.ManagementVlan, _state.Profile.ManagementNetwork + ".1"), (_state.Profile.ReceptionVlan, _state.Profile.ReceptionNetwork + ".1"), (_state.Profile.DataVlan, _state.Profile.DataNetwork + ".1") })
         {
             var found = false;
-            foreach (var iface in router.Interfaces.Values) if (iface.Dot1qVlan == pair.Item1 && iface.Address == pair.Item2 && iface.Mask == "255.255.255.0" && iface.AdminUp && iface.CarrierUp) { found = true; break; }
+            foreach (var iface in router.Interfaces.Values) if (iface.Dot1qVlan == pair.Item1 && iface.Address == pair.Item2 && iface.Mask == "255.255.255.0" && router.IsInterfaceOperational(iface)) { found = true; break; }
             if (!found) result.Add("WP3.Subinterfaces", "Router subinterfaces are incomplete.");
             else result.Pass("WP3.Subinterfaces", "Router subinterface is correct.");
         }
@@ -246,7 +246,7 @@ public sealed class TssNetworkWorkPackageEvaluator
 
     private bool HasInterface(NetworkDeviceState device, string name, bool trunk, string address, string mask)
     {
-        if (!device.Interfaces.TryGetValue(name, out var iface) || !iface.AdminUp || !iface.CarrierUp || iface.IsTrunk != trunk) return false;
+        if (!device.Interfaces.TryGetValue(name, out var iface) || !device.IsInterfaceOperational(iface) || iface.IsTrunk != trunk) return false;
         return address == null || (iface.Address == address && iface.Mask == mask);
     }
 
@@ -311,7 +311,7 @@ public sealed class TssNetworkWorkPackageEvaluator
 
     private static bool Equivalent(NetworkDeviceState a, NetworkDeviceState b)
     {
-        if (a == null || b == null || a.Hostname != b.Hostname || a.EnablePassword != b.EnablePassword || a.EnableSecret != b.EnableSecret || a.ConsolePassword != b.ConsolePassword || a.VtyPassword != b.VtyPassword || a.Motd != b.Motd || a.PasswordEncryption != b.PasswordEncryption || a.DomainLookupDisabled != b.DomainLookupDisabled || a.ConsoleLoginRequired != b.ConsoleLoginRequired || a.VtyLoginRequired != b.VtyLoginRequired || a.ManagementAddress != b.ManagementAddress || a.ManagementMask != b.ManagementMask || a.DefaultGateway != b.DefaultGateway || a.Routes.Count != b.Routes.Count || a.Vlans.Count != b.Vlans.Count || a.Interfaces.Count != b.Interfaces.Count) return false;
+        if (a == null || b == null || a.Hostname != b.Hostname || a.EnablePassword != b.EnablePassword || a.EnableSecret != b.EnableSecret || a.ConsolePassword != b.ConsolePassword || a.AuxPassword != b.AuxPassword || a.VtyPassword != b.VtyPassword || a.Motd != b.Motd || a.PasswordEncryption != b.PasswordEncryption || a.DomainLookupDisabled != b.DomainLookupDisabled || a.ConsoleLoginRequired != b.ConsoleLoginRequired || a.AuxLoginRequired != b.AuxLoginRequired || a.VtyLoginRequired != b.VtyLoginRequired || a.ConsoleLoggingSynchronous != b.ConsoleLoggingSynchronous || a.AuxLoggingSynchronous != b.AuxLoggingSynchronous || a.ManagementAddress != b.ManagementAddress || a.ManagementMask != b.ManagementMask || a.DefaultGateway != b.DefaultGateway || a.Routes.Count != b.Routes.Count || a.Vlans.Count != b.Vlans.Count || a.Interfaces.Count != b.Interfaces.Count) return false;
         foreach (var vlan in a.Vlans) if (!b.Vlans.TryGetValue(vlan.Key, out var name) || name != vlan.Value) return false;
         foreach (var route in a.Routes) if (!b.Routes.Any(x => x.Network == route.Network && x.Mask == route.Mask && x.NextHop == route.NextHop)) return false;
         foreach (var pair in a.Interfaces) if (!b.Interfaces.TryGetValue(pair.Key, out var other) || pair.Value.Name != other.Name || pair.Value.AdminUp != other.AdminUp || pair.Value.IsTrunk != other.IsTrunk || pair.Value.TrunkEncapsulationDot1q != other.TrunkEncapsulationDot1q || pair.Value.AccessVlan != other.AccessVlan || pair.Value.NativeVlan != other.NativeVlan || pair.Value.Dot1qVlan != other.Dot1qVlan || pair.Value.Address != other.Address || pair.Value.Mask != other.Mask || !pair.Value.AllowedVlans.SetEquals(other.AllowedVlans)) return false;

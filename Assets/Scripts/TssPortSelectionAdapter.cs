@@ -81,6 +81,9 @@ public sealed class TssPortSelectionAdapter : MonoBehaviour
     {
         _selecting = false;
         RefreshEndpointCache();
+        var hoveredEndpoint = _hoveredEndpoint;
+        _hoveredEndpoint = null;
+
         if (_endpoints == null)
             return;
 
@@ -94,7 +97,8 @@ public sealed class TssPortSelectionAdapter : MonoBehaviour
             endpoint.SetSelected(false);
         }
 
-        _hoveredEndpoint = null;
+        if (hoveredEndpoint && System.Array.IndexOf(_endpoints, hoveredEndpoint) < 0)
+            hoveredEndpoint.SetHovered(false);
     }
 
     private void RefreshHighlights()

@@ -69,6 +69,14 @@ public sealed class TssPortEndpoint : MonoBehaviour
         CacheMaterials();
     }
 
+    private void OnDisable()
+    {
+        _selected = false;
+        _selectable = false;
+        _hovered = false;
+        ApplyHighlight();
+    }
+
     private void Update()
     {
         if (_materials == null || _targetColors == null)
@@ -139,9 +147,10 @@ public sealed class TssPortEndpoint : MonoBehaviour
 
     private void CacheMaterials()
     {
-        _renderers = GetComponentsInChildren<Renderer>(true);
-        if (_renderers.Length == 0 && highlightRenderers != null)
-            _renderers = System.Array.FindAll(highlightRenderers, renderer => renderer);
+        var configuredRenderers = highlightRenderers == null
+            ? System.Array.Empty<Renderer>()
+            : System.Array.FindAll(highlightRenderers, renderer => renderer);
+        _renderers = configuredRenderers.Length > 0 ? configuredRenderers : GetComponentsInChildren<Renderer>(true);
 
         _materials = new Material[_renderers.Length][];
         _baseColors = new Color[_renderers.Length][];

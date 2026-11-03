@@ -83,7 +83,7 @@ public sealed class TssComputerConnectivityPresenter : MonoBehaviour, ITssEndpoi
                     var providerProbe = gatewayProbe.Success
                         ? evaluator.Evaluate(key, session.NetworkState.Profile.WanProviderAddress)
                         : default;
-                    var layer1 = gatewayProbe.FailedLayer != 1;
+                    var layer1 = connected && gatewayProbe.FailedLayer != 1;
                     var layer2 = layer1 && gatewayProbe.FailedLayer != 2;
                     var layer3 = layer2 && gatewayProbe.Success;
                     var providerReachable = layer3 && providerProbe.Success;

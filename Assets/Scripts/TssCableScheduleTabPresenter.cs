@@ -50,7 +50,7 @@ public sealed class TssCableScheduleTabPresenter : MonoBehaviour
 
         if (scenarioRows != null && scenarioRows.Length > 0 && tableContent && rowTemplate)
         {
-            PopulateRows(scenarioRows);
+            PopulateRows(scenarioRows, profile);
             return;
         }
 
@@ -66,7 +66,7 @@ public sealed class TssCableScheduleTabPresenter : MonoBehaviour
         }
     }
 
-    private void PopulateRows(IReadOnlyList<ScenarioCableScheduleEntry> scenarioRows)
+    private void PopulateRows(IReadOnlyList<ScenarioCableScheduleEntry> scenarioRows, TssNetworkRunProfile profile)
     {
         prefabRowStyles ??= CaptureRowStyles();
 
@@ -93,9 +93,9 @@ public sealed class TssCableScheduleTabPresenter : MonoBehaviour
             row.SetActive(true);
             var rowCells = row.GetComponentsInChildren<Text>(true);
             SetRowCell(rowCells, 0, DisplayName(entry.fromEndpoint));
-            SetRowCell(rowCells, 1, DisplayPort(entry.fromPort));
+            SetRowCell(rowCells, 1, DisplayPortFor(entry.fromEndpoint, entry.fromPort, entry.toEndpoint, profile));
             SetRowCell(rowCells, 2, DisplayName(entry.toEndpoint));
-            SetRowCell(rowCells, 3, DisplayPort(entry.toPort));
+            SetRowCell(rowCells, 3, DisplayPortFor(entry.toEndpoint, entry.toPort, entry.fromEndpoint, profile));
             SetRowCell(rowCells, 4, entry.cableType);
             ApplyRowStyle(row, prefabRowStyles, i);
         }
@@ -162,6 +162,22 @@ public sealed class TssCableScheduleTabPresenter : MonoBehaviour
             .Replace("Patch2", "Patch Panel 2");
     }
 
+    private static string DisplayPortFor(string endpoint, string fallback, string connectedEndpoint, TssNetworkRunProfile profile)
+    {
+        if (profile != null)
+        {
+            foreach (var required in profile.RequiredPorts ?? Array.Empty<NetworkRequiredPort>())
+            {
+                if (string.Equals(required.deviceRole, endpoint, StringComparison.OrdinalIgnoreCase) &&
+                    string.Equals(required.endpointId, connectedEndpoint, StringComparison.OrdinalIgnoreCase) &&
+                    !string.IsNullOrWhiteSpace(required.interfaceName))
+                    return required.interfaceName;
+            }
+        }
+
+        return DisplayPort(fallback);
+    }
+
     private static string DisplayPort(string value) => (value ?? string.Empty).Replace("Punch", "Port");
 
     private string ResolveDynamicValue(int row, int column, string fallback, TssNetworkRunProfile profile)
@@ -186,7 +202,7 @@ public sealed class TssCableScheduleTabPresenter : MonoBehaviour
         var switchPort = SwitchPortFor(endpoint, profile);
         if (switchPort == null)
             return fallback;
-        return column == 2 ? switchPort.Value.Role : switchPort.Value.Port;
+        return column == 2 ? switchPort.Value.Role : switchPort.Value.InterfaceName;
     }
 
     private static SwitchPort? SwitchPortFor(string endpointId, TssNetworkRunProfile profile)
@@ -209,12 +225,12 @@ public sealed class TssCableScheduleTabPresenter : MonoBehaviour
     private readonly struct SwitchPort
     {
         public readonly string Role;
-        public readonly string Port;
+        public readonly string InterfaceName;
 
-        public SwitchPort(string role, string port)
+        public SwitchPort(string role, string interfaceName)
         {
             Role = role;
-            Port = port;
+            InterfaceName = interfaceName;
         }
     }
 

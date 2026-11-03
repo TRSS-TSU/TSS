@@ -13,6 +13,7 @@ public enum CiscoCliMode
     PrivilegedExec,  // Switch#
     GlobalConfig,    // Switch(config)#
     InterfaceConfig, // Switch(config-if)#
+    SubinterfaceConfig, // Router(config-subif)#
     LineConfig,      // Switch(config-line)#
     VlanConfig       // Switch(config-vlan)#
 }
@@ -210,6 +211,17 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             commandGrid.SetReference(state.Category);
         else if (commandReferenceText)
             commandReferenceText.text = TssCliCommandProcessor.BuildCommandReference(state.Category);
+        else
+        {
+            var referenceText = transform
+                .Find("TerminalWindow/ContentArea/SidebarPanel/CommandReference/Viewport/ReferenceText/Syntax")
+                ?.GetComponent<Text>();
+            if (referenceText)
+            {
+                referenceText.supportRichText = true;
+                referenceText.text = TssCliCommandProcessor.BuildCommandReference(state.Category);
+            }
+        }
 
         _consoleHistory.Clear();
         AppendToConsole(isRouter ? GetRouterBootBanner(state) : GetSwitchBootBanner(state));
@@ -247,6 +259,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             CiscoCliMode.PrivilegedExec => $"{host}#",
             CiscoCliMode.GlobalConfig => $"{host}(config)#",
             CiscoCliMode.InterfaceConfig => $"{host}(config-if)#",
+            CiscoCliMode.SubinterfaceConfig => $"{host}(config-subif)#",
             CiscoCliMode.LineConfig => $"{host}(config-line)#",
             CiscoCliMode.VlanConfig => $"{host}(config-vlan)#",
             _ => $"{host}#"
@@ -460,6 +473,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
                     TssNetworkCliMode.PrivilegedExec => CiscoCliMode.PrivilegedExec,
                     TssNetworkCliMode.GlobalConfig => CiscoCliMode.GlobalConfig,
                     TssNetworkCliMode.InterfaceConfig => CiscoCliMode.InterfaceConfig,
+                    TssNetworkCliMode.SubinterfaceConfig => CiscoCliMode.SubinterfaceConfig,
                     TssNetworkCliMode.LineConfig => CiscoCliMode.LineConfig,
                     TssNetworkCliMode.VlanConfig => CiscoCliMode.VlanConfig,
                     _ => CiscoCliMode.UserExec
@@ -527,10 +541,12 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         }
         else if (verb == "interface" || verb == "int")
         {
-            if (_cliMode == CiscoCliMode.GlobalConfig || _cliMode == CiscoCliMode.InterfaceConfig)
+            if (_cliMode == CiscoCliMode.GlobalConfig || _cliMode == CiscoCliMode.InterfaceConfig || _cliMode == CiscoCliMode.SubinterfaceConfig)
             {
                 _configuredInterface = parts.Length > 1 ? parts[1] : "FastEthernet0/1";
-                _cliMode = CiscoCliMode.InterfaceConfig;
+                _cliMode = _state != null && _state.Category == EquipmentCategory.Router && _configuredInterface.Contains('.')
+                    ? CiscoCliMode.SubinterfaceConfig
+                    : CiscoCliMode.InterfaceConfig;
             }
             else
             {
@@ -553,7 +569,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         }
         else if (lower == "exit")
         {
-            if (_cliMode == CiscoCliMode.InterfaceConfig || _cliMode == CiscoCliMode.LineConfig || _cliMode == CiscoCliMode.VlanConfig)
+            if (_cliMode == CiscoCliMode.InterfaceConfig || _cliMode == CiscoCliMode.SubinterfaceConfig || _cliMode == CiscoCliMode.LineConfig || _cliMode == CiscoCliMode.VlanConfig)
             {
                 _cliMode = CiscoCliMode.GlobalConfig;
             }
@@ -641,7 +657,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         {
             AppendCommandOutput(cmd, BuildShowVlanBrief());
         }
-        else if (lower.StartsWith("show ip route") || lower == "show route" || lower.StartsWith("do show ip route"))
+        else if (lower.StartsWith("show ip route") || lower == "show ip ro" || lower.StartsWith("sh ip route") || lower.StartsWith("do show ip route"))
         {
             AppendCommandOutput(cmd, BuildShowIpRoute());
         }
@@ -787,7 +803,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
                 "  exit                       Exit from configure mode\n" +
                 "  end                        Exit to privileged EXEC mode\n",
 
-            CiscoCliMode.InterfaceConfig =>
+            CiscoCliMode.InterfaceConfig or CiscoCliMode.SubinterfaceConfig =>
                 "Interface Configuration Commands:\n" +
                 "  ip address <ip> <mask> | ip add <ip> <mask>     Set IPv4 address on interface\n" +
                 "  no shutdown                Enable interface\n" +
@@ -821,7 +837,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         sb.AppendLine("!");
         if (_state != null)
         {
-            foreach (var iface in _state.Interfaces.OrderBy(item => InterfaceOrderKey(item.InterfaceName), StringComparer.OrdinalIgnoreCase))
+            foreach (var iface in _state.Interfaces.Where(item => !IsLineEndpoint(item.InterfaceName)).OrderBy(item => InterfaceOrderKey(item.InterfaceName), StringComparer.OrdinalIgnoreCase))
             {
                 sb.AppendLine($"interface {iface.InterfaceName}");
                 if (_state.Category == EquipmentCategory.Router)
@@ -858,7 +874,20 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             sb.AppendLine(" password " + (networkDevice.PasswordEncryption ? "<encrypted>" : networkDevice.ConsolePassword));
         if (networkDevice != null && networkDevice.ConsoleLoginRequired)
             sb.AppendLine(" login");
+        if (networkDevice != null && networkDevice.ConsoleLoggingSynchronous)
+            sb.AppendLine(" logging synchronous");
         sb.AppendLine("!");
+        if (networkDevice != null && (!string.IsNullOrEmpty(networkDevice.AuxPassword) || networkDevice.AuxLoginRequired || networkDevice.AuxLoggingSynchronous))
+        {
+            sb.AppendLine("line aux 0");
+            if (!string.IsNullOrEmpty(networkDevice.AuxPassword))
+                sb.AppendLine(" password " + (networkDevice.PasswordEncryption ? "<encrypted>" : networkDevice.AuxPassword));
+            if (networkDevice.AuxLoginRequired)
+                sb.AppendLine(" login");
+            if (networkDevice.AuxLoggingSynchronous)
+                sb.AppendLine(" logging synchronous");
+            sb.AppendLine("!");
+        }
         sb.AppendLine("line vty 0 4");
         if (networkDevice != null && !string.IsNullOrEmpty(networkDevice.VtyPassword))
             sb.AppendLine(" password " + (networkDevice.PasswordEncryption ? "<encrypted>" : networkDevice.VtyPassword));
@@ -868,7 +897,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         if (_state != null && _state.Category == EquipmentCategory.Switch)
         {
             var vlanIds = new SortedSet<int> { 1 };
-            foreach (var iface in _state.Interfaces)
+            foreach (var iface in _state.Interfaces.Where(item => !IsLineEndpoint(item.InterfaceName)))
                 vlanIds.Add(iface.VlanId);
             if (networkDevice != null)
                 foreach (var vlanId in networkDevice.Vlans.Keys)
@@ -887,6 +916,8 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         sb.AppendLine("end");
         return sb.ToString();
     }
+
+    private static bool IsLineEndpoint(string name) => !string.IsNullOrWhiteSpace(name) && (name.Equals("Console", StringComparison.OrdinalIgnoreCase) || name.Equals("Con", StringComparison.OrdinalIgnoreCase) || name.Equals("Aux", StringComparison.OrdinalIgnoreCase) || name.Equals("Auxiliary", StringComparison.OrdinalIgnoreCase));
 
     private static string InterfaceOrderKey(string name)
     {
@@ -912,7 +943,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         sb.AppendLine("-------------------------- --------------- --- ------ --------------------- --------");
         if (_state != null)
         {
-            foreach (var iface in _state.Interfaces)
+            foreach (var iface in _state.Interfaces.Where(item => !IsLineEndpoint(item.InterfaceName)))
             {
                 var ip = !string.IsNullOrEmpty(iface.IpAddress) ? iface.IpAddress.Split('/')[0] : "unassigned";
                 var status = iface.IsPhysicalLinkUp ? "up" : "down";
@@ -928,7 +959,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         var sb = new StringBuilder();
         if (_state != null)
         {
-            foreach (var iface in _state.Interfaces)
+            foreach (var iface in _state.Interfaces.Where(item => !IsLineEndpoint(item.InterfaceName)))
             {
                 var status = iface.IsPhysicalLinkUp ? "up" : "down";
                 sb.AppendLine($"{iface.InterfaceName} is {status}, line protocol is {status}");
