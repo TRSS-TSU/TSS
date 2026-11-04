@@ -361,6 +361,67 @@ public sealed class TssPlacementEvaluatorTests
     }
 
     [Test]
+    public void LogicalLayer1UsesRouterDefaultBeforeItsInterfaceIsRegistered()
+    {
+        var root = new GameObject("Local interface precedence");
+        var session = root.AddComponent<TssTrainingSession>();
+        var scenario = CreateScenario();
+        var straight = Cable(TssCableType.StraightThrough);
+        scenario.cableInventory = new[] { new ScenarioCableInventoryItem { cable = straight, quantity = 1 } };
+        scenario.networkScenario = new NetworkScenarioConfig
+        {
+            enableLayer23Simulation = true,
+            roleBindings = new[]
+            {
+                new NetworkRoleBinding { role = "AN-1", deviceKey = "Rack:Rack01:U37", category = EquipmentCategory.Switch },
+                new NetworkRoleBinding { role = "CN-1", deviceKey = "Rack:Rack01:U34", category = EquipmentCategory.Router }
+            }
+        };
+
+        var routerPort = EndpointObject("CN-1 Fa0/0").AddComponent<TssPortEndpoint>();
+        var switchPort = EndpointObject("AN-1 Fa0/6").AddComponent<TssPortEndpoint>();
+        routerPort.Configure("Rack:Rack01:U34:Fa00", Port("Fa00"));
+        switchPort.Configure("Rack:Rack01:U37:Fa06", Port("Fa06"));
+
+        try
+        {
+            session.BeginScenario(scenario);
+            Assert.IsTrue(session.TryCheckoutCable(straight, out _));
+            Assert.IsTrue(session.TryUsePort(routerPort, out _));
+            Assert.IsTrue(session.TryUsePort(switchPort, out _));
+
+            Assert.AreEqual(1, session.GetEffectivePhysicalPaths().Count);
+            Assert.IsFalse(session.NetworkState.IsEndpointLogicalLayer1Available(session, switchPort.EndpointId));
+            Assert.IsFalse(session.NetworkState.IsEndpointLogicalLayer1Available(session, routerPort.EndpointId));
+
+            var networkSwitch = session.NetworkState.GetOrCreateDevice("Rack:Rack01:U37", EquipmentCategory.Switch, "AN-1");
+            networkSwitch.Interfaces["Fa0/6"] = new NetworkInterfaceState
+            {
+                Name = "Fa0/6", EndpointId = switchPort.EndpointId, AdminUp = true, CarrierUp = true
+            };
+            var router = session.NetworkState.GetOrCreateDevice("Rack:Rack01:U34", EquipmentCategory.Router, "CN-1");
+            router.Interfaces["Fa0/0"] = new NetworkInterfaceState
+            {
+                Name = "Fa0/0", EndpointId = routerPort.EndpointId, AdminUp = false, CarrierUp = true
+            };
+            Assert.IsFalse(session.NetworkState.IsEndpointLogicalLayer1Available(session, switchPort.EndpointId));
+            Assert.IsFalse(session.NetworkState.IsEndpointLogicalLayer1Available(session, routerPort.EndpointId));
+
+            router.Interfaces["Fa0/0"].AdminUp = true;
+            Assert.IsTrue(session.NetworkState.IsEndpointLogicalLayer1Available(session, switchPort.EndpointId));
+            Assert.IsTrue(session.NetworkState.IsEndpointLogicalLayer1Available(session, routerPort.EndpointId));
+        }
+        finally
+        {
+            Object.DestroyImmediate(routerPort.gameObject);
+            Object.DestroyImmediate(switchPort.gameObject);
+            Object.DestroyImmediate(straight);
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(root);
+        }
+    }
+
+    [Test]
     public void UnterminatedPatchPanelCableDoesNotCountAsEffectivePath()
     {
         var go = new GameObject("Session");

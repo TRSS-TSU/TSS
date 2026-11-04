@@ -24,7 +24,7 @@ public sealed class TssExternalScenarioPlayModeTests
             Assert.Ignore("These scene integration tests require writable local StreamingAssets in the Editor.");
         manifestPath = Path.Combine(Application.streamingAssetsPath, "Scenarios/manifest.json");
         originalManifest = File.ReadAllText(manifestPath);
-        scenarioPath = Path.Combine(Application.streamingAssetsPath, "Scenarios/balanced-lab.json");
+        scenarioPath = Path.Combine(Application.streamingAssetsPath, "Scenarios/capstone.json");
         originalScenario = File.ReadAllText(scenarioPath);
     }
 
@@ -37,13 +37,14 @@ public sealed class TssExternalScenarioPlayModeTests
     }
 
     [UnityTest]
-    public IEnumerator AllFourMenuButtonsLaunchMatchingSessionAndBinder()
+    public IEnumerator CapstoneMenuButtonLaunchesMatchingSessionAndBinder()
     {
         var manifest = JsonUtility.FromJson<TssScenarioManifest>(originalManifest);
         foreach (var entry in manifest.scenarios)
         {
             yield return OpenMenu();
-            Assert.AreEqual(4, ScenarioButtons().Length);
+            Assert.AreEqual(1, ScenarioButtons().Length);
+            StringAssert.Contains("manifest loaded", GameObject.Find("ScenarioManifestStatus").GetComponent<Text>().text.ToLowerInvariant());
             Assert.AreEqual(0, Object.FindObjectsByType<TssTrainingSession>(FindObjectsSortMode.None).Length);
             var button = ScenarioButtons().Single(x => x.GetComponentInChildren<Text>().text == entry.displayName);
             button.onClick.Invoke();
@@ -141,7 +142,7 @@ public sealed class TssExternalScenarioPlayModeTests
         File.WriteAllText(scenarioPath, JsonUtility.ToJson(data));
         yield return OpenMenu();
         File.WriteAllText(scenarioPath, originalScenario);
-        Assert.AreEqual(4, ScenarioButtons().Length, "Three external choices plus built-in fallback.");
+        Assert.AreEqual(1, ScenarioButtons().Length, "One external Capstone choice plus built-in fallback.");
         Assert.IsFalse(ScenarioButtons().Any(x => x.GetComponentInChildren<Text>().text == data.displayName));
         yield return LaunchFallback();
     }

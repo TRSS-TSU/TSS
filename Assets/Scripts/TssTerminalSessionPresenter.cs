@@ -51,6 +51,8 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
     [SerializeField] private Transform interfaceListContainer;
     [SerializeField] private Text sidebarStatusText;
     [SerializeField] private Text commandReferenceText;
+    [SerializeField] private RawImage inspectionPreview;
+    [SerializeField] private GameObject inspectionPreviewRoot;
 
     private TssDeviceLogicalState _state;
     private Action _onClose;
@@ -80,6 +82,16 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
 
     public CiscoCliMode CliMode => _cliMode;
 
+    public void SetInspectionPreview(Texture texture)
+    {
+        if (inspectionPreview)
+            inspectionPreview.texture = texture;
+
+        var root = inspectionPreviewRoot ? inspectionPreviewRoot : inspectionPreview ? inspectionPreview.gameObject : null;
+        if (root)
+            root.SetActive(texture);
+    }
+
     private void Awake()
     {
         if (closeButton)
@@ -105,6 +117,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             _notificationSession.StateChanged -= OnNetworkStateChanged;
         _notificationSession = null;
         _observedNetworkDevice = null;
+        SetInspectionPreview(null);
     }
 
     public bool TrySetCommandInput(string value)
@@ -162,6 +175,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         _onClose = onClose;
         _cliMode = CiscoCliMode.UserExec;
         _processor = new TssCliCommandProcessor(TssTrainingSession.Instance, deviceKey ?? state.DeviceKey, state.Category, state.DeviceName);
+        var consoleLoginRequired = _processor.BeginConsoleLogin();
         if (_notificationSession)
             _notificationSession.StateChanged -= OnNetworkStateChanged;
         _notificationSession = TssTrainingSession.Instance;
@@ -224,7 +238,10 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         }
 
         _consoleHistory.Clear();
-        AppendToConsole(isRouter ? GetRouterBootBanner(state) : GetSwitchBootBanner(state));
+        if (consoleOutputText)
+            consoleOutputText.text = string.Empty;
+        if (!consoleLoginRequired)
+            AppendToConsole(isRouter ? GetRouterBootBanner(state) : GetSwitchBootBanner(state));
 
         UpdatePrompt();
 
@@ -269,7 +286,13 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
     public void UpdatePrompt()
     {
         if (promptText)
-            promptText.text = GetCurrentPrompt() + " ";
+            promptText.text = IsAwaitingPassword() ? "Password:" : GetCurrentPrompt() + " ";
+    }
+
+    private bool IsAwaitingPassword()
+    {
+        return _processor != null && _processor.Device != null
+            && (_processor.Device.AwaitingConsolePassword || _processor.Device.AwaitingEnablePassword);
     }
 
     private void PopulateSidebarInterfaces()
@@ -446,8 +469,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             return;
 
         cmd = cmd.Trim();
-        var awaitingEnablePassword = _processor != null && _processor.Device != null && _processor.Device.AwaitingEnablePassword;
-        if (awaitingEnablePassword)
+        if (IsAwaitingPassword())
             AppendToConsole("********\n");
         else
         {
@@ -478,11 +500,16 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
                     TssNetworkCliMode.VlanConfig => CiscoCliMode.VlanConfig,
                     _ => CiscoCliMode.UserExec
                 };
-                AppendCommandOutput(cmd, result.Output);
+                AppendCommandOutput(cmd, IsAwaitingPassword() ? RemovePasswordPrompt(result.Output) : result.Output);
                 if (result.StateChanged) UpdateSubheader();
                 if (string.Equals(cmd, "exit", StringComparison.OrdinalIgnoreCase) && wasUserExec)
                 {
-                    Close();
+                    _consoleHistory.Clear();
+                    if (consoleOutputText)
+                        consoleOutputText.text = string.Empty;
+                    UpdatePrompt();
+                    if (commandInput)
+                        commandInput.ActivateInputField();
                     return;
                 }
             }
@@ -583,8 +610,12 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             }
             else if (_cliMode == CiscoCliMode.UserExec)
             {
-                AppendToConsole("Connection to terminal closed by foreign host.\n");
-                Close();
+                _consoleHistory.Clear();
+                if (consoleOutputText)
+                    consoleOutputText.text = string.Empty;
+                UpdatePrompt();
+                if (commandInput)
+                    commandInput.ActivateInputField();
                 return;
             }
         }
@@ -827,7 +858,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         sb.AppendLine("!");
         sb.AppendLine("version 15.0");
         sb.AppendLine("no service timestamps log datetime msec");
-        sb.AppendLine("no service password-encryption");
+        sb.AppendLine(networkDevice != null && networkDevice.PasswordEncryption ? "service password-encryption" : "no service password-encryption");
         if (networkDevice != null && !string.IsNullOrEmpty(networkDevice.EnableSecret))
             sb.AppendLine("enable secret <configured>");
         if (networkDevice != null && !string.IsNullOrEmpty(networkDevice.EnablePassword))
@@ -1239,6 +1270,15 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             value = value.Substring(3).TrimStart();
         return value.StartsWith("show", StringComparison.OrdinalIgnoreCase)
             || value.StartsWith("sh ", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static string RemovePasswordPrompt(string output)
+    {
+        if (string.IsNullOrEmpty(output))
+            return output;
+
+        var promptIndex = output.LastIndexOf("Password:", StringComparison.OrdinalIgnoreCase);
+        return promptIndex >= 0 ? output.Substring(0, promptIndex) : output;
     }
 
     private IEnumerator ScrollToBottomNextFrame()

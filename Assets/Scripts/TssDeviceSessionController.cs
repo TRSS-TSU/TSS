@@ -23,6 +23,7 @@ public sealed class TssDeviceSessionController : MonoBehaviour
 
     public bool IsSessionOpen { get; private set; }
     private string _lastWorkstationSourceKey;
+    private TssInspectionCameraSource _activeInspectionCamera;
 
     public sealed class DeviceContext
     {
@@ -262,6 +263,17 @@ public sealed class TssDeviceSessionController : MonoBehaviour
         if (ctx == null)
             ctx = ResolveContext(deviceObject);
 
+        if (_activeInspectionCamera)
+            _activeInspectionCamera.SetPreviewActive(false);
+        _activeInspectionCamera = FindInspectionCameraSource(deviceObject, ctx);
+        if (_activeInspectionCamera)
+        {
+            _activeInspectionCamera.SetPreviewActive(true);
+            terminalPresenter.SetInspectionPreview(_activeInspectionCamera.PreviewTexture);
+        }
+        else
+            terminalPresenter.SetInspectionPreview(null);
+
         var endpoints = deviceObject ? deviceObject.GetComponentsInChildren<TssPortEndpoint>(true) : Array.Empty<TssPortEndpoint>();
         var network = TssTrainingSession.Instance ? TssTrainingSession.Instance.NetworkState : null;
         TssDeviceLogicalState state;
@@ -403,8 +415,15 @@ public sealed class TssDeviceSessionController : MonoBehaviour
 
     public void CloseCurrentSession()
     {
+        if (_activeInspectionCamera)
+            _activeInspectionCamera.SetPreviewActive(false);
+        _activeInspectionCamera = null;
+
         if (terminalPresenter && terminalPresenter.gameObject.activeSelf)
+        {
+            terminalPresenter.SetInspectionPreview(null);
             terminalPresenter.gameObject.SetActive(false);
+        }
 
         if (desktopPresenter && desktopPresenter.gameObject.activeSelf)
             desktopPresenter.gameObject.SetActive(false);
@@ -416,5 +435,14 @@ public sealed class TssDeviceSessionController : MonoBehaviour
 
         if (TssRuntimeUi.Instance)
             TssRuntimeUi.Instance.PopExternalGameplayLock(this);
+    }
+
+    private static TssInspectionCameraSource FindInspectionCameraSource(GameObject deviceObject, DeviceContext ctx)
+    {
+        var source = deviceObject ? deviceObject.GetComponentInChildren<TssInspectionCameraSource>(true) : null;
+        if (source || ctx == null || !ctx.Root || ctx.Root == deviceObject)
+            return source;
+
+        return ctx.Root.GetComponentInChildren<TssInspectionCameraSource>(true);
     }
 }

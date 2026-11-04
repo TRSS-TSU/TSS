@@ -9,34 +9,7 @@
       "catalogId": "TSS_MAIN_CATALOG",
       "jsonFile": "capstone.json",
       "sceneName": "TSS",
-      "description": "Final capstone scenario for Technical Systems Support course.."
-    },
-    {
-      "scenarioId": "INSTALLATION_PRACTICE",
-      "displayName": "Installation Practice",
-      "facilityId": "TSS_MAIN",
-      "catalogId": "TSS_MAIN_CATALOG",
-      "jsonFile": "installation-practice.json",
-      "sceneName": "TSS",
-      "description": "Extra equipment and cables; start with the second rack."
-    },
-    {
-      "scenarioId": "NETWORK_VERIFICATION",
-      "displayName": "Network Verification",
-      "facilityId": "TSS_MAIN",
-      "catalogId": "TSS_MAIN_CATALOG",
-      "jsonFile": "network-verification.json",
-      "sceneName": "TSS",
-      "description": "Alternate VLAN bounds and additional endpoint diagnostics."
-    },
-    {
-      "scenarioId": "WIRELESS_READINESS",
-      "displayName": "Wireless Readiness",
-      "facilityId": "TSS_MAIN",
-      "catalogId": "TSS_MAIN_CATALOG",
-      "jsonFile": "wireless-readiness.json",
-      "sceneName": "TSS",
-      "description": "Wireless-focused binder and readiness checks with spare equipment."
+      "description": "Final capstone scenario for Technical Systems Support course."
     }
   ]
 }

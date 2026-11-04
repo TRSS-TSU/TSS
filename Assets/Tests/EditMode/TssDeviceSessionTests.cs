@@ -9,6 +9,76 @@ using Object = UnityEngine.Object;
 public sealed class TssDeviceSessionTests
 {
     [Test]
+    public void ConsoleLineLoginGuardsTerminalOpenAndReturnToUserExec()
+    {
+        var sessionObject = new GameObject("ConsoleLoginSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+
+        try
+        {
+            session.BeginScenario(scenario);
+            var processor = new TssCliCommandProcessor(session, "Router", EquipmentCategory.Router, "AN-1");
+            Assert.IsTrue(processor.Execute("enable").Accepted);
+            Assert.IsTrue(processor.Execute("configure terminal").Accepted);
+            Assert.IsTrue(processor.Execute("line con 0").Accepted);
+            Assert.IsTrue(processor.Execute("password consolepw").Accepted);
+            Assert.IsTrue(processor.Execute("login").Accepted);
+            Assert.IsTrue(processor.Execute("end").Accepted);
+
+            processor.BeginConsoleLogin();
+            Assert.IsTrue(processor.Device.AwaitingConsolePassword);
+            Assert.AreEqual(TssNetworkCliMode.UserExec, processor.Device.Mode);
+            Assert.IsFalse(processor.Execute("wrong").Accepted);
+            Assert.IsTrue(processor.Device.AwaitingConsolePassword);
+            Assert.IsTrue(processor.Execute("consolepw").Accepted);
+
+            Assert.IsTrue(processor.Execute("disable").Accepted);
+            Assert.IsFalse(processor.Device.AwaitingConsolePassword);
+
+            Assert.IsTrue(processor.Execute("enable").Accepted);
+            Assert.IsTrue(processor.Execute("exit").Accepted);
+            Assert.IsFalse(processor.Device.AwaitingConsolePassword);
+
+            processor.BeginConsoleLogin();
+            Assert.IsTrue(processor.Device.AwaitingConsolePassword);
+        }
+        finally
+        {
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
+    public void ConsolePasswordWithoutLoginDoesNotGateEnable()
+    {
+        var sessionObject = new GameObject("ConsolePasswordOnlySession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+
+        try
+        {
+            session.BeginScenario(scenario);
+            var processor = new TssCliCommandProcessor(session, "Router", EquipmentCategory.Router, "AN-1");
+            processor.Device.ConsolePassword = "consolepw";
+            processor.Device.ConsoleLoginRequired = false;
+            processor.BeginConsoleLogin();
+
+            Assert.IsFalse(processor.Device.AwaitingConsolePassword);
+            Assert.IsTrue(processor.Execute("enable").Accepted);
+            Assert.AreEqual(TssNetworkCliMode.PrivilegedExec, processor.Device.Mode);
+        }
+        finally
+        {
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
     public void AuxiliaryLineUsesSeparateStateAndRunningConfigBlocks()
     {
         var sessionObject = new GameObject("Session");
@@ -36,6 +106,80 @@ public sealed class TssDeviceSessionTests
             Assert.IsTrue(processor.Device.AuxLoginRequired);
         }
         finally { Object.DestroyImmediate(sessionObject); }
+    }
+
+    [Test]
+    public void ServicePasswordEncryptionCoversPlainPasswordsAndSecretTakesPrecedence()
+    {
+        var sessionObject = new GameObject("EnablePasswordSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        try
+        {
+            session.BeginScenario(scenario);
+            var processor = new TssCliCommandProcessor(session, "Router", EquipmentCategory.Router, "CN-1");
+            processor.Execute("enable");
+            processor.Execute("configure terminal");
+            Assert.IsTrue(processor.Execute("enable password plainpw").Accepted);
+            Assert.IsTrue(processor.Execute("ser pass").Accepted);
+            Assert.IsTrue(processor.Execute("username student password userpw").Accepted);
+            var config = TssCliCommandProcessor.BuildRunningConfig(processor.Device);
+            StringAssert.Contains("enable password <encrypted>", config);
+            StringAssert.Contains("username student password <encrypted>", config);
+            StringAssert.Contains("service password-encryption", config);
+
+            processor.Execute("end");
+            processor.Execute("disable");
+            processor.Execute("enable");
+            Assert.IsTrue(processor.Execute("plainpw").Accepted);
+
+            processor.Execute("configure terminal");
+            Assert.IsTrue(processor.Execute("enable secret secretpw").Accepted);
+            processor.Execute("end");
+            processor.Execute("disable");
+            processor.Execute("enable");
+            Assert.IsFalse(processor.Execute("plainpw").Accepted);
+            Assert.IsTrue(processor.Execute("secretpw").Accepted);
+        }
+        finally
+        {
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
+    public void CliCanSwitchBetweenLinesAndInterfacesFromConfigurationModes()
+    {
+        var sessionObject = new GameObject("CliConfigSwitchSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        try
+        {
+            session.BeginScenario(scenario);
+            var processor = new TssCliCommandProcessor(session, "Router", EquipmentCategory.Router, "Router");
+            processor.Execute("enable");
+            processor.Execute("configure terminal");
+
+            Assert.IsTrue(processor.Execute("line con 0").Accepted);
+            Assert.IsTrue(processor.Execute("line aux 0").Accepted);
+            Assert.AreEqual(TssNetworkCliMode.LineConfig, processor.Device.Mode);
+            Assert.AreEqual("aux", processor.Device.SelectedLine);
+            Assert.IsTrue(processor.Execute("interface Fa0/0").Accepted);
+            Assert.AreEqual(TssNetworkCliMode.InterfaceConfig, processor.Device.Mode);
+            Assert.IsTrue(processor.Execute("interface Fa0/0.10").Accepted);
+            Assert.AreEqual(TssNetworkCliMode.SubinterfaceConfig, processor.Device.Mode);
+            Assert.IsTrue(processor.Execute("line console 0").Accepted);
+            Assert.AreEqual(TssNetworkCliMode.LineConfig, processor.Device.Mode);
+            Assert.AreEqual("console", processor.Device.SelectedLine);
+        }
+        finally
+        {
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
     }
 
     [Test]
@@ -1141,6 +1285,8 @@ public sealed class TssDeviceSessionTests
         scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true, profileSeed = 42 };
         session.BeginScenario(scenario);
         var processor = new TssCliCommandProcessor(session, "Router", EquipmentCategory.Router, "CN-1");
+        var refreshes = 0;
+        session.StateChanged += () => refreshes++;
 
         processor.Execute("enable");
         processor.Execute("configure terminal");
@@ -1154,9 +1300,13 @@ public sealed class TssDeviceSessionTests
         var canonicalRoutes = processor.Execute("show ip route");
         var abbreviatedRoutes = processor.Execute("sh ip route");
         var shortRoutes = processor.Execute("show ip ro");
+        var shortCiscoRoutes = processor.Execute("sh ip ro");
         Assert.IsTrue(canonicalRoutes.Accepted);
         Assert.AreEqual(canonicalRoutes.Output, abbreviatedRoutes.Output);
         Assert.AreEqual(canonicalRoutes.Output, shortRoutes.Output);
+        Assert.AreEqual(canonicalRoutes.Output, shortCiscoRoutes.Output);
+        Assert.IsTrue(processor.Device.Evidence.Contains("show ip route"));
+        Assert.Greater(refreshes, 0);
         Assert.IsFalse(processor.Execute("show route").Accepted);
         Assert.IsTrue(processor.Execute("interface Fa0/1").Accepted);
         Assert.IsTrue(processor.Execute("no shutdown").Accepted);
@@ -1230,6 +1380,8 @@ public sealed class TssDeviceSessionTests
         Assert.IsTrue(processor.Device.Interfaces["Fa0/0"].AdminUp);
         Assert.IsTrue(processor.Execute("interface Fa0/0.44").Accepted);
         Assert.IsTrue(processor.Device.Interfaces["Fa0/0"].AdminUp);
+        Assert.IsFalse(processor.Execute("shutdown").Accepted);
+        Assert.IsFalse(processor.Execute("no shutdown").Accepted);
         processor.Execute("encapsulation dot1q 44");
         processor.Execute("ip address 192.0.2.1 255.255.255.0");
         processor.Device.Interfaces["Fa0/0"].CarrierUp = true;
@@ -1256,6 +1408,12 @@ public sealed class TssDeviceSessionTests
         processor.Execute("end");
         StringAssert.Contains("Fa0/0.44", processor.Execute("show ip interface brief").Output);
         StringAssert.Contains("up", processor.Execute("show ip interface brief").Output);
+
+        processor.Execute("configure terminal");
+        Assert.IsTrue(processor.Execute("no interface Fa0/0.44").Accepted);
+        Assert.IsFalse(processor.Device.Interfaces.ContainsKey("Fa0/0.44"));
+        processor.Execute("end");
+        StringAssert.DoesNotContain("interface Fa0/0.44", processor.Execute("show running-config").Output);
 
         Object.DestroyImmediate(scenario);
         Object.DestroyImmediate(sessionObject);

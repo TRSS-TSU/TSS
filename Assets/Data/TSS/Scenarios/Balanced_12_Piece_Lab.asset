@@ -53,6 +53,10 @@ MonoBehaviour:
     endpointAId: Rack:Rack01:U30:Fa01
     endpointBId: PatchPanel:Rack01:Port18
     requiredCableType: 0
+  - requirementId: RouterLanUplink
+    endpointAId: Rack:Rack01:U30:Fa00
+    endpointBId: Rack:Rack01:U35:Fa06
+    requiredCableType: 0
   permanentConnections:
   - connectionId: Infrastructure001
     cable: {fileID: 11400000, guid: 4ce11174c7c04ef44bd70d86449fcec6, type: 2}
@@ -407,9 +411,14 @@ MonoBehaviour:
     toPort: Port 1
     cableType: Straight
   - fromEndpoint: CN-1
-    fromPort: Port 1
+    fromPort: Fa0/1
     toEndpoint: Patch Panel 1
     toPort: Port 18
+    cableType: Straight
+  - fromEndpoint: CN-1
+    fromPort: Fa0/0
+    toEndpoint: AN-1
+    toPort: Fa0/6
     cableType: Straight
   - fromEndpoint: Patch Panel 1
     fromPort: Port 18

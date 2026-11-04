@@ -34,7 +34,7 @@ public sealed class TssScenarioAutomationPlayModeTests
 
         var cables = automation.ConnectAllCables();
         Assert.AreEqual(0, cables.failedConnections, cables.ToString());
-        Assert.AreEqual(10, cables.connected);
+        Assert.AreEqual(11, cables.connected);
         foreach (var status in session.GetCableTypeStatuses())
             Assert.IsTrue(status.IsConnected && status.IsCorrect, $"Incorrect cable: {status.ConnectionId}");
 
@@ -47,7 +47,7 @@ public sealed class TssScenarioAutomationPlayModeTests
         Assert.AreEqual(0, rerun.failedPlacements + rerun.failedConnections + rerun.failedTerminations, rerun.ToString());
         Assert.AreEqual(6, session.Installed.Count);
         Assert.AreEqual(8, session.EndpointPlacements.Count);
-        Assert.AreEqual(52, session.PhysicalConnections.Count);
+        Assert.AreEqual(53, session.PhysicalConnections.Count);
     }
 
     private static bool HasInstalled(TssTrainingSession session, string name, EquipmentCategory category)

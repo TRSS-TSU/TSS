@@ -1448,7 +1448,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
         var builder = new StringBuilder();
         var complete = 0;
-        var total = workPackage == 3 ? 6 : 7;
+        var total = 7;
         builder.AppendLine(TssWorkPackageTitles.Get(workPackage));
         builder.AppendLine($"Complete: {complete}/{total}");
         builder.AppendLine();
@@ -1475,6 +1475,13 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 result,
                 "Point the default route at the provider",
                 "WP3.DefaultRoute",
+                ref complete
+            );
+            AppendChecklistLine(
+                builder,
+                result,
+                "Verify the route table",
+                "WP3.RouteEvidence",
                 ref complete
             );
             AppendChecklistLine(

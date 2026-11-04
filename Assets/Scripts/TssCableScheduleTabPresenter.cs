@@ -213,10 +213,7 @@ public sealed class TssCableScheduleTabPresenter : MonoBehaviour
                 continue;
 
             var interfaceName = required.interfaceName ?? string.Empty;
-            var port = interfaceName.StartsWith("Fa0/", StringComparison.OrdinalIgnoreCase)
-                ? interfaceName.Substring(4)
-                : interfaceName;
-            return new SwitchPort(required.deviceRole, "Port " + port);
+            return new SwitchPort(required.deviceRole, interfaceName);
         }
 
         return null;

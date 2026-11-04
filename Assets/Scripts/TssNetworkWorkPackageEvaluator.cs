@@ -78,13 +78,14 @@ public sealed class TssNetworkWorkPackageEvaluator
         if (router == null) { result.Add("WP3.Router", "Router configuration is unavailable."); return result; }
         CheckHardening(router, "WP3.Hardening", result);
         CheckRouterInterfaces(router, result);
-        if (router.Evidence.Contains("show ip route")) result.Attempt("WP3.RouteEvidence");
+        if (router.Evidence.Contains("show ip route")) result.Pass("WP3.RouteEvidence", "Required router route verification is complete.");
         else result.Add("WP3.RouteEvidence", "Required router verification was not typed.");
         var hasDefault = false;
         foreach (var route in router.Routes)
             if (route.Network == "0.0.0.0" && route.Mask == "0.0.0.0" && route.NextHop == _state.Profile.WanProviderAddress) { hasDefault = true; break; }
         if (router.Routes.Count > 0) result.Attempt("WP3.DefaultRoute");
-        if (!hasDefault) result.Add("WP3.DefaultRoute", "Provider routing is incomplete.");
+        if (hasDefault) result.Pass("WP3.DefaultRoute", "Default route points to the provider.");
+        else result.Add("WP3.DefaultRoute", "Provider routing is incomplete.");
         CheckEndpointEvidence(result);
         CheckSaved(router, "WP3.Save", result);
         return result;
@@ -311,8 +312,9 @@ public sealed class TssNetworkWorkPackageEvaluator
 
     private static bool Equivalent(NetworkDeviceState a, NetworkDeviceState b)
     {
-        if (a == null || b == null || a.Hostname != b.Hostname || a.EnablePassword != b.EnablePassword || a.EnableSecret != b.EnableSecret || a.ConsolePassword != b.ConsolePassword || a.AuxPassword != b.AuxPassword || a.VtyPassword != b.VtyPassword || a.Motd != b.Motd || a.PasswordEncryption != b.PasswordEncryption || a.DomainLookupDisabled != b.DomainLookupDisabled || a.ConsoleLoginRequired != b.ConsoleLoginRequired || a.AuxLoginRequired != b.AuxLoginRequired || a.VtyLoginRequired != b.VtyLoginRequired || a.ConsoleLoggingSynchronous != b.ConsoleLoggingSynchronous || a.AuxLoggingSynchronous != b.AuxLoggingSynchronous || a.ManagementAddress != b.ManagementAddress || a.ManagementMask != b.ManagementMask || a.DefaultGateway != b.DefaultGateway || a.Routes.Count != b.Routes.Count || a.Vlans.Count != b.Vlans.Count || a.Interfaces.Count != b.Interfaces.Count) return false;
+        if (a == null || b == null || a.Hostname != b.Hostname || a.EnablePassword != b.EnablePassword || a.EnableSecret != b.EnableSecret || a.ConsolePassword != b.ConsolePassword || a.AuxPassword != b.AuxPassword || a.VtyPassword != b.VtyPassword || a.Motd != b.Motd || a.PasswordEncryption != b.PasswordEncryption || a.DomainLookupDisabled != b.DomainLookupDisabled || a.ConsoleLoginRequired != b.ConsoleLoginRequired || a.AuxLoginRequired != b.AuxLoginRequired || a.VtyLoginRequired != b.VtyLoginRequired || a.ConsoleLoggingSynchronous != b.ConsoleLoggingSynchronous || a.AuxLoggingSynchronous != b.AuxLoggingSynchronous || a.ManagementAddress != b.ManagementAddress || a.ManagementMask != b.ManagementMask || a.DefaultGateway != b.DefaultGateway || a.Routes.Count != b.Routes.Count || a.Vlans.Count != b.Vlans.Count || a.UserPasswords.Count != b.UserPasswords.Count || a.Interfaces.Count != b.Interfaces.Count) return false;
         foreach (var vlan in a.Vlans) if (!b.Vlans.TryGetValue(vlan.Key, out var name) || name != vlan.Value) return false;
+        foreach (var user in a.UserPasswords) if (!b.UserPasswords.TryGetValue(user.Key, out var password) || password != user.Value) return false;
         foreach (var route in a.Routes) if (!b.Routes.Any(x => x.Network == route.Network && x.Mask == route.Mask && x.NextHop == route.NextHop)) return false;
         foreach (var pair in a.Interfaces) if (!b.Interfaces.TryGetValue(pair.Key, out var other) || pair.Value.Name != other.Name || pair.Value.AdminUp != other.AdminUp || pair.Value.IsTrunk != other.IsTrunk || pair.Value.TrunkEncapsulationDot1q != other.TrunkEncapsulationDot1q || pair.Value.AccessVlan != other.AccessVlan || pair.Value.NativeVlan != other.NativeVlan || pair.Value.Dot1qVlan != other.Dot1qVlan || pair.Value.Address != other.Address || pair.Value.Mask != other.Mask || !pair.Value.AllowedVlans.SetEquals(other.AllowedVlans)) return false;
         return true;

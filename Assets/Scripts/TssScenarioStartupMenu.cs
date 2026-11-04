@@ -22,6 +22,7 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
     private InputField computerNumberInput;
     private Text validation;
     private Text loadStatus;
+    private Text manifestStatus;
     private TssExternalScenarioLoader loader;
     private readonly List<Button> buttons = new();
     private bool launching;
@@ -40,6 +41,7 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
         try
         {
             var manifest = await loader.LoadManifestAsync();
+            manifestStatus.text = $"Manifest loaded: {manifest.scenarios.Length} scenario(s).";
             foreach (var entry in manifest.scenarios)
             {
                 try
@@ -57,16 +59,22 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
             if (!this) return;
             if (loader.Warnings.Count > 0 || buttons.Count == 0)
             {
+                manifestStatus.text = $"Manifest loaded with issues: {buttons.Count}/{manifest.scenarios.Length} available.";
                 loadStatus.text = "Some external scenarios are unavailable. Built-in fallback is listed below.";
                 foreach (var warning in loader.Warnings) Debug.LogWarning("[TSS Scenarios] " + warning);
                 AddFallbackButtons();
             }
-            else loadStatus.text = "Choose a scenario to begin.";
+            else
+            {
+                manifestStatus.text = $"Manifest loaded: {buttons.Count} scenario(s) available.";
+                loadStatus.text = "Choose a scenario to begin.";
+            }
         }
         catch (Exception ex)
         {
             if (!this) return;
             Debug.LogWarning("[TSS Scenarios] " + ex.Message);
+            manifestStatus.text = "Manifest not loaded: using built-in scenario(s).";
             loadStatus.text = "External scenarios unavailable. Using built-in scenarios.";
             AddFallbackButtons();
         }
@@ -99,11 +107,13 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
         if (!scenarioMenuCanvasInstance)
             canvasInstance.name = "TSS Scenario Selection UGUI (Prefab)";
 
-        buttonsContainer = canvasInstance.transform.Find("ScenarioSelectionPanel/ScenarioButtonsContainer");
+        buttonsContainer = canvasInstance.transform.Find("ScenarioSelectionPanel/ScenarioButtonsContainer")
+            ?? Array.Find(canvasInstance.GetComponentsInChildren<Transform>(true), child => child.name == "ScenarioButtonsContainer");
         if (!buttonsContainer) return;
 
         var panel = buttonsContainer.parent as RectTransform;
-        if (panel)
+        var layoutDriven = panel && panel.GetComponent<VerticalLayoutGroup>();
+        if (panel && !layoutDriven)
         {
             panel.anchorMin = panel.anchorMax = new Vector2(1f, .5f);
             panel.pivot = new Vector2(1f, .5f);
@@ -111,7 +121,7 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
             panel.sizeDelta = new Vector2(620f, 840f);
         }
         var buttonsRect = buttonsContainer as RectTransform;
-        if (buttonsRect)
+        if (buttonsRect && !layoutDriven)
         {
             buttonsRect.anchorMin = buttonsRect.anchorMax = new Vector2(.5f, 1f);
             buttonsRect.pivot = new Vector2(.5f, 1f);
@@ -127,10 +137,13 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
             ?? CreateInput(panel, "ComputerNumberInput", "Computer number", new Vector2(0f, 215f), InputField.ContentType.IntegerNumber);
         validation = panel.Find("PlayerIdValidation")?.GetComponent<Text>()
             ?? CreateText(panel, "PlayerIdValidation", string.Empty, new Vector2(0f, 155f), 16, new Color(1f, .7f, .35f));
-        validation.rectTransform.sizeDelta = new Vector2(540f, 36f);
+        if (!layoutDriven) validation.rectTransform.sizeDelta = new Vector2(540f, 36f);
         loadStatus = panel.Find("ScenarioLoadStatus")?.GetComponent<Text>()
             ?? CreateText(panel, "ScenarioLoadStatus", "Loading scenarios...", new Vector2(0f, 95f), 18, new Color(.9f, .9f, .75f));
-        loadStatus.rectTransform.sizeDelta = new Vector2(540f, 65f);
+        if (!layoutDriven) loadStatus.rectTransform.sizeDelta = new Vector2(540f, 65f);
+        manifestStatus = panel.Find("ScenarioManifestStatus")?.GetComponent<Text>()
+            ?? CreateText(panel, "ScenarioManifestStatus", "Manifest loading...", new Vector2(0f, 55f), 16, new Color(.55f, .9f, .65f));
+        if (!layoutDriven) manifestStatus.rectTransform.sizeDelta = new Vector2(540f, 28f);
     }
 
     private void AddFallbackButtons()

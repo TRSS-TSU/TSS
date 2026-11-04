@@ -14,10 +14,7 @@ The supplied files are:
 
 | File | Exercise |
 | --- | --- |
-| `balanced-lab.json` | Export of the existing balanced scenario |
-| `installation-practice.json` | Extra equipment/cables and second-rack-first placement phases |
-| `network-verification.json` | Different VLAN bounds/names and diagnostic evidence |
-| `wireless-readiness.json` | Wireless-focused instructions, spares and diagnostic evidence |
+| `capstone.json` | The single task-encompassing scenario used during current testing |
 
 The current manifest and scenario identity is `"schemaVersion": 2`. Version 1 packages remain readable and are normalized to `facilityId: "TSS_MAIN"`, `catalogId: "TSS_MAIN_CATALOG"` and scene `TSS`. Unsupported versions fail before scene launch. Filenames may contain ASCII letters, digits, hyphens and underscores followed by `.json`; paths, remote URLs and traversal are rejected. Files are resolved inside the `Scenarios` folder.
 
@@ -86,7 +83,7 @@ Expected successful state: four enabled external buttons, `Choose a scenario to 
 
 Verification checkpoint: the focused external-scenario Edit Mode coverage passes after the schema/catalog upgrade. The broader Edit Mode suite retains unrelated pre-existing failures; Play Mode validation is currently sensitive to the project’s separate VideoPlayer media availability.
 
-**TSS → External Scenarios → Export Four Sample Scenarios** explicitly rewrites the supplied four samples and manifest from the baseline asset. Back up instructor edits before running it. Nothing exports automatically during play, import or build.
+**TSS → External Scenarios → Export Capstone Scenario** explicitly rewrites the supplied Capstone sample and manifest from the baseline asset. Back up instructor edits before running it. Nothing exports automatically during play, import or build.
 
 To use the original behavior without removing code, remove/rename the external manifest and launch the built-in fallback. To roll back the feature, revert the scenario/menu/session changes and remove the new catalog, external-data/loading utilities, samples and tests. Scene and prefab bindings do not need rollback because this feature does not edit them.
 

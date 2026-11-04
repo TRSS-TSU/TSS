@@ -705,27 +705,38 @@ public sealed class TssTrainingSession : MonoBehaviour
         return crossoverParity == (IsSwitchEndpoint(endpointAId) == IsSwitchEndpoint(endpointBId));
     }
 
-    private bool IsSwitchEndpoint(string endpointId)
+    public bool TryGetEndpointEquipmentCategory(string endpointId, out EquipmentCategory category)
     {
-        if (string.IsNullOrWhiteSpace(endpointId))
-            return false;
+        category = default;
+        if (string.IsNullOrWhiteSpace(endpointId)) return false;
 
         foreach (var device in NetworkState?.Devices ?? Array.Empty<NetworkDeviceState>())
-            if (device.Category == EquipmentCategory.Switch
-                && device.Interfaces.Values.Any(iface => string.Equals(iface.EndpointId, endpointId, StringComparison.OrdinalIgnoreCase)))
+            if (device.Interfaces.Values.Any(iface => string.Equals(iface.EndpointId, endpointId, StringComparison.OrdinalIgnoreCase)))
+            {
+                category = device.Category;
                 return true;
+            }
 
         foreach (var binding in Scenario?.networkScenario?.roleBindings ?? Array.Empty<NetworkRoleBinding>())
-            if (binding != null && binding.category == EquipmentCategory.Switch
-                && endpointId.StartsWith(binding.deviceKey + ":", StringComparison.OrdinalIgnoreCase))
+            if (binding != null && endpointId.StartsWith(binding.deviceKey + ":", StringComparison.OrdinalIgnoreCase))
+            {
+                category = binding.category;
                 return true;
+            }
 
         foreach (var installed in _installed)
-            if (installed.Equipment && installed.Equipment.category == EquipmentCategory.Switch
-                && endpointId.StartsWith(GetRackOwnerPrefix(installed.RackId, installed.StartingU) + ":", StringComparison.OrdinalIgnoreCase))
+            if (installed.Equipment && endpointId.StartsWith(GetRackOwnerPrefix(installed.RackId, installed.StartingU) + ":", StringComparison.OrdinalIgnoreCase))
+            {
+                category = installed.Equipment.category;
                 return true;
+            }
 
         return false;
+    }
+
+    private bool IsSwitchEndpoint(string endpointId)
+    {
+        return TryGetEndpointEquipmentCategory(endpointId, out var category) && category == EquipmentCategory.Switch;
     }
 
     public bool IsEndpointOnEffectivePhysicalPath(string endpointId)

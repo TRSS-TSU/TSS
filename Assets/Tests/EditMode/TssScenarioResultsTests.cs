@@ -40,6 +40,26 @@ public sealed class TssScenarioResultsTests
     }
 
     [Test]
+    public void Layer3MarksRouteAndRouteEvidenceCompleteWhenConfigured()
+    {
+        var profile = TssNetworkRunProfile.Create(42, new NetworkScenarioConfig());
+        var state = new TssNetworkSessionState(profile);
+        var router = state.GetOrCreateDevice("router", EquipmentCategory.Router, "CN-1");
+        router.Evidence.Add("show ip route");
+        router.Routes.Add(new NetworkRouteState
+        {
+            Network = "0.0.0.0",
+            Mask = "0.0.0.0",
+            NextHop = profile.WanProviderAddress
+        });
+
+        var result = new TssNetworkWorkPackageEvaluator(state).EvaluateLayer3();
+
+        Assert.IsTrue(result.IsComplete("WP3.RouteEvidence"));
+        Assert.IsTrue(result.IsComplete("WP3.DefaultRoute"));
+    }
+
+    [Test]
     public void ResultsAssessmentUsesLiveEvaluationForWp2()
     {
         var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
@@ -357,7 +377,7 @@ public sealed class TssScenarioResultsTests
             var wp4Hud = (string)checklist.Invoke(ui, new object[] { 4 });
             var assessment = TssScenarioAssessmentCoordinator.Assess(session);
 
-            StringAssert.Contains("Complete: 0/6", wp3Hud);
+            StringAssert.Contains("Complete: 0/7", wp3Hud);
             StringAssert.Contains("Complete: 0/7", wp4Hud);
             Assert.IsFalse(assessment.WorkPackages[2].IsComplete);
             Assert.IsFalse(assessment.WorkPackages[3].IsComplete);

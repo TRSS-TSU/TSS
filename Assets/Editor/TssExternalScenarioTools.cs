@@ -44,65 +44,24 @@ public static class TssExternalScenarioTools
     }
 
     // Explicit export only: never overwrite instructor files on import or when the game starts.
-    [MenuItem("TSS/External Scenarios/Export Four Sample Scenarios")]
-    public static void ExportSamples()
+    [MenuItem("TSS/External Scenarios/Export Capstone Scenario")]
+    public static void ExportCapstoneScenario()
     {
         var source = AssetDatabase.LoadAssetAtPath<TssScenarioDefinition>(BaselinePath);
         var catalog = AssetDatabase.LoadAssetAtPath<TssScenarioCatalog>(CatalogPath);
         if (!source || !catalog) throw new InvalidOperationException("Baseline scenario/catalog is missing.");
-        var manifest = new TssScenarioManifest { format = TssScenarioManifest.Format, schemaVersion = TssExternalScenarioData.Version, scenarios = new TssScenarioManifestEntry[4] };
-        var files = new[] { "balanced-lab.json", "installation-practice.json", "network-verification.json", "wireless-readiness.json" };
-        var titles = new[] { source.displayName, "Installation Practice", "Network Verification", "Wireless Readiness" };
-        var descriptions = new[] { "Original balanced facility exercise.", "Extra equipment and cables; start with the second rack.", "Alternate VLAN bounds and additional endpoint diagnostics.", "Wireless-focused binder and readiness checks with spare equipment." };
+        var manifest = new TssScenarioManifest { format = TssScenarioManifest.Format, schemaVersion = TssExternalScenarioData.Version, scenarios = new TssScenarioManifestEntry[1] };
+        var file = "capstone.json";
+        var description = "Final capstone scenario for Technical Systems Support course.";
         var folder = Path.Combine(Application.streamingAssetsPath, TssExternalScenarioLoader.Folder);
         Directory.CreateDirectory(folder);
-        for (var index = 0; index < files.Length; index++)
-        {
-            var data = TssExternalScenarioLoader.Export(source);
-            if (index > 0)
-            {
-                data.scenarioId = new[] { "", "INSTALLATION_PRACTICE", "NETWORK_VERIFICATION", "WIRELESS_READINESS" }[index];
-                data.displayName = titles[index];
-                data.cableInventory[0].quantity += index * 5;
-                data.inventory.First(x => catalog.FindEquipment(x.equipmentId).category == EquipmentCategory.DesktopPc).quantity += index;
-                data.binderReference.namingAndRacks.intro = descriptions[index] + " " + data.binderReference.namingAndRacks.intro;
-                data.binderReference.cableSchedule.introParagraph = "Training variant: " + titles[index] + ". " + data.binderReference.cableSchedule.introParagraph;
-            }
-            if (index == 1)
-            {
-                Array.Reverse(data.expectedRackPlacements);
-                foreach (var row in data.expectedRackPlacements) row.phaseLabel = row.rackId == "Rack02" ? "Phase 1" : "Phase 2";
-                foreach (var row in data.namingRows) row.rationale = "Installation practice: verify this label before fitting equipment.";
-            }
-            if (index == 2)
-            {
-                data.networkScenario.vlanMinimum = 100;
-                data.networkScenario.vlanMaximum = 290;
-                data.networkScenario.managementVlanName = "Administration";
-                data.networkScenario.dataVlanName = "Operations";
-                foreach (var role in data.networkScenario.roleBindings) role.displayName += " - Verification";
-                data.networkScenario.evidenceRequirements = data.networkScenario.evidenceRequirements.Concat(new[]
-                {
-                    new NetworkEvidenceRequirement { evidenceId = "Provider-trace", command = "tracert provider", description = "Record a successful provider route trace." }
-                }).ToArray();
-                data.binderReference.ipPlan.paragraph = "Verify the Administration and Operations networks using your generated addresses. " + data.binderReference.ipPlan.paragraph;
-            }
-            if (index == 3)
-            {
-                data.inventory.First(x => catalog.FindEquipment(x.equipmentId).category == EquipmentCategory.AccessPoint).quantity++;
-                data.binderReference.wireless.intro = "Wireless readiness: configure AP-1, associate TestLaptop, then verify provider access. " + data.binderReference.wireless.intro;
-                data.networkScenario.evidenceRequirements = data.networkScenario.evidenceRequirements.Concat(new[]
-                {
-                    new NetworkEvidenceRequirement { evidenceId = "Wireless-provider-trace", command = "tracert provider", description = "Record a provider route trace during wireless readiness checks." }
-                }).ToArray();
-            }
-            var errors = TssExternalScenarioValidator.Validate(data, catalog);
-            if (errors.Count > 0) throw new InvalidDataException(files[index] + ":\n" + string.Join("\n", errors));
-            File.WriteAllText(Path.Combine(folder, files[index]), JsonUtility.ToJson(data, true));
-            manifest.scenarios[index] = new TssScenarioManifestEntry { scenarioId = data.scenarioId, displayName = data.displayName, facilityId = data.facilityId, catalogId = data.catalogId, jsonFile = files[index], sceneName = data.sceneName, description = descriptions[index] };
-        }
+        var data = TssExternalScenarioLoader.Export(source);
+        var errors = TssExternalScenarioValidator.Validate(data, catalog);
+        if (errors.Count > 0) throw new InvalidDataException(file + ":\n" + string.Join("\n", errors));
+        File.WriteAllText(Path.Combine(folder, file), JsonUtility.ToJson(data, true));
+        manifest.scenarios[0] = new TssScenarioManifestEntry { scenarioId = data.scenarioId, displayName = data.displayName, facilityId = data.facilityId, catalogId = data.catalogId, jsonFile = file, sceneName = data.sceneName, description = description };
         File.WriteAllText(Path.Combine(folder, "manifest.json"), JsonUtility.ToJson(manifest, true));
         AssetDatabase.Refresh();
-        Debug.Log("[TSS Scenarios] Exported four validated scenario files and manifest.");
+        Debug.Log("[TSS Scenarios] Exported the validated Capstone scenario and manifest.");
     }
 }

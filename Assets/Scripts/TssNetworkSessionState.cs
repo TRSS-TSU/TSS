@@ -186,16 +186,30 @@ public sealed class TssNetworkSessionState
 
     public bool IsEndpointLogicalLayer1Available(TssTrainingSession session, string endpointId)
     {
-        if (!TryGetLogicalInterface(session, endpointId, out var device, out var iface))
-            return session && session.IsEndpointOnEffectivePhysicalPath(endpointId);
+        if (!IsEndpointLocallyLayer1Available(session, endpointId))
+            return false;
 
-        return device.IsInterfaceOperational(iface);
+        if (session.TryGetEndpointEquipmentCategory(endpointId, out var category)
+            && category == EquipmentCategory.Router && session.IsProviderDemarcConnected(endpointId))
+            return true;
+
+        foreach (var path in session.GetEffectivePhysicalPaths())
+        {
+            if (string.Equals(path.EndpointAId, endpointId, StringComparison.OrdinalIgnoreCase)
+                && IsEndpointLocallyLayer1Available(session, path.EndpointBId))
+                return true;
+            if (string.Equals(path.EndpointBId, endpointId, StringComparison.OrdinalIgnoreCase)
+                && IsEndpointLocallyLayer1Available(session, path.EndpointAId))
+                return true;
+        }
+
+        return false;
     }
 
     public bool IsEndpointLogicalLayer2Available(TssTrainingSession session, string endpointId)
     {
-        if (!TryGetLogicalInterface(session, endpointId, out var device, out var iface))
-            return session && session.IsEndpointOnEffectivePhysicalPath(endpointId);
+        if (!TryGetLogicalInterface(endpointId, out var device, out var iface))
+            return IsEndpointLogicalLayer1Available(session, endpointId);
 
         if (!device.IsInterfaceOperational(iface))
             return false;
@@ -221,6 +235,14 @@ public sealed class TssNetworkSessionState
             return iface.AllowedVlans != null && iface.AllowedVlans.Any(vlan => IsActiveVlan(device, vlan));
 
         return IsActiveVlan(device, iface.AccessVlan);
+    }
+
+    private bool IsEndpointLocallyLayer1Available(TssTrainingSession session, string endpointId)
+    {
+        if (TryGetLogicalInterface(endpointId, out var device, out var iface))
+            return device.IsInterfaceOperational(iface);
+
+        return !session.TryGetEndpointEquipmentCategory(endpointId, out var category) || category != EquipmentCategory.Router;
     }
 
     public bool IsEndpointIpRoutingAvailable(string endpointId)
@@ -287,24 +309,9 @@ public sealed class TssNetworkSessionState
         return false;
     }
 
-    private bool TryGetLogicalInterface(TssTrainingSession session, string endpointId, out NetworkDeviceState device, out NetworkInterfaceState iface)
+    private bool TryGetLogicalInterface(string endpointId, out NetworkDeviceState device, out NetworkInterfaceState iface)
     {
-        device = null;
-        iface = null;
-        if (string.IsNullOrWhiteSpace(endpointId))
-            return false;
-
-        foreach (var candidate in _devices.Values)
-            foreach (var candidateInterface in candidate.Interfaces.Values)
-                if (string.Equals(candidateInterface.EndpointId, endpointId, StringComparison.OrdinalIgnoreCase)
-                    || (session && session.HasPhysicalPath(endpointId, candidateInterface.EndpointId)))
-                {
-                    device = candidate;
-                    iface = candidateInterface;
-                    return true;
-                }
-
-        return false;
+        return TryGetInterfaceByEndpoint(endpointId, out device, out iface);
     }
 
     private static bool IsActiveVlan(NetworkDeviceState device, int vlan)
@@ -554,12 +561,14 @@ public sealed class NetworkDeviceState
     public bool ConsoleLoggingSynchronous;
     public bool AuxLoggingSynchronous;
     public readonly Dictionary<int, string> Vlans = new();
+    public readonly Dictionary<string, string> UserPasswords = new(StringComparer.OrdinalIgnoreCase);
     public readonly Dictionary<string, NetworkInterfaceState> Interfaces = new(StringComparer.OrdinalIgnoreCase);
     public readonly Dictionary<int, NetworkInterfaceState> Svis = new();
     public readonly List<NetworkRouteState> Routes = new();
     public readonly HashSet<string> Evidence = new(StringComparer.OrdinalIgnoreCase);
     public NetworkDeviceState StartupSnapshot;
     public TssNetworkCliMode Mode;
+    public bool AwaitingConsolePassword;
     public bool AwaitingEnablePassword;
     public List<string> SelectedInterfaces = new();
     public int SelectedVlan;
@@ -578,13 +587,17 @@ public sealed class NetworkDeviceState
     }
     public bool IsInterfaceAdminUp(NetworkInterfaceState iface)
     {
-        if (iface == null || !iface.AdminUp) return false;
-        return !IsRouterSubinterface(iface) || Interfaces.TryGetValue(ParentName(iface.Name), out var parent) && parent.AdminUp;
+        if (iface == null) return false;
+        return IsRouterSubinterface(iface)
+            ? Interfaces.TryGetValue(ParentName(iface.Name), out var parent) && parent.AdminUp
+            : iface.AdminUp;
     }
     public bool IsInterfaceOperational(NetworkInterfaceState iface)
     {
-        if (!IsInterfaceAdminUp(iface) || !iface.CarrierUp) return false;
-        return !IsRouterSubinterface(iface) || Interfaces.TryGetValue(ParentName(iface.Name), out var parent) && parent.CarrierUp;
+        if (!IsInterfaceAdminUp(iface)) return false;
+        return IsRouterSubinterface(iface)
+            ? Interfaces.TryGetValue(ParentName(iface.Name), out var parent) && parent.CarrierUp
+            : iface.CarrierUp;
     }
     private bool IsRouterSubinterface(NetworkInterfaceState iface) => Category == EquipmentCategory.Router && iface != null && iface.Name.IndexOf('.') >= 0;
     private static string ParentName(string name) => name.Substring(0, name.IndexOf('.'));
@@ -598,10 +611,12 @@ public sealed class NetworkDeviceState
             PasswordEncryption = PasswordEncryption, DomainLookupDisabled = DomainLookupDisabled,
             ConsoleLoginRequired = ConsoleLoginRequired, AuxLoginRequired = AuxLoginRequired, VtyLoginRequired = VtyLoginRequired,
             ConsoleLoggingSynchronous = ConsoleLoggingSynchronous, AuxLoggingSynchronous = AuxLoggingSynchronous, Mode = Mode,
+            AwaitingConsolePassword = AwaitingConsolePassword,
             AwaitingEnablePassword = AwaitingEnablePassword,
             SelectedVlan = SelectedVlan, SelectedLine = SelectedLine, SelectedInterfaces = new List<string>(SelectedInterfaces), ExpectedRole = ExpectedRole
         };
         foreach (var vlan in Vlans) copy.Vlans[vlan.Key] = vlan.Value;
+        foreach (var user in UserPasswords) copy.UserPasswords[user.Key] = user.Value;
         foreach (var pair in Interfaces) copy.Interfaces[pair.Key] = pair.Value.Clone();
         foreach (var pair in Svis) copy.Svis[pair.Key] = pair.Value.Clone();
         foreach (var route in Routes) copy.Routes.Add(new NetworkRouteState { Network = route.Network, Mask = route.Mask, NextHop = route.NextHop });

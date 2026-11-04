@@ -20,10 +20,7 @@ public sealed class TssExternalScenarioTests
 
     private TssExternalScenarioData BaselineData() => TssExternalScenarioLoader.Export(baseline);
 
-    [TestCase("balanced-lab.json")]
-    [TestCase("installation-practice.json")]
-    [TestCase("network-verification.json")]
-    [TestCase("wireless-readiness.json")]
+    [TestCase("capstone.json")]
     public void SampleJsonResolvesIntoIndependentRuntimeDefinition(string file)
     {
         var data = JsonUtility.FromJson<TssExternalScenarioData>(File.ReadAllText(Path.Combine(Application.streamingAssetsPath, "Scenarios", file)));
@@ -156,7 +153,9 @@ public sealed class TssExternalScenarioTests
     public void DuplicateScenarioIdsExcludeBothEntries()
     {
         var manifest = JsonUtility.FromJson<TssScenarioManifest>(File.ReadAllText(Path.Combine(Application.streamingAssetsPath, "Scenarios/manifest.json")));
-        manifest.scenarios[1].scenarioId = manifest.scenarios[0].scenarioId.ToLowerInvariant();
+        var duplicate = JsonUtility.FromJson<TssScenarioManifestEntry>(JsonUtility.ToJson(manifest.scenarios[0]));
+        duplicate.scenarioId = manifest.scenarios[0].scenarioId.ToLowerInvariant();
+        manifest.scenarios = new[] { manifest.scenarios[0], duplicate };
         var warnings = new List<string>();
         var filtered = TssExternalScenarioLoader.ParseManifest(JsonUtility.ToJson(manifest), warnings);
         Assert.AreEqual(2, filtered.scenarios.Length);
@@ -167,7 +166,9 @@ public sealed class TssExternalScenarioTests
     public void DuplicateManifestFilenamesExcludeBothEntries()
     {
         var manifest = JsonUtility.FromJson<TssScenarioManifest>(File.ReadAllText(Path.Combine(Application.streamingAssetsPath, "Scenarios/manifest.json")));
-        manifest.scenarios[1].jsonFile = manifest.scenarios[0].jsonFile;
+        var duplicate = JsonUtility.FromJson<TssScenarioManifestEntry>(JsonUtility.ToJson(manifest.scenarios[0]));
+        duplicate.scenarioId = "CAPSTONE_COPY";
+        manifest.scenarios = new[] { manifest.scenarios[0], duplicate };
         var warnings = new List<string>();
         var filtered = TssExternalScenarioLoader.ParseManifest(JsonUtility.ToJson(manifest), warnings);
         Assert.AreEqual(2, filtered.scenarios.Length);

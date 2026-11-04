@@ -75,6 +75,12 @@
       "requiredCableType": 0
     },
     {
+      "requirementId": "RouterLanUplink",
+      "endpointAId": "Rack:Rack01:U30:Fa00",
+      "endpointBId": "Rack:Rack01:U35:Fa06",
+      "requiredCableType": 0
+    },
+    {
       "requirementId": "IT1ToAN1",
       "endpointAId": "IT1",
       "endpointBId": "Rack:Rack01:U35:Fa02",
@@ -563,9 +569,16 @@
     },
     {
       "fromEndpoint": "CN-1",
-      "fromPort": "Port 1",
+      "fromPort": "Fa0/1",
       "toEndpoint": "Patch Panel 1",
       "toPort": "Port 18",
+      "cableType": "Straight"
+    },
+    {
+      "fromEndpoint": "CN-1",
+      "fromPort": "Fa0/0",
+      "toEndpoint": "AN-1",
+      "toPort": "Fa0/6",
       "cableType": "Straight"
     },
     {

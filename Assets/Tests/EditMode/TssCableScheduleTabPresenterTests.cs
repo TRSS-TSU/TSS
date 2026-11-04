@@ -44,6 +44,16 @@ public sealed class TssCableScheduleTabPresenterTests
         var unchanged = content.Find("GeneratedRow01");
         Assert.That(unchanged.GetComponentsInChildren<Text>(true)[1].text, Is.EqualTo("Port 1"));
 
+        var fallbackCells = new Text[90];
+        for (var i = 0; i < fallbackCells.Length; i++)
+        {
+            fallbackCells[i] = new GameObject("FallbackCell" + i).AddComponent<Text>();
+            fallbackCells[i].transform.SetParent(root.transform);
+        }
+        SetPrivate(presenter, "cells", fallbackCells);
+        presenter.SetValues("TEST", profile);
+        Assert.That(fallbackCells[8].text, Is.EqualTo("Fa0/2"));
+
         Object.DestroyImmediate(root);
     }
 
