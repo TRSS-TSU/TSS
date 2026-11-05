@@ -34,7 +34,34 @@ public sealed class TssNetworkRunProfile
     public readonly Dictionary<string, string> EndpointAliases = new(StringComparer.OrdinalIgnoreCase);
     public readonly NetworkRoleBinding[] RoleBindings;
     public readonly NetworkRequiredPort[] RequiredPorts;
+    public readonly NetworkTrunkRequirement[] TrunkRequirements;
+    public readonly NetworkUnusedPortRequirement[] UnusedPortRequirements;
+    public readonly NetworkRouterSubinterfaceRequirement[] RouterSubinterfaceRequirements;
     public readonly NetworkEvidenceRequirement[] EvidenceRequirements;
+    public readonly string RouterRole;
+    public readonly string RouterParentInterface;
+    public readonly string RouterWanInterface;
+    public readonly string AccessPointSwitchRole;
+    public readonly string AccessPointSwitchPort;
+    public readonly string TestLaptopRole;
+    public readonly string RouteEvidenceCommand;
+    public readonly string[] TestLaptopDiagnosticEvidenceIds;
+    public readonly string RedWolfEvidenceId;
+    public readonly bool RequirePasswordEncryption;
+    public readonly bool RequireDomainLookupDisabled;
+    public readonly bool RequireConsoleLogin;
+    public readonly bool RequireVtyLogin;
+    public readonly bool RequireNoEnablePassword;
+    public readonly bool RequireRouteEvidence;
+    public readonly bool RequireDefaultRoute;
+    public readonly bool RequireSave;
+    public readonly bool RequireAccessPointUplink;
+    public readonly bool RequireAccessPointSwitchPort;
+    public readonly bool RequireAccessPointConfiguration;
+    public readonly bool RequireLaptopAssociation;
+    public readonly bool RequireDhcpLease;
+    public readonly bool RequireLaptopDiagnostics;
+    public readonly bool RequireRedWolfEvidence;
     public readonly string ManagementVlanName;
     public readonly string ReceptionVlanName;
     public readonly string DataVlanName;
@@ -76,7 +103,34 @@ public sealed class TssNetworkRunProfile
             if (!string.IsNullOrWhiteSpace(name)) DhcpNetworkNames.Add(name.Trim());
         RoleBindings = config?.roleBindings ?? Array.Empty<NetworkRoleBinding>();
         RequiredPorts = config?.requiredPorts is { Length: > 0 } ? config.requiredPorts : DefaultPorts();
+        TrunkRequirements = config?.trunkRequirements is { Length: > 0 } ? config.trunkRequirements : DefaultTrunks();
+        UnusedPortRequirements = config?.unusedPortRequirements is { Length: > 0 } ? config.unusedPortRequirements : DefaultUnusedPorts();
+        RouterSubinterfaceRequirements = config?.routerSubinterfaceRequirements is { Length: > 0 } ? config.routerSubinterfaceRequirements : DefaultRouterSubinterfaces();
         EvidenceRequirements = config?.evidenceRequirements is { Length: > 0 } ? config.evidenceRequirements : DefaultEvidence();
+        RouterRole = string.IsNullOrWhiteSpace(config?.routerRole) ? "CN-1" : config.routerRole;
+        RouterParentInterface = string.IsNullOrWhiteSpace(config?.routerParentInterface) ? "Fa0/0" : config.routerParentInterface;
+        RouterWanInterface = string.IsNullOrWhiteSpace(config?.routerWanInterface) ? "Fa0/1" : config.routerWanInterface;
+        AccessPointSwitchRole = string.IsNullOrWhiteSpace(config?.accessPointSwitchRole) ? "AN-1" : config.accessPointSwitchRole;
+        AccessPointSwitchPort = string.IsNullOrWhiteSpace(config?.accessPointSwitchPort) ? "Fa0/7" : config.accessPointSwitchPort;
+        TestLaptopRole = string.IsNullOrWhiteSpace(config?.testLaptopRole) ? "TestLaptop" : config.testLaptopRole;
+        RouteEvidenceCommand = string.IsNullOrWhiteSpace(config?.routeEvidenceCommand) ? "show ip route" : config.routeEvidenceCommand;
+        TestLaptopDiagnosticEvidenceIds = config?.testLaptopDiagnosticEvidenceIds is { Length: > 0 } ? config.testLaptopDiagnosticEvidenceIds : new[] { "ipconfig", "TestLaptop-provider" };
+        RedWolfEvidenceId = string.IsNullOrWhiteSpace(config?.redWolfEvidenceId) ? "redwolf" : config.redWolfEvidenceId;
+        RequirePasswordEncryption = config?.requirePasswordEncryption ?? true;
+        RequireDomainLookupDisabled = config?.requireDomainLookupDisabled ?? true;
+        RequireConsoleLogin = config?.requireConsoleLogin ?? true;
+        RequireVtyLogin = config?.requireVtyLogin ?? true;
+        RequireNoEnablePassword = config?.requireNoEnablePassword ?? true;
+        RequireRouteEvidence = config?.requireRouteEvidence ?? true;
+        RequireDefaultRoute = config?.requireDefaultRoute ?? true;
+        RequireSave = config?.requireSave ?? true;
+        RequireAccessPointUplink = config?.requireAccessPointUplink ?? true;
+        RequireAccessPointSwitchPort = config?.requireAccessPointSwitchPort ?? true;
+        RequireAccessPointConfiguration = config?.requireAccessPointConfiguration ?? true;
+        RequireLaptopAssociation = config?.requireLaptopAssociation ?? true;
+        RequireDhcpLease = config?.requireDhcpLease ?? true;
+        RequireLaptopDiagnostics = config?.requireLaptopDiagnostics ?? true;
+        RequireRedWolfEvidence = config?.requireRedWolfEvidence ?? true;
         Add("IT1", ManagementNetwork, 11); Add("IT2", ManagementNetwork, 12);
         Add("Reception1", ReceptionNetwork, 21); Add("Reception2", ReceptionNetwork, 22);
         Add("Data1", DataNetwork, 31); Add("Data2", DataNetwork, 32); Add("Data3", DataNetwork, 33);
@@ -115,6 +169,46 @@ public sealed class TssNetworkRunProfile
     {
         new NetworkEvidenceRequirement { evidenceId = "IT1-provider", command = "ping " + WanProviderAddress, description = "Endpoint-originated provider diagnostic" }
     };
+    private static NetworkTrunkRequirement[] DefaultTrunks() => new[]
+    {
+        new NetworkTrunkRequirement { deviceRole = "AN-1", interfaceName = "Fa0/1", nativeVlanName = "Native", allowedVlanNames = new[] { "Management", "Reception", "Data" } },
+        new NetworkTrunkRequirement { deviceRole = "AN-1", interfaceName = "Fa0/6", nativeVlanName = "Native", allowedVlanNames = new[] { "Management", "Reception", "Data" } },
+        new NetworkTrunkRequirement { deviceRole = "AN-2", interfaceName = "Fa0/1", nativeVlanName = "Native", allowedVlanNames = new[] { "Management", "Reception", "Data" } }
+    };
+    private static NetworkUnusedPortRequirement[] DefaultUnusedPorts() => new[]
+    {
+        new NetworkUnusedPortRequirement { deviceRole = "AN-1", firstPort = 7, lastPort = 24, deadVlanName = "Dead_Vlan" },
+        new NetworkUnusedPortRequirement { deviceRole = "AN-2", firstPort = 5, lastPort = 24, deadVlanName = "Dead_Vlan" }
+    };
+    private static NetworkRouterSubinterfaceRequirement[] DefaultRouterSubinterfaces() => new[]
+    {
+        new NetworkRouterSubinterfaceRequirement { vlanName = "Management", networkName = "Management", addressSuffix = 1 },
+        new NetworkRouterSubinterfaceRequirement { vlanName = "Reception", networkName = "Reception", addressSuffix = 1 },
+        new NetworkRouterSubinterfaceRequirement { vlanName = "Data", networkName = "Data", addressSuffix = 1 }
+    };
+    public string ExpectedHostname(string role)
+    {
+        foreach (var binding in RoleBindings)
+            if (binding != null && string.Equals(binding.role, role, StringComparison.OrdinalIgnoreCase))
+                return string.IsNullOrWhiteSpace(binding.displayName) ? binding.role : binding.displayName;
+        return role;
+    }
+    public int VlanId(string name)
+    {
+        if (string.Equals(name, ManagementVlanName, StringComparison.OrdinalIgnoreCase)) return ManagementVlan;
+        if (string.Equals(name, ReceptionVlanName, StringComparison.OrdinalIgnoreCase)) return ReceptionVlan;
+        if (string.Equals(name, DataVlanName, StringComparison.OrdinalIgnoreCase)) return DataVlan;
+        if (string.Equals(name, NativeVlanName, StringComparison.OrdinalIgnoreCase)) return NativeVlan;
+        if (string.Equals(name, DeadVlanName, StringComparison.OrdinalIgnoreCase)) return DeadVlan;
+        return -1;
+    }
+    public string NetworkAddress(string name, int suffix)
+    {
+        var network = string.Equals(name, ManagementVlanName, StringComparison.OrdinalIgnoreCase) ? ManagementNetwork
+            : string.Equals(name, ReceptionVlanName, StringComparison.OrdinalIgnoreCase) ? ReceptionNetwork
+            : string.Equals(name, DataVlanName, StringComparison.OrdinalIgnoreCase) ? DataNetwork : null;
+        return string.IsNullOrWhiteSpace(network) ? null : network + "." + suffix;
+    }
     private void Add(string role, string network, int host) => EndpointAddresses[role] = network + "." + host;
     public bool IsDhcpNetwork(string address)
     {
@@ -345,11 +439,11 @@ public sealed class TssNetworkSessionState
 
     public bool IsAccessPointSwitchPortReady()
     {
-        var accessSwitch = FindDeviceByRole("AN-1");
+        var accessSwitch = FindDeviceByRole(Profile?.AccessPointSwitchRole ?? "AN-1");
         return accessSwitch != null
-            && accessSwitch.Interfaces.TryGetValue("Fa0/7", out var port)
+            && accessSwitch.Interfaces.TryGetValue(Profile?.AccessPointSwitchPort ?? "Fa0/7", out var port)
             && accessSwitch.IsInterfaceOperational(port) && !port.IsTrunk
-            && port.AccessVlan == Profile.ReceptionVlan;
+            && port.AccessVlan == Profile.VlanId(Profile.ReceptionVlanName);
     }
 
     public bool IsWirelessAssociated(string endpointKey)

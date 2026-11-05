@@ -60,6 +60,37 @@ public sealed class TssScenarioResultsTests
     }
 
     [Test]
+    public void Layer3HardeningRequiresCn1Hostname()
+    {
+        var config = new NetworkScenarioConfig
+        {
+            enableSecret = "EnableSecret",
+            consolePassword = "ConsolePassword",
+            vtyPassword = "VtyPassword",
+            motd = "Authorized users only"
+        };
+        var profile = TssNetworkRunProfile.Create(42, config);
+        var state = new TssNetworkSessionState(profile);
+        var router = state.GetOrCreateDevice("router", EquipmentCategory.Router, "CN-1");
+        router.ExpectedRole = "CN-1";
+        router.Hostname = "WRONG-NAME";
+        router.PasswordEncryption = true;
+        router.DomainLookupDisabled = true;
+        router.ConsoleLoginRequired = true;
+        router.VtyLoginRequired = true;
+        router.EnableSecret = profile.EnableSecret;
+        router.ConsolePassword = profile.ConsolePassword;
+        router.VtyPassword = profile.VtyPassword;
+        router.Motd = profile.Motd;
+
+        var evaluator = new TssNetworkWorkPackageEvaluator(state);
+        Assert.IsFalse(evaluator.EvaluateLayer3().IsComplete("WP3.Hardening"));
+
+        router.Hostname = "CN-1";
+        Assert.IsTrue(evaluator.EvaluateLayer3().IsComplete("WP3.Hardening"));
+    }
+
+    [Test]
     public void ResultsAssessmentUsesLiveEvaluationForWp2()
     {
         var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();

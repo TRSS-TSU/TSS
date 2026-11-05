@@ -65,10 +65,10 @@ public sealed class TssRuntimeUi : MonoBehaviour
     private int _activeHudSlidePanel = -1;
     private GameObject _sopSlidePanel;
     private GameObject _wp1SlidePanel;
-    private Text _wp1SlideTitleText;
-    private Text _wp1SlideBodyText;
-    private readonly Text[] _workPackageTitleTexts = new Text[4];
-    private readonly Text[] _workPackageBodyTexts = new Text[4];
+    private TMP_Text _wp1SlideTitleText;
+    private TMP_Text _wp1SlideBodyText;
+    private readonly TMP_Text[] _workPackageTitleTexts = new TMP_Text[4];
+    private readonly TMP_Text[] _workPackageBodyTexts = new TMP_Text[4];
     private int _activeRightSlidePanel = -1;
 
     private GameObject _casePanel;
@@ -1113,14 +1113,14 @@ public sealed class TssRuntimeUi : MonoBehaviour
         var wp1 = _hudRoot.Find("HudWp1SlidePanel");
         _wp1SlidePanel = wp1 ? wp1.gameObject : null;
         EnsureSlidePanelOverlay(_wp1SlidePanel);
-        _wp1SlideTitleText = wp1 ? wp1.Find("Title")?.GetComponent<Text>() : null;
-        _wp1SlideBodyText = wp1 ? wp1.Find("Body")?.GetComponent<Text>() : null;
+        _wp1SlideTitleText = wp1 ? wp1.Find("Title")?.GetComponent<TMP_Text>() : null;
+        _wp1SlideBodyText = wp1 ? wp1.Find("Body")?.GetComponent<TMP_Text>() : null;
 
         for (var i = 0; i < _workPackageBodyTexts.Length; i++)
         {
             var section = wp1?.Find($"WorkPackage{i + 1}");
-            _workPackageTitleTexts[i] = section?.Find("Title")?.GetComponent<Text>();
-            _workPackageBodyTexts[i] = section?.Find("Body")?.GetComponent<Text>();
+            _workPackageTitleTexts[i] = section?.Find("Title")?.GetComponent<TMP_Text>();
+            _workPackageBodyTexts[i] = section?.Find("Body")?.GetComponent<TMP_Text>();
         }
     }
 
@@ -1409,8 +1409,26 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (!session)
             return "No training session.";
 
+        TssWorkPackageResult result = null;
         if (workPackage == 1)
-            return PhysicalWorkPackageChecklistText();
+        {
+            result = new TssPhysicalWorkPackageEvaluator(session).Evaluate();
+            return ConfiguredWorkPackageChecklistText(workPackage, result)
+                ?? PhysicalWorkPackageChecklistText();
+        }
+
+        if (session.NetworkState != null)
+        {
+            var evaluator = new TssNetworkWorkPackageEvaluator(session.NetworkState);
+            result =
+                workPackage == 2 ? evaluator.EvaluateLayer2()
+                : workPackage == 3 ? evaluator.EvaluateLayer3()
+                : evaluator.EvaluateLayer4();
+        }
+
+        var configured = ConfiguredWorkPackageChecklistText(workPackage, result);
+        if (configured != null)
+            return configured;
 
         if (session.NetworkState == null)
         {
@@ -1436,12 +1454,6 @@ public sealed class TssRuntimeUi : MonoBehaviour
                     "Save the router configuration"
                 );
         }
-
-        var evaluator = new TssNetworkWorkPackageEvaluator(session.NetworkState);
-        var result =
-            workPackage == 2 ? evaluator.EvaluateLayer2()
-            : workPackage == 3 ? evaluator.EvaluateLayer3()
-            : evaluator.EvaluateLayer4();
 
         if (workPackage == 2)
             return Layer2ChecklistText(result);
@@ -1577,6 +1589,78 @@ public sealed class TssRuntimeUi : MonoBehaviour
             builder.AppendLine();
         }
         return builder.ToString();
+    }
+
+    private string ConfiguredWorkPackageChecklistText(int workPackage, TssWorkPackageResult result)
+    {
+        var configured = session?.Scenario?.networkScenario?.workPackageObjectives;
+        if (configured == null)
+            return null;
+
+        NetworkWorkPackageObjective objective = null;
+        foreach (var candidate in configured)
+        {
+            if (candidate != null && candidate.workPackage == workPackage)
+            {
+                objective = candidate;
+                break;
+            }
+        }
+
+        if (objective?.groups == null || objective.groups.Length == 0)
+            return null;
+
+        var builder = new StringBuilder();
+        var complete = 0;
+        var displayed = 0;
+        builder.AppendLine(TssWorkPackageTitles.Get(workPackage));
+        builder.AppendLine("Complete: 0/0");
+        builder.AppendLine();
+
+        foreach (var group in objective.groups)
+        {
+            if (group == null || string.IsNullOrWhiteSpace(group.heading))
+                continue;
+
+            var matches = MatchingConditions(result, group.conditionIdPrefixes);
+            displayed++;
+            var isComplete = matches.Count > 0 && matches.All(x => x.IsComplete);
+            if (isComplete)
+                complete++;
+
+            builder.Append(isComplete ? "[x] " : "[ ] ");
+            builder.AppendLine(group.heading.Trim());
+        }
+
+        if (displayed == 0)
+            return null;
+
+        builder.Replace("Complete: 0/0", $"Complete: {complete}/{displayed}");
+        return builder.ToString();
+    }
+
+    private static List<TssWorkPackageCondition> MatchingConditions(
+        TssWorkPackageResult result,
+        string[] prefixes
+    )
+    {
+        var matches = new List<TssWorkPackageCondition>();
+        if (result?.Conditions == null || prefixes == null)
+            return matches;
+
+        foreach (var condition in result.Conditions)
+        {
+            foreach (var prefix in prefixes)
+            {
+                if (!string.IsNullOrWhiteSpace(prefix) && condition.Id.StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                {
+                    matches.Add(condition);
+                    break;
+                }
+            }
+        }
+
+        return matches;
     }
 
     private static string StaticWorkPackageChecklist(params string[] items)

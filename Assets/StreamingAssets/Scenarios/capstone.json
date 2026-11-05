@@ -977,11 +977,210 @@
         "endpointId": "Data3"
       }
     ],
+    "trunkRequirements": [
+      {
+        "deviceRole": "AN-1",
+        "interfaceName": "Fa0/1",
+        "nativeVlanName": "Native",
+        "allowedVlanNames": ["Management", "Reception", "Data"]
+      },
+      {
+        "deviceRole": "AN-1",
+        "interfaceName": "Fa0/6",
+        "nativeVlanName": "Native",
+        "allowedVlanNames": ["Management", "Reception", "Data"]
+      },
+      {
+        "deviceRole": "AN-2",
+        "interfaceName": "Fa0/1",
+        "nativeVlanName": "Native",
+        "allowedVlanNames": ["Management", "Reception", "Data"]
+      }
+    ],
+    "unusedPortRequirements": [
+      {"deviceRole": "AN-1", "interfacePrefix": "Fa0/", "firstPort": 7, "lastPort": 24, "deadVlanName": "Dead_Vlan"},
+      {"deviceRole": "AN-2", "interfacePrefix": "Fa0/", "firstPort": 5, "lastPort": 24, "deadVlanName": "Dead_Vlan"}
+    ],
+    "routerSubinterfaceRequirements": [
+      {"vlanName": "Management", "networkName": "Management", "addressSuffix": 1, "mask": "255.255.255.0"},
+      {"vlanName": "Reception", "networkName": "Reception", "addressSuffix": 1, "mask": "255.255.255.0"},
+      {"vlanName": "Data", "networkName": "Data", "addressSuffix": 1, "mask": "255.255.255.0"}
+    ],
+    "routerRole": "CN-1",
+    "routerParentInterface": "Fa0/0",
+    "routerWanInterface": "Fa0/1",
+    "accessPointSwitchRole": "AN-1",
+    "accessPointSwitchPort": "Fa0/7",
+    "testLaptopRole": "TestLaptop",
+    "routeEvidenceCommand": "show ip route",
+    "testLaptopDiagnosticEvidenceIds": ["ipconfig", "TestLaptop-provider"],
+    "redWolfEvidenceId": "redwolf",
+    "requirePasswordEncryption": true,
+    "requireDomainLookupDisabled": true,
+    "requireConsoleLogin": true,
+    "requireVtyLogin": true,
+    "requireNoEnablePassword": true,
+    "requireRouteEvidence": true,
+    "requireDefaultRoute": true,
+    "requireSave": true,
+    "requireAccessPointUplink": true,
+    "requireAccessPointSwitchPort": true,
+    "requireAccessPointConfiguration": true,
+    "requireLaptopAssociation": true,
+    "requireDhcpLease": true,
+    "requireLaptopDiagnostics": true,
+    "requireRedWolfEvidence": true,
     "evidenceRequirements": [
       {
         "evidenceId": "IT1-provider",
         "command": "ping provider",
         "description": "Endpoint-originated provider diagnostic"
+      }
+    ],
+    "workPackageObjectives": [
+      {
+        "workPackage": 1,
+        "groups": [
+          {
+            "id": "placement",
+            "heading": "Place all required rack and endpoint equipment",
+            "conditionIdPrefixes": ["WP1.Placement."]
+          },
+          {
+            "id": "cable-types",
+            "heading": "Install all required player cable runs with the specified types",
+            "conditionIdPrefixes": ["WP1.CableTypes."]
+          },
+          {
+            "id": "permanent-connections",
+            "heading": "Complete all permanent infrastructure connections",
+            "conditionIdPrefixes": ["WP1.PermanentConnections."]
+          },
+          {
+            "id": "terminations",
+            "heading": "Terminate every required permanent run",
+            "conditionIdPrefixes": ["WP1.Terminations"]
+          }
+        ]
+      },
+      {
+        "workPackage": 2,
+        "groups": [
+          {
+            "id": "switch-setup",
+            "heading": "Configure and harden both access switches",
+            "conditionIdPrefixes": [
+              "WP2.AN-1.Hardening",
+              "WP2.AN-1.ManagementSvi",
+              "WP2.AN-1.Evidence",
+              "WP2.AN-1.Save",
+              "WP2.AN-2.Hardening",
+              "WP2.AN-2.ManagementSvi",
+              "WP2.AN-2.Evidence",
+              "WP2.AN-2.Save"
+            ]
+          },
+          {
+            "id": "vlan-databases",
+            "heading": "Build the required VLAN databases",
+            "conditionIdPrefixes": ["WP2.AN-1.Vlans", "WP2.AN-2.Vlans"]
+          },
+          {
+            "id": "access-ports",
+            "heading": "Configure the required access ports",
+            "conditionIdPrefixes": ["WP2.Access:"]
+          },
+          {
+            "id": "trunks",
+            "heading": "Configure the required switch trunks",
+            "conditionIdPrefixes": ["WP2.Trunk:"]
+          },
+          {
+            "id": "unused-ports",
+            "heading": "Park unused ports in the Dead VLAN and shut them down",
+            "conditionIdPrefixes": ["WP2.UnusedPorts:"]
+          }
+        ]
+      },
+      {
+        "workPackage": 3,
+        "groups": [
+          {
+            "id": "hardening",
+            "heading": "Harden CN-1",
+            "conditionIdPrefixes": ["WP3.Hardening"]
+          },
+          {
+            "id": "inter-vlan-gateways",
+            "heading": "Configure the scenario's inter-VLAN gateways",
+            "conditionIdPrefixes": ["WP3.ParentInterface", "WP3.Subinterfaces"]
+          },
+          {
+            "id": "wan",
+            "heading": "Configure the provider WAN interface",
+            "conditionIdPrefixes": ["WP3.Wan"]
+          },
+          {
+            "id": "default-route",
+            "heading": "Point the default route at the provider",
+            "conditionIdPrefixes": ["WP3.DefaultRoute"]
+          },
+          {
+            "id": "route-evidence",
+            "heading": "Verify the route table",
+            "conditionIdPrefixes": ["WP3.RouteEvidence"]
+          },
+          {
+            "id": "endpoint-evidence",
+            "heading": "Verify required endpoint connectivity",
+            "conditionIdPrefixes": ["WP3.EndpointEvidence."]
+          },
+          {
+            "id": "save",
+            "heading": "Save the CN-1 configuration",
+            "conditionIdPrefixes": ["WP3.Save"]
+          }
+        ]
+      },
+      {
+        "workPackage": 4,
+        "groups": [
+          {
+            "id": "ap-uplink",
+            "heading": "Connect the AP uplink",
+            "conditionIdPrefixes": ["WP4.APUplink"]
+          },
+          {
+            "id": "switchport",
+            "heading": "Place the AP switchport in the Reception VLAN",
+            "conditionIdPrefixes": ["WP4.SwitchPort"]
+          },
+          {
+            "id": "ap-config",
+            "heading": "Configure the scenario's guest wireless settings",
+            "conditionIdPrefixes": ["WP4.APConfig"]
+          },
+          {
+            "id": "laptop-association",
+            "heading": "Associate TestLaptop over Wi-Fi",
+            "conditionIdPrefixes": ["WP4.LaptopAssociation"]
+          },
+          {
+            "id": "dhcp",
+            "heading": "Obtain the TestLaptop DHCP lease",
+            "conditionIdPrefixes": ["WP4.Dhcp"]
+          },
+          {
+            "id": "diagnostics",
+            "heading": "Run the required TestLaptop diagnostics",
+            "conditionIdPrefixes": ["WP4.Diagnostics"]
+          },
+          {
+            "id": "redwolf",
+            "heading": "Load the RedWolf page",
+            "conditionIdPrefixes": ["WP4.RedWolf"]
+          }
+        ]
       }
     ]
   },

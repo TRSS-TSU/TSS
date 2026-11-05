@@ -208,7 +208,35 @@ public sealed class NetworkScenarioConfig
     public string[] endpointAliases;
     public NetworkRoleBinding[] roleBindings;
     public NetworkRequiredPort[] requiredPorts;
+    public NetworkTrunkRequirement[] trunkRequirements;
+    public NetworkUnusedPortRequirement[] unusedPortRequirements;
+    public NetworkRouterSubinterfaceRequirement[] routerSubinterfaceRequirements;
     public NetworkEvidenceRequirement[] evidenceRequirements;
+    public string routerRole = "CN-1";
+    public string routerParentInterface = "Fa0/0";
+    public string routerWanInterface = "Fa0/1";
+    public string accessPointSwitchRole = "AN-1";
+    public string accessPointSwitchPort = "Fa0/7";
+    public string testLaptopRole = "TestLaptop";
+    public string routeEvidenceCommand = "show ip route";
+    public string[] testLaptopDiagnosticEvidenceIds = { "ipconfig", "TestLaptop-provider" };
+    public string redWolfEvidenceId = "redwolf";
+    public bool requirePasswordEncryption = true;
+    public bool requireDomainLookupDisabled = true;
+    public bool requireConsoleLogin = true;
+    public bool requireVtyLogin = true;
+    public bool requireNoEnablePassword = true;
+    public bool requireRouteEvidence = true;
+    public bool requireDefaultRoute = true;
+    public bool requireSave = true;
+    public bool requireAccessPointUplink = true;
+    public bool requireAccessPointSwitchPort = true;
+    public bool requireAccessPointConfiguration = true;
+    public bool requireLaptopAssociation = true;
+    public bool requireDhcpLease = true;
+    public bool requireLaptopDiagnostics = true;
+    public bool requireRedWolfEvidence = true;
+    public NetworkWorkPackageObjective[] workPackageObjectives;
 }
 
 [Serializable]
@@ -229,9 +257,53 @@ public sealed class NetworkRequiredPort
 }
 
 [Serializable]
+public sealed class NetworkTrunkRequirement
+{
+    public string deviceRole;
+    public string interfaceName;
+    public string nativeVlanName;
+    public string[] allowedVlanNames;
+}
+
+[Serializable]
+public sealed class NetworkUnusedPortRequirement
+{
+    public string deviceRole;
+    public string interfacePrefix = "Fa0/";
+    public int firstPort;
+    public int lastPort;
+    public string deadVlanName;
+}
+
+[Serializable]
+public sealed class NetworkRouterSubinterfaceRequirement
+{
+    public string vlanName;
+    public string networkName;
+    public int addressSuffix = 1;
+    public string mask = "255.255.255.0";
+}
+
+[Serializable]
 public sealed class NetworkEvidenceRequirement
 {
     public string evidenceId;
     public string command;
     public string description;
+}
+
+[Serializable]
+public sealed class NetworkWorkPackageObjective
+{
+    public int workPackage;
+    public NetworkWorkPackageObjectiveGroup[] groups;
+}
+
+[Serializable]
+public sealed class NetworkWorkPackageObjectiveGroup
+{
+    public string id;
+    public string heading;
+    // ponytail: prefixes keep scenario grouping compact; use explicit IDs if selectors become ambiguous.
+    public string[] conditionIdPrefixes;
 }

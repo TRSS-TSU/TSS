@@ -198,6 +198,31 @@ public static class TssExternalScenarioValidator
             if (row.command == null || !Regex.IsMatch(row.command, @"\A(?:ping|tracert) provider\z", RegexOptions.IgnoreCase))
                 errors.Add("Evidence command must be ping provider or tracert provider; student addresses are generated at runtime.");
         }
+
+        if (network.workPackageObjectives == null)
+            return;
+
+        var objectiveIds = NewIds();
+        foreach (var objective in Rows(network.workPackageObjectives, "workPackageObjectives", errors))
+        {
+            if (objective.workPackage < 1 || objective.workPackage > 4)
+                errors.Add("workPackageObjectives workPackage must be 1..4.");
+
+            var groupIds = NewIds();
+            foreach (var group in Rows(objective.groups, "workPackageObjectives groups", errors))
+            {
+                Required(group.id, "work-package objective id", errors);
+                Required(group.heading, "work-package objective heading", errors);
+                if (!string.IsNullOrWhiteSpace(group.id) && !groupIds.Add(group.id))
+                    errors.Add("Duplicate work-package objective id: " + group.id);
+                if (group.conditionIdPrefixes == null || group.conditionIdPrefixes.Length == 0)
+                    errors.Add("Work-package objective requires conditionIdPrefixes: " + group.id);
+            }
+
+            var objectiveId = objective.workPackage.ToString();
+            if (!objectiveIds.Add(objectiveId))
+                errors.Add("Duplicate workPackageObjectives entry: " + objectiveId);
+        }
     }
 
     private static void ValidateBinder(TssBinderReferenceContent binder, List<string> errors)

@@ -15,6 +15,31 @@ const groups = {
 };
 const help = {
   networkScenario: "Network values, device roles, configuration expectations, and evidence for the student lab.",
+  trunkRequirements: "Scenario-authored switch trunk interfaces, native VLAN, and allowed VLAN names.",
+  unusedPortRequirements: "Scenario-authored unused-port ranges that must be assigned to the dead VLAN and shut down.",
+  routerSubinterfaceRequirements: "Scenario-authored router subinterface VLAN and seed-derived network expectations.",
+  roleBindings: "Maps scenario roles to stable devices and expected hostnames.",
+  routerRole: "Role binding used to locate the scenario router.",
+  routerParentInterface: "Router parent interface used for inter-VLAN subinterfaces.",
+  routerWanInterface: "Router provider-facing interface.",
+  accessPointSwitchRole: "Role of the switch carrying the access point uplink.",
+  accessPointSwitchPort: "Switch interface carrying the access point uplink.",
+  routeEvidenceCommand: "Router command that satisfies route-table evidence.",
+  testLaptopDiagnosticEvidenceIds: "Evidence IDs required for TestLaptop diagnostics.",
+  redWolfEvidenceId: "Evidence ID required for the RedWolf page check.",
+  requireRouteEvidence: "Whether route-table evidence is required for WP3.",
+  requireDefaultRoute: "Whether the provider default route is required for WP3.",
+  requireSave: "Whether saved startup configuration is required for switch and router grading.",
+  requireAccessPointUplink: "Whether the AP uplink is required for WP4.",
+  requireAccessPointSwitchPort: "Whether the AP switchport configuration is required for WP4.",
+  requireAccessPointConfiguration: "Whether AP wireless configuration is required for WP4.",
+  requireLaptopAssociation: "Whether TestLaptop Wi-Fi association is required for WP4.",
+  requireDhcpLease: "Whether the TestLaptop DHCP lease is required for WP4.",
+  requireLaptopDiagnostics: "Whether TestLaptop diagnostics are required for WP4.",
+  requireRedWolfEvidence: "Whether RedWolf page evidence is required for WP4.",
+  workPackageObjectives: "Scenario-authored headings that group runtime-evaluated work-package conditions.",
+  groups: "Runtime evaluation conditions shown under this work-package heading.",
+  conditionIdPrefixes: "Evaluator condition IDs or prefixes assigned to this heading.",
   inventory: "Equipment IDs must match Unity’s equipment catalog. Quantity controls how many items are available.",
   cableInventory: "Cable IDs must match Unity’s cable catalog. Quantity controls available loose cable stock.",
   defaultPlayerCableType: "Cable type offered by default in the student cable placement workflow.",
@@ -83,7 +108,7 @@ function renderBinder(){
 function prettyName(value){return String(value).replace(/([A-Z])([A-Z][a-z])/g,"$1 $2").replace(/([a-z0-9])([A-Z])/g,"$1 $2").replace(/[_-]+/g," ").replace(/^./,x=>x.toUpperCase());}
 function pathValue(root,path){return path.reduce((value,key)=>value?.[key],root);}
 function longText(key,value){return typeof value==="string"&&(value.length>110||/motd|paragraph|intro|ending|rationale|description|heading|note|address/i.test(key));}
-function makeDefaultArrayItem(path){const name=String(path.at(-1)||"");const templates={inventory:{equipmentId:"",quantity:0},cableInventory:{cableId:"",quantity:0},cableTypeRequirements:{requirementId:"",endpointAId:"",endpointBId:"",requiredCableType:0},permanentConnections:{connectionId:"",cableId:"",cableType:0,patchPanelEndpointId:"",wallportEndpointId:"",requiresPunchDownTermination:false,endpointATerminationModuleId:"",endpointBTerminationModuleId:""},cableSchedule:{fromEndpoint:"",fromPort:"",toEndpoint:"",toPort:"",cableType:"Straight"},namingRows:{rackId:"",slot:"",device:"",assignedName:"",rationale:""},racks:{rackId:"",lowestU:1,highestU:40,firstInstallableU:1,lastInstallableU:40,reservedUPositions:[]},reservedUPositions:1,expectedRackPlacements:{phaseLabel:"",rackId:"",startingU:1,endingU:1,category:0,requiredName:""},expectedEndpointPlacements:{phaseLabel:"",stationId:"",category:0,requiredName:""},rows:{label:"",value:""},roleBindings:{role:"",deviceKey:"",category:0,displayName:""},requiredPorts:{deviceRole:"",interfaceName:"",endpointId:""},evidenceRequirements:{evidenceId:"",command:"",description:""},dhcpNetworkNames:"",endpointAliases:""};return structuredClone(templates[name]??{});}
+function makeDefaultArrayItem(path){const name=String(path.at(-1)||"");const templates={inventory:{equipmentId:"",quantity:0},cableInventory:{cableId:"",quantity:0},cableTypeRequirements:{requirementId:"",endpointAId:"",endpointBId:"",requiredCableType:0},permanentConnections:{connectionId:"",cableId:"",cableType:0,patchPanelEndpointId:"",wallportEndpointId:"",requiresPunchDownTermination:false,endpointATerminationModuleId:"",endpointBTerminationModuleId:""},cableSchedule:{fromEndpoint:"",fromPort:"",toEndpoint:"",toPort:"",cableType:"Straight"},namingRows:{rackId:"",slot:"",device:"",assignedName:"",rationale:""},racks:{rackId:"",lowestU:1,highestU:40,firstInstallableU:1,lastInstallableU:40,reservedUPositions:[]},reservedUPositions:1,expectedRackPlacements:{phaseLabel:"",rackId:"",startingU:1,endingU:1,category:0,requiredName:""},expectedEndpointPlacements:{phaseLabel:"",stationId:"",category:0,requiredName:""},rows:{label:"",value:""},roleBindings:{role:"",deviceKey:"",category:0,displayName:""},requiredPorts:{deviceRole:"",interfaceName:"",endpointId:""},trunkRequirements:{deviceRole:"",interfaceName:"",nativeVlanName:"",allowedVlanNames:[]},unusedPortRequirements:{deviceRole:"",interfacePrefix:"Fa0/",firstPort:1,lastPort:1,deadVlanName:""},routerSubinterfaceRequirements:{vlanName:"",networkName:"",addressSuffix:1,mask:"255.255.255.0"},evidenceRequirements:{evidenceId:"",command:"",description:""},workPackageObjectives:{workPackage:1,groups:[]},groups:{id:"",heading:"",conditionIdPrefixes:[]},conditionIdPrefixes:"",dhcpNetworkNames:"",endpointAliases:""};return structuredClone(templates[name]??{});}
 function blankLike(value){if(Array.isArray(value))return[];if(value&&typeof value==="object")return Object.fromEntries(Object.entries(value).map(([k,v])=>[k,blankLike(v)]));if(typeof value==="number")return 0;if(typeof value==="boolean")return false;return "";}
 function card(title,description){const section=document.createElement("section");section.className="data-card";const head=document.createElement("div");head.className="data-card-heading";const h=document.createElement("h3");h.textContent=title;head.append(h);if(description){const p=document.createElement("p");p.textContent=description;head.append(p);}section.append(head);return section;}
 function singularName(name){return name.endsWith("ies")?`${name.slice(0,-3)}y`:name.endsWith("s")?name.slice(0,-1):name;}
