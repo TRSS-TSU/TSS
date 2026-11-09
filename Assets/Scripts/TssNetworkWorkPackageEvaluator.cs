@@ -174,11 +174,11 @@ public sealed class TssNetworkWorkPackageEvaluator
 
     private void CheckHardening(NetworkDeviceState device, string id, TssWorkPackageResult result, string expectedHostname = null)
     {
-        if (device != null && (!string.IsNullOrWhiteSpace(device.EnablePassword) || !string.IsNullOrWhiteSpace(device.EnableSecret) || !string.IsNullOrWhiteSpace(device.ConsolePassword) || !string.IsNullOrWhiteSpace(device.VtyPassword) || !string.IsNullOrWhiteSpace(device.Motd) || device.PasswordEncryption || device.DomainLookupDisabled))
+        if (device != null && (!string.IsNullOrWhiteSpace(device.EnablePassword) || !string.IsNullOrWhiteSpace(device.EnableSecret) || !string.IsNullOrWhiteSpace(device.ConsolePassword) || !string.IsNullOrWhiteSpace(device.VtyPassword) || !string.IsNullOrWhiteSpace(device.Motd) || device.PasswordEncryption || device.DomainLookupDisabled || device.VtyLoginLocal || device.VtyExecTimeoutMinutes > 0 || device.VtyTransportInputSsh || device.VtyLoggingSynchronous))
             result.Attempt(id);
         var p = _state.Profile;
         if (p == null || device == null || (p.RequirePasswordEncryption && !device.PasswordEncryption) || (p.RequireDomainLookupDisabled && !device.DomainLookupDisabled)
-            || (p.RequireConsoleLogin && !device.ConsoleLoginRequired) || (p.RequireVtyLogin && !device.VtyLoginRequired)
+            || (p.RequireConsoleLogin && !device.ConsoleLoginRequired) || (p.RequireVtyLogin && (!device.VtyLoginRequired || !device.VtyLoginLocal || device.VtyExecTimeoutMinutes != 10 || !device.VtyTransportInputSsh || !device.VtyLoggingSynchronous || device.Vty5To15LoginRequired))
             || (p.RequireNoEnablePassword && !string.IsNullOrWhiteSpace(device.EnablePassword)) || device.EnableSecret != p.EnableSecret
             || device.ConsolePassword != p.ConsolePassword || device.VtyPassword != p.VtyPassword || device.Motd != p.Motd
             || (!string.IsNullOrWhiteSpace(expectedHostname) && !string.Equals(device.Hostname, expectedHostname, StringComparison.OrdinalIgnoreCase)))
@@ -205,7 +205,7 @@ public sealed class TssNetworkWorkPackageEvaluator
             var id = "WP2.Access:" + required.deviceRole + ":" + required.interfaceName;
             if (device != null && device.Interfaces.ContainsKey(required.interfaceName))
                 result.Attempt(id);
-            if (device == null || !device.Interfaces.TryGetValue(required.interfaceName, out var port) || port.IsTrunk || !device.IsInterfaceOperational(port) || port.AccessVlan != VlanFor(required.endpointId))
+            if (device == null || !device.Interfaces.TryGetValue(required.interfaceName, out var port) || port.IsTrunk || !device.IsInterfaceOperational(port) || port.AccessVlan != VlanFor(required))
                 result.Add(id, required.deviceRole + " " + required.interfaceName + " access port is incomplete.");
             else result.Pass(id, required.deviceRole + " " + required.interfaceName + " access port is correct.");
         }
@@ -332,11 +332,17 @@ public sealed class TssNetworkWorkPackageEvaluator
                 return endpoint;
         return null;
     }
-    private int VlanFor(string role) => role.IndexOf("Reception", StringComparison.OrdinalIgnoreCase) >= 0 ? _state.Profile.ReceptionVlan : role.IndexOf("Data", StringComparison.OrdinalIgnoreCase) >= 0 ? _state.Profile.DataVlan : _state.Profile.ManagementVlan;
+    private int VlanFor(NetworkRequiredPort requirement)
+    {
+        if (!string.IsNullOrWhiteSpace(requirement.vlanName))
+            return _state.Profile.VlanId(requirement.vlanName);
+        var endpointId = requirement.endpointId ?? string.Empty;
+        return endpointId.IndexOf("Reception", StringComparison.OrdinalIgnoreCase) >= 0 ? _state.Profile.ReceptionVlan : endpointId.IndexOf("Data", StringComparison.OrdinalIgnoreCase) >= 0 ? _state.Profile.DataVlan : _state.Profile.ManagementVlan;
+    }
 
     private static bool Equivalent(NetworkDeviceState a, NetworkDeviceState b)
     {
-        if (a == null || b == null || a.Hostname != b.Hostname || a.EnablePassword != b.EnablePassword || a.EnableSecret != b.EnableSecret || a.ConsolePassword != b.ConsolePassword || a.AuxPassword != b.AuxPassword || a.VtyPassword != b.VtyPassword || a.Motd != b.Motd || a.PasswordEncryption != b.PasswordEncryption || a.DomainLookupDisabled != b.DomainLookupDisabled || a.ConsoleLoginRequired != b.ConsoleLoginRequired || a.AuxLoginRequired != b.AuxLoginRequired || a.VtyLoginRequired != b.VtyLoginRequired || a.ConsoleLoggingSynchronous != b.ConsoleLoggingSynchronous || a.AuxLoggingSynchronous != b.AuxLoggingSynchronous || a.ManagementAddress != b.ManagementAddress || a.ManagementMask != b.ManagementMask || a.DefaultGateway != b.DefaultGateway || a.Routes.Count != b.Routes.Count || a.Vlans.Count != b.Vlans.Count || a.UserPasswords.Count != b.UserPasswords.Count || a.Interfaces.Count != b.Interfaces.Count) return false;
+        if (a == null || b == null || a.Hostname != b.Hostname || a.EnablePassword != b.EnablePassword || a.EnableSecret != b.EnableSecret || a.ConsolePassword != b.ConsolePassword || a.AuxPassword != b.AuxPassword || a.VtyPassword != b.VtyPassword || a.Motd != b.Motd || a.PasswordEncryption != b.PasswordEncryption || a.DomainLookupDisabled != b.DomainLookupDisabled || a.ConsoleLoginRequired != b.ConsoleLoginRequired || a.AuxLoginRequired != b.AuxLoginRequired || a.VtyLoginRequired != b.VtyLoginRequired || a.VtyLoginLocal != b.VtyLoginLocal || a.VtyExecTimeoutMinutes != b.VtyExecTimeoutMinutes || a.VtyTransportInputSsh != b.VtyTransportInputSsh || a.ConsoleLoggingSynchronous != b.ConsoleLoggingSynchronous || a.AuxLoggingSynchronous != b.AuxLoggingSynchronous || a.VtyLoggingSynchronous != b.VtyLoggingSynchronous || a.ManagementAddress != b.ManagementAddress || a.ManagementMask != b.ManagementMask || a.DefaultGateway != b.DefaultGateway || a.Routes.Count != b.Routes.Count || a.Vlans.Count != b.Vlans.Count || a.UserPasswords.Count != b.UserPasswords.Count || a.Interfaces.Count != b.Interfaces.Count) return false;
         foreach (var vlan in a.Vlans) if (!b.Vlans.TryGetValue(vlan.Key, out var name) || name != vlan.Value) return false;
         foreach (var user in a.UserPasswords) if (!b.UserPasswords.TryGetValue(user.Key, out var password) || password != user.Value) return false;
         foreach (var route in a.Routes) if (!b.Routes.Any(x => x.Network == route.Network && x.Mask == route.Mask && x.NextHop == route.NextHop)) return false;

@@ -173,7 +173,7 @@ public sealed class TssTrainingSession : MonoBehaviour
             if (string.IsNullOrWhiteSpace(iface.EndpointId)) continue;
 
             iface.CarrierUp = effectiveEndpoints.Contains(iface.EndpointId)
-                || (device.Category == EquipmentCategory.Router && iface.Name == "Fa0/1"
+                || (device.Category == EquipmentCategory.Router && iface.Name == NetworkProfile?.RouterWanInterface
                     && IsProviderDemarcConnected(iface.EndpointId));
         }
 

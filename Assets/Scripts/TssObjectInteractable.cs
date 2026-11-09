@@ -25,7 +25,8 @@ public sealed class TssObjectInteractable : MonoBehaviour
     [SerializeField] private bool rackFirstPersonOrthographic = true;
     [SerializeField] private float rackFirstPersonOrthographicSize = 0.14f;
     [SerializeField] private float rackFirstPersonNearClipPlane = -0.36f;
-    [SerializeField] private float rackFirstPersonFarClipPlane = 8f;
+    [SerializeField] private float rackFirstPersonFarClipPlane = 2f;
+    [SerializeField] private float endpointFirstPersonFarClipPlane = 8f;
 
     [Header("Player")]
     [SerializeField] private ThirdPersonController playerController;
@@ -254,17 +255,28 @@ public sealed class TssObjectInteractable : MonoBehaviour
 
     private void ApplyRackCameraMode()
     {
-        if (_rackCameraModeApplied || !rackFirstPersonOrthographic || !GetComponentInParent<RackMountController>(true))
+        if (_rackCameraModeApplied || !mainCamera)
             return;
 
+        var rack = GetComponentInParent<RackMountController>(true);
         _previousOrthographic = mainCamera.orthographic;
         _previousOrthographicSize = mainCamera.orthographicSize;
         _previousNearClipPlane = mainCamera.nearClipPlane;
         _previousFarClipPlane = mainCamera.farClipPlane;
-        mainCamera.orthographic = true;
-        mainCamera.orthographicSize = rackFirstPersonOrthographicSize;
-        mainCamera.nearClipPlane = rackFirstPersonNearClipPlane;
-        mainCamera.farClipPlane = rackFirstPersonFarClipPlane;
+        if (rack && rackFirstPersonOrthographic)
+        {
+            mainCamera.orthographic = true;
+            mainCamera.orthographicSize = rackFirstPersonOrthographicSize;
+            mainCamera.nearClipPlane = rackFirstPersonNearClipPlane;
+        }
+
+        // Existing scene overrides may still contain the previous zero value.
+        if (rack && rackFirstPersonFarClipPlane <= 0f)
+            rackFirstPersonFarClipPlane = 2f;
+
+        mainCamera.farClipPlane = rack
+            ? rackFirstPersonFarClipPlane
+            : endpointFirstPersonFarClipPlane;
         _rackCameraModeApplied = true;
     }
 

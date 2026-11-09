@@ -1,5 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
+// Shared reachability is the source of truth for endpoint and device probes.
+
 
 public enum TssReachabilityFaultCategory
 {
@@ -34,12 +37,63 @@ public sealed class TssNetworkReachabilityEvaluator
         if (_state == null || !_state.TryGetEndpoint(sourceKey, out var source))
             return Fail(1, TssReachabilityFaultCategory.PhysicalPathUnavailable, "source endpoint is unavailable.", string.Empty, string.Empty);
 
+        return EvaluateSource(source, FindDevice(source), destinationAddress);
+    }
+
+    public TssReachabilityResult EvaluateDevice(string sourceKey, string destinationAddress)
+    {
+        if (_state == null || !_state.TryGetDevice(sourceKey, out var sourceDevice))
+            return Fail(1, TssReachabilityFaultCategory.PhysicalPathUnavailable, "source device is unavailable.", string.Empty, string.Empty);
+
         var profile = _state.Profile;
+        var destinationRole = ResolveRole(destinationAddress, profile);
+        if (string.IsNullOrEmpty(destinationRole))
+            return Fail(3, TssReachabilityFaultCategory.DestinationUnavailable, "destination does not respond.", sourceDevice.Hostname, string.Empty);
+
+        var sourceInterface = SelectDeviceSourceInterface(sourceDevice, destinationAddress, profile);
+        if (sourceInterface == null || !IsDeviceInterfaceOperational(sourceDevice, sourceInterface, profile))
+            return Fail(3, TssReachabilityFaultCategory.InterfaceUnavailable, "source has no operational Layer 3 interface.", sourceDevice.Hostname, destinationRole);
+
+        if (!TssNetworkAddress.IsAddress(sourceInterface.Address) || !TssNetworkAddress.IsMask(sourceInterface.Mask))
+            return Fail(3, TssReachabilityFaultCategory.InterfaceUnavailable, "source interface has no valid Layer 3 address.", sourceDevice.Hostname, destinationRole);
+
+        var source = new EndpointNetworkState("__device_probe__", sourceDevice.Hostname, profile)
+        {
+            Address = sourceInterface.Address,
+            Mask = sourceInterface.Mask,
+            Gateway = sourceDevice.Category == EquipmentCategory.Switch ? sourceDevice.DefaultGateway : sourceInterface.Address
+        };
+
+        var hops = new List<string> { source.Address };
+        if (destinationAddress.Equals(profile.WanProviderAddress, StringComparison.OrdinalIgnoreCase))
+            return EvaluateDeviceProvider(sourceDevice, sourceInterface, source, destinationRole, hops);
+
+        if (FindEndpointByAddress(destinationAddress) is { } destination)
+        {
+            if (!destination.HasValidAddress || !GatewayMatches(destination, profile))
+                return Fail(3, TssReachabilityFaultCategory.DestinationUnavailable, "destination addressing is invalid.", source.Role, destinationRole, hops.ToArray());
+
+            var destinationPath = Evaluate(destination.Key, destination.Gateway);
+            if (!destinationPath.Success)
+                return Fail(destinationPath.FailedLayer, destinationPath.FaultCategory, destinationPath.Diagnostic.Substring(destinationPath.Diagnostic.IndexOf(':') + 1).Trim(), source.Role, destinationRole, hops.ToArray());
+        }
+
+        var routeFailure = ValidateDeviceRoute(sourceDevice, sourceInterface, source, destinationAddress, destinationRole, hops);
+        if (routeFailure.HasValue)
+            return routeFailure.Value;
+
+        Add(hops, destinationAddress);
+        return new TssReachabilityResult(true, 0, TssReachabilityFaultCategory.None, "Reachable.", source.Role, destinationRole, hops);
+    }
+
+    private TssReachabilityResult EvaluateSource(EndpointNetworkState source, NetworkDeviceState sourceDevice, string destinationAddress)
+    {
+        var profile = _state.Profile;
+
         var destinationRole = ResolveRole(destinationAddress, profile);
         if (string.IsNullOrEmpty(destinationRole))
             return Fail(3, TssReachabilityFaultCategory.DestinationUnavailable, "destination does not respond.", source.Role, string.Empty, source.Address);
 
-        var sourceDevice = FindDevice(source);
         var sourceInterface = FindSourceInterface(source, sourceDevice);
         if (!source.Layer1Connected)
             return Fail(1, TssReachabilityFaultCategory.PhysicalPathUnavailable, "no usable physical path.", source.Role, destinationRole);
@@ -97,6 +151,134 @@ public sealed class TssNetworkReachabilityEvaluator
 
         Add(hops, destinationAddress);
         return new TssReachabilityResult(true, 0, TssReachabilityFaultCategory.None, "Reachable.", source.Role, destinationRole, hops);
+    }
+
+    private NetworkInterfaceState SelectDeviceSourceInterface(NetworkDeviceState device, string destinationAddress, TssNetworkRunProfile profile)
+    {
+        if (device == null || profile == null)
+            return null;
+
+        if (device.Category == EquipmentCategory.Router && destinationAddress.Equals(profile.WanProviderAddress, StringComparison.OrdinalIgnoreCase))
+            return FindInterface(device, profile.RouterWanInterface);
+
+        if (device.Category == EquipmentCategory.Router)
+        {
+            var role = ResolveRole(destinationAddress, profile);
+            var vlan = VlanFor(role, destinationAddress, profile);
+            var gateway = GatewayForVlan(vlan, profile);
+            return device.Interfaces.Values.FirstOrDefault(iface => string.Equals(iface.Address, gateway, StringComparison.OrdinalIgnoreCase))
+                ?? device.Interfaces.Values.FirstOrDefault(iface => TssNetworkAddress.IsInSameSubnet(iface.Address, iface.Mask, destinationAddress));
+        }
+
+        if (device.Category == EquipmentCategory.Switch)
+            return device.Svis.Values.FirstOrDefault(iface => TssNetworkAddress.IsAddress(iface.Address) && TssNetworkAddress.IsMask(iface.Mask))
+                ?? (TssNetworkAddress.IsAddress(device.ManagementAddress) && TssNetworkAddress.IsMask(device.ManagementMask)
+                    ? new NetworkInterfaceState { Name = "Vlan1", Address = device.ManagementAddress, Mask = device.ManagementMask, AdminUp = true }
+                    : null);
+
+        return device.Interfaces.Values.FirstOrDefault(iface => TssNetworkAddress.IsAddress(iface.Address) && TssNetworkAddress.IsMask(iface.Mask));
+    }
+
+    private bool IsDeviceInterfaceOperational(NetworkDeviceState device, NetworkInterfaceState iface, TssNetworkRunProfile profile)
+    {
+        if (device == null || iface == null || !device.IsInterfaceAdminUp(iface))
+            return false;
+
+        if (device.Category != EquipmentCategory.Switch || !iface.Name.StartsWith("Vlan", StringComparison.OrdinalIgnoreCase))
+            return device.IsInterfaceOperational(iface);
+
+        var vlan = iface.Name.Equals("Vlan1", StringComparison.OrdinalIgnoreCase)
+            ? profile.ManagementVlan
+            : int.TryParse(iface.Name.Substring(4), out var parsed) ? parsed : 0;
+        if (!ActiveVlan(device, vlan))
+            return false;
+
+        return device.Interfaces.Values.Any(port => device.IsInterfaceOperational(port)
+            && (port.IsTrunk ? port.AllowedVlans.Contains(vlan) : port.AccessVlan == vlan));
+    }
+
+    private TssReachabilityResult EvaluateDeviceProvider(NetworkDeviceState sourceDevice, NetworkInterfaceState sourceInterface, EndpointNetworkState source, string destinationRole, List<string> hops)
+    {
+        var profile = _state.Profile;
+        NetworkDeviceState router;
+        if (sourceDevice.Category == EquipmentCategory.Router)
+        {
+            router = sourceDevice;
+            if (sourceInterface.Address != profile.WanCustomerAddress || sourceInterface.Mask != "255.255.255.252")
+                return Fail(3, TssReachabilityFaultCategory.ProviderRouteUnavailable, "provider interface is unavailable.", source.Role, destinationRole, hops.ToArray());
+        }
+        else
+        {
+            if (!TssNetworkAddress.IsAddress(sourceDevice.DefaultGateway)
+                || !TssNetworkAddress.IsInSameSubnet(source.Address, source.Mask, sourceDevice.DefaultGateway))
+                return Fail(3, TssReachabilityFaultCategory.GatewayUnavailable, "default gateway is unavailable.", source.Role, destinationRole, hops.ToArray());
+
+            router = FindRouterByInterfaceAddress(sourceDevice.DefaultGateway);
+            if (router == null)
+                return Fail(3, TssReachabilityFaultCategory.GatewayUnavailable, "default gateway is unavailable.", source.Role, destinationRole, hops.ToArray());
+            Add(hops, sourceDevice.DefaultGateway);
+            sourceInterface = FindInterface(router, _state.Profile.RouterWanInterface);
+        }
+
+        if (!_state.ProviderDemarcConnected)
+            return Fail(1, TssReachabilityFaultCategory.PhysicalPathUnavailable, "provider handoff is not connected through the DEMARC.", source.Role, destinationRole, hops.ToArray());
+        if (sourceInterface == null || !router.IsInterfaceOperational(sourceInterface)
+            || sourceInterface.Address != profile.WanCustomerAddress || sourceInterface.Mask != "255.255.255.252")
+            return Fail(3, TssReachabilityFaultCategory.ProviderRouteUnavailable, "provider interface is unavailable.", source.Role, destinationRole, hops.ToArray());
+        if (!HasProviderRoute(router, profile))
+            return Fail(3, TssReachabilityFaultCategory.ProviderRouteUnavailable, "provider route is unavailable.", source.Role, destinationRole, hops.ToArray());
+
+        Add(hops, profile.WanProviderAddress);
+        return new TssReachabilityResult(true, 0, TssReachabilityFaultCategory.None, "Reachable.", source.Role, destinationRole, hops);
+    }
+
+    private TssReachabilityResult? ValidateDeviceRoute(NetworkDeviceState sourceDevice, NetworkInterfaceState sourceInterface, EndpointNetworkState source, string destinationAddress, string destinationRole, List<string> hops)
+    {
+        var profile = _state.Profile;
+        var vlan = VlanFor(destinationRole, destinationAddress, profile);
+        var gateway = GatewayForVlan(vlan, profile);
+        if (sourceDevice.Category == EquipmentCategory.Router)
+        {
+            var routeInterface = sourceDevice.Interfaces.Values.FirstOrDefault(iface => string.Equals(iface.Address, gateway, StringComparison.OrdinalIgnoreCase));
+            if (routeInterface == null || !sourceDevice.IsInterfaceOperational(routeInterface) || routeInterface.Dot1qVlan != vlan)
+                return Fail(3, TssReachabilityFaultCategory.GatewayUnavailable, "router gateway is unavailable.", source.Role, destinationRole, hops.ToArray());
+            Add(hops, routeInterface.Address);
+            return null;
+        }
+
+        if (sourceDevice.Category == EquipmentCategory.Switch)
+        {
+            if (!TssNetworkAddress.IsAddress(sourceDevice.DefaultGateway)
+                || !TssNetworkAddress.IsInSameSubnet(source.Address, source.Mask, sourceDevice.DefaultGateway))
+                return Fail(3, TssReachabilityFaultCategory.GatewayUnavailable, "default gateway is unavailable.", source.Role, destinationRole, hops.ToArray());
+
+            var gatewayRouter = FindRouterByInterfaceAddress(sourceDevice.DefaultGateway);
+            if (gatewayRouter == null)
+                return Fail(3, TssReachabilityFaultCategory.GatewayUnavailable, "default gateway is unavailable.", source.Role, destinationRole, hops.ToArray());
+
+            var sourceGatewayInterface = gatewayRouter.Interfaces.Values.FirstOrDefault(iface => string.Equals(iface.Address, sourceDevice.DefaultGateway, StringComparison.OrdinalIgnoreCase));
+            if (sourceGatewayInterface == null || !gatewayRouter.IsInterfaceOperational(sourceGatewayInterface))
+                return Fail(3, TssReachabilityFaultCategory.GatewayUnavailable, "default gateway is unavailable.", source.Role, destinationRole, hops.ToArray());
+            Add(hops, sourceDevice.DefaultGateway);
+
+            var destinationRouterInterface = gatewayRouter.Interfaces.Values.FirstOrDefault(iface => string.Equals(iface.Address, gateway, StringComparison.OrdinalIgnoreCase));
+            if (destinationRouterInterface == null || !gatewayRouter.IsInterfaceOperational(destinationRouterInterface) || destinationRouterInterface.Dot1qVlan != vlan)
+                return Fail(3, TssReachabilityFaultCategory.GatewayUnavailable, "destination route is unavailable.", source.Role, destinationRole, hops.ToArray());
+            Add(hops, destinationRouterInterface.Address);
+            return null;
+        }
+
+        if (!TssNetworkAddress.IsInSameSubnet(sourceInterface.Address, sourceInterface.Mask, destinationAddress))
+            return Fail(3, TssReachabilityFaultCategory.GatewayUnavailable, "default gateway is unavailable.", source.Role, destinationRole, hops.ToArray());
+        return null;
+    }
+
+    private NetworkDeviceState FindRouterByInterfaceAddress(string address)
+    {
+        foreach (var device in _state.Devices)
+            if (device.Category == EquipmentCategory.Router && device.Interfaces.Values.Any(iface => string.Equals(iface.Address, address, StringComparison.OrdinalIgnoreCase)))
+                return device;
+        return null;
     }
 
     private TssReachabilityResult CheckLayer2(EndpointNetworkState source, NetworkDeviceState sourceDevice, NetworkInterfaceState sourceInterface, TssNetworkRunProfile profile, string destinationRole, List<string> hops)

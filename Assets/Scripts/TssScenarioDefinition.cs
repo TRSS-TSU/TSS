@@ -254,6 +254,8 @@ public sealed class NetworkRequiredPort
     public string deviceRole;
     public string interfaceName;
     public string endpointId;
+    // Empty preserves legacy endpoint-name inference; new scenarios should author this explicitly.
+    public string vlanName;
 }
 
 [Serializable]

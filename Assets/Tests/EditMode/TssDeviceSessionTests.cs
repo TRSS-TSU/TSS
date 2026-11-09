@@ -98,7 +98,7 @@ public sealed class TssDeviceSessionTests
             Assert.IsTrue(processor.Execute("password auxpw").Accepted);
             Assert.IsTrue(processor.Execute("login").Accepted);
             var config = TssCliCommandProcessor.BuildRunningConfig(processor.Device);
-            StringAssert.Contains("line console 0" + Environment.NewLine + " logging synchronous", config);
+            StringAssert.Contains("line con 0" + Environment.NewLine + " logging synchronous", config);
             StringAssert.Contains("line aux 0" + Environment.NewLine + " password auxpw" + Environment.NewLine + " login", config);
             StringAssert.DoesNotContain("interface Console", config);
             StringAssert.DoesNotContain("interface Aux", config);
@@ -141,6 +141,47 @@ public sealed class TssDeviceSessionTests
             processor.Execute("enable");
             Assert.IsFalse(processor.Execute("plainpw").Accepted);
             Assert.IsTrue(processor.Execute("secretpw").Accepted);
+        }
+        finally
+        {
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
+    public void RunningConfigIncludesDefaultServiceLinesAndDelimitedBannerAfterInterfaces()
+    {
+        var sessionObject = new GameObject("RunningConfigDefaultsSession");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        try
+        {
+            session.BeginScenario(scenario);
+            var processor = new TssCliCommandProcessor(session, "Router", EquipmentCategory.Router, "CN-1");
+            processor.Execute("enable");
+            processor.Execute("configure terminal");
+            Assert.IsTrue(processor.Execute("banner motd #AUTHORIZED ACCESS#").Accepted);
+            processor.Execute("end");
+
+            var defaults = processor.Execute("show running-config").Output;
+            StringAssert.Contains("version 15.0" + Environment.NewLine + "!" + Environment.NewLine + "service timestamps debug datetime msec" + Environment.NewLine + "service timestamps log datetime msec" + Environment.NewLine + "no service password-encryption", defaults);
+            StringAssert.Contains("no aaa new-model" + Environment.NewLine + "ip cef", defaults);
+            StringAssert.Contains("interface GigabitEthernet0/0" + Environment.NewLine + " no ip address" + Environment.NewLine + " shutdown", defaults);
+            StringAssert.Contains("interface GigabitEthernet0/1" + Environment.NewLine + " no ip address" + Environment.NewLine + " shutdown", defaults);
+            StringAssert.Contains("ip forward-protocol nd", defaults);
+            StringAssert.Contains("line con 0" + Environment.NewLine + "!" + Environment.NewLine + "line aux 0", defaults);
+            StringAssert.Contains("line vty 0 4" + Environment.NewLine + " login" + Environment.NewLine + "!" + Environment.NewLine + "line vty 5 15" + Environment.NewLine + " login", defaults);
+            StringAssert.Contains("banner motd #AUTHORIZED ACCESS#", defaults);
+            Assert.Less(defaults.IndexOf("interface GigabitEthernet0/0", System.StringComparison.Ordinal), defaults.IndexOf("banner motd #", System.StringComparison.Ordinal));
+
+            Assert.IsTrue(processor.Execute("configure terminal").Accepted);
+            Assert.IsTrue(processor.Execute("service password-encryption").Accepted);
+            processor.Execute("end");
+            var encrypted = processor.Execute("show running-config").Output;
+            StringAssert.Contains("service timestamps debug datetime msec" + Environment.NewLine + "service timestamps log datetime msec" + Environment.NewLine + "service password-encryption", encrypted);
+            StringAssert.DoesNotContain("no service password-encryption", encrypted);
         }
         finally
         {
@@ -404,14 +445,85 @@ public sealed class TssDeviceSessionTests
             StringAssert.Contains(" switchport access vlan 80", running);
             StringAssert.DoesNotContain(" switchport trunk ", running);
             StringAssert.Contains("\n!\n", running);
-            StringAssert.Contains("interface Fa0/2", running);
-            Assert.Less(running.IndexOf("interface Fa0/2", StringComparison.Ordinal), running.IndexOf("interface Fa0/10", StringComparison.Ordinal));
-            Assert.Less(running.IndexOf("interface Fa0/2", StringComparison.Ordinal), running.IndexOf("\r\nvlan 1\r\n", StringComparison.Ordinal));
+            StringAssert.Contains("interface FastEthernet0/2", running);
+            Assert.Less(running.IndexOf("interface FastEthernet0/2", StringComparison.Ordinal), running.IndexOf("interface FastEthernet0/10", StringComparison.Ordinal));
+            Assert.Less(running.IndexOf("interface FastEthernet0/2", StringComparison.Ordinal), running.IndexOf("interface Vlan1", StringComparison.Ordinal));
         }
         finally
         {
             Object.DestroyImmediate(scenario);
             Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
+    public void SwitchRunningConfigIncludesFactoryDefaults()
+    {
+        var sessionObject = new GameObject("SwitchRunningConfigDefaultsSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        try
+        {
+            session.BeginScenario(scenario);
+            var processor = new TssCliCommandProcessor(session, "Switch", EquipmentCategory.Switch, "AN-1");
+            var defaults = processor.Execute("show running-config").Output;
+            StringAssert.Contains("version 15.0" + Environment.NewLine + "!" + Environment.NewLine + "service timestamps debug datetime msec" + Environment.NewLine + "service timestamps log datetime msec" + Environment.NewLine + "no service password-encryption", defaults);
+            StringAssert.Contains("spanning-tree mode pvst", defaults);
+            StringAssert.Contains("interface FastEthernet0/1" + Environment.NewLine + " switchport mode dynamic auto", defaults);
+            StringAssert.Contains("interface FastEthernet0/24" + Environment.NewLine + " switchport mode dynamic auto", defaults);
+            StringAssert.Contains("interface GigabitEthernet0/1" + Environment.NewLine + " switchport mode dynamic auto", defaults);
+            StringAssert.Contains("interface GigabitEthernet0/2" + Environment.NewLine + " switchport mode dynamic auto", defaults);
+            StringAssert.Contains("interface Vlan1" + Environment.NewLine + " no ip address" + Environment.NewLine + " shutdown", defaults);
+            StringAssert.Contains("ip classless", defaults);
+            StringAssert.Contains("line con 0" + Environment.NewLine + "!" + Environment.NewLine + "line vty 0 4" + Environment.NewLine + " login" + Environment.NewLine + "!" + Environment.NewLine + "line vty 5 15" + Environment.NewLine + " login", defaults);
+            StringAssert.Contains("vlan 1" + Environment.NewLine + "!", defaults);
+        }
+        finally
+        {
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
+    public void VtyRangesAreIndependentAndInlineHelpReportsSixteenLines()
+    {
+        foreach (var category in new[] { EquipmentCategory.Router, EquipmentCategory.Switch })
+        {
+            var sessionObject = new GameObject("VtyRangeSession", typeof(TssTrainingSession));
+            var session = sessionObject.GetComponent<TssTrainingSession>();
+            var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+            scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+            try
+            {
+                session.BeginScenario(scenario);
+                var processor = new TssCliCommandProcessor(session, "Device", category, "Device");
+                processor.Execute("enable");
+                processor.Execute("configure terminal");
+
+                var inlineHelp = processor.Execute("line vty 0 ?");
+                Assert.IsTrue(inlineHelp.Accepted);
+                StringAssert.Contains("16 VTY lines exist", inlineHelp.Output);
+
+                Assert.IsTrue(processor.Execute("line vty 0 4").Accepted);
+                Assert.IsTrue(processor.Execute("login local").Accepted);
+                Assert.IsTrue(processor.Execute("exec-timeout 10").Accepted);
+                Assert.IsTrue(processor.Execute("transport input ssh").Accepted);
+                Assert.IsTrue(processor.Execute("logging synchronous").Accepted);
+                Assert.IsTrue(processor.Execute("line vty 5 15").Accepted);
+                Assert.IsTrue(processor.Execute("no login").Accepted);
+                Assert.IsFalse(processor.Device.Vty5To15LoginRequired);
+
+                var runningConfig = TssCliCommandProcessor.BuildRunningConfig(processor.Device);
+                StringAssert.Contains("line vty 0 4" + Environment.NewLine + " login local" + Environment.NewLine + " exec-timeout 10" + Environment.NewLine + " transport input ssh" + Environment.NewLine + " logging synchronous", runningConfig);
+                StringAssert.Contains("line vty 5 15" + Environment.NewLine + " no login", runningConfig);
+            }
+            finally
+            {
+                Object.DestroyImmediate(scenario);
+                Object.DestroyImmediate(sessionObject);
+            }
         }
     }
 
@@ -488,7 +600,10 @@ public sealed class TssDeviceSessionTests
             Assert.IsTrue(processor.Execute("exit").Accepted);
             Assert.IsTrue(processor.Execute("line vty 0 4").Accepted);
             Assert.IsTrue(processor.Execute("password vtypw").Accepted);
-            Assert.IsTrue(processor.Execute("login").Accepted);
+            Assert.IsTrue(processor.Execute("login local").Accepted);
+            Assert.IsTrue(processor.Execute("exec-timeout 10").Accepted);
+            Assert.IsTrue(processor.Execute("transport input ssh").Accepted);
+            Assert.IsTrue(processor.Execute("logging synchronous").Accepted);
             Assert.IsTrue(processor.Execute("exit").Accepted);
             Assert.IsTrue(processor.Execute("vlan 10").Accepted);
             Assert.IsTrue(processor.Execute("name Data").Accepted);
@@ -496,6 +611,8 @@ public sealed class TssDeviceSessionTests
             Assert.IsTrue(processor.Execute("exit").Accepted);
             Assert.IsTrue(processor.Execute("ip route 10.10.10.0 255.255.255.0 192.0.2.1").Accepted);
             Assert.IsTrue(processor.Execute("end").Accepted);
+            var runningConfig = TssCliCommandProcessor.BuildRunningConfig(processor.Device);
+            StringAssert.Contains("line vty 0 4" + Environment.NewLine + " password vtypw" + Environment.NewLine + " login local" + Environment.NewLine + " exec-timeout 10" + Environment.NewLine + " transport input ssh" + Environment.NewLine + " logging synchronous", runningConfig);
 
             foreach (var command in new[]
             {
@@ -518,6 +635,10 @@ public sealed class TssDeviceSessionTests
             Assert.IsTrue(processor.Device.Interfaces["Fa0/2"].AllowedVlans.Contains(20));
             Assert.IsTrue(processor.Device.ConsoleLoginRequired);
             Assert.IsTrue(processor.Device.VtyLoginRequired);
+            Assert.IsTrue(processor.Device.VtyLoginLocal);
+            Assert.AreEqual(10, processor.Device.VtyExecTimeoutMinutes);
+            Assert.IsTrue(processor.Device.VtyTransportInputSsh);
+            Assert.IsTrue(processor.Device.VtyLoggingSynchronous);
             Assert.AreEqual("Data (suspended)", processor.Device.Vlans[10]);
             Assert.IsTrue(processor.Execute("disable").Accepted);
             Assert.AreEqual(TssNetworkCliMode.UserExec, processor.Device.Mode);
@@ -578,10 +699,10 @@ public sealed class TssDeviceSessionTests
             Assert.IsTrue(processor.Execute("int Fa0/0.10").Accepted);
             Assert.AreEqual(TssNetworkCliMode.InterfaceConfig, processor.Device.Mode);
             var defaultRunning = processor.Execute("do show running-config").Output;
-            StringAssert.Contains("interface Fa0/0\r\n shutdown\r\n!", defaultRunning);
-            StringAssert.Contains("interface Fa0/0.10\r\n shutdown\r\n!", defaultRunning);
+            StringAssert.Contains("interface GigabitEthernet0/0\r\n no ip address\r\n shutdown\r\n!", defaultRunning);
+            StringAssert.Contains("interface GigabitEthernet0/0.10\r\n no ip address\r\n!", defaultRunning);
             StringAssert.Contains("\r\n!\r\n", defaultRunning);
-            Assert.Less(defaultRunning.IndexOf("interface Fa0/0.2", StringComparison.Ordinal), defaultRunning.IndexOf("interface Fa0/0.10", StringComparison.Ordinal));
+            Assert.Less(defaultRunning.IndexOf("interface GigabitEthernet0/0.2", StringComparison.Ordinal), defaultRunning.IndexOf("interface GigabitEthernet0/0.10", StringComparison.Ordinal));
             Assert.IsFalse(processor.Execute("switchport mode trunk").Accepted);
             Assert.IsTrue(processor.Execute("encapsulation dot1q 10").Accepted);
             Assert.IsTrue(processor.Execute("ip add 192.168.10.1 255.255.255.0").Accepted);
@@ -606,6 +727,37 @@ public sealed class TssDeviceSessionTests
         {
             Object.DestroyImmediate(scenario);
             Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
+    public void CommandReferenceGridBuildsSeparateRowsPerDeviceCategory()
+    {
+        var host = new GameObject("CommandReferenceScrollHost", typeof(RectTransform), typeof(ScrollRect));
+        var syntax = new GameObject("Syntax", typeof(RectTransform), typeof(TssCommandReferenceGrid));
+        syntax.transform.SetParent(host.transform, false);
+        var grid = syntax.GetComponent<TssCommandReferenceGrid>();
+
+        try
+        {
+            grid.SetReference(EquipmentCategory.Switch);
+            var switchText = string.Join("\n", syntax.GetComponentsInChildren<Text>(true).Select(x => x.text));
+            StringAssert.Contains("show vlan brief", switchText);
+            Assert.IsTrue(syntax.GetComponentsInChildren<Transform>(true).Count(x => x.name == "Generated_CommandRow") > 0);
+            foreach (Transform row in syntax.transform)
+            {
+                if (row.name == "Generated_CommandRow")
+                    Assert.AreEqual(2, row.GetComponentsInChildren<Text>(true).Length);
+            }
+
+            grid.SetReference(EquipmentCategory.Router);
+            var routerText = string.Join("\n", syntax.GetComponentsInChildren<Text>(true).Select(x => x.text));
+            StringAssert.Contains("show ip route", routerText);
+            StringAssert.DoesNotContain("switchport mode trunk", routerText);
+        }
+        finally
+        {
+            Object.DestroyImmediate(host);
         }
     }
 
@@ -936,6 +1088,75 @@ public sealed class TssDeviceSessionTests
     }
 
     [Test]
+    public void DevicePingUsesLayer3StateForRouterAndSwitch()
+    {
+        var sessionObject = new GameObject("DevicePingSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+
+        try
+        {
+            session.BeginScenario(scenario);
+            var network = session.NetworkState;
+            var profile = network.Profile;
+            var router = network.GetOrCreateDevice("router", EquipmentCategory.Router, "CN-1");
+            router.Interfaces["Fa0/0"] = new NetworkInterfaceState { Name = "Fa0/0", AdminUp = true, CarrierUp = true };
+            router.Interfaces["Fa0/0." + profile.ManagementVlan] = new NetworkInterfaceState
+            {
+                Name = "Fa0/0." + profile.ManagementVlan,
+                AdminUp = true,
+                CarrierUp = true,
+                Address = profile.ManagementNetwork + ".1",
+                Mask = "255.255.255.0",
+                Dot1qVlan = profile.ManagementVlan
+            };
+
+            var accessSwitch = network.GetOrCreateDevice("access", EquipmentCategory.Switch, "AN-1");
+            accessSwitch.Vlans[profile.ManagementVlan] = profile.ManagementVlanName;
+            accessSwitch.Interfaces["Fa0/2"] = new NetworkInterfaceState
+            {
+                Name = "Fa0/2", AdminUp = true, CarrierUp = true, AccessVlan = profile.ManagementVlan
+            };
+            var trunk = new NetworkInterfaceState
+            {
+                Name = "Fa0/6", AdminUp = true, CarrierUp = true, IsTrunk = true, NativeVlan = profile.NativeVlan
+            };
+            trunk.AllowedVlans.Add(profile.ManagementVlan);
+            trunk.AllowedVlans.Add(profile.ReceptionVlan);
+            trunk.AllowedVlans.Add(profile.DataVlan);
+            accessSwitch.Interfaces["Fa0/6"] = trunk;
+            accessSwitch.Svis[1] = new NetworkInterfaceState
+            {
+                Name = "Vlan1", AdminUp = true, Address = profile.ManagementNetwork + ".2", Mask = "255.255.255.0"
+            };
+
+            var endpoint = network.GetOrCreateEndpoint("IT1", "IT1");
+            endpoint.Address = profile.ManagementNetwork + ".11";
+            endpoint.Mask = "255.255.255.0";
+            endpoint.Gateway = profile.ManagementNetwork + ".1";
+            endpoint.Layer1Connected = true;
+            endpoint.Layer2Connected = true;
+
+            var target = endpoint.Address;
+            var routerPing = new TssCliCommandProcessor(session, "router", EquipmentCategory.Router, "CN-1").Execute("ping " + target);
+            var switchPing = new TssCliCommandProcessor(session, "access", EquipmentCategory.Switch, "AN-1").Execute("ping " + target);
+            StringAssert.Contains("Success rate is 100 percent", routerPing.Output);
+            StringAssert.Contains("Success rate is 100 percent", switchPing.Output);
+
+            router.Interfaces["Fa0/0." + profile.ManagementVlan].AdminUp = false;
+            var failedPing = new TssCliCommandProcessor(session, "router", EquipmentCategory.Router, "CN-1").Execute("ping " + target);
+            StringAssert.Contains("Success rate is 0 percent", failedPing.Output);
+            StringAssert.Contains("operational Layer 3 interface", failedPing.Output);
+        }
+        finally
+        {
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
     public void EndpointApplyRejectsInvalidCandidateAtomically()
     {
         var profile = TssNetworkRunProfile.Create(8, new NetworkScenarioConfig());
@@ -1095,9 +1316,14 @@ public sealed class TssDeviceSessionTests
         promptGo.transform.SetParent(go.transform);
         var promptText = promptGo.GetComponent<Text>();
 
+        var inputGo = new GameObject("Input", typeof(RectTransform), typeof(InputField));
+        inputGo.transform.SetParent(go.transform);
+        var input = inputGo.GetComponent<InputField>();
+
         var ser = new UnityEditor.SerializedObject(pres);
         ser.FindProperty("consoleOutputText").objectReferenceValue = outputText;
         ser.FindProperty("promptText").objectReferenceValue = promptText;
+        ser.FindProperty("commandInput").objectReferenceValue = input;
         ser.ApplyModifiedPropertiesWithoutUndo();
 
         var state = new TssDeviceLogicalState("sw1", EquipmentCategory.Switch, "TestSwitch");
@@ -1105,6 +1331,9 @@ public sealed class TssDeviceSessionTests
 
         Assert.IsTrue(outputText.text.Contains("TestSwitch"));
         Assert.AreEqual("TestSwitch> ", promptText.text);
+        Assert.IsFalse(input.gameObject.activeSelf);
+        typeof(TssTerminalSessionPresenter).GetMethod("StartTerminalSession", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(pres, null);
+        Assert.IsTrue(input.gameObject.activeSelf);
 
         // enable -> PrivilegedExec
         pres.ExecuteCommand("enable");
@@ -1142,6 +1371,58 @@ public sealed class TssDeviceSessionTests
         Assert.IsTrue(outputText.text.Contains("default"));
 
         Object.DestroyImmediate(go);
+    }
+
+    [Test]
+    public void TerminalSessionShowsMotdBeforeActivatingCliInput()
+    {
+        var sessionObject = new GameObject("TerminalStartupSession");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        var go = new GameObject("TerminalMotdPresenter", typeof(RectTransform), typeof(TssTerminalSessionPresenter));
+        try
+        {
+            typeof(TssTrainingSession).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(session, null);
+            session.BeginScenario(scenario);
+            var cli = new TssCliCommandProcessor(session, "sw1", EquipmentCategory.Switch, "TestSwitch");
+            cli.Device.Motd = "AUTHORIZED ACCESS";
+
+            var pres = go.GetComponent<TssTerminalSessionPresenter>();
+            var outputGo = new GameObject("Output", typeof(RectTransform), typeof(Text));
+            outputGo.transform.SetParent(go.transform);
+            var output = outputGo.GetComponent<Text>();
+            output.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var promptGo = new GameObject("Prompt", typeof(RectTransform), typeof(Text));
+            promptGo.transform.SetParent(go.transform);
+            var prompt = promptGo.GetComponent<Text>();
+            var inputGo = new GameObject("Input", typeof(RectTransform), typeof(InputField));
+            inputGo.transform.SetParent(go.transform);
+            var input = inputGo.GetComponent<InputField>();
+
+            var serialized = new UnityEditor.SerializedObject(pres);
+            serialized.FindProperty("consoleOutputText").objectReferenceValue = output;
+            serialized.FindProperty("promptText").objectReferenceValue = prompt;
+            serialized.FindProperty("commandInput").objectReferenceValue = input;
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            var state = new TssDeviceLogicalState("sw1", EquipmentCategory.Switch, "TestSwitch");
+            pres.Initialize(state, null, null, "sw1");
+            Assert.IsFalse(input.gameObject.activeSelf);
+            StringAssert.Contains("Press RETURN to get started!", output.text);
+            StringAssert.DoesNotContain("AUTHORIZED ACCESS", output.text);
+
+            typeof(TssTerminalSessionPresenter).GetMethod("StartTerminalSession", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(pres, null);
+            Assert.IsTrue(input.gameObject.activeSelf);
+            StringAssert.Contains("AUTHORIZED ACCESS", output.text);
+            Assert.AreEqual("TestSwitch> ", prompt.text);
+        }
+        finally
+        {
+            Object.DestroyImmediate(go);
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
     }
 
     [Test]

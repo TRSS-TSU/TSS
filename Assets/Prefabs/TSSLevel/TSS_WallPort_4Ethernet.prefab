@@ -62,7 +62,7 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75

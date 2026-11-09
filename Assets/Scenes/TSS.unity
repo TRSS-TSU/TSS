@@ -5560,11 +5560,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2141876551}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &115692549 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-  m_PrefabInstance: {fileID: 185446723}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &115863277
 GameObject:
   m_ObjectHideFlags: 0
@@ -6122,7 +6117,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -7664,6 +7660,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1098741239}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!4 &166726425 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+  m_PrefabInstance: {fileID: 1335683772}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &166739587
 GameObject:
   m_ObjectHideFlags: 0
@@ -8940,63 +8941,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 185288009}
   m_Mesh: {fileID: -8699394809564572974, guid: 9bb121eb368bca1419160dcb7b3554cc, type: 3}
---- !u!1001 &185446723
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 250352196}
-    m_Modifications:
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 14.419224
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 2.8943405
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -4.286
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3315489266759930359, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_Name
-      value: Shelf with Crates (1)
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: f355da60777d10946920a8b633e6b316, type: 3}
 --- !u!1 &185748657
 GameObject:
   m_ObjectHideFlags: 0
@@ -12140,8 +12084,6 @@ Transform:
   - {fileID: 1498349556}
   - {fileID: 460839910}
   - {fileID: 739440254}
-  - {fileID: 1390822607}
-  - {fileID: 115692549}
   - {fileID: 458834163}
   m_Father: {fileID: 902827105}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
@@ -15187,6 +15129,11 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 306511200}
   m_Mesh: {fileID: 7603306904459848980, guid: 9bb121eb368bca1419160dcb7b3554cc, type: 3}
+--- !u!4 &306566132 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+  m_PrefabInstance: {fileID: 773906096}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &310650308
 GameObject:
   m_ObjectHideFlags: 0
@@ -19782,7 +19729,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -20278,7 +20226,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -20306,7 +20255,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2566897808450485784, guid: abac71f90a5307d4fa6720cb4af50d75, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2.577
+      value: -2.65
       objectReference: {fileID: 0}
     - target: {fileID: 2566897808450485784, guid: abac71f90a5307d4fa6720cb4af50d75, type: 3}
       propertyPath: m_LocalRotation.w
@@ -24523,7 +24472,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -25410,11 +25360,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2234133296062316951, guid: 2123423133558c64dbe655a531087a4b, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 0
+      value: 760
       objectReference: {fileID: 0}
     - target: {fileID: 2234133296062316951, guid: 2123423133558c64dbe655a531087a4b, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 0
+      value: 890
       objectReference: {fileID: 0}
     - target: {fileID: 2234133296062316951, guid: 2123423133558c64dbe655a531087a4b, type: 3}
       propertyPath: m_LocalPosition.x
@@ -25466,11 +25416,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8216917323242019239, guid: 2123423133558c64dbe655a531087a4b, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 760
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8216917323242019239, guid: 2123423133558c64dbe655a531087a4b, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 890
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -25770,7 +25720,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 624814065}
   playerInput: {fileID: 624814067}
   fallbackInteractionRange: 2.75
@@ -26341,7 +26292,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2566897808450485784, guid: abac71f90a5307d4fa6720cb4af50d75, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2.577
+      value: -2.65
       objectReference: {fileID: 0}
     - target: {fileID: 2566897808450485784, guid: abac71f90a5307d4fa6720cb4af50d75, type: 3}
       propertyPath: m_LocalRotation.w
@@ -26546,7 +26497,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -35088,6 +35040,8 @@ Transform:
   m_Children:
   - {fileID: 297103250}
   - {fileID: 293449612}
+  - {fileID: 166726425}
+  - {fileID: 306566132}
   m_Father: {fileID: 250352196}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &740722449
@@ -35797,7 +35751,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -36002,7 +35957,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2566897808450485784, guid: abac71f90a5307d4fa6720cb4af50d75, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2.577
+      value: -2.65
       objectReference: {fileID: 0}
     - target: {fileID: 2566897808450485784, guid: abac71f90a5307d4fa6720cb4af50d75, type: 3}
       propertyPath: m_LocalRotation.w
@@ -36744,6 +36699,63 @@ Transform:
   m_Children: []
   m_Father: {fileID: 1233865782}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &773906096
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 739440254}
+    m_Modifications:
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 3.082
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.973966
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -3.067
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.7071068
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 90
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8984770348849976128, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_Name
+      value: Shelf_With_Crates
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
 --- !u!1 &774455000
 GameObject:
   m_ObjectHideFlags: 0
@@ -38391,7 +38403,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 624814065}
   playerInput: {fileID: 624814067}
   fallbackInteractionRange: 2.75
@@ -38461,7 +38474,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2566897808450485784, guid: abac71f90a5307d4fa6720cb4af50d75, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2.577
+      value: -2.65
       objectReference: {fileID: 0}
     - target: {fileID: 2566897808450485784, guid: abac71f90a5307d4fa6720cb4af50d75, type: 3}
       propertyPath: m_LocalRotation.w
@@ -38623,6 +38636,10 @@ PrefabInstance:
       propertyPath: playerController
       value: 
       objectReference: {fileID: 624814065}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: rackFirstPersonFarClipPlane
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: endpointId
       value: WallPort:Floor02:Office03:Wallport01:Port02
@@ -40479,7 +40496,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -45143,7 +45161,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -46557,7 +46576,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -48355,7 +48375,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -49700,7 +49721,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -51781,7 +51803,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 624814065}
   playerInput: {fileID: 624814067}
   fallbackInteractionRange: 2.75
@@ -52469,7 +52492,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -53675,6 +53699,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 624814065}
     - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: rackFirstPersonFarClipPlane
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: firstPersonLocalEulerOffset.z
       value: 0
       objectReference: {fileID: 0}
@@ -54065,7 +54093,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -54920,7 +54949,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -57120,6 +57150,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 624814065}
     - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: rackFirstPersonFarClipPlane
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: firstPersonLocalEulerOffset.z
       value: 90
       objectReference: {fileID: 0}
@@ -59262,7 +59296,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 624814065}
   playerInput: {fileID: 624814067}
   fallbackInteractionRange: 2.75
@@ -60696,6 +60731,10 @@ PrefabInstance:
       propertyPath: playerController
       value: 
       objectReference: {fileID: 624814065}
+    - target: {fileID: 2653381092769078728, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: rackFirstPersonFarClipPlane
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2744766679811765274, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
       propertyPath: endpointId
       value: PatchPanel:Rack01:Port23
@@ -61357,63 +61396,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 414065103}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1001 &1315180941
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 250352196}
-    m_Modifications:
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: 14.419225
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 2.8914025
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: -8.521818
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: -0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 3315489266759930359, guid: f355da60777d10946920a8b633e6b316, type: 3}
-      propertyPath: m_Name
-      value: Shelf with Crates
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: f355da60777d10946920a8b633e6b316, type: 3}
 --- !u!1 &1317160100
 GameObject:
   m_ObjectHideFlags: 0
@@ -61890,7 +61872,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2566897808450485784, guid: abac71f90a5307d4fa6720cb4af50d75, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2.577
+      value: -2.65
       objectReference: {fileID: 0}
     - target: {fileID: 2566897808450485784, guid: abac71f90a5307d4fa6720cb4af50d75, type: 3}
       propertyPath: m_LocalRotation.w
@@ -61978,7 +61960,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2566897808450485784, guid: abac71f90a5307d4fa6720cb4af50d75, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2.577
+      value: -2.65
       objectReference: {fileID: 0}
     - target: {fileID: 2566897808450485784, guid: abac71f90a5307d4fa6720cb4af50d75, type: 3}
       propertyPath: m_LocalRotation.w
@@ -62442,6 +62424,63 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 7435466893150946102, guid: ebb3c85b58baeef44825d9dcc11dc781, type: 3}
   m_PrefabInstance: {fileID: 919965969}
   m_PrefabAsset: {fileID: 0}
+--- !u!1001 &1335683772
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 739440254}
+    m_Modifications:
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 14.363056
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.973966
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -5.9836926
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8645646485353531898, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8984770348849976128, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
+      propertyPath: m_Name
+      value: Shelf_With_Crates
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 397c7877b1b464b4b8437beaf01af6fc, type: 3}
 --- !u!1 &1336599469
 GameObject:
   m_ObjectHideFlags: 0
@@ -65884,11 +65923,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1390382372}
   m_Mesh: {fileID: 4568043463422995934, guid: 9bb121eb368bca1419160dcb7b3554cc, type: 3}
---- !u!4 &1390822607 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1754611878057632740, guid: f355da60777d10946920a8b633e6b316, type: 3}
-  m_PrefabInstance: {fileID: 1315180941}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1393127524
 GameObject:
   m_ObjectHideFlags: 0
@@ -67092,7 +67126,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -68341,7 +68376,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -68592,6 +68628,10 @@ PrefabInstance:
       propertyPath: playerController
       value: 
       objectReference: {fileID: 624814065}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: rackFirstPersonFarClipPlane
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: firstPersonLocalEulerOffset.z
       value: 90
@@ -69909,6 +69949,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 624814065}
     - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: rackFirstPersonFarClipPlane
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: firstPersonLocalEulerOffset.z
       value: 90
       objectReference: {fileID: 0}
@@ -70248,7 +70292,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -75832,6 +75877,10 @@ PrefabInstance:
       propertyPath: playerController
       value: 
       objectReference: {fileID: 624814065}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: rackFirstPersonFarClipPlane
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: endpointId
       value: WallPort:Floor01:Office03:Wallport01:Port02
@@ -79582,7 +79631,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -79890,7 +79940,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 624814065}
   playerInput: {fileID: 624814067}
   fallbackInteractionRange: 2.75
@@ -81150,7 +81201,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -81726,6 +81778,10 @@ PrefabInstance:
       propertyPath: playerController
       value: 
       objectReference: {fileID: 624814065}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: rackFirstPersonFarClipPlane
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: endpointId
       value: WallPort:Floor02:Office04:Wallport01:Port02
@@ -82214,6 +82270,10 @@ PrefabInstance:
       propertyPath: playerController
       value: 
       objectReference: {fileID: 624814065}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: rackFirstPersonFarClipPlane
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: firstPersonLocalEulerOffset.z
       value: -90
@@ -84372,6 +84432,10 @@ PrefabInstance:
       propertyPath: playerController
       value: 
       objectReference: {fileID: 624814065}
+    - target: {fileID: 2653381092769078728, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
+      propertyPath: rackFirstPersonFarClipPlane
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2744766679811765274, guid: 05c42b51a9962ad40a3b6fece6e27617, type: 3}
       propertyPath: endpointId
       value: PatchPanel:Rack02:Port23
@@ -86799,7 +86863,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -87770,7 +87835,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -89786,6 +89852,10 @@ PrefabInstance:
       propertyPath: playerController
       value: 
       objectReference: {fileID: 624814065}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: rackFirstPersonFarClipPlane
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: endpointId
       value: WallPort:Floor01:Office02:Wallport01:Port02
@@ -92019,7 +92089,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -94007,7 +94078,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2566897808450485784, guid: abac71f90a5307d4fa6720cb4af50d75, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2.577
+      value: -2.65
       objectReference: {fileID: 0}
     - target: {fileID: 2566897808450485784, guid: abac71f90a5307d4fa6720cb4af50d75, type: 3}
       propertyPath: m_LocalRotation.w
@@ -95614,7 +95685,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2566897808450485784, guid: abac71f90a5307d4fa6720cb4af50d75, type: 3}
       propertyPath: m_LocalPosition.z
-      value: -2.577
+      value: -2.65
       objectReference: {fileID: 0}
     - target: {fileID: 2566897808450485784, guid: abac71f90a5307d4fa6720cb4af50d75, type: 3}
       propertyPath: m_LocalRotation.w
@@ -98494,7 +98565,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -99380,6 +99452,10 @@ PrefabInstance:
       propertyPath: playerController
       value: 
       objectReference: {fileID: 624814065}
+    - target: {fileID: 5839275016902381379, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
+      propertyPath: rackFirstPersonFarClipPlane
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6391536648952849126, guid: 88f26ed6978de87478c633614f02df9e, type: 3}
       propertyPath: endpointId
       value: WallPort:Floor02:Office05:Wallport01:Port02
@@ -101929,7 +102005,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75
@@ -104078,7 +104155,8 @@ MonoBehaviour:
   rackFirstPersonOrthographic: 1
   rackFirstPersonOrthographicSize: 0.14
   rackFirstPersonNearClipPlane: -0.36
-  rackFirstPersonFarClipPlane: 8
+  rackFirstPersonFarClipPlane: 0
+  endpointFirstPersonFarClipPlane: 8
   playerController: {fileID: 0}
   playerInput: {fileID: 0}
   fallbackInteractionRange: 2.75

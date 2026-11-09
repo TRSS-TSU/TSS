@@ -944,37 +944,44 @@
       {
         "deviceRole": "AN-1",
         "interfaceName": "Fa0/2",
-        "endpointId": "IT1"
+        "endpointId": "IT1",
+        "vlanName": "Management"
       },
       {
         "deviceRole": "AN-1",
         "interfaceName": "Fa0/3",
-        "endpointId": "Reception1"
+        "endpointId": "Reception1",
+        "vlanName": "Reception"
       },
       {
         "deviceRole": "AN-1",
         "interfaceName": "Fa0/4",
-        "endpointId": "Reception2"
+        "endpointId": "Reception2",
+        "vlanName": "Reception"
       },
       {
         "deviceRole": "AN-1",
         "interfaceName": "Fa0/5",
-        "endpointId": "IT2"
+        "endpointId": "IT2",
+        "vlanName": "Management"
       },
       {
         "deviceRole": "AN-2",
         "interfaceName": "Fa0/2",
-        "endpointId": "Data1"
+        "endpointId": "Data1",
+        "vlanName": "Data"
       },
       {
         "deviceRole": "AN-2",
         "interfaceName": "Fa0/3",
-        "endpointId": "Data2"
+        "endpointId": "Data2",
+        "vlanName": "Data"
       },
       {
         "deviceRole": "AN-2",
         "interfaceName": "Fa0/4",
-        "endpointId": "Data3"
+        "endpointId": "Data3",
+        "vlanName": "Data"
       }
     ],
     "trunkRequirements": [

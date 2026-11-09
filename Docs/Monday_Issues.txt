@@ -1,0 +1,86 @@
+instantiation of manual signs use old model, change to new
+
+Add success ping capability if a device pings a working configured layer 3 interface on itself.
+Ensure line aux 0 is rejected by switch as there is no AUX interfaces on a switch - remove from switch command reference too.
+on vty 5 15 hardening replace current "no login" with correct "no exec" command
+create capability to configure "ip default-gateway" ip address on switches, tie into network connectivity code if required.
+
+------------------
+
+Finding — Access-switch management SVI and VLAN 1 hardening
+
+Keep the existing Layer 3 access-switch support. The simulator correctly supports configuring an SVI IP address, and once the access switch has a valid management SVI, pings to the CN-1 router gateways succeed.
+
+For security hardening, `interface Vlan1` should remain the default SVI, but it should be administratively shut down and have no IP address. The access switch’s management IP should instead be assigned to the SVI for the seeded Management VLAN. In the most recent run, that was VLAN 200:
+
+interface Vlan1
+ shutdown
+ no ip address
+
+interface Vlan200
+ description Management
+ ip address 192.168.171.2 255.255.255.0
+ no shutdown
+
+The mandatory `ManagementSvi` requirement should not be removed. The evaluator should be updated to verify both conditions: VLAN 1 is shut down without an IP address, and the Management VLAN SVI is configured with the correct management address, mask, and operational state. The native VLAN remains a separate unaddressed trunk VLAN.
+
+-------------------------
+
+Bidirectional Access-Switch Management Ping Issue
+
+Keep the existing Layer 3 SVI support. The current run proves that AN-1 can reach the CN-1 Management gateway through `Vlan200`, but CN-1 cannot ping `192.168.171.2` because destination resolution does not recognize access-switch management SVI addresses. `ResolveRole()` recognizes router gateways and endpoint addresses, but not device SVI addresses, so the reverse ping exits as `DestinationUnavailable` before interface validation.
+
+Implement two related corrections:
+
+1. Extend destination resolution to discover configured access-switch management SVI addresses, recognize them as valid device destinations, and validate that the SVI is administratively up, correctly addressed, and reachable through the management VLAN.
+
+2. Update `ManagementSvi` evaluation to match the intended configuration:
+   - `Vlan1` is administratively shut down and has no IP address.
+   - `Vlan<ManagementVlan>` is administratively up.
+   - The management SVI has `<ManagementNetwork>.2/24`.
+   - The management SVI is usable through the configured management VLAN.
+
+This preserves Layer 3 switch support, makes AN-1 ↔ CN-1 management pings symmetric, and keeps the mandatory ManagementSvi requirement.
+
+---------------------------
+
+Training Binder VLANs Tab and Native VLAN Guidance Issue:
+
+Update the Training Binder VLANs tab to distinguish the Management VLAN, the default VLAN 1 SVI, and the Native VLAN.
+
+The Management VLAN carries management-network traffic and receives the access-switch management SVI address. In the current run, the Management VLAN is VLAN 200:
+
+interface Vlan1
+ shutdown
+ no ip address
+
+interface Vlan200
+ description Management
+ ip address 192.168.171.2 255.255.255.0
+ no shutdown
+
+The mandatory `ManagementSvi` requirement remains. The evaluator must verify that VLAN 1 is shut down and unaddressed, while `interface Vlan<Management VLAN>` has the correct management address, mask, and operational state.
+
+The Native VLAN is separate. It is only the untagged VLAN used on 802.1Q trunks.
+
+Configure the Native VLAN here:
+
+```text
+AN-1 Fa0/1  trunk to AN-2
+AN-1 Fa0/6  trunk to CN-1
+AN-2 Fa0/1  trunk to AN-1
+
+switchport trunk native vlan <NATIVE VLAN ID>
+```
+
+Use the same Native VLAN on both ends of every trunk. Create and name it on both switches, but do not assign it to user access ports.
+
+Do not:
+
+- Include the Native VLAN in the trunk allowed list.
+- Use the Native VLAN as the management network.
+- Assign the management IP to `interface Vlan<NATIVE VLAN>`.
+- Create a router subinterface or gateway for the Native VLAN.
+- Use `interface Vlan1` as the management SVI; VLAN 1 remains shutdown and unaddressed.
+
+The Management VLAN is an allowed, tagged VLAN on the trunks. The management SVI belongs on `interface Vlan<Management VLAN>`, which is `interface Vlan200` in the current run.

@@ -33,8 +33,9 @@ public sealed class TssScenarioCatalog : ScriptableObject
             errors.Add("Catalog requires equipment and cables.");
         if (string.IsNullOrWhiteSpace(facilityId)) errors.Add("Catalog facilityId is required.");
         if (string.IsNullOrWhiteSpace(catalogId)) errors.Add("Catalog catalogId is required.");
-        if (string.IsNullOrWhiteSpace(sceneName) || sceneName != "TSS" || rackIds == null || stationIds == null || endpointIds == null)
-            errors.Add("Catalog requires the TSS facility identifiers.");
+        if (!TssExternalScenarioValidator.IsSceneName(sceneName)) errors.Add("Catalog sceneName must use only letters, numbers, hyphens, or underscores.");
+        if (rackIds == null || stationIds == null || endpointIds == null)
+            errors.Add("Catalog requires rack, station, and endpoint identifiers.");
         foreach (var group in new[] { rackIds, stationIds, endpointIds })
         {
             ids.Clear();

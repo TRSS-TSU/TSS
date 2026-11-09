@@ -70,6 +70,8 @@ public sealed class TssCliCommandProcessor
             return Result(device, "% Access denied.\nPassword: ", false, false);
         }
         var lower = command.ToLowerInvariant();
+        if (device.Mode == TssNetworkCliMode.GlobalConfig && lower == "line vty 0 ?")
+            return Result(device, "  <0-15>  First line number; 16 VTY lines exist (0 through 15).\n", false, true);
         if (lower == "?" || lower == "help" || lower.EndsWith("?")) return Result(device, Help(device.Mode, device.Category), false, true);
         if (lower == "clear") return Result(device, string.Empty, false, true);
         if (lower.StartsWith("do "))
@@ -109,7 +111,8 @@ public sealed class TssCliCommandProcessor
         {
             if (lower is "line console 0" or "line con 0") return SelectLine(device, "console");
             if (lower is "line aux 0" or "line auxiliary 0") return SelectLine(device, "aux");
-            if (lower == "line vty 0 4") return SelectLine(device, "vty");
+            if (lower is "line vty 0 4" or "line vty 5 15")
+                return SelectLine(device, lower == "line vty 0 4" ? "vty" : "vty5-15");
             if (lower.StartsWith("interface ") || lower.StartsWith("int "))
                 return SelectInterfaces(device, command.Substring(command.IndexOf(' ') + 1).Trim());
         }
@@ -268,13 +271,26 @@ public sealed class TssCliCommandProcessor
         var parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (command.Equals("login", StringComparison.OrdinalIgnoreCase)) { SetLineLogin(d, true); return Changed(d, string.Empty); }
         if (command.Equals("no login", StringComparison.OrdinalIgnoreCase)) { SetLineLogin(d, false); return Changed(d, string.Empty); }
-        if (command.Equals("logging synchronous", StringComparison.OrdinalIgnoreCase)) { if (d.SelectedLine == "console") d.ConsoleLoggingSynchronous = true; else if (d.SelectedLine == "aux") d.AuxLoggingSynchronous = true; else return Invalid(d); return Changed(d, string.Empty); }
-        if (command.Equals("no logging synchronous", StringComparison.OrdinalIgnoreCase)) { if (d.SelectedLine == "console") d.ConsoleLoggingSynchronous = false; else if (d.SelectedLine == "aux") d.AuxLoggingSynchronous = false; else return Invalid(d); return Changed(d, string.Empty); }
+        if (command.Equals("login local", StringComparison.OrdinalIgnoreCase)) { if (d.SelectedLine != "vty") return Invalid(d); d.VtyLoginRequired = true; d.VtyLoginLocal = true; return Changed(d, string.Empty); }
+        if (command.Equals("no login local", StringComparison.OrdinalIgnoreCase)) { if (d.SelectedLine != "vty") return Invalid(d); d.VtyLoginLocal = false; return Changed(d, string.Empty); }
+        if (command.Equals("logging synchronous", StringComparison.OrdinalIgnoreCase)) { if (d.SelectedLine == "console") d.ConsoleLoggingSynchronous = true; else if (d.SelectedLine == "aux") d.AuxLoggingSynchronous = true; else if (d.SelectedLine == "vty") d.VtyLoggingSynchronous = true; else return Invalid(d); return Changed(d, string.Empty); }
+        if (command.Equals("no logging synchronous", StringComparison.OrdinalIgnoreCase)) { if (d.SelectedLine == "console") d.ConsoleLoggingSynchronous = false; else if (d.SelectedLine == "aux") d.AuxLoggingSynchronous = false; else if (d.SelectedLine == "vty") d.VtyLoggingSynchronous = false; else return Invalid(d); return Changed(d, string.Empty); }
+        if (parts.Length == 2 && parts[0].Equals("exec-timeout", StringComparison.OrdinalIgnoreCase) && int.TryParse(parts[1], out var timeout) && timeout >= 0)
+        { if (d.SelectedLine != "vty") return Invalid(d); d.VtyExecTimeoutMinutes = timeout; return Changed(d, string.Empty); }
+        if (command.Equals("no exec-timeout", StringComparison.OrdinalIgnoreCase)) { if (d.SelectedLine != "vty") return Invalid(d); d.VtyExecTimeoutMinutes = 0; return Changed(d, string.Empty); }
+        if (command.Equals("transport input ssh", StringComparison.OrdinalIgnoreCase)) { if (d.SelectedLine != "vty") return Invalid(d); d.VtyTransportInputSsh = true; return Changed(d, string.Empty); }
+        if (command.Equals("no transport input ssh", StringComparison.OrdinalIgnoreCase)) { if (d.SelectedLine != "vty") return Invalid(d); d.VtyTransportInputSsh = false; return Changed(d, string.Empty); }
         if (parts.Length == 2 && parts[0].Equals("no", StringComparison.OrdinalIgnoreCase) && parts[1].Equals("password", StringComparison.OrdinalIgnoreCase)) { SetLinePassword(d, string.Empty); return Changed(d, string.Empty); }
         if (parts.Length >= 2 && parts[0].Equals("password", StringComparison.OrdinalIgnoreCase)) { SetLinePassword(d, parts[1]); return Changed(d, string.Empty); }
         return Invalid(d);
     }
-    private void SetLineLogin(NetworkDeviceState d, bool required) { if (d.SelectedLine == "console") d.ConsoleLoginRequired = required; else if (d.SelectedLine == "aux") d.AuxLoginRequired = required; else d.VtyLoginRequired = required; }
+    private void SetLineLogin(NetworkDeviceState d, bool required)
+    {
+        if (d.SelectedLine == "console") d.ConsoleLoginRequired = required;
+        else if (d.SelectedLine == "aux") d.AuxLoginRequired = required;
+        else if (d.SelectedLine == "vty5-15") d.Vty5To15LoginRequired = required;
+        else { d.VtyLoginRequired = required; d.VtyLoginLocal = false; }
+    }
     private void SetLinePassword(NetworkDeviceState d, string password) { if (d.SelectedLine == "console") d.ConsolePassword = password; else if (d.SelectedLine == "aux") d.AuxPassword = password; else d.VtyPassword = password; }
     private TssCliResult Vlan(NetworkDeviceState d, string command)
     {
@@ -310,7 +326,14 @@ public sealed class TssCliCommandProcessor
             ? Result(d, "Mac Address Table\n(no dynamic entries until endpoints are reachable)\n", false, true)
             : Invalid(d);
         if (lower is "show ip route" or "show ip ro") { RecordEvidence(d, "show ip route"); return Result(d, Routes(d), false, true); }
-        if (lower.StartsWith("ping ")) return Result(d, "Sending 5, 100-byte ICMP Echos to " + command.Split(' ').Last() + ", timeout is 2 seconds:\n.....\nSuccess rate is 0 percent (0/5) - use endpoint diagnostics for Phase 19 evidence\n", false, true);
+        if (lower.StartsWith("ping "))
+        {
+            var target = command.Split(' ', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? string.Empty;
+            var reachability = _network == null
+                ? new TssReachabilityResult(false, 1, TssReachabilityFaultCategory.PhysicalPathUnavailable, "Network state is unavailable.", d.Hostname, string.Empty, Array.Empty<string>())
+                : new TssNetworkReachabilityEvaluator(_network).EvaluateDevice(_key, target);
+            return Result(d, PingOutput(target, reachability), false, true);
+        }
         return Invalid(d);
     }
     private void RecordEvidence(NetworkDeviceState d, string evidenceId)
@@ -324,6 +347,15 @@ public sealed class TssCliCommandProcessor
     private static TssCliResult Result(NetworkDeviceState d, string text, bool changed, bool accepted) => new(text, d.Mode, changed, accepted);
     private static TssCliResult Invalid(NetworkDeviceState d) => Result(d, "% Invalid input detected at '^' marker.\n", false, false);
     private static TssCliResult Incomplete(NetworkDeviceState d, string syntax) => Result(d, "% Incomplete command. Syntax: " + syntax + "\n", false, false);
+    private static string PingOutput(string target, TssReachabilityResult result)
+    {
+        if (!TssNetworkAddress.IsAddress(target))
+            return "% Invalid IPv4 address.\n";
+
+        return result.Success
+            ? $"Sending 5, 100-byte ICMP Echos to {target}, timeout is 2 seconds:\n!!!!!\nSuccess rate is 100 percent (5/5), round-trip min/avg/max = 1/2/4 ms\n"
+            : $"Sending 5, 100-byte ICMP Echos to {target}, timeout is 2 seconds:\n.....\nSuccess rate is 0 percent (0/5) - {result.Diagnostic}\n";
+    }
     private static IEnumerable<NetworkInterfaceState> Selected(NetworkDeviceState d) => d.SelectedInterfaces.Select(name =>
         name.StartsWith("Vlan", StringComparison.OrdinalIgnoreCase) && int.TryParse(name.Substring(4), out var vlan) && d.Svis.TryGetValue(vlan, out var svi)
             ? svi : d.Interfaces.TryGetValue(name, out var physical) ? physical : null).Where(x => x != null);
@@ -436,7 +468,7 @@ public sealed class TssCliCommandProcessor
             "banner motd #<text>#\tSet the DoD warning banner",
             "line console 0\tSelect the console line",
             "line aux 0\tSelect the auxiliary line",
-            "line vty 0 4\tSelect remote terminal lines"
+            "line vty 0 4 | line vty 5 15\tSelect remote terminal lines"
         });
         if (!isRouter)
         {
@@ -478,7 +510,11 @@ public sealed class TssCliCommandProcessor
         {
             "password <password>\tSet the selected line password",
             "login\tRequire the selected line password",
-            "logging synchronous\tSynchronize console or auxiliary output"
+            "no login\tDisable login on the selected line",
+            "login local\tUse the local username database on VTY lines",
+            "exec-timeout 10\tSet the VTY inactivity timeout in minutes",
+            "transport input ssh\tAllow SSH on VTY lines",
+            "logging synchronous\tSynchronize line output"
         });
         return sb.ToString();
     }
@@ -498,15 +534,15 @@ public sealed class TssCliCommandProcessor
     private static string Help(TssNetworkCliMode mode, EquipmentCategory category) => mode switch
     {
         TssNetworkCliMode.GlobalConfig => category == EquipmentCategory.Router
-            ? "hostname <name>\nenable password <value>\nenable secret <value>\nservice password-encryption | ser pass\nusername <name> password <value>\ninterface <name>\nip route <network> <mask> <next-hop>\nline console 0|aux 0|vty 0 4\n"
-            : "hostname <name>\nenable password <value>\nenable secret <value>\nservice password-encryption | ser pass\nusername <name> password <value>\ninterface <name>|range <first> - <last>|Vlan<id>\nvlan <id>\nline console 0|aux 0|vty 0 4\n",
+            ? "hostname <name>\nenable password <value>\nenable secret <value>\nservice password-encryption | ser pass\nusername <name> password <value>\ninterface <name>\nip route <network> <mask> <next-hop>\nline console 0|aux 0|vty 0 4|vty 5 15\n"
+            : "hostname <name>\nenable password <value>\nenable secret <value>\nservice password-encryption | ser pass\nusername <name> password <value>\ninterface <name>|range <first> - <last>|Vlan<id>\nvlan <id>\nline console 0|aux 0|vty 0 4|vty 5 15\n",
         TssNetworkCliMode.InterfaceConfig => category == EquipmentCategory.Router
             ? "shutdown | no shutdown\nip address <address> <mask> | ip add <address> <mask>\nencapsulation dot1q <vlan>\n"
             : "shutdown | no shutdown\ndescription <text> | no description\nswitchport trunk encapsulation dot1q\nswitchport mode access|trunk\nswitchport access vlan <id> | no switchport access vlan\nswitchport trunk allowed vlan <id>[,<id>]\nswitchport trunk native vlan <id>\ninterface Vlan<id>\nip address <address> <mask> | ip add <address> <mask>\n",
         TssNetworkCliMode.SubinterfaceConfig => category == EquipmentCategory.Router
             ? "description <text> | no description\nip address <address> <mask> | ip add <address> <mask>\nencapsulation dot1q <vlan>\n(no shutdown commands; state is inherited from the parent interface)\n"
             : "shutdown | no shutdown\ndescription <text> | no description\nswitchport trunk encapsulation dot1q\nswitchport mode access|trunk\nswitchport access vlan <id> | no switchport access vlan\nswitchport trunk allowed vlan <id>[,<id>]\nswitchport trunk native vlan <id>\ninterface Vlan<id>\nip address <address> <mask> | ip add <address> <mask>\n",
-        TssNetworkCliMode.LineConfig => "password <value>\nlogin\n",
+        TssNetworkCliMode.LineConfig => "password <value>\nlogin | no login | login local\nexec-timeout <minutes>\ntransport input ssh\nlogging synchronous\n",
         TssNetworkCliMode.VlanConfig => category == EquipmentCategory.Switch ? "name <name>\nstate suspend\n" : "% VLAN configuration is switch-only.\n",
         _ => category == EquipmentCategory.Router
             ? "enable | configure terminal | show running-config | show startup-config | show ip interface brief | show interfaces | show ip route | ping <ip>\n"
@@ -514,75 +550,89 @@ public sealed class TssCliCommandProcessor
     };
     public static string BuildRunningConfig(NetworkDeviceState d)
     {
+        if (d.Category == EquipmentCategory.Router)
+            return BuildRouterRunningConfig(d);
+
         var sb = new StringBuilder();
         sb.AppendLine("version 15.0");
+        sb.AppendLine("!");
+        sb.AppendLine("service timestamps debug datetime msec");
+        sb.AppendLine("service timestamps log datetime msec");
+        sb.AppendLine(d.PasswordEncryption ? "service password-encryption" : "no service password-encryption");
         sb.AppendLine("!");
         sb.AppendLine("hostname " + d.Hostname);
         if (!string.IsNullOrWhiteSpace(d.EnablePassword)) sb.AppendLine("enable password " + (d.PasswordEncryption ? "<encrypted>" : d.EnablePassword));
         if (!string.IsNullOrWhiteSpace(d.EnableSecret)) sb.AppendLine("enable secret <configured>");
-        if (d.PasswordEncryption) sb.AppendLine("service password-encryption");
         foreach (var user in d.UserPasswords.OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase))
             sb.AppendLine("username " + user.Key + " password " + (d.PasswordEncryption ? "<encrypted>" : user.Value));
         if (d.DomainLookupDisabled) sb.AppendLine("no ip domain-lookup");
+        sb.AppendLine("!");
+        sb.AppendLine("spanning-tree mode pvst");
+        sb.AppendLine("!");
+        var interfaces = d.Interfaces.Values.Where(i => !IsLineEndpoint(i.Name)).ToList();
+        for (var port = 1; port <= 24; port++)
+        {
+            var name = "Fa0/" + port;
+            if (!interfaces.Any(i => i.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
+                interfaces.Add(new NetworkInterfaceState { Name = name, AdminUp = true });
+        }
+        foreach (var name in new[] { "GigabitEthernet0/1", "GigabitEthernet0/2" })
+            if (!interfaces.Any(i => i.Name.Equals(name, StringComparison.OrdinalIgnoreCase) || i.Name.Equals(name.Replace("GigabitEthernet", "Gi", StringComparison.OrdinalIgnoreCase), StringComparison.OrdinalIgnoreCase)))
+                interfaces.Add(new NetworkInterfaceState { Name = name, AdminUp = true });
+        foreach (var i in interfaces.OrderBy(x => InterfaceOrderKey(x.Name), StringComparer.OrdinalIgnoreCase))
+        {
+            sb.AppendLine("interface " + SwitchRunningConfigInterfaceName(i.Name));
+            if (!string.IsNullOrWhiteSpace(i.Description)) sb.AppendLine(" description " + i.Description);
+            if (i.TrunkEncapsulationDot1q && i.IsTrunk)
+                sb.AppendLine(" switchport trunk encapsulation dot1q");
+            if (i.SwitchportModeConfigured)
+                sb.AppendLine(" switchport mode " + (i.IsTrunk ? "trunk" : "access"));
+            else if (!i.IsTrunk && !i.SwitchportAccessVlanConfigured)
+                sb.AppendLine(" switchport mode dynamic auto");
+            if (i.IsTrunk && i.AllowedVlans.Count > 0)
+                sb.AppendLine(" switchport trunk allowed vlan " + string.Join(",", i.AllowedVlans.OrderBy(x => x)));
+            if (i.IsTrunk && i.NativeVlan != 1)
+                sb.AppendLine(" switchport trunk native vlan " + i.NativeVlan);
+            if (!i.IsTrunk && i.SwitchportAccessVlanConfigured)
+                sb.AppendLine(" switchport access vlan " + i.AccessVlan);
+            if (!i.AdminUp && i.Name.IndexOf('.') < 0) sb.AppendLine(" shutdown");
+            if (i.Dot1qVlan > 0) sb.AppendLine(" encapsulation dot1q " + i.Dot1qVlan);
+            if (!string.IsNullOrEmpty(i.Address)) sb.AppendLine(" ip address " + i.Address + " " + i.Mask);
+            sb.AppendLine("!");
+        }
+        sb.AppendLine("interface Vlan1");
+        if (d.Svis.TryGetValue(1, out var vlan1) && !string.IsNullOrWhiteSpace(vlan1.Description)) sb.AppendLine(" description " + vlan1.Description);
+        if (!string.IsNullOrWhiteSpace(d.ManagementAddress)) sb.AppendLine(" ip address " + d.ManagementAddress + " " + d.ManagementMask);
+        else sb.AppendLine(" no ip address");
+        if (!d.Svis.TryGetValue(1, out vlan1) || !vlan1.AdminUp) sb.AppendLine(" shutdown");
+        sb.AppendLine("!");
+        foreach (var svi in d.Svis.Values.Where(x => !x.Name.Equals("Vlan1", StringComparison.OrdinalIgnoreCase)).OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrWhiteSpace(svi.Description) && string.IsNullOrWhiteSpace(svi.Address) && svi.AdminUp) continue;
+            sb.AppendLine("interface " + svi.Name);
+            if (!string.IsNullOrWhiteSpace(svi.Description)) sb.AppendLine(" description " + svi.Description);
+            if (!string.IsNullOrWhiteSpace(svi.Address)) sb.AppendLine(" ip address " + svi.Address + " " + svi.Mask);
+            if (!svi.AdminUp) sb.AppendLine(" shutdown");
+            sb.AppendLine("!");
+        }
+        sb.AppendLine("ip classless");
+        sb.AppendLine("!");
         if (!string.IsNullOrWhiteSpace(d.Motd))
         {
-            sb.AppendLine("!");
             var motd = d.Motd.Trim();
             const string legacyPrefix = "banner motd #";
             if (motd.StartsWith(legacyPrefix, StringComparison.OrdinalIgnoreCase))
                 motd = motd.Substring(legacyPrefix.Length);
             if (motd.EndsWith("#", StringComparison.Ordinal))
                 motd = motd[..^1];
-            sb.AppendLine(motd);
+            sb.AppendLine("banner motd #" + motd + "#");
+            sb.AppendLine("!");
         }
+        sb.AppendLine("line con 0");
+        if (!string.IsNullOrWhiteSpace(d.ConsolePassword)) sb.AppendLine(" password " + (d.PasswordEncryption ? "<encrypted>" : d.ConsolePassword));
+        if (d.ConsoleLoginRequired) sb.AppendLine(" login");
+        if (d.ConsoleLoggingSynchronous) sb.AppendLine(" logging synchronous");
         sb.AppendLine("!");
-        foreach (var i in d.Interfaces.Values.Where(i => !IsLineEndpoint(i.Name)).OrderBy(x => InterfaceOrderKey(x.Name), StringComparer.OrdinalIgnoreCase))
-        {
-            sb.AppendLine("interface " + i.Name);
-            if (!string.IsNullOrWhiteSpace(i.Description)) sb.AppendLine(" description " + i.Description);
-            if (d.Category == EquipmentCategory.Switch)
-            {
-                if (i.TrunkEncapsulationDot1q && i.IsTrunk)
-                    sb.AppendLine(" switchport trunk encapsulation dot1q");
-                if (i.SwitchportModeConfigured)
-                    sb.AppendLine(" switchport mode " + (i.IsTrunk ? "trunk" : "access"));
-                if (i.IsTrunk && i.AllowedVlans.Count > 0)
-                    sb.AppendLine(" switchport trunk allowed vlan " + string.Join(",", i.AllowedVlans.OrderBy(x => x)));
-                if (i.IsTrunk && i.NativeVlan != 1)
-                    sb.AppendLine(" switchport trunk native vlan " + i.NativeVlan);
-                if (!i.IsTrunk && i.SwitchportAccessVlanConfigured)
-                    sb.AppendLine(" switchport access vlan " + i.AccessVlan);
-            }
-            if (!i.AdminUp && i.Name.IndexOf('.') < 0) sb.AppendLine(" shutdown");
-            if (i.Dot1qVlan > 0) sb.AppendLine(" encapsulation dot1q " + i.Dot1qVlan);
-            if (!string.IsNullOrEmpty(i.Address)) sb.AppendLine(" ip address " + i.Address + " " + i.Mask);
-            sb.AppendLine("!");
-        }
-        if (d.Category == EquipmentCategory.Switch && (!string.IsNullOrWhiteSpace(d.ManagementAddress) || (d.Svis.TryGetValue(1, out var vlan1State) && !string.IsNullOrWhiteSpace(vlan1State.Description))))
-        {
-            sb.AppendLine("interface Vlan1");
-            if (d.Svis.TryGetValue(1, out var vlan1) && !string.IsNullOrWhiteSpace(vlan1.Description)) sb.AppendLine(" description " + vlan1.Description);
-            if (!string.IsNullOrWhiteSpace(d.ManagementAddress)) sb.AppendLine(" ip address " + d.ManagementAddress + " " + d.ManagementMask);
-            sb.AppendLine("!");
-        }
-        if (d.Category == EquipmentCategory.Switch)
-            foreach (var svi in d.Svis.Values.Where(x => !x.Name.Equals("Vlan1", StringComparison.OrdinalIgnoreCase)).OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase))
-            {
-                if (string.IsNullOrWhiteSpace(svi.Description) && string.IsNullOrWhiteSpace(svi.Address) && svi.AdminUp) continue;
-                sb.AppendLine("interface " + svi.Name);
-                if (!string.IsNullOrWhiteSpace(svi.Description)) sb.AppendLine(" description " + svi.Description);
-                if (!string.IsNullOrWhiteSpace(svi.Address)) sb.AppendLine(" ip address " + svi.Address + " " + svi.Mask);
-                if (!svi.AdminUp) sb.AppendLine(" shutdown");
-                sb.AppendLine("!");
-            }
-        if (!string.IsNullOrWhiteSpace(d.ConsolePassword) || d.ConsoleLoginRequired || d.ConsoleLoggingSynchronous)
-        {
-            sb.AppendLine("line console 0");
-            if (!string.IsNullOrWhiteSpace(d.ConsolePassword)) sb.AppendLine(" password " + (d.PasswordEncryption ? "<encrypted>" : d.ConsolePassword));
-            if (d.ConsoleLoginRequired) sb.AppendLine(" login");
-            if (d.ConsoleLoggingSynchronous) sb.AppendLine(" logging synchronous");
-            sb.AppendLine("!");
-        }
         if (!string.IsNullOrWhiteSpace(d.AuxPassword) || d.AuxLoginRequired || d.AuxLoggingSynchronous)
         {
             sb.AppendLine("line aux 0");
@@ -591,13 +641,18 @@ public sealed class TssCliCommandProcessor
             if (d.AuxLoggingSynchronous) sb.AppendLine(" logging synchronous");
             sb.AppendLine("!");
         }
-        if (!string.IsNullOrWhiteSpace(d.VtyPassword) || d.VtyLoginRequired)
-        {
-            sb.AppendLine("line vty 0 4");
-            if (!string.IsNullOrWhiteSpace(d.VtyPassword)) sb.AppendLine(" password " + (d.PasswordEncryption ? "<encrypted>" : d.VtyPassword));
-            if (d.VtyLoginRequired) sb.AppendLine(" login");
-            sb.AppendLine("!");
-        }
+        sb.AppendLine("line vty 0 4");
+        if (!string.IsNullOrWhiteSpace(d.VtyPassword)) sb.AppendLine(" password " + (d.PasswordEncryption ? "<encrypted>" : d.VtyPassword));
+        if (d.VtyLoginLocal) sb.AppendLine(" login local");
+        else if (d.VtyLoginRequired || d.Category == EquipmentCategory.Switch) sb.AppendLine(" login");
+        if (d.VtyExecTimeoutMinutes > 0) sb.AppendLine(" exec-timeout " + d.VtyExecTimeoutMinutes);
+        if (d.VtyTransportInputSsh) sb.AppendLine(" transport input ssh");
+        if (d.VtyLoggingSynchronous) sb.AppendLine(" logging synchronous");
+        sb.AppendLine("!");
+        sb.AppendLine("line vty 5 15");
+        if (d.Vty5To15LoginRequired) sb.AppendLine(" login");
+        else sb.AppendLine(" no login");
+        sb.AppendLine("!");
         foreach (var v in d.Vlans.OrderBy(x => x.Key))
         {
             sb.AppendLine("vlan " + v.Key);
@@ -611,6 +666,95 @@ public sealed class TssCliCommandProcessor
             sb.AppendLine("!");
         }
         return sb.Append("end\n").ToString();
+    }
+
+    private static string SwitchRunningConfigInterfaceName(string name)
+    {
+        if (name.StartsWith("Fa0/", StringComparison.OrdinalIgnoreCase)) return "FastEthernet" + name.Substring(2);
+        if (name.StartsWith("Gi0/", StringComparison.OrdinalIgnoreCase)) return "GigabitEthernet" + name.Substring(2);
+        return name;
+    }
+
+    private static string BuildRouterRunningConfig(NetworkDeviceState d)
+    {
+        var sb = new StringBuilder();
+        sb.AppendLine("version 15.0");
+        sb.AppendLine("!");
+        sb.AppendLine("service timestamps debug datetime msec");
+        sb.AppendLine("service timestamps log datetime msec");
+        sb.AppendLine(d.PasswordEncryption ? "service password-encryption" : "no service password-encryption");
+        sb.AppendLine("!");
+        sb.AppendLine("hostname " + d.Hostname);
+        if (!string.IsNullOrWhiteSpace(d.EnablePassword)) sb.AppendLine("enable password " + (d.PasswordEncryption ? "<encrypted>" : d.EnablePassword));
+        if (!string.IsNullOrWhiteSpace(d.EnableSecret)) sb.AppendLine("enable secret <configured>");
+        foreach (var user in d.UserPasswords.OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase))
+            sb.AppendLine("username " + user.Key + " password " + (d.PasswordEncryption ? "<encrypted>" : user.Value));
+        if (d.DomainLookupDisabled) sb.AppendLine("no ip domain-lookup");
+        sb.AppendLine("!");
+        sb.AppendLine("no aaa new-model");
+        sb.AppendLine("ip cef");
+        sb.AppendLine("!");
+        var interfaces = d.Interfaces.Values.Where(i => !IsLineEndpoint(i.Name)).ToList();
+        if (!interfaces.Any(i => i.Name.Equals("Fa0/0", StringComparison.OrdinalIgnoreCase))) interfaces.Add(new NetworkInterfaceState { Name = "Fa0/0" });
+        if (!interfaces.Any(i => i.Name.Equals("Fa0/1", StringComparison.OrdinalIgnoreCase))) interfaces.Add(new NetworkInterfaceState { Name = "Fa0/1" });
+        foreach (var i in interfaces.OrderBy(x => InterfaceOrderKey(x.Name), StringComparer.OrdinalIgnoreCase))
+        {
+            sb.AppendLine("interface " + RouterRunningConfigInterfaceName(i.Name));
+            if (string.IsNullOrWhiteSpace(i.Address)) sb.AppendLine(" no ip address");
+            if (!string.IsNullOrWhiteSpace(i.Description)) sb.AppendLine(" description " + i.Description);
+            if (!i.AdminUp && i.Name.IndexOf('.') < 0) sb.AppendLine(" shutdown");
+            if (i.Dot1qVlan > 0) sb.AppendLine(" encapsulation dot1q " + i.Dot1qVlan);
+            if (!string.IsNullOrEmpty(i.Address)) sb.AppendLine(" ip address " + i.Address + " " + i.Mask);
+            sb.AppendLine("!");
+        }
+        sb.AppendLine("ip forward-protocol nd");
+        sb.AppendLine("!");
+        if (!string.IsNullOrWhiteSpace(d.Motd))
+        {
+            var motd = d.Motd.Trim();
+            const string legacyPrefix = "banner motd #";
+            if (motd.StartsWith(legacyPrefix, StringComparison.OrdinalIgnoreCase)) motd = motd.Substring(legacyPrefix.Length);
+            if (motd.EndsWith("#", StringComparison.Ordinal)) motd = motd[..^1];
+            sb.AppendLine("banner motd #" + motd + "#");
+            sb.AppendLine("!");
+        }
+        sb.AppendLine("line con 0");
+        if (!string.IsNullOrWhiteSpace(d.ConsolePassword)) sb.AppendLine(" password " + (d.PasswordEncryption ? "<encrypted>" : d.ConsolePassword));
+        if (d.ConsoleLoginRequired) sb.AppendLine(" login");
+        if (d.ConsoleLoggingSynchronous) sb.AppendLine(" logging synchronous");
+        sb.AppendLine("!");
+        sb.AppendLine("line aux 0");
+        if (!string.IsNullOrWhiteSpace(d.AuxPassword)) sb.AppendLine(" password " + (d.PasswordEncryption ? "<encrypted>" : d.AuxPassword));
+        if (d.AuxLoginRequired) sb.AppendLine(" login");
+        if (d.AuxLoggingSynchronous) sb.AppendLine(" logging synchronous");
+        sb.AppendLine("!");
+        sb.AppendLine("line vty 0 4");
+        if (!string.IsNullOrWhiteSpace(d.VtyPassword)) sb.AppendLine(" password " + (d.PasswordEncryption ? "<encrypted>" : d.VtyPassword));
+        if (d.VtyLoginLocal) sb.AppendLine(" login local");
+        else if (d.VtyLoginRequired || d.Category == EquipmentCategory.Router) sb.AppendLine(" login");
+        if (d.VtyExecTimeoutMinutes > 0) sb.AppendLine(" exec-timeout " + d.VtyExecTimeoutMinutes);
+        if (d.VtyTransportInputSsh) sb.AppendLine(" transport input ssh");
+        if (d.VtyLoggingSynchronous) sb.AppendLine(" logging synchronous");
+        sb.AppendLine("!");
+        sb.AppendLine("line vty 5 15");
+        if (d.Vty5To15LoginRequired) sb.AppendLine(" login");
+        else sb.AppendLine(" no login");
+        sb.AppendLine("!");
+        foreach (var r in d.Routes)
+        {
+            sb.AppendLine("ip route " + r.Network + " " + r.Mask + " " + r.NextHop);
+            sb.AppendLine("!");
+        }
+        return sb.Append("end\n").ToString();
+    }
+
+    private static string RouterRunningConfigInterfaceName(string name)
+    {
+        if (name.Equals("Fa0/0", StringComparison.OrdinalIgnoreCase)) return "GigabitEthernet0/0";
+        if (name.Equals("Fa0/1", StringComparison.OrdinalIgnoreCase)) return "GigabitEthernet0/1";
+        if (name.StartsWith("Fa0/0.", StringComparison.OrdinalIgnoreCase)) return "GigabitEthernet0/0" + name.Substring(5);
+        if (name.StartsWith("Fa0/1.", StringComparison.OrdinalIgnoreCase)) return "GigabitEthernet0/1" + name.Substring(5);
+        return name;
     }
 
     public static IReadOnlyList<string> ResultsShowCommands(EquipmentCategory category)

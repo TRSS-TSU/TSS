@@ -50,8 +50,8 @@
           <label class="full">Instructor description <span class="hint">A short note shown with the scenario package</span><textarea id="basicDescription" rows="3" placeholder="What is the purpose or focus of this scenario?"></textarea></label>
           <label>Facility ID <span class="hint">Must match a facility supported by Unity</span><input id="basicFacilityId" autocomplete="off"></label>
           <label>Catalog ID <span class="hint">Must match a catalog supported by Unity</span><input id="basicCatalogId" autocomplete="off"></label>
-          <label>Unity scene <span class="hint">The current editor supports TSS</span><input id="basicSceneName" value="TSS" disabled></label>
-          <p class="field-help full">Changing the scenario ID updates its manifest entry and downloaded filename. Unity checks facility and catalog compatibility when the package is launched.</p>
+          <label>Unity scene <span class="hint">Letters, numbers, hyphens, and underscores; must be enabled in Build Settings</span><input id="basicSceneName" value="TSS" pattern="[A-Za-z0-9_-]+" autocomplete="off"></label>
+          <p class="field-help full">Changing the scenario ID updates its manifest entry and downloaded filename. The scene must exist in Build Settings and match the selected catalog before Unity will launch it.</p>
         </div></div>
       </section>
 

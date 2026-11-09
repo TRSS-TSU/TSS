@@ -78,6 +78,11 @@ public sealed class TssScenarioResultsTests
         router.DomainLookupDisabled = true;
         router.ConsoleLoginRequired = true;
         router.VtyLoginRequired = true;
+        router.Vty5To15LoginRequired = false;
+        router.VtyLoginLocal = true;
+        router.VtyExecTimeoutMinutes = 10;
+        router.VtyTransportInputSsh = true;
+        router.VtyLoggingSynchronous = true;
         router.EnableSecret = profile.EnableSecret;
         router.ConsolePassword = profile.ConsolePassword;
         router.VtyPassword = profile.VtyPassword;
@@ -284,6 +289,18 @@ public sealed class TssScenarioResultsTests
     }
 
     [Test]
+    public void HardeningRequiresNoLoginOnVty5To15()
+    {
+        var state = CompleteLayer2State(out var an1, out _);
+
+        an1.Vty5To15LoginRequired = true;
+        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2().UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Hardening"));
+
+        an1.Vty5To15LoginRequired = false;
+        Assert.IsFalse(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2().UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Hardening"));
+    }
+
+    [Test]
     public void Layer2RequiresExactTrunkListsAndUnusedPortShutdown()
     {
         var state = CompleteLayer2State(out var an1, out _);
@@ -481,6 +498,11 @@ public sealed class TssScenarioResultsTests
         device.DomainLookupDisabled = true;
         device.ConsoleLoginRequired = true;
         device.VtyLoginRequired = true;
+        device.Vty5To15LoginRequired = false;
+        device.VtyLoginLocal = true;
+        device.VtyExecTimeoutMinutes = 10;
+        device.VtyTransportInputSsh = true;
+        device.VtyLoggingSynchronous = true;
         device.Vlans[profile.ManagementVlan] = profile.ManagementVlanName;
         device.Vlans[profile.ReceptionVlan] = profile.ReceptionVlanName;
         device.Vlans[profile.DataVlan] = profile.DataVlanName;

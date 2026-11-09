@@ -74,6 +74,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
     private bool _isPagingShowOutput;
     private bool _morePromptVisible;
     private bool _isEnteringBannerText;
+    private bool _awaitingTerminalStart;
     private char _bannerDelimiter;
     private const int ShowPageLineCount = 8;
     private const string MorePrompt = "\n--More-- Press SPACE for more --\n";
@@ -142,6 +143,12 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             return;
         }
 
+        if (_awaitingTerminalStart && WasEnterPressed())
+        {
+            StartTerminalSession();
+            return;
+        }
+
         if (_isPagingShowOutput && WasEnterPressed())
         {
             ShowNextOutputPage(1);
@@ -175,7 +182,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         _onClose = onClose;
         _cliMode = CiscoCliMode.UserExec;
         _processor = new TssCliCommandProcessor(TssTrainingSession.Instance, deviceKey ?? state.DeviceKey, state.Category, state.DeviceName);
-        var consoleLoginRequired = _processor.BeginConsoleLogin();
+        _processor.BeginConsoleLogin();
         if (_notificationSession)
             _notificationSession.StateChanged -= OnNetworkStateChanged;
         _notificationSession = TssTrainingSession.Instance;
@@ -190,9 +197,10 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         _isPagingShowOutput = false;
         _morePromptVisible = false;
         _isEnteringBannerText = false;
+        _awaitingTerminalStart = true;
         _bannerDelimiter = '\0';
         SetBannerEntryMode(false);
-        SetCommandEntryVisible(true);
+        SetCommandEntryVisible(false);
 
         var isRouter = state.Category == EquipmentCategory.Router;
         if (titleText)
@@ -240,17 +248,38 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         _consoleHistory.Clear();
         if (consoleOutputText)
             consoleOutputText.text = string.Empty;
-        if (!consoleLoginRequired)
-            AppendToConsole(isRouter ? GetRouterBootBanner(state) : GetSwitchBootBanner(state));
+        AppendToConsole(isRouter ? GetRouterBootBanner(state) : GetSwitchBootBanner(state));
 
         UpdatePrompt();
 
         if (commandInput)
-        {
             commandInput.text = string.Empty;
-            commandInput.ActivateInputField();
+
+        StartCoroutine(ScrollToBottomNextFrame());
+    }
+
+    private void StartTerminalSession()
+    {
+        if (!_awaitingTerminalStart)
+            return;
+
+        _awaitingTerminalStart = false;
+        var motd = _processor?.Device?.Motd;
+        if (!string.IsNullOrWhiteSpace(motd))
+        {
+            motd = motd.Trim();
+            const string legacyPrefix = "banner motd #";
+            if (motd.StartsWith(legacyPrefix, StringComparison.OrdinalIgnoreCase))
+                motd = motd.Substring(legacyPrefix.Length);
+            if (motd.EndsWith("#", StringComparison.Ordinal))
+                motd = motd[..^1];
+            AppendToConsole(motd + "\n");
         }
 
+        SetCommandEntryVisible(true);
+        UpdatePrompt();
+        if (commandInput && commandInput.gameObject.activeInHierarchy)
+            commandInput.ActivateInputField();
         StartCoroutine(ScrollToBottomNextFrame());
     }
 
@@ -853,11 +882,17 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         NetworkDeviceState networkDevice = null;
         if (network != null && !string.IsNullOrWhiteSpace(_state?.DeviceKey))
             network.TryGetDevice(_state.DeviceKey, out networkDevice);
+        if (_state != null && (_state.Category == EquipmentCategory.Router || _state.Category == EquipmentCategory.Switch))
+        {
+            networkDevice ??= new NetworkDeviceState(_state.DeviceKey, _state.Category, _state.DeviceName, null);
+            return "Building configuration...\nCurrent configuration : 1084 bytes\n" + TssCliCommandProcessor.BuildRunningConfig(networkDevice);
+        }
         sb.AppendLine("Building configuration...");
         sb.AppendLine("Current configuration : 1084 bytes");
         sb.AppendLine("!");
         sb.AppendLine("version 15.0");
         sb.AppendLine("no service timestamps log datetime msec");
+        sb.AppendLine("no service timestamps debug datetime msec");
         sb.AppendLine(networkDevice != null && networkDevice.PasswordEncryption ? "service password-encryption" : "no service password-encryption");
         if (networkDevice != null && !string.IsNullOrEmpty(networkDevice.EnableSecret))
             sb.AppendLine("enable secret <configured>");
@@ -899,6 +934,17 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
                 }
                 sb.AppendLine("!");
             }
+        }
+        if (networkDevice != null && !string.IsNullOrWhiteSpace(networkDevice.Motd))
+        {
+            var motd = networkDevice.Motd.Trim();
+            const string legacyPrefix = "banner motd #";
+            if (motd.StartsWith(legacyPrefix, System.StringComparison.OrdinalIgnoreCase))
+                motd = motd.Substring(legacyPrefix.Length);
+            if (motd.EndsWith("#", System.StringComparison.Ordinal))
+                motd = motd[..^1];
+            sb.AppendLine("banner motd #" + motd + "#");
+            sb.AppendLine("!");
         }
         sb.AppendLine("line con 0");
         if (networkDevice != null && !string.IsNullOrEmpty(networkDevice.ConsolePassword))

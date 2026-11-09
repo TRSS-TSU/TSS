@@ -4,17 +4,19 @@ public sealed class RackInstalledEquipmentTarget : MonoBehaviour
 {
     public RackMountController Rack { get; private set; }
     public int StartingU { get; private set; }
+    public GameObject Visual { get; private set; }
 
-    public void Initialize(RackMountController rack, int startingU)
+    public void Initialize(RackMountController rack, int startingU, GameObject visual = null)
     {
         Rack = rack;
         StartingU = startingU;
+        Visual = visual;
     }
 
     public void Click()
     {
         if (Rack)
-            Rack.ClickInstalled(StartingU);
+            Rack.ClickInstalled(StartingU, Visual);
     }
 
 }

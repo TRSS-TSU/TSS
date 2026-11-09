@@ -6,6 +6,7 @@ using System.Text.RegularExpressions;
 public static class TssExternalScenarioValidator
 {
     public static bool IsLocalJsonFile(string path) => path != null && Regex.IsMatch(path, @"\A[A-Za-z0-9_-]+\.json\z");
+    public static bool IsSceneName(string value) => value != null && Regex.IsMatch(value, @"\A[A-Za-z0-9_-]+\z");
 
     public static List<string> Validate(TssExternalScenarioData data, TssScenarioCatalog catalog)
     {
@@ -22,6 +23,7 @@ public static class TssExternalScenarioValidator
         Required(data.displayName, "displayName", errors);
         Required(facilityId, "facilityId", errors);
         Required(catalogId, "catalogId", errors);
+        if (!IsSceneName(data.sceneName)) errors.Add("sceneName must use only letters, numbers, hyphens, or underscores.");
         if (!catalog || data.sceneName != catalog.sceneName) errors.Add("Scenario sceneName does not match the catalog.");
         if (catalog && facilityId != catalog.facilityId) errors.Add("Scenario facilityId does not match the catalog.");
         if (catalog && catalogId != catalog.catalogId) errors.Add("Scenario catalogId does not match the catalog.");
@@ -170,22 +172,20 @@ public static class TssExternalScenarioValidator
             if (string.IsNullOrEmpty(row.deviceKey) || !owners.TryGetValue(row.deviceKey, out var categories) || !categories.Contains(row.category))
                 errors.Add("Unknown role device/category: " + row.deviceKey);
         }
-        if (network.enableLayer23Simulation)
-        {
-            foreach (var role in new[] { "AN-1", "AN-2", "CN-1" })
-                if (!roles.TryGetValue(role, out var binding) || binding.category != (role == "CN-1" ? EquipmentCategory.Router : EquipmentCategory.Switch))
-                    errors.Add("Missing required network role/category: " + role);
-        }
+        if (network.enableLayer23Simulation && (!roles.TryGetValue(network.routerRole, out var routerBinding) || routerBinding.category != EquipmentCategory.Router))
+            errors.Add("Missing router role/category: " + network.routerRole);
         var ports = NewIds();
         foreach (var row in Rows(network.requiredPorts, "requiredPorts", errors))
         {
             Unique(row.deviceRole + ":" + row.interfaceName, ports, "required port", errors);
-            if ((row.deviceRole != "AN-1" && row.deviceRole != "AN-2") || !roles.TryGetValue(row.deviceRole, out var binding))
+            if (!roles.TryGetValue(row.deviceRole, out var binding) || binding.category != EquipmentCategory.Switch)
                 errors.Add("Unsupported required-port role: " + row.deviceRole);
             else if (string.IsNullOrEmpty(row.interfaceName) || !Regex.IsMatch(row.interfaceName, @"\A(?:Fa|Gi)0/[1-9][0-9]*\z") || !equipment.Where(x => x.category == binding.category)
                 .SelectMany(x => x.interfaces ?? Array.Empty<EquipmentInterface>()).Any(p => p != null && p.name == row.interfaceName.Replace("/", "")))
                 errors.Add("Unknown interface: " + row.interfaceName);
             Known(row.endpointId, names, "required-port endpoint", errors);
+            if (!string.IsNullOrWhiteSpace(row.vlanName))
+                Known(row.vlanName, new[] { network.managementVlanName, network.receptionVlanName, network.dataVlanName }, "required-port VLAN", errors);
         }
         if (network.enableLayer23Simulation && (network.requiredPorts == null || network.requiredPorts.Length == 0)) errors.Add("Enabled network requires ports.");
         var evidence = NewIds();

@@ -33,6 +33,8 @@ public sealed class RackMountController : MonoBehaviour
     private readonly HashSet<int> _rearOccupied = new();
     private readonly Dictionary<int, GameObject> _slots = new();
     private readonly Dictionary<int, InstalledRackItem> _installedItems = new();
+    private readonly Dictionary<GameObject, InstalledRackItem> _installedItemsByVisual = new();
+    private readonly Dictionary<GameObject, int> _installedStartingUByVisual = new();
     private TssTrainingSession _session;
     private bool _playerInRange;
     private Material _slotMaterial;
@@ -223,7 +225,10 @@ public sealed class RackMountController : MonoBehaviour
         }
 
         var grabTarget = CreateInstalledGrabTarget(equipment, startingU, instance);
-        _installedItems[startingU] = new InstalledRackItem(equipment, instance, grabTarget, equipment.rackUnits);
+        var installedItem = new InstalledRackItem(equipment, instance, grabTarget, equipment.rackUnits);
+        _installedItems[startingU] = installedItem;
+        _installedItemsByVisual[instance] = installedItem;
+        _installedStartingUByVisual[instance] = startingU;
 
         SetOccupied(equipment, startingU, equipment.rackUnits, true);
 
@@ -291,12 +296,15 @@ public sealed class RackMountController : MonoBehaviour
         }
     }
 
-    public void ClickInstalled(int startingU)
+    public void ClickInstalled(int startingU, GameObject clickedVisual = null)
     {
         if (TssRuntimeUi.Instance && TssRuntimeUi.Instance.IsGameplayInputBlocked)
             return;
 
-        if (!_installedItems.TryGetValue(startingU, out var item))
+        InstalledRackItem item;
+        if (clickedVisual && _installedItemsByVisual.TryGetValue(clickedVisual, out var visualItem))
+            item = visualItem;
+        else if (!_installedItems.TryGetValue(startingU, out item))
             return;
 
         if (TryEnterInstalledCableView(item))
@@ -328,6 +336,23 @@ public sealed class RackMountController : MonoBehaviour
 
     public bool TryGetInstalledAtVisual(GameObject visual, out int startingU, out EquipmentDefinition equipment)
     {
+        if (visual && _installedItemsByVisual.TryGetValue(visual, out var exactItem))
+        {
+            startingU = _installedStartingUByVisual[visual];
+            equipment = exactItem.Equipment;
+            return true;
+        }
+
+        foreach (var pair in _installedItemsByVisual)
+        {
+            if (visual != null && pair.Key && visual.transform.IsChildOf(pair.Key.transform))
+            {
+                startingU = _installedStartingUByVisual[pair.Key];
+                equipment = pair.Value.Equipment;
+                return true;
+            }
+        }
+
         foreach (var pair in _installedItems)
         {
             if (pair.Value.Visual == visual || (visual != null && pair.Value.Visual != null && visual.transform.IsChildOf(pair.Value.Visual.transform)))
@@ -371,7 +396,20 @@ public sealed class RackMountController : MonoBehaviour
         if (item.GrabTarget)
             Destroy(item.GrabTarget);
 
-        _installedItems.Remove(startingU);
+        _installedItemsByVisual.Remove(item.Visual);
+        _installedStartingUByVisual.Remove(item.Visual);
+        if (_installedItems.TryGetValue(startingU, out var currentItem) && currentItem.Visual == item.Visual)
+        {
+            _installedItems.Remove(startingU);
+            foreach (var pair in _installedItemsByVisual)
+            {
+                if (_installedStartingUByVisual[pair.Key] == startingU)
+                {
+                    _installedItems[startingU] = pair.Value;
+                    break;
+                }
+            }
+        }
         RefreshHighlights();
         TssRuntimeUi.Instance?.ShowHudMessage(message);
     }
@@ -499,7 +537,7 @@ public sealed class RackMountController : MonoBehaviour
         Physics.SyncTransforms();
         var collider = grabTarget.AddComponent<BoxCollider>();
         collider.size = colliderSize;
-        grabTarget.AddComponent<RackInstalledEquipmentTarget>().Initialize(this, startingU);
+        grabTarget.AddComponent<RackInstalledEquipmentTarget>().Initialize(this, startingU, visualInstance);
         return grabTarget;
     }
 

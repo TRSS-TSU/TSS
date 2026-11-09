@@ -322,7 +322,9 @@ public sealed class TssExternalScenarioPlayModeTests
             device.ConsolePassword = profile.ConsolePassword;
             device.VtyPassword = profile.VtyPassword;
             device.Motd = profile.Motd;
-            device.PasswordEncryption = device.DomainLookupDisabled = device.ConsoleLoginRequired = device.VtyLoginRequired = true;
+            device.PasswordEncryption = device.DomainLookupDisabled = device.ConsoleLoginRequired = device.VtyLoginRequired = device.VtyLoginLocal = device.VtyTransportInputSsh = device.VtyLoggingSynchronous = true;
+            device.Vty5To15LoginRequired = false;
+            device.VtyExecTimeoutMinutes = 10;
             device.Vlans[profile.ManagementVlan] = profile.ManagementVlanName;
             device.Vlans[profile.ReceptionVlan] = profile.ReceptionVlanName;
             device.Vlans[profile.DataVlan] = profile.DataVlanName;

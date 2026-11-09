@@ -71,7 +71,7 @@ public sealed class TssExternalScenarioLoader
             }
             if (entry != null && !string.IsNullOrWhiteSpace(entry.scenarioId) && entry.scenarioId == entry.scenarioId.Trim() &&
                 !duplicates.Contains(entry.scenarioId) && !fileDuplicates.Contains(entry.jsonFile) && !string.IsNullOrWhiteSpace(entry.displayName) &&
-                !string.IsNullOrWhiteSpace(entry.facilityId) && !string.IsNullOrWhiteSpace(entry.catalogId) && entry.sceneName == "TSS" &&
+                !string.IsNullOrWhiteSpace(entry.facilityId) && !string.IsNullOrWhiteSpace(entry.catalogId) && TssExternalScenarioValidator.IsSceneName(entry.sceneName) &&
                 TssExternalScenarioValidator.IsLocalJsonFile(entry.jsonFile)) return true;
             warnings.Add("Unavailable manifest entry: " + (entry?.scenarioId ?? "missing entry"));
             return false;

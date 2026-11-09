@@ -150,6 +150,36 @@ public sealed class TssExternalScenarioTests
     }
 
     [Test]
+    public void CustomSceneAndCatalogIdentityAreAcceptedWhenTheyMatch()
+    {
+        var data = BaselineData();
+        var customCatalog = UnityEngine.Object.Instantiate(catalog);
+        try
+        {
+            data.facilityId = customCatalog.facilityId = "TSS_CUSTOM";
+            data.catalogId = customCatalog.catalogId = "TSS_CUSTOM_CATALOG";
+            data.sceneName = customCatalog.sceneName = "TSS_Custom";
+
+            Assert.IsTrue(TssExternalScenarioLoader.TryCreate(data, customCatalog, out var runtime, out var errors), string.Join("\n", errors));
+            TssScenarioLaunchState.ReleaseRuntime(runtime);
+        }
+        finally { UnityEngine.Object.DestroyImmediate(customCatalog); }
+    }
+
+    [Test]
+    public void ManifestAcceptsCustomSceneNamesAndRejectsInvalidOnes()
+    {
+        var manifest = JsonUtility.FromJson<TssScenarioManifest>(File.ReadAllText(Path.Combine(Application.streamingAssetsPath, "Scenarios/manifest.json")));
+        manifest.scenarios[0].sceneName = "TSS_Custom";
+        var warnings = new List<string>();
+        Assert.AreEqual(1, TssExternalScenarioLoader.ParseManifest(JsonUtility.ToJson(manifest), warnings).scenarios.Length);
+        Assert.IsEmpty(warnings);
+
+        manifest.scenarios[0].sceneName = "TSS Custom";
+        Assert.IsEmpty(TssExternalScenarioLoader.ParseManifest(JsonUtility.ToJson(manifest), warnings).scenarios);
+    }
+
+    [Test]
     public void DuplicateScenarioIdsExcludeBothEntries()
     {
         var manifest = JsonUtility.FromJson<TssScenarioManifest>(File.ReadAllText(Path.Combine(Application.streamingAssetsPath, "Scenarios/manifest.json")));

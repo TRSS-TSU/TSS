@@ -344,7 +344,7 @@ public sealed class TssNetworkSessionState
         if (!TryGetInterfaceByEndpoint(endpointId, out var device, out var iface))
             return false;
 
-        if (device.Category == EquipmentCategory.Router && string.Equals(iface.Name, "Fa0/0", StringComparison.OrdinalIgnoreCase))
+        if (device.Category == EquipmentCategory.Router && string.Equals(iface.Name, Profile?.RouterParentInterface, StringComparison.OrdinalIgnoreCase))
             return device.Interfaces.Values.Any(candidate => candidate.Name.StartsWith(iface.Name + ".", StringComparison.OrdinalIgnoreCase)
                 && IsInterfaceIpRoutingAvailable(device, candidate));
 
@@ -372,12 +372,12 @@ public sealed class TssNetworkSessionState
             return false;
 
         if (device.Category == EquipmentCategory.Router
-            && string.Equals(iface.Name, "Fa0/1", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(iface.Name, Profile?.RouterWanInterface, StringComparison.OrdinalIgnoreCase)
             && Profile != null)
             return string.Equals(iface.Address, Profile.WanCustomerAddress, StringComparison.OrdinalIgnoreCase)
                 && string.Equals(iface.Mask, "255.255.255.252", StringComparison.OrdinalIgnoreCase);
 
-        if (device.Category == EquipmentCategory.Router && string.Equals(iface.Name, "Fa0/0", StringComparison.OrdinalIgnoreCase))
+        if (device.Category == EquipmentCategory.Router && string.Equals(iface.Name, Profile?.RouterParentInterface, StringComparison.OrdinalIgnoreCase))
             return device.Interfaces.Values.Any(candidate => candidate.Name.StartsWith(iface.Name + ".", StringComparison.OrdinalIgnoreCase)
                 && IsInterfaceIpRoutingAvailable(device, candidate));
 
@@ -458,8 +458,8 @@ public sealed class TssNetworkSessionState
         if (!ProviderDemarcConnected)
             return false;
 
-        var router = FindDeviceByRole("CN-1");
-        if (router == null || !router.Interfaces.TryGetValue("Fa0/1", out var wan)
+        var router = FindDeviceByRole(Profile?.RouterRole ?? "CN-1");
+        if (router == null || !router.Interfaces.TryGetValue(Profile?.RouterWanInterface ?? "Fa0/1", out var wan)
             || !router.IsInterfaceOperational(wan)
             || wan.Address != Profile.WanCustomerAddress || wan.Mask != "255.255.255.252")
             return false;
@@ -597,8 +597,8 @@ public sealed class TssNetworkSessionState
             return false;
         }
 
-        endpoint.AttemptedEvidence.Add("redwolf");
-        endpoint.Evidence.Add("redwolf");
+        endpoint.AttemptedEvidence.Add(Profile.RedWolfEvidenceId);
+        endpoint.Evidence.Add(Profile.RedWolfEvidenceId);
         return true;
     }
     public void SaveCheckpoint(string name)
@@ -652,8 +652,13 @@ public sealed class NetworkDeviceState
     public bool ConsoleLoginRequired;
     public bool AuxLoginRequired;
     public bool VtyLoginRequired;
+    public bool Vty5To15LoginRequired = true;
+    public bool VtyLoginLocal;
+    public int VtyExecTimeoutMinutes;
+    public bool VtyTransportInputSsh;
     public bool ConsoleLoggingSynchronous;
     public bool AuxLoggingSynchronous;
+    public bool VtyLoggingSynchronous;
     public readonly Dictionary<int, string> Vlans = new();
     public readonly Dictionary<string, string> UserPasswords = new(StringComparer.OrdinalIgnoreCase);
     public readonly Dictionary<string, NetworkInterfaceState> Interfaces = new(StringComparer.OrdinalIgnoreCase);
@@ -704,7 +709,10 @@ public sealed class NetworkDeviceState
             DefaultGateway = DefaultGateway, DnsAddress = DnsAddress, UseDhcp = UseDhcp,
             PasswordEncryption = PasswordEncryption, DomainLookupDisabled = DomainLookupDisabled,
             ConsoleLoginRequired = ConsoleLoginRequired, AuxLoginRequired = AuxLoginRequired, VtyLoginRequired = VtyLoginRequired,
-            ConsoleLoggingSynchronous = ConsoleLoggingSynchronous, AuxLoggingSynchronous = AuxLoggingSynchronous, Mode = Mode,
+            Vty5To15LoginRequired = Vty5To15LoginRequired,
+            VtyLoginLocal = VtyLoginLocal, VtyExecTimeoutMinutes = VtyExecTimeoutMinutes, VtyTransportInputSsh = VtyTransportInputSsh,
+            ConsoleLoggingSynchronous = ConsoleLoggingSynchronous, AuxLoggingSynchronous = AuxLoggingSynchronous,
+            VtyLoggingSynchronous = VtyLoggingSynchronous, Mode = Mode,
             AwaitingConsolePassword = AwaitingConsolePassword,
             AwaitingEnablePassword = AwaitingEnablePassword,
             SelectedVlan = SelectedVlan, SelectedLine = SelectedLine, SelectedInterfaces = new List<string>(SelectedInterfaces), ExpectedRole = ExpectedRole
