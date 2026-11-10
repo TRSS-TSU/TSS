@@ -446,10 +446,12 @@ public static class TssDeviceSessionPrefabBuilder
         // Desktop Wallpaper / BG
         var bg = MakeImage(root.transform, "DesktopBackground", new Color(0.08f, 0.11f, 0.16f, 1f));
         Stretch(bg.rectTransform, 0f, 0f, 1f, 1f);
+        bg.rectTransform.offsetMax = new Vector2(0f, -60f);
 
         // OS Top Taskbar
         var taskbar = MakeImage(root.transform, "TopTaskbar", HeaderDark);
         AnchorTop(taskbar.rectTransform, 44f);
+        taskbar.rectTransform.anchoredPosition = new Vector2(0f, -60f);
 
         var topTitle = MakeText(taskbar.transform, "TopBarTitleText", "Workstation OS Enterprise", 15, TextAnchor.MiddleLeft);
         topTitle.rectTransform.anchorMin = new Vector2(0f, 0f);
@@ -489,7 +491,7 @@ public static class TssDeviceSessionPrefabBuilder
         daRt.anchorMin = Vector2.zero;
         daRt.anchorMax = Vector2.one;
         daRt.offsetMin = new Vector2(24f, 20f);
-        daRt.offsetMax = new Vector2(-24f, -60f);
+        daRt.offsetMax = new Vector2(-24f, -104f);
 
         // Left Card: Network Configuration (Layer 2 & Layer 3)
         var netCard = MakeImage(desktopArea.transform, "NetworkConfigCard", CardDark);

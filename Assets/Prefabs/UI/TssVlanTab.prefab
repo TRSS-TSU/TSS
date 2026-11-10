@@ -79,8 +79,10 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: 'These IDs are yours. Build this database on both switches: a VLAN database
-    is locally significant, so AN-2 will not learn AN-1''s VLANs across the trunk'
+  m_Text: 'VLAN 1 stays shut and unaddressed. Configure interface Vlan110 with the
+    seeded Management network''s .2/24 address. Tag Management on the required trunks;
+    create and name Native on both switches, keep it consistent on AN-1 Fa0/1, AN-1
+    Fa0/6, and AN-2 Fa0/1, and do not use it as an access, user, or routed VLAN.'
 --- !u!114 &5193005713409244715
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2451,8 +2453,9 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: 'Trunk (Fa0/1 both switches): 802.1Q, allowed 310,120,330, native 180.
-    Every unused port: access VLAN 888 + shutdown.'
+  m_Text: 'Management is included in the allowed trunk list. Native VLAN 350 is omitted
+    from this scenario''s explicit allowed list, has no switch management IP, and has
+    no CN-1 subinterface or gateway. Every unused port uses access VLAN 888 and shutdown.'
 --- !u!114 &3604964279913570908
 MonoBehaviour:
   m_ObjectHideFlags: 0

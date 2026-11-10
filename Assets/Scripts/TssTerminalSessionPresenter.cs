@@ -291,7 +291,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         var isRouter = _state.Category == EquipmentCategory.Router;
         subheaderText.text = isRouter
             ? $"Hostname: {_state.DeviceName}   Interfaces: {_state.Interfaces.Count} Ports"
-            : $"Hostname: {_state.DeviceName}   Mgmt IP: {_state.IpAddress}   MAC: {_state.MacAddress}   VLAN 1";
+            : $"Hostname: {_state.DeviceName}   Mgmt IP: {_state.IpAddress}   MAC: {_state.MacAddress}   VLAN {TssTrainingSession.Instance?.NetworkProfile?.ManagementVlan ?? 1}";
     }
 
     public string GetCurrentPrompt()

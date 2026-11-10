@@ -1750,6 +1750,46 @@ public sealed class TssDeviceSessionTests
     }
 
     [Test]
+    public void DisconnectedLaptopCanOpenGuestWifiJoinPanel()
+    {
+        var sessionObject = new GameObject("LaptopWirelessSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true, profileSeed = 47 };
+        var presenterObject = new GameObject("LaptopPresenter", typeof(RectTransform), typeof(TssDesktopSessionPresenter));
+        var joinCard = new GameObject("GuestWifiJoinCard");
+        var feedbackObject = new GameObject("Feedback", typeof(Text));
+
+        try
+        {
+            typeof(TssTrainingSession).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(session, null);
+            session.BeginScenario(scenario);
+            var laptop = session.NetworkState.GetOrCreateEndpoint("laptop", "TestLaptop", EquipmentCategory.Laptop);
+            Assert.IsFalse(laptop.Layer1Connected);
+
+            var presenter = presenterObject.GetComponent<TssDesktopSessionPresenter>();
+            var serialized = new UnityEditor.SerializedObject(presenter);
+            serialized.FindProperty("accessPointBrowserCard").objectReferenceValue = joinCard;
+            serialized.FindProperty("applyFeedbackText").objectReferenceValue = feedbackObject.GetComponent<Text>();
+            serialized.ApplyModifiedPropertiesWithoutUndo();
+
+            presenter.Initialize(new TssDeviceLogicalState("laptop", EquipmentCategory.Laptop, "Test Laptop"), null, null);
+            InvokePrivate(presenter, "OpenAccessPointBrowser");
+
+            Assert.IsTrue(joinCard.activeSelf);
+            StringAssert.DoesNotContain("Layer 1:", feedbackObject.GetComponent<Text>().text);
+        }
+        finally
+        {
+            Object.DestroyImmediate(feedbackObject);
+            Object.DestroyImmediate(joinCard);
+            Object.DestroyImmediate(presenterObject);
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
     public void ClickInstalledEntersFirstPersonView()
     {
         var camGo = new GameObject("TestCam");

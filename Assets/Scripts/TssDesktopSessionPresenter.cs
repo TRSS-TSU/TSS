@@ -343,7 +343,7 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
             return;
 
         if (_state != null
-            && (_state.Category == EquipmentCategory.DesktopPc || _state.Category == EquipmentCategory.Laptop)
+            && _state.Category == EquipmentCategory.DesktopPc
             && (!network.TryGetEndpoint(_deviceKey, out var sourceEndpoint) || !sourceEndpoint.Layer1Connected))
         {
             if (applyFeedbackText)

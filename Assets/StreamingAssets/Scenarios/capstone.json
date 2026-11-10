@@ -773,9 +773,7 @@
       "highestU": 38,
       "firstInstallableU": 3,
       "lastInstallableU": 38,
-      "reservedUPositions": [
-        40
-      ]
+      "reservedUPositions": [40]
     },
     {
       "rackId": "Rack02",
@@ -783,9 +781,7 @@
       "highestU": 38,
       "firstInstallableU": 3,
       "lastInstallableU": 38,
-      "reservedUPositions": [
-        40
-      ]
+      "reservedUPositions": [40]
     }
   ],
   "expectedRackPlacements": [
@@ -905,9 +901,7 @@
     "dataVlanName": "Data",
     "nativeVlanName": "Native",
     "deadVlanName": "Dead_Vlan",
-    "dhcpNetworkNames": [
-      "Reception"
-    ],
+    "dhcpNetworkNames": ["Reception"],
     "vlanMinimum": 10,
     "vlanMaximum": 390,
     "endpointAliases": [
@@ -1005,13 +999,40 @@
       }
     ],
     "unusedPortRequirements": [
-      {"deviceRole": "AN-1", "interfacePrefix": "Fa0/", "firstPort": 7, "lastPort": 24, "deadVlanName": "Dead_Vlan"},
-      {"deviceRole": "AN-2", "interfacePrefix": "Fa0/", "firstPort": 5, "lastPort": 24, "deadVlanName": "Dead_Vlan"}
+      {
+        "deviceRole": "AN-1",
+        "interfacePrefix": "Fa0/",
+        "firstPort": 7,
+        "lastPort": 24,
+        "deadVlanName": "Dead_Vlan"
+      },
+      {
+        "deviceRole": "AN-2",
+        "interfacePrefix": "Fa0/",
+        "firstPort": 5,
+        "lastPort": 24,
+        "deadVlanName": "Dead_Vlan"
+      }
     ],
     "routerSubinterfaceRequirements": [
-      {"vlanName": "Management", "networkName": "Management", "addressSuffix": 1, "mask": "255.255.255.0"},
-      {"vlanName": "Reception", "networkName": "Reception", "addressSuffix": 1, "mask": "255.255.255.0"},
-      {"vlanName": "Data", "networkName": "Data", "addressSuffix": 1, "mask": "255.255.255.0"}
+      {
+        "vlanName": "Management",
+        "networkName": "Management",
+        "addressSuffix": 1,
+        "mask": "255.255.255.0"
+      },
+      {
+        "vlanName": "Reception",
+        "networkName": "Reception",
+        "addressSuffix": 1,
+        "mask": "255.255.255.0"
+      },
+      {
+        "vlanName": "Data",
+        "networkName": "Data",
+        "addressSuffix": 1,
+        "mask": "255.255.255.0"
+      }
     ],
     "routerRole": "CN-1",
     "routerParentInterface": "Fa0/0",
@@ -1200,7 +1221,7 @@
     "vlans": {
       "sectionTitle": "VLANs",
       "scenarioHeading": "VLAN ASSIGNMENT - {ScenarioId}",
-      "intro": "VLAN 1 stays shut and unaddressed. Configure interface Vlan{ManagementVlan} with the seeded Management network's .2/24 address. Tag Management on the required trunks; create and name Native on both switches, keep it consistent on AN-1 Fa0/1, AN-1 Fa0/6, and AN-2 Fa0/1, and do not use it as an access, user, or routed VLAN.",
+      "intro": "Interface VLAN 1 stays shut and unaddressed. Configure interface Vlan{ManagementVlan} with the seeded Management network's .2/24 address. Tag Management on the required trunks; create and name Native on both switches, keep it consistent on AN-1 Fa0/1, AN-1 Fa0/6, and AN-2 Fa0/1, and do not use it as an access, user, or routed VLAN.",
       "endingParagraph": "Management is included in the allowed trunk list. Native VLAN {NativeVlan} is omitted from this scenario's explicit allowed list, has no switch management IP, and has no CN-1 subinterface or gateway. Every unused port uses access VLAN {DeadVlan} and shutdown."
     },
     "ipPlan": {
