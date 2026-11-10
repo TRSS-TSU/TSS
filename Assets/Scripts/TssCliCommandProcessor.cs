@@ -110,7 +110,7 @@ public sealed class TssCliCommandProcessor
         if (device.Mode is TssNetworkCliMode.GlobalConfig or TssNetworkCliMode.InterfaceConfig or TssNetworkCliMode.SubinterfaceConfig or TssNetworkCliMode.LineConfig or TssNetworkCliMode.VlanConfig)
         {
             if (lower is "line console 0" or "line con 0") return SelectLine(device, "console");
-            if (lower is "line aux 0" or "line auxiliary 0") return SelectLine(device, "aux");
+            if (lower is "line aux 0" or "line auxiliary 0") return device.Category == EquipmentCategory.Router ? SelectLine(device, "aux") : Invalid(device);
             if (lower is "line vty 0 4" or "line vty 5 15")
                 return SelectLine(device, lower == "line vty 0 4" ? "vty" : "vty5-15");
             if (lower.StartsWith("interface ") || lower.StartsWith("int "))
@@ -141,6 +141,8 @@ public sealed class TssCliCommandProcessor
         if (lower == "ip domain-lookup") { d.DomainLookupDisabled = false; return Changed(d, string.Empty); }
         if (lower == "no ip domain-lookup") { d.DomainLookupDisabled = true; return Changed(d, string.Empty); }
         if (lower == "no banner motd") { d.Motd = string.Empty; return Changed(d, string.Empty); }
+        if (d.Category == EquipmentCategory.Switch && lower == "no ip default-gateway") { d.DefaultGateway = string.Empty; return Changed(d, string.Empty); }
+        if (d.Category == EquipmentCategory.Switch && parts.Length == 3 && lower.StartsWith("ip default-gateway ") && ValidAddress(parts[2])) { d.DefaultGateway = parts[2]; return Changed(d, string.Empty); }
         if (lower.StartsWith("banner motd ") && command.Length > 13)
         {
             var rest = command.Substring(12).Trim(); if (rest.Length < 3 || rest[0] != rest[^1]) return Incomplete(d, "banner motd <delimiter>text<delimiter>");
@@ -177,7 +179,7 @@ public sealed class TssCliCommandProcessor
         {
             names.Add("Vlan" + svi);
             if (!d.Svis.ContainsKey(svi))
-                d.Svis[svi] = new NetworkInterfaceState { Name = "Vlan" + svi, AdminUp = svi == 1 };
+                d.Svis[svi] = new NetworkInterfaceState { Name = "Vlan" + svi, AdminUp = svi != 1 };
         }
         else { if (!TryCanonical(selection, out var canonical, d.Category == EquipmentCategory.Router)) return Invalid(d); names.Add(canonical); }
         d.SelectedInterfaces = names;
@@ -233,11 +235,11 @@ public sealed class TssCliCommandProcessor
         }
         if (lower is "no ip address" or "no ip add")
         {
-            if (d.Category == EquipmentCategory.Switch && d.SelectedInterfaces.Contains("Vlan1", StringComparer.OrdinalIgnoreCase))
+            if (d.Category == EquipmentCategory.Switch && d.SelectedInterfaces.Contains("Vlan" + _network.Profile.ManagementVlan, StringComparer.OrdinalIgnoreCase))
             {
                 d.ManagementAddress = string.Empty;
                 d.ManagementMask = string.Empty;
-                if (d.Svis.TryGetValue(1, out var managementSvi)) { managementSvi.Address = string.Empty; managementSvi.Mask = string.Empty; }
+                foreach (var i in Selected(d)) { i.Address = string.Empty; i.Mask = string.Empty; }
                 return Changed(d, string.Empty);
             }
             foreach (var i in Selected(d)) { i.Address = string.Empty; i.Mask = string.Empty; }
@@ -247,17 +249,17 @@ public sealed class TssCliCommandProcessor
         }
         if (lower.StartsWith("ip address ") && parts.Length == 4 && ValidAddress(parts[2]) && ValidMask(parts[3]))
         {
-            if (d.Category == EquipmentCategory.Switch && d.SelectedInterfaces.Contains("Vlan1", StringComparer.OrdinalIgnoreCase))
+            if (d.Category == EquipmentCategory.Switch && d.SelectedInterfaces.Contains("Vlan" + _network.Profile.ManagementVlan, StringComparer.OrdinalIgnoreCase))
             {
                 d.ManagementAddress = parts[2];
                 d.ManagementMask = parts[3];
-                if (d.Svis.TryGetValue(1, out var managementSvi)) { managementSvi.Address = parts[2]; managementSvi.Mask = parts[3]; }
+                foreach (var i in Selected(d)) { i.Address = parts[2]; i.Mask = parts[3]; }
                 return Changed(d, string.Empty);
             }
             foreach (var i in Selected(d)) { i.Address = parts[2]; i.Mask = parts[3]; }
-            if (d.Category == EquipmentCategory.Switch && d.SelectedInterfaces.Any(x => x.StartsWith("Vlan", StringComparison.OrdinalIgnoreCase)))
+            if (d.Category == EquipmentCategory.Switch && d.SelectedInterfaces.Any(x => x.Equals("Vlan" + _network.Profile.ManagementVlan, StringComparison.OrdinalIgnoreCase)))
             {
-                foreach (var i in Selected(d)) if (i.Name.Equals("Vlan1", StringComparison.OrdinalIgnoreCase)) { d.ManagementAddress = parts[2]; d.ManagementMask = parts[3]; }
+                d.ManagementAddress = parts[2]; d.ManagementMask = parts[3];
             }
             return Changed(d, string.Empty);
         }
@@ -271,6 +273,8 @@ public sealed class TssCliCommandProcessor
         var parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (command.Equals("login", StringComparison.OrdinalIgnoreCase)) { SetLineLogin(d, true); return Changed(d, string.Empty); }
         if (command.Equals("no login", StringComparison.OrdinalIgnoreCase)) { SetLineLogin(d, false); return Changed(d, string.Empty); }
+        if (command.Equals("no exec", StringComparison.OrdinalIgnoreCase)) { if (d.SelectedLine != "vty5-15") return Invalid(d); d.Vty5To15ExecDisabled = true; return Changed(d, string.Empty); }
+        if (command.Equals("exec", StringComparison.OrdinalIgnoreCase)) { if (d.SelectedLine != "vty5-15") return Invalid(d); d.Vty5To15ExecDisabled = false; return Changed(d, string.Empty); }
         if (command.Equals("login local", StringComparison.OrdinalIgnoreCase)) { if (d.SelectedLine != "vty") return Invalid(d); d.VtyLoginRequired = true; d.VtyLoginLocal = true; return Changed(d, string.Empty); }
         if (command.Equals("no login local", StringComparison.OrdinalIgnoreCase)) { if (d.SelectedLine != "vty") return Invalid(d); d.VtyLoginLocal = false; return Changed(d, string.Empty); }
         if (command.Equals("logging synchronous", StringComparison.OrdinalIgnoreCase)) { if (d.SelectedLine == "console") d.ConsoleLoggingSynchronous = true; else if (d.SelectedLine == "aux") d.AuxLoggingSynchronous = true; else if (d.SelectedLine == "vty") d.VtyLoggingSynchronous = true; else return Invalid(d); return Changed(d, string.Empty); }
@@ -467,9 +471,10 @@ public sealed class TssCliCommandProcessor
             "ip domain-lookup\tSet DNS lookup state",
             "banner motd #<text>#\tSet the DoD warning banner",
             "line console 0\tSelect the console line",
-            "line aux 0\tSelect the auxiliary line",
             "line vty 0 4 | line vty 5 15\tSelect remote terminal lines"
         });
+        if (isRouter) AppendReferenceSection(sb, "Router line configuration", new[] { "line aux 0\tSelect the auxiliary line" });
+        if (!isRouter) AppendReferenceSection(sb, "Switch management", new[] { "ip default-gateway <address>\tSet the management default gateway", "no ip default-gateway\tClear the management default gateway" });
         if (!isRouter)
         {
             AppendReferenceSection(sb, "Switch management interface", new[]
@@ -535,14 +540,14 @@ public sealed class TssCliCommandProcessor
     {
         TssNetworkCliMode.GlobalConfig => category == EquipmentCategory.Router
             ? "hostname <name>\nenable password <value>\nenable secret <value>\nservice password-encryption | ser pass\nusername <name> password <value>\ninterface <name>\nip route <network> <mask> <next-hop>\nline console 0|aux 0|vty 0 4|vty 5 15\n"
-            : "hostname <name>\nenable password <value>\nenable secret <value>\nservice password-encryption | ser pass\nusername <name> password <value>\ninterface <name>|range <first> - <last>|Vlan<id>\nvlan <id>\nline console 0|aux 0|vty 0 4|vty 5 15\n",
+            : "hostname <name>\nenable password <value>\nenable secret <value>\nservice password-encryption | ser pass\nusername <name> password <value>\nip default-gateway <address>\ninterface <name>|range <first> - <last>|Vlan<id>\nvlan <id>\nline console 0|vty 0 4|vty 5 15\n",
         TssNetworkCliMode.InterfaceConfig => category == EquipmentCategory.Router
             ? "shutdown | no shutdown\nip address <address> <mask> | ip add <address> <mask>\nencapsulation dot1q <vlan>\n"
             : "shutdown | no shutdown\ndescription <text> | no description\nswitchport trunk encapsulation dot1q\nswitchport mode access|trunk\nswitchport access vlan <id> | no switchport access vlan\nswitchport trunk allowed vlan <id>[,<id>]\nswitchport trunk native vlan <id>\ninterface Vlan<id>\nip address <address> <mask> | ip add <address> <mask>\n",
         TssNetworkCliMode.SubinterfaceConfig => category == EquipmentCategory.Router
             ? "description <text> | no description\nip address <address> <mask> | ip add <address> <mask>\nencapsulation dot1q <vlan>\n(no shutdown commands; state is inherited from the parent interface)\n"
             : "shutdown | no shutdown\ndescription <text> | no description\nswitchport trunk encapsulation dot1q\nswitchport mode access|trunk\nswitchport access vlan <id> | no switchport access vlan\nswitchport trunk allowed vlan <id>[,<id>]\nswitchport trunk native vlan <id>\ninterface Vlan<id>\nip address <address> <mask> | ip add <address> <mask>\n",
-        TssNetworkCliMode.LineConfig => "password <value>\nlogin | no login | login local\nexec-timeout <minutes>\ntransport input ssh\nlogging synchronous\n",
+        TssNetworkCliMode.LineConfig => "password <value>\nlogin | no login | login local\nno exec | exec (VTY 5-15)\nexec-timeout <minutes>\ntransport input ssh\nlogging synchronous\n",
         TssNetworkCliMode.VlanConfig => category == EquipmentCategory.Switch ? "name <name>\nstate suspend\n" : "% VLAN configuration is switch-only.\n",
         _ => category == EquipmentCategory.Router
             ? "enable | configure terminal | show running-config | show startup-config | show ip interface brief | show interfaces | show ip route | ping <ip>\n"
@@ -602,7 +607,7 @@ public sealed class TssCliCommandProcessor
         }
         sb.AppendLine("interface Vlan1");
         if (d.Svis.TryGetValue(1, out var vlan1) && !string.IsNullOrWhiteSpace(vlan1.Description)) sb.AppendLine(" description " + vlan1.Description);
-        if (!string.IsNullOrWhiteSpace(d.ManagementAddress)) sb.AppendLine(" ip address " + d.ManagementAddress + " " + d.ManagementMask);
+        if (!string.IsNullOrWhiteSpace(vlan1?.Address)) sb.AppendLine(" ip address " + vlan1.Address + " " + vlan1.Mask);
         else sb.AppendLine(" no ip address");
         if (!d.Svis.TryGetValue(1, out vlan1) || !vlan1.AdminUp) sb.AppendLine(" shutdown");
         sb.AppendLine("!");
@@ -616,6 +621,7 @@ public sealed class TssCliCommandProcessor
             sb.AppendLine("!");
         }
         sb.AppendLine("ip classless");
+        if (!string.IsNullOrWhiteSpace(d.DefaultGateway)) sb.AppendLine("ip default-gateway " + d.DefaultGateway);
         sb.AppendLine("!");
         if (!string.IsNullOrWhiteSpace(d.Motd))
         {
@@ -633,7 +639,7 @@ public sealed class TssCliCommandProcessor
         if (d.ConsoleLoginRequired) sb.AppendLine(" login");
         if (d.ConsoleLoggingSynchronous) sb.AppendLine(" logging synchronous");
         sb.AppendLine("!");
-        if (!string.IsNullOrWhiteSpace(d.AuxPassword) || d.AuxLoginRequired || d.AuxLoggingSynchronous)
+        if (d.Category == EquipmentCategory.Router && (!string.IsNullOrWhiteSpace(d.AuxPassword) || d.AuxLoginRequired || d.AuxLoggingSynchronous))
         {
             sb.AppendLine("line aux 0");
             if (!string.IsNullOrWhiteSpace(d.AuxPassword)) sb.AppendLine(" password " + (d.PasswordEncryption ? "<encrypted>" : d.AuxPassword));
@@ -652,6 +658,7 @@ public sealed class TssCliCommandProcessor
         sb.AppendLine("line vty 5 15");
         if (d.Vty5To15LoginRequired) sb.AppendLine(" login");
         else sb.AppendLine(" no login");
+        if (d.Vty5To15ExecDisabled) sb.AppendLine(" no exec");
         sb.AppendLine("!");
         foreach (var v in d.Vlans.OrderBy(x => x.Key))
         {
@@ -739,6 +746,7 @@ public sealed class TssCliCommandProcessor
         sb.AppendLine("line vty 5 15");
         if (d.Vty5To15LoginRequired) sb.AppendLine(" login");
         else sb.AppendLine(" no login");
+        if (d.Vty5To15ExecDisabled) sb.AppendLine(" no exec");
         sb.AppendLine("!");
         foreach (var r in d.Routes)
         {

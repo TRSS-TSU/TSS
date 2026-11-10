@@ -46,7 +46,18 @@ public sealed class TssNetworkReachabilityEvaluator
             return Fail(1, TssReachabilityFaultCategory.PhysicalPathUnavailable, "source device is unavailable.", string.Empty, string.Empty);
 
         var profile = _state.Profile;
+        var localInterface = sourceDevice.Interfaces.Values.FirstOrDefault(iface => string.Equals(iface.Address, destinationAddress, StringComparison.OrdinalIgnoreCase))
+            ?? sourceDevice.Svis.Values.FirstOrDefault(iface => string.Equals(iface.Address, destinationAddress, StringComparison.OrdinalIgnoreCase));
+        if (localInterface != null)
+        {
+            if (!TssNetworkAddress.IsAddress(localInterface.Address) || !TssNetworkAddress.IsMask(localInterface.Mask) || !IsDeviceInterfaceOperational(sourceDevice, localInterface, profile))
+                return Fail(3, TssReachabilityFaultCategory.InterfaceUnavailable, "local interface is unavailable.", sourceDevice.Hostname, sourceDevice.Hostname);
+            return new TssReachabilityResult(true, 0, TssReachabilityFaultCategory.None, "Reachable.", sourceDevice.Hostname, sourceDevice.Hostname, new[] { localInterface.Address });
+        }
+        var destinationDevice = FindDeviceInterfaceByAddress(destinationAddress, out var destinationSvi);
         var destinationRole = ResolveRole(destinationAddress, profile);
+        if (destinationDevice != null)
+            destinationRole = destinationDevice.ExpectedRole ?? destinationDevice.Hostname;
         if (string.IsNullOrEmpty(destinationRole))
             return Fail(3, TssReachabilityFaultCategory.DestinationUnavailable, "destination does not respond.", sourceDevice.Hostname, string.Empty);
 
@@ -81,6 +92,25 @@ public sealed class TssNetworkReachabilityEvaluator
         var routeFailure = ValidateDeviceRoute(sourceDevice, sourceInterface, source, destinationAddress, destinationRole, hops);
         if (routeFailure.HasValue)
             return routeFailure.Value;
+
+        if (destinationDevice != null && destinationSvi != null)
+        {
+            if (!IsDeviceInterfaceOperational(destinationDevice, destinationSvi, profile))
+                return Fail(3, TssReachabilityFaultCategory.InterfaceUnavailable, "destination SVI is unavailable.", source.Role, destinationRole, hops.ToArray());
+            var vlan = profile.ManagementVlan;
+            var pathSwitch = destinationDevice.ExpectedRole ?? destinationDevice.Hostname;
+            var trunkNames = pathSwitch.Equals("AN-2", StringComparison.OrdinalIgnoreCase)
+                ? new[] { "AN-1:Fa0/6", "AN-2:Fa0/1" }
+                : new[] { "AN-1:Fa0/6" };
+            foreach (var trunkName in trunkNames)
+            {
+                var split = trunkName.IndexOf(':');
+                var trunkDevice = FindDevice(trunkName.Substring(0, split));
+                var trunk = FindInterface(trunkDevice, trunkName.Substring(split + 1));
+                if (trunkDevice == null || trunk == null || !trunk.IsTrunk || !trunkDevice.IsInterfaceOperational(trunk) || !trunk.AllowedVlans.Contains(vlan))
+                    return Fail(2, TssReachabilityFaultCategory.VlanNotCarried, "management VLAN is not carried to the destination SVI.", source.Role, destinationRole, hops.ToArray());
+            }
+        }
 
         Add(hops, destinationAddress);
         return new TssReachabilityResult(true, 0, TssReachabilityFaultCategory.None, "Reachable.", source.Role, destinationRole, hops);
@@ -434,6 +464,18 @@ public sealed class TssNetworkReachabilityEvaluator
     {
         foreach (var endpoint in _state.Endpoints)
             if (endpoint.Address == address) return endpoint;
+        return null;
+    }
+    private NetworkDeviceState FindDeviceInterfaceByAddress(string address, out NetworkInterfaceState matched)
+    {
+        matched = null;
+        foreach (var device in _state.Devices)
+        {
+            matched = device.Svis.Values.FirstOrDefault(iface => string.Equals(iface.Address, address, StringComparison.OrdinalIgnoreCase));
+            if (matched != null) return device;
+            matched = device.Interfaces.Values.FirstOrDefault(iface => string.Equals(iface.Address, address, StringComparison.OrdinalIgnoreCase));
+            if (matched != null) return device;
+        }
         return null;
     }
     private static string ResolveRole(string address, TssNetworkRunProfile profile)

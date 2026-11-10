@@ -1200,8 +1200,8 @@
     "vlans": {
       "sectionTitle": "VLANs",
       "scenarioHeading": "VLAN ASSIGNMENT - {ScenarioId}",
-      "intro": "These IDs are yours. Build this database on both switches; VLAN databases are locally significant, so AN-2 will not learn AN-1's VLANs across the trunk.",
-      "endingParagraph": "Trunk (Fa0/1 both switches): 802.1Q, allowed {ManagementVlan},{ReceptionVlan},{DataVlan}, native {NativeVlan}. Every unused port: access VLAN {DeadVlan} + shutdown."
+      "intro": "VLAN 1 stays shut and unaddressed. Configure interface Vlan{ManagementVlan} with the seeded Management network's .2/24 address. Tag Management on the required trunks; create and name Native on both switches, keep it consistent on AN-1 Fa0/1, AN-1 Fa0/6, and AN-2 Fa0/1, and do not use it as an access, user, or routed VLAN.",
+      "endingParagraph": "Management is included in the allowed trunk list. Native VLAN {NativeVlan} is omitted from this scenario's explicit allowed list, has no switch management IP, and has no CN-1 subinterface or gateway. Every unused port uses access VLAN {DeadVlan} and shutdown."
     },
     "ipPlan": {
       "sectionTitle": "IP Plan",

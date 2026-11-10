@@ -653,6 +653,7 @@ public sealed class NetworkDeviceState
     public bool AuxLoginRequired;
     public bool VtyLoginRequired;
     public bool Vty5To15LoginRequired = true;
+    public bool Vty5To15ExecDisabled;
     public bool VtyLoginLocal;
     public int VtyExecTimeoutMinutes;
     public bool VtyTransportInputSsh;
@@ -682,7 +683,11 @@ public sealed class NetworkDeviceState
         DefaultGateway = category == EquipmentCategory.Router || profile == null
             ? string.Empty
             : profile.ManagementNetwork + ".1";
-        if (category == EquipmentCategory.Switch) Vlans[1] = "default";
+        if (category == EquipmentCategory.Switch)
+        {
+            Vlans[1] = "default";
+            Svis[1] = new NetworkInterfaceState { Name = "Vlan1", AdminUp = false };
+        }
     }
     public bool IsInterfaceAdminUp(NetworkInterfaceState iface)
     {
@@ -710,6 +715,7 @@ public sealed class NetworkDeviceState
             PasswordEncryption = PasswordEncryption, DomainLookupDisabled = DomainLookupDisabled,
             ConsoleLoginRequired = ConsoleLoginRequired, AuxLoginRequired = AuxLoginRequired, VtyLoginRequired = VtyLoginRequired,
             Vty5To15LoginRequired = Vty5To15LoginRequired,
+            Vty5To15ExecDisabled = Vty5To15ExecDisabled,
             VtyLoginLocal = VtyLoginLocal, VtyExecTimeoutMinutes = VtyExecTimeoutMinutes, VtyTransportInputSsh = VtyTransportInputSsh,
             ConsoleLoggingSynchronous = ConsoleLoggingSynchronous, AuxLoggingSynchronous = AuxLoggingSynchronous,
             VtyLoggingSynchronous = VtyLoggingSynchronous, Mode = Mode,

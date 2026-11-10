@@ -49,7 +49,7 @@ public sealed class TssVlanTabPresenter : MonoBehaviour
         {
             var intro = transform.Find("IntroParagraph")?.GetComponent<Text>();
             if (intro)
-                intro.text = content.intro;
+                intro.text = ResolveTokens(content.intro, scenarioId, managementVlan, receptionVlan, dataVlan, nativeVlan, deadVlan);
         }
     }
 
