@@ -670,8 +670,8 @@ public sealed class TssCliCommandProcessor
         sb.AppendLine("!");
         foreach (var v in d.Vlans.OrderBy(x => x.Key))
         {
-            var name = VlanName(v.Value);
-            var suspended = IsVlanSuspended(d, v.Key);
+            var name = d.GetVlanName(v.Key);
+            var suspended = d.IsVlanSuspended(v.Key);
             sb.AppendLine("vlan " + v.Key);
             if (!string.Equals(name, "default", StringComparison.OrdinalIgnoreCase)) sb.AppendLine(" name " + name);
             if (suspended) sb.AppendLine(" state suspend");
