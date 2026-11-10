@@ -239,7 +239,7 @@ public sealed class TssNetworkRunProfile
     }
 }
 
-public enum TssNetworkCliMode { UserExec, PrivilegedExec, GlobalConfig, InterfaceConfig, SubinterfaceConfig, LineConfig, VlanConfig }
+public enum TssNetworkCliMode { UserExec, PrivilegedExec, GlobalConfig, InterfaceConfig, InterfaceRangeConfig, SubinterfaceConfig, LineConfig, VlanConfig }
 
 
 // Runtime network session state.\n
@@ -410,9 +410,9 @@ public sealed class TssNetworkSessionState
 
     private static bool IsActiveVlan(NetworkDeviceState device, int vlan)
     {
-        return device != null
-            && device.Vlans.TryGetValue(vlan, out var name)
-            && (name ?? string.Empty).IndexOf("suspend", StringComparison.OrdinalIgnoreCase) < 0;
+        if (device == null) return false;
+        if (vlan == 1) return true;
+        return device.Vlans.ContainsKey(vlan) && !device.IsVlanSuspended(vlan);
     }
     public EndpointNetworkState GetOrCreateEndpoint(string key, string role, EquipmentCategory category = EquipmentCategory.DesktopPc)
     {
@@ -661,6 +661,7 @@ public sealed class NetworkDeviceState
     public bool AuxLoggingSynchronous;
     public bool VtyLoggingSynchronous;
     public readonly Dictionary<int, string> Vlans = new();
+    public readonly HashSet<int> SuspendedVlans = new();
     public readonly Dictionary<string, string> UserPasswords = new(StringComparer.OrdinalIgnoreCase);
     public readonly Dictionary<string, NetworkInterfaceState> Interfaces = new(StringComparer.OrdinalIgnoreCase);
     public readonly Dictionary<int, NetworkInterfaceState> Svis = new();
@@ -703,6 +704,8 @@ public sealed class NetworkDeviceState
             ? Interfaces.TryGetValue(ParentName(iface.Name), out var parent) && parent.CarrierUp
             : iface.CarrierUp;
     }
+    public bool IsVlanSuspended(int vlan) => vlan != 1 && (SuspendedVlans.Contains(vlan) || (Vlans.TryGetValue(vlan, out var name) && (name ?? string.Empty).EndsWith(" (suspended)", StringComparison.OrdinalIgnoreCase)));
+    public string GetVlanName(int vlan) => Vlans.TryGetValue(vlan, out var name) ? (name ?? string.Empty).Replace(" (suspended)", string.Empty, StringComparison.OrdinalIgnoreCase) : vlan == 1 ? "default" : "VLAN" + vlan;
     private bool IsRouterSubinterface(NetworkInterfaceState iface) => Category == EquipmentCategory.Router && iface != null && iface.Name.IndexOf('.') >= 0;
     private static string ParentName(string name) => name.Substring(0, name.IndexOf('.'));
     public NetworkDeviceState Clone()
@@ -724,6 +727,7 @@ public sealed class NetworkDeviceState
             SelectedVlan = SelectedVlan, SelectedLine = SelectedLine, SelectedInterfaces = new List<string>(SelectedInterfaces), ExpectedRole = ExpectedRole
         };
         foreach (var vlan in Vlans) copy.Vlans[vlan.Key] = vlan.Value;
+        foreach (var vlan in SuspendedVlans) copy.SuspendedVlans.Add(vlan);
         foreach (var user in UserPasswords) copy.UserPasswords[user.Key] = user.Value;
         foreach (var pair in Interfaces) copy.Interfaces[pair.Key] = pair.Value.Clone();
         foreach (var pair in Svis) copy.Svis[pair.Key] = pair.Value.Clone();

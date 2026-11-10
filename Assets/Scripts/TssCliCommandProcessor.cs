@@ -107,7 +107,7 @@ public sealed class TssCliCommandProcessor
             return device.Mode is TssNetworkCliMode.UserExec or TssNetworkCliMode.PrivilegedExec
                 ? ExecuteExec(device, command)
                 : Invalid(device);
-        if (device.Mode is TssNetworkCliMode.GlobalConfig or TssNetworkCliMode.InterfaceConfig or TssNetworkCliMode.SubinterfaceConfig or TssNetworkCliMode.LineConfig or TssNetworkCliMode.VlanConfig)
+        if (device.Mode is TssNetworkCliMode.GlobalConfig or TssNetworkCliMode.InterfaceConfig or TssNetworkCliMode.InterfaceRangeConfig or TssNetworkCliMode.SubinterfaceConfig or TssNetworkCliMode.LineConfig or TssNetworkCliMode.VlanConfig)
         {
             if (lower is "line console 0" or "line con 0") return SelectLine(device, "console");
             if (lower is "line aux 0" or "line auxiliary 0") return device.Category == EquipmentCategory.Router ? SelectLine(device, "aux") : Invalid(device);
@@ -117,9 +117,9 @@ public sealed class TssCliCommandProcessor
                 return SelectInterfaces(device, command.Substring(command.IndexOf(' ') + 1).Trim());
         }
         if (device.Mode == TssNetworkCliMode.GlobalConfig) return Global(device, command);
-        if (device.Mode is TssNetworkCliMode.InterfaceConfig or TssNetworkCliMode.SubinterfaceConfig) return Interface(device, command);
+        if (device.Mode is TssNetworkCliMode.InterfaceConfig or TssNetworkCliMode.InterfaceRangeConfig or TssNetworkCliMode.SubinterfaceConfig) return Interface(device, command);
         if (device.Mode == TssNetworkCliMode.LineConfig) return Line(device, command);
-        if (device.Mode == TssNetworkCliMode.VlanConfig) return Vlan(device, command);
+        if (device.Mode == TssNetworkCliMode.VlanConfig) return TrySelectVlan(device, command) ? Changed(device, string.Empty) : Vlan(device, command);
         return Invalid(device);
     }
 
@@ -156,8 +156,8 @@ public sealed class TssCliCommandProcessor
             d.SelectedInterfaces.RemoveAll(name => name.Equals(subinterface, StringComparison.OrdinalIgnoreCase));
             return Changed(d, string.Empty);
         }
-        if (lower.StartsWith("no vlan ") && d.Category == EquipmentCategory.Switch && int.TryParse(parts.LastOrDefault(), out var removeVlan) && ValidVlan(removeVlan) && removeVlan != 1) { d.Vlans.Remove(removeVlan); return Changed(d, string.Empty); }
-        if (lower.StartsWith("vlan ") && d.Category == EquipmentCategory.Switch && int.TryParse(parts.LastOrDefault(), out var vlan) && ValidVlan(vlan)) { d.SelectedVlan = vlan; if (!d.Vlans.ContainsKey(vlan)) d.Vlans[vlan] = "VLAN" + vlan; d.Mode = TssNetworkCliMode.VlanConfig; return Changed(d, string.Empty); }
+        if (lower.StartsWith("no vlan ") && d.Category == EquipmentCategory.Switch && int.TryParse(parts.LastOrDefault(), out var removeVlan) && ValidVlan(removeVlan) && removeVlan != 1) { d.Vlans.Remove(removeVlan); d.SuspendedVlans.Remove(removeVlan); return Changed(d, string.Empty); }
+        if (TrySelectVlan(d, command)) return Changed(d, string.Empty);
         if (lower.StartsWith("no ip route ") && parts.Length == 5 && ValidAddress(parts[2]) && ValidRouteMask(parts[3]) && ValidAddress(parts[4])) { d.Routes.RemoveAll(route => route.Network == parts[2] && route.Mask == parts[3] && route.NextHop == parts[4]); return Changed(d, string.Empty); }
         if (lower.StartsWith("interface ") || lower.StartsWith("int "))
             return SelectInterfaces(d, command.Substring(command.IndexOf(' ') + 1));
@@ -188,8 +188,18 @@ public sealed class TssCliCommandProcessor
                 d.Interfaces[name] = new NetworkInterfaceState { Name = name, AdminUp = d.Category == EquipmentCategory.Switch || name.IndexOf('.') >= 0 };
         d.Mode = d.Category == EquipmentCategory.Router && names.Any(name => name.IndexOf('.') >= 0)
             ? TssNetworkCliMode.SubinterfaceConfig
-            : TssNetworkCliMode.InterfaceConfig;
+            : selection.StartsWith("range ", StringComparison.OrdinalIgnoreCase) ? TssNetworkCliMode.InterfaceRangeConfig : TssNetworkCliMode.InterfaceConfig;
         return Result(d, string.Empty, false, true);
+    }
+
+    private static bool TrySelectVlan(NetworkDeviceState d, string command)
+    {
+        var parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (d.Category != EquipmentCategory.Switch || parts.Length != 2 || !parts[0].Equals("vlan", StringComparison.OrdinalIgnoreCase) || !int.TryParse(parts[1], out var vlan) || !ValidVlan(vlan)) return false;
+        d.SelectedVlan = vlan;
+        if (!d.Vlans.ContainsKey(vlan)) d.Vlans[vlan] = vlan == 1 ? "default" : "VLAN" + vlan;
+        d.Mode = TssNetworkCliMode.VlanConfig;
+        return true;
     }
 
     private static TssCliResult SelectLine(NetworkDeviceState d, string line)
@@ -300,9 +310,9 @@ public sealed class TssCliCommandProcessor
     {
         var lower = command.ToLowerInvariant();
         var parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries); if (parts.Length == 2 && parts[0].Equals("name", StringComparison.OrdinalIgnoreCase)) { d.Vlans[d.SelectedVlan] = parts[1]; return Changed(d, string.Empty); }
-        if (lower == "no name") { d.Vlans[d.SelectedVlan] = "VLAN" + d.SelectedVlan; return Changed(d, string.Empty); }
-        if (command.Equals("state suspend", StringComparison.OrdinalIgnoreCase)) { d.Vlans[d.SelectedVlan] = d.Vlans[d.SelectedVlan] + " (suspended)"; return Changed(d, string.Empty); }
-        if (lower == "no state suspend") { d.Vlans[d.SelectedVlan] = d.Vlans[d.SelectedVlan].Replace(" (suspended)", string.Empty, StringComparison.OrdinalIgnoreCase); return Changed(d, string.Empty); }
+        if (lower == "no name") { d.Vlans[d.SelectedVlan] = d.SelectedVlan == 1 ? "default" : "VLAN" + d.SelectedVlan; return Changed(d, string.Empty); }
+        if (command.Equals("state suspend", StringComparison.OrdinalIgnoreCase)) { if (d.SelectedVlan == 1) return Result(d, "% VLAN 1 cannot be suspended.\n", false, false); d.SuspendedVlans.Add(d.SelectedVlan); return Changed(d, string.Empty); }
+        if (lower == "no state suspend") { d.SuspendedVlans.Remove(d.SelectedVlan); d.Vlans[d.SelectedVlan] = d.GetVlanName(d.SelectedVlan); return Changed(d, string.Empty); }
         return Invalid(d);
     }
 
@@ -346,7 +356,7 @@ public sealed class TssCliCommandProcessor
         _network.Evidence.Add(evidenceId);
         _session.NotifyNetworkStateChanged();
     }
-    private TssCliResult Exit(NetworkDeviceState d) { d.Mode = d.Mode switch { TssNetworkCliMode.InterfaceConfig or TssNetworkCliMode.SubinterfaceConfig or TssNetworkCliMode.LineConfig or TssNetworkCliMode.VlanConfig => TssNetworkCliMode.GlobalConfig, TssNetworkCliMode.GlobalConfig => TssNetworkCliMode.PrivilegedExec, TssNetworkCliMode.PrivilegedExec => TssNetworkCliMode.UserExec, _ => TssNetworkCliMode.UserExec }; return Result(d, string.Empty, false, true); }
+    private TssCliResult Exit(NetworkDeviceState d) { d.Mode = d.Mode switch { TssNetworkCliMode.InterfaceConfig or TssNetworkCliMode.InterfaceRangeConfig or TssNetworkCliMode.SubinterfaceConfig or TssNetworkCliMode.LineConfig or TssNetworkCliMode.VlanConfig => TssNetworkCliMode.GlobalConfig, TssNetworkCliMode.GlobalConfig => TssNetworkCliMode.PrivilegedExec, TssNetworkCliMode.PrivilegedExec => TssNetworkCliMode.UserExec, _ => TssNetworkCliMode.UserExec }; return Result(d, string.Empty, false, true); }
     private TssCliResult Changed(NetworkDeviceState d, string text) { _session.NotifyNetworkStateChanged(); return Result(d, text, true, true); }
     private static TssCliResult Result(NetworkDeviceState d, string text, bool changed, bool accepted) => new(text, d.Mode, changed, accepted);
     private static TssCliResult Invalid(NetworkDeviceState d) => Result(d, "% Invalid input detected at '^' marker.\n", false, false);
@@ -548,7 +558,7 @@ public sealed class TssCliCommandProcessor
             ? "description <text> | no description\nip address <address> <mask> | ip add <address> <mask>\nencapsulation dot1q <vlan>\n(no shutdown commands; state is inherited from the parent interface)\n"
             : "shutdown | no shutdown\ndescription <text> | no description\nswitchport trunk encapsulation dot1q\nswitchport mode access|trunk\nswitchport access vlan <id> | no switchport access vlan\nswitchport trunk allowed vlan <id>[,<id>]\nswitchport trunk native vlan <id>\ninterface Vlan<id>\nip address <address> <mask> | ip add <address> <mask>\n",
         TssNetworkCliMode.LineConfig => "password <value>\nlogin | no login | login local\nno exec | exec (VTY 5-15)\nexec-timeout <minutes>\ntransport input ssh\nlogging synchronous\n",
-        TssNetworkCliMode.VlanConfig => category == EquipmentCategory.Switch ? "name <name>\nstate suspend\n" : "% VLAN configuration is switch-only.\n",
+        TssNetworkCliMode.VlanConfig => category == EquipmentCategory.Switch ? "name <name>\nno name\nstate suspend\nno state suspend\nvlan <id>\n" : "% VLAN configuration is switch-only.\n",
         _ => category == EquipmentCategory.Router
             ? "enable | configure terminal | show running-config | show startup-config | show ip interface brief | show interfaces | show ip route | ping <ip>\n"
             : "enable | configure terminal | show running-config | show startup-config | show vlan brief | show interfaces trunk | show ip interface brief | show interfaces | show mac address-table | ping <ip>\n"
@@ -581,11 +591,9 @@ public sealed class TssCliCommandProcessor
             if (!interfaces.Any(i => i.Name.Equals(name, StringComparison.OrdinalIgnoreCase)))
                 interfaces.Add(new NetworkInterfaceState { Name = name, AdminUp = true });
         }
-        foreach (var name in new[] { "GigabitEthernet0/1", "GigabitEthernet0/2" })
-            if (!interfaces.Any(i => i.Name.Equals(name, StringComparison.OrdinalIgnoreCase) || i.Name.Equals(name.Replace("GigabitEthernet", "Gi", StringComparison.OrdinalIgnoreCase), StringComparison.OrdinalIgnoreCase)))
-                interfaces.Add(new NetworkInterfaceState { Name = name, AdminUp = true });
         foreach (var i in interfaces.OrderBy(x => InterfaceOrderKey(x.Name), StringComparer.OrdinalIgnoreCase))
         {
+            if (IsSwitchGigabitInterface(d, i.Name)) continue;
             sb.AppendLine("interface " + SwitchRunningConfigInterfaceName(i.Name));
             if (!string.IsNullOrWhiteSpace(i.Description)) sb.AppendLine(" description " + i.Description);
             if (i.TrunkEncapsulationDot1q && i.IsTrunk)
@@ -662,9 +670,11 @@ public sealed class TssCliCommandProcessor
         sb.AppendLine("!");
         foreach (var v in d.Vlans.OrderBy(x => x.Key))
         {
+            var name = VlanName(v.Value);
+            var suspended = IsVlanSuspended(d, v.Key);
             sb.AppendLine("vlan " + v.Key);
-            if (!string.Equals(v.Value, "default", StringComparison.OrdinalIgnoreCase))
-                sb.AppendLine(" name " + v.Value);
+            if (!string.Equals(name, "default", StringComparison.OrdinalIgnoreCase)) sb.AppendLine(" name " + name);
+            if (suspended) sb.AppendLine(" state suspend");
             sb.AppendLine("!");
         }
         foreach (var r in d.Routes)
@@ -758,10 +768,10 @@ public sealed class TssCliCommandProcessor
 
     private static string RouterRunningConfigInterfaceName(string name)
     {
-        if (name.Equals("Fa0/0", StringComparison.OrdinalIgnoreCase)) return "GigabitEthernet0/0";
-        if (name.Equals("Fa0/1", StringComparison.OrdinalIgnoreCase)) return "GigabitEthernet0/1";
-        if (name.StartsWith("Fa0/0.", StringComparison.OrdinalIgnoreCase)) return "GigabitEthernet0/0" + name.Substring(5);
-        if (name.StartsWith("Fa0/1.", StringComparison.OrdinalIgnoreCase)) return "GigabitEthernet0/1" + name.Substring(5);
+        if (name.Equals("Fa0/0", StringComparison.OrdinalIgnoreCase)) return "FastEthernet0/0";
+        if (name.Equals("Fa0/1", StringComparison.OrdinalIgnoreCase)) return "FastEthernet0/1";
+        if (name.StartsWith("Fa0/0.", StringComparison.OrdinalIgnoreCase)) return "FastEthernet0/0" + name.Substring(5);
+        if (name.StartsWith("Fa0/1.", StringComparison.OrdinalIgnoreCase)) return "FastEthernet0/1" + name.Substring(5);
         return name;
     }
 
@@ -865,9 +875,10 @@ public sealed class TssCliCommandProcessor
         }
         return key.ToString();
     }
-    private static string Vlans(NetworkDeviceState d) { var ports = new Dictionary<int, List<string>>(); foreach (var i in d.Interfaces.Values) if (!i.IsTrunk) { if (!ports.TryGetValue(i.AccessVlan, out var list)) ports[i.AccessVlan] = list = new List<string>(); list.Add(i.Name); } var ids = new SortedSet<int> { 1 }; foreach (var v in d.Vlans.Keys) ids.Add(v); foreach (var v in ports.Keys) ids.Add(v); var sb = new StringBuilder("VLAN Name                             Status    Ports\n---- -------------------------------- --------- -------------------------------\n"); foreach (var id in ids) { var name = d.Vlans.TryGetValue(id, out var configured) ? configured.Replace(" (suspended)", string.Empty, StringComparison.OrdinalIgnoreCase) : id == 1 ? "default" : "VLAN" + id; ports.TryGetValue(id, out var list); sb.AppendLine($"{id,-4} {name,-32} active    {string.Join(", ", list?.OrderBy(InterfaceOrderKey, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>())}"); } return sb.ToString(); }
-    private static string Trunks(NetworkDeviceState d) { var sb = new StringBuilder(); foreach (var i in d.Interfaces.Values.Where(x => x.IsTrunk)) sb.AppendLine($"{i.Name} on 802.1q trunking\nNative vlan: {i.NativeVlan}\nVlans allowed on trunk: {string.Join(",", i.AllowedVlans.OrderBy(x => x))}"); return sb.Length == 0 ? "No active trunks.\n" : sb.ToString(); }
-    private static string Interfaces(NetworkDeviceState d) { var sb = new StringBuilder("Interface                  IP-Address      Status                Protocol\n"); foreach (var i in d.Svis.Values.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)) { var address = i.Name.Equals("Vlan1", StringComparison.OrdinalIgnoreCase) ? d.ManagementAddress : i.Address; var status = i.AdminUp ? "up" : "administratively down"; sb.AppendLine($"{i.Name,-26} {(string.IsNullOrWhiteSpace(address) ? "unassigned" : address),-15} {status,-21} {(i.AdminUp ? "up" : "down")}"); } foreach (var i in d.Interfaces.Values.Where(i => !IsLineEndpoint(i.Name))) { var adminUp = d.IsInterfaceAdminUp(i); var operational = d.IsInterfaceOperational(i); var status = adminUp ? (operational ? "up" : "down") : "administratively down"; sb.AppendLine($"{i.Name,-26} {(i.Address ?? "unassigned"),-15} {status,-21} {(operational ? "up" : "down")}"); } return sb.ToString(); }
+    private static string Vlans(NetworkDeviceState d) { var ports = new Dictionary<int, List<string>>(); foreach (var i in d.Interfaces.Values) if (!i.IsTrunk && !IsSwitchGigabitInterface(d, i.Name)) { if (!ports.TryGetValue(i.AccessVlan, out var list)) ports[i.AccessVlan] = list = new List<string>(); list.Add(i.Name); } var ids = new SortedSet<int> { 1 }; foreach (var v in d.Vlans.Keys) ids.Add(v); foreach (var v in ports.Keys) ids.Add(v); var sb = new StringBuilder("VLAN Name                             Status    Ports\n---- -------------------------------- --------- -------------------------------\n"); foreach (var id in ids) { var name = d.GetVlanName(id); ports.TryGetValue(id, out var list); sb.AppendLine($"{id,-4} {name,-32} {(d.IsVlanSuspended(id) ? "suspend" : "active"),-9} {string.Join(", ", list?.OrderBy(InterfaceOrderKey, StringComparer.OrdinalIgnoreCase) ?? Enumerable.Empty<string>())}"); } return sb.ToString(); }
+    private static bool IsSwitchGigabitInterface(NetworkDeviceState d, string name) => d.Category == EquipmentCategory.Switch && (name.StartsWith("Gi0/", StringComparison.OrdinalIgnoreCase) || name.StartsWith("GigabitEthernet0/", StringComparison.OrdinalIgnoreCase));
+    private static string Trunks(NetworkDeviceState d) { var sb = new StringBuilder(); foreach (var i in d.Interfaces.Values.Where(x => x.IsTrunk && !IsSwitchGigabitInterface(d, x.Name))) sb.AppendLine($"{i.Name} on 802.1q trunking\nNative vlan: {i.NativeVlan}\nVlans allowed on trunk: {string.Join(",", i.AllowedVlans.OrderBy(x => x))}"); return sb.Length == 0 ? "No active trunks.\n" : sb.ToString(); }
+    private static string Interfaces(NetworkDeviceState d) { var sb = new StringBuilder("Interface                  IP-Address      Status                Protocol\n"); foreach (var i in d.Svis.Values.OrderBy(x => x.Name, StringComparer.OrdinalIgnoreCase)) { var address = i.Name.Equals("Vlan1", StringComparison.OrdinalIgnoreCase) ? d.ManagementAddress : i.Address; var status = i.AdminUp ? "up" : "administratively down"; sb.AppendLine($"{i.Name,-26} {(string.IsNullOrWhiteSpace(address) ? "unassigned" : address),-15} {status,-21} {(i.AdminUp ? "up" : "down")}"); } foreach (var i in d.Interfaces.Values.Where(i => !IsLineEndpoint(i.Name) && !IsSwitchGigabitInterface(d, i.Name))) { var adminUp = d.IsInterfaceAdminUp(i); var operational = d.IsInterfaceOperational(i); var status = adminUp ? (operational ? "up" : "down") : "administratively down"; var name = d.Category == EquipmentCategory.Router ? RouterRunningConfigInterfaceName(i.Name) : i.Name; sb.AppendLine($"{name,-26} {(i.Address ?? "unassigned"),-15} {status,-21} {(operational ? "up" : "down")}"); } return sb.ToString(); }
     private static bool IsLineEndpoint(string name) => !string.IsNullOrWhiteSpace(name) && (name.Equals("Console", StringComparison.OrdinalIgnoreCase) || name.Equals("Con", StringComparison.OrdinalIgnoreCase) || name.Equals("Aux", StringComparison.OrdinalIgnoreCase) || name.Equals("Auxiliary", StringComparison.OrdinalIgnoreCase));
     private string Routes(NetworkDeviceState d) => BuildRoutes(d, _network);
     private static string BuildRoutes(NetworkDeviceState d, TssNetworkSessionState network)
@@ -889,8 +900,9 @@ public sealed class TssCliCommandProcessor
         {
             var prefix = TssNetworkAddress.PrefixLength(i.Mask);
             var networkAddress = TssNetworkAddress.NetworkAddress(i.Address, i.Mask);
-            sb.AppendLine($"C    {networkAddress}/{prefix} is directly connected, {i.Name}");
-            sb.AppendLine($"L    {i.Address}/32 is directly connected, {i.Name}");
+            var interfaceName = d.Category == EquipmentCategory.Router ? RouterRunningConfigInterfaceName(i.Name) : i.Name;
+            sb.AppendLine($"C    {networkAddress}/{prefix} is directly connected, {interfaceName}");
+            sb.AppendLine($"L    {i.Address}/32 is directly connected, {interfaceName}");
         }
         foreach (var r in installed.OrderByDescending(r => TssNetworkAddress.PrefixLength(r.Mask)).ThenBy(r => r.Network, StringComparer.Ordinal).ThenBy(r => r.NextHop, StringComparer.Ordinal))
         {

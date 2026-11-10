@@ -13,6 +13,7 @@ public enum CiscoCliMode
     PrivilegedExec,  // Switch#
     GlobalConfig,    // Switch(config)#
     InterfaceConfig, // Switch(config-if)#
+    InterfaceRangeConfig,
     SubinterfaceConfig, // Router(config-subif)#
     LineConfig,      // Switch(config-line)#
     VlanConfig       // Switch(config-vlan)#
@@ -305,6 +306,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
             CiscoCliMode.PrivilegedExec => $"{host}#",
             CiscoCliMode.GlobalConfig => $"{host}(config)#",
             CiscoCliMode.InterfaceConfig => $"{host}(config-if)#",
+            CiscoCliMode.InterfaceRangeConfig => $"{host}(config-if-range)#",
             CiscoCliMode.SubinterfaceConfig => $"{host}(config-subif)#",
             CiscoCliMode.LineConfig => $"{host}(config-line)#",
             CiscoCliMode.VlanConfig => $"{host}(config-vlan)#",
@@ -524,6 +526,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
                     TssNetworkCliMode.PrivilegedExec => CiscoCliMode.PrivilegedExec,
                     TssNetworkCliMode.GlobalConfig => CiscoCliMode.GlobalConfig,
                     TssNetworkCliMode.InterfaceConfig => CiscoCliMode.InterfaceConfig,
+                    TssNetworkCliMode.InterfaceRangeConfig => CiscoCliMode.InterfaceRangeConfig,
                     TssNetworkCliMode.SubinterfaceConfig => CiscoCliMode.SubinterfaceConfig,
                     TssNetworkCliMode.LineConfig => CiscoCliMode.LineConfig,
                     TssNetworkCliMode.VlanConfig => CiscoCliMode.VlanConfig,
@@ -597,12 +600,12 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         }
         else if (verb == "interface" || verb == "int")
         {
-            if (_cliMode == CiscoCliMode.GlobalConfig || _cliMode == CiscoCliMode.InterfaceConfig || _cliMode == CiscoCliMode.SubinterfaceConfig)
+            if (_cliMode == CiscoCliMode.GlobalConfig || _cliMode == CiscoCliMode.InterfaceConfig || _cliMode == CiscoCliMode.InterfaceRangeConfig || _cliMode == CiscoCliMode.SubinterfaceConfig)
             {
-                _configuredInterface = parts.Length > 1 ? parts[1] : "FastEthernet0/1";
+                _configuredInterface = parts.Length > 1 ? string.Join(" ", parts.Skip(1)) : "FastEthernet0/1";
                 _cliMode = _state != null && _state.Category == EquipmentCategory.Router && _configuredInterface.Contains('.')
                     ? CiscoCliMode.SubinterfaceConfig
-                    : CiscoCliMode.InterfaceConfig;
+                    : _configuredInterface.StartsWith("range ", StringComparison.OrdinalIgnoreCase) ? CiscoCliMode.InterfaceRangeConfig : CiscoCliMode.InterfaceConfig;
             }
             else
             {
@@ -625,7 +628,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         }
         else if (lower == "exit")
         {
-            if (_cliMode == CiscoCliMode.InterfaceConfig || _cliMode == CiscoCliMode.SubinterfaceConfig || _cliMode == CiscoCliMode.LineConfig || _cliMode == CiscoCliMode.VlanConfig)
+            if (_cliMode == CiscoCliMode.InterfaceConfig || _cliMode == CiscoCliMode.InterfaceRangeConfig || _cliMode == CiscoCliMode.SubinterfaceConfig || _cliMode == CiscoCliMode.LineConfig || _cliMode == CiscoCliMode.VlanConfig)
             {
                 _cliMode = CiscoCliMode.GlobalConfig;
             }
@@ -671,21 +674,21 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         }
         else if (lower == "no shutdown" || lower == "no shut")
         {
-            if (_cliMode == CiscoCliMode.InterfaceConfig)
+            if (_cliMode == CiscoCliMode.InterfaceConfig || _cliMode == CiscoCliMode.InterfaceRangeConfig)
                 AppendToConsole($"%LINK-3-UPDOWN: Interface {_configuredInterface}, changed state to up\n%LINEPROTO-5-UPDOWN: Line protocol on Interface {_configuredInterface}, changed state to up\n");
             else
                 AppendToConsole("% Command only valid in interface configuration mode.\n");
         }
         else if (lower == "shutdown" || lower == "shut")
         {
-            if (_cliMode == CiscoCliMode.InterfaceConfig)
+            if (_cliMode == CiscoCliMode.InterfaceConfig || _cliMode == CiscoCliMode.InterfaceRangeConfig)
                 AppendToConsole($"%LINK-5-CHANGED: Interface {_configuredInterface}, changed state to administratively down\n%LINEPROTO-5-UPDOWN: Line protocol on Interface {_configuredInterface}, changed state to down\n");
             else
                 AppendToConsole("% Command only valid in interface configuration mode.\n");
         }
         else if (lower.StartsWith("ip address"))
         {
-            if (_cliMode == CiscoCliMode.InterfaceConfig)
+            if (_cliMode == CiscoCliMode.InterfaceConfig || _cliMode == CiscoCliMode.InterfaceRangeConfig)
             {
                 if (parts.Length >= 4)
                     AppendToConsole($"Configured interface {_configuredInterface} with IP {parts[2]} {parts[3]}.\n");
@@ -863,7 +866,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
                 "  exit                       Exit from configure mode\n" +
                 "  end                        Exit to privileged EXEC mode\n",
 
-            CiscoCliMode.InterfaceConfig or CiscoCliMode.SubinterfaceConfig =>
+            CiscoCliMode.InterfaceConfig or CiscoCliMode.InterfaceRangeConfig or CiscoCliMode.SubinterfaceConfig =>
                 "Interface Configuration Commands:\n" +
                 "  ip address <ip> <mask> | ip add <ip> <mask>     Set IPv4 address on interface\n" +
                 "  no shutdown                Enable interface\n" +
@@ -981,12 +984,11 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
                     vlanIds.Add(vlanId);
             foreach (var vlanId in vlanIds)
             {
-                var vlanName = networkDevice != null && networkDevice.Vlans.TryGetValue(vlanId, out var configuredName)
-                    ? configuredName.Replace(" (suspended)", string.Empty, StringComparison.OrdinalIgnoreCase)
-                    : vlanId == 1 ? "default" : "VLAN" + vlanId;
+                var vlanName = networkDevice != null ? networkDevice.GetVlanName(vlanId) : vlanId == 1 ? "default" : "VLAN" + vlanId;
                 sb.AppendLine($"vlan {vlanId}");
                 if (!string.Equals(vlanName, "default", StringComparison.OrdinalIgnoreCase))
                     sb.AppendLine($" name {vlanName}");
+                if (networkDevice != null && networkDevice.IsVlanSuspended(vlanId)) sb.AppendLine(" state suspend");
                 sb.AppendLine("!");
             }
         }
@@ -1102,11 +1104,9 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
                 vlanIds.Add(vlanId);
         foreach (var vlanId in vlanIds)
         {
-            var name = networkDevice != null && networkDevice.Vlans.TryGetValue(vlanId, out var configuredName)
-                ? configuredName.Replace(" (suspended)", string.Empty, StringComparison.OrdinalIgnoreCase)
-                : vlanId == 1 ? "default" : "VLAN" + vlanId;
+            var name = networkDevice != null ? networkDevice.GetVlanName(vlanId) : vlanId == 1 ? "default" : "VLAN" + vlanId;
             portsByVlan.TryGetValue(vlanId, out var ports);
-            sb.AppendLine($"{vlanId,-4} {name,-32} active    {string.Join(", ", ports ?? new List<string>())}");
+            sb.AppendLine($"{vlanId,-4} {name,-32} {(networkDevice != null && networkDevice.IsVlanSuspended(vlanId) ? "suspend" : "active"),-9} {string.Join(", ", ports ?? new List<string>())}");
         }
         sb.AppendLine("1002 fddi-default                     act/unsup ");
         sb.AppendLine("1003 token-ring-default               act/unsup ");

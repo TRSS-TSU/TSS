@@ -438,7 +438,7 @@ public sealed class TssNetworkReachabilityEvaluator
             if ((device.Category == EquipmentCategory.Switch || device.Category == EquipmentCategory.Router) && device.Interfaces.Count > 0) return true;
         return false;
     }
-    private static bool ActiveVlan(NetworkDeviceState device, int vlan) => device != null && device.Vlans.TryGetValue(vlan, out var name) && (name ?? string.Empty).IndexOf("suspend", StringComparison.OrdinalIgnoreCase) < 0;
+    private static bool ActiveVlan(NetworkDeviceState device, int vlan) => device != null && device.Vlans.ContainsKey(vlan) && !device.IsVlanSuspended(vlan);
     private static bool HasProviderRoute(NetworkDeviceState router, TssNetworkRunProfile profile)
     {
         foreach (var route in router.Routes)

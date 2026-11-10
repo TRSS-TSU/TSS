@@ -9,6 +9,76 @@ using Object = UnityEngine.Object;
 public sealed class TssDeviceSessionTests
 {
     [Test]
+    public void TuesdayCliTasksShareConsistentStateAndDisplay()
+    {
+        var sessionObject = new GameObject("TuesdayCliSession");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        try
+        {
+            typeof(TssTrainingSession).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(session, null);
+            session.BeginScenario(scenario);
+            var sw = new TssCliCommandProcessor(session, "Switch", EquipmentCategory.Switch, "AN-1");
+            Assert.IsTrue(sw.Execute("enable").Accepted);
+            Assert.IsTrue(sw.Execute("configure terminal").Accepted);
+            Assert.IsTrue(sw.Execute("interface range Fa0/2 - Fa0/3").Accepted);
+            Assert.AreEqual(TssNetworkCliMode.InterfaceRangeConfig, sw.Device.Mode);
+            Assert.IsTrue(sw.Execute("switchport mode trunk").Accepted);
+            Assert.IsTrue(sw.Execute("exit").Accepted);
+            Assert.AreEqual(TssNetworkCliMode.GlobalConfig, sw.Device.Mode);
+            Assert.IsTrue(sw.Execute("vlan 1").Accepted);
+            Assert.IsFalse(sw.Execute("state suspend").Accepted);
+            Assert.IsTrue(sw.Execute("name Management").Accepted);
+            Assert.IsTrue(sw.Execute("vlan 10").Accepted);
+            Assert.IsTrue(sw.Execute("name Data").Accepted);
+            Assert.IsTrue(sw.Execute("state suspend").Accepted);
+            Assert.IsTrue(sw.Execute("name Sales").Accepted);
+            Assert.IsTrue(sw.Execute("vlan 20").Accepted);
+            Assert.IsTrue(sw.Execute("name Engineering").Accepted);
+            Assert.IsTrue(sw.Execute("vlan 10").Accepted);
+            Assert.AreEqual(TssNetworkCliMode.VlanConfig, sw.Device.Mode);
+            Assert.AreEqual(10, sw.Device.SelectedVlan);
+            Assert.AreEqual("Sales", sw.Device.Vlans[10]);
+            Assert.IsTrue(sw.Execute("end").Accepted);
+            var vlanOutput = sw.Execute("show vlan brief").Output;
+            StringAssert.Contains("1    Management", vlanOutput);
+            StringAssert.Contains("active", vlanOutput);
+            StringAssert.Contains("10   Sales", vlanOutput);
+            StringAssert.Contains("suspend", vlanOutput);
+            StringAssert.Contains("20   Engineering", vlanOutput);
+            Assert.IsTrue(sw.Execute("copy run start").Accepted);
+            var savedConfig = TssCliCommandProcessor.BuildRunningConfig(sw.Device.StartupSnapshot);
+            StringAssert.Contains("vlan 1" + Environment.NewLine + " name Management", savedConfig);
+            StringAssert.Contains("name Sales", savedConfig);
+            StringAssert.Contains("state suspend", savedConfig);
+            StringAssert.Contains("name Management", TssCliCommandProcessor.BuildRunningConfig(sw.Device));
+            Assert.IsTrue(sw.Execute("configure terminal").Accepted);
+            Assert.IsTrue(sw.Execute("vlan 10").Accepted);
+            Assert.IsTrue(sw.Execute("no state suspend").Accepted);
+            Assert.AreEqual("Sales", sw.Device.Vlans[10]);
+            StringAssert.DoesNotContain("state suspend", TssCliCommandProcessor.BuildRunningConfig(sw.Device));
+
+            sw.Device.Interfaces["Gi0/1"] = new NetworkInterfaceState { Name = "Gi0/1", AdminUp = true };
+            sw.Device.Interfaces["GigabitEthernet0/2"] = new NetworkInterfaceState { Name = "GigabitEthernet0/2", AdminUp = true };
+            StringAssert.DoesNotContain("GigabitEthernet", TssCliCommandProcessor.BuildRunningConfig(sw.Device));
+            StringAssert.DoesNotContain("Gi0/1", TssCliCommandProcessor.BuildResultsShowOutput(sw.Device, "show interfaces"));
+            StringAssert.DoesNotContain("GigabitEthernet0/2", TssCliCommandProcessor.BuildResultsShowOutput(sw.Device, "show vlan brief"));
+
+            var router = new TssCliCommandProcessor(session, "Router", EquipmentCategory.Router, "CN-1");
+            var routerConfig = TssCliCommandProcessor.BuildRunningConfig(router.Device);
+            StringAssert.Contains("interface FastEthernet0/0", routerConfig);
+            StringAssert.DoesNotContain("interface GigabitEthernet0/", routerConfig);
+            StringAssert.DoesNotContain("GigabitEthernet", TssCliCommandProcessor.BuildResultsShowOutput(router.Device, "show interfaces"));
+        }
+        finally
+        {
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
     public void ConsoleLineLoginGuardsTerminalOpenAndReturnToUserExec()
     {
         var sessionObject = new GameObject("ConsoleLoginSession", typeof(TssTrainingSession));
@@ -168,13 +238,13 @@ public sealed class TssDeviceSessionTests
             var defaults = processor.Execute("show running-config").Output;
             StringAssert.Contains("version 15.0" + Environment.NewLine + "!" + Environment.NewLine + "service timestamps debug datetime msec" + Environment.NewLine + "service timestamps log datetime msec" + Environment.NewLine + "no service password-encryption", defaults);
             StringAssert.Contains("no aaa new-model" + Environment.NewLine + "ip cef", defaults);
-            StringAssert.Contains("interface GigabitEthernet0/0" + Environment.NewLine + " no ip address" + Environment.NewLine + " shutdown", defaults);
-            StringAssert.Contains("interface GigabitEthernet0/1" + Environment.NewLine + " no ip address" + Environment.NewLine + " shutdown", defaults);
+            StringAssert.Contains("interface FastEthernet0/0" + Environment.NewLine + " no ip address" + Environment.NewLine + " shutdown", defaults);
+            StringAssert.Contains("interface FastEthernet0/1" + Environment.NewLine + " no ip address" + Environment.NewLine + " shutdown", defaults);
             StringAssert.Contains("ip forward-protocol nd", defaults);
             StringAssert.Contains("line con 0" + Environment.NewLine + "!" + Environment.NewLine + "line aux 0", defaults);
             StringAssert.Contains("line vty 0 4" + Environment.NewLine + " login" + Environment.NewLine + "!" + Environment.NewLine + "line vty 5 15" + Environment.NewLine + " login", defaults);
             StringAssert.Contains("banner motd #AUTHORIZED ACCESS#", defaults);
-            Assert.Less(defaults.IndexOf("interface GigabitEthernet0/0", System.StringComparison.Ordinal), defaults.IndexOf("banner motd #", System.StringComparison.Ordinal));
+            Assert.Less(defaults.IndexOf("interface FastEthernet0/0", System.StringComparison.Ordinal), defaults.IndexOf("banner motd #", System.StringComparison.Ordinal));
 
             Assert.IsTrue(processor.Execute("configure terminal").Accepted);
             Assert.IsTrue(processor.Execute("service password-encryption").Accepted);
@@ -470,10 +540,8 @@ public sealed class TssDeviceSessionTests
             var defaults = processor.Execute("show running-config").Output;
             StringAssert.Contains("version 15.0" + Environment.NewLine + "!" + Environment.NewLine + "service timestamps debug datetime msec" + Environment.NewLine + "service timestamps log datetime msec" + Environment.NewLine + "no service password-encryption", defaults);
             StringAssert.Contains("spanning-tree mode pvst", defaults);
-            StringAssert.Contains("interface FastEthernet0/1" + Environment.NewLine + " switchport mode dynamic auto", defaults);
             StringAssert.Contains("interface FastEthernet0/24" + Environment.NewLine + " switchport mode dynamic auto", defaults);
-            StringAssert.Contains("interface GigabitEthernet0/1" + Environment.NewLine + " switchport mode dynamic auto", defaults);
-            StringAssert.Contains("interface GigabitEthernet0/2" + Environment.NewLine + " switchport mode dynamic auto", defaults);
+            StringAssert.DoesNotContain("GigabitEthernet", defaults);
             StringAssert.Contains("interface Vlan1" + Environment.NewLine + " no ip address" + Environment.NewLine + " shutdown", defaults);
             StringAssert.Contains("ip classless", defaults);
             StringAssert.Contains("line con 0" + Environment.NewLine + "!" + Environment.NewLine + "line vty 0 4" + Environment.NewLine + " login" + Environment.NewLine + "!" + Environment.NewLine + "line vty 5 15" + Environment.NewLine + " login", defaults);
@@ -639,7 +707,8 @@ public sealed class TssDeviceSessionTests
             Assert.AreEqual(10, processor.Device.VtyExecTimeoutMinutes);
             Assert.IsTrue(processor.Device.VtyTransportInputSsh);
             Assert.IsTrue(processor.Device.VtyLoggingSynchronous);
-            Assert.AreEqual("Data (suspended)", processor.Device.Vlans[10]);
+            Assert.AreEqual("Data", processor.Device.Vlans[10]);
+            Assert.IsTrue(processor.Device.SuspendedVlans.Contains(10));
             Assert.IsTrue(processor.Execute("disable").Accepted);
             Assert.AreEqual(TssNetworkCliMode.UserExec, processor.Device.Mode);
             var enableChallenge = processor.Execute("enable");
@@ -699,10 +768,10 @@ public sealed class TssDeviceSessionTests
             Assert.IsTrue(processor.Execute("int Fa0/0.10").Accepted);
             Assert.AreEqual(TssNetworkCliMode.InterfaceConfig, processor.Device.Mode);
             var defaultRunning = processor.Execute("do show running-config").Output;
-            StringAssert.Contains("interface GigabitEthernet0/0\r\n no ip address\r\n shutdown\r\n!", defaultRunning);
-            StringAssert.Contains("interface GigabitEthernet0/0.10\r\n no ip address\r\n!", defaultRunning);
+            StringAssert.Contains("interface FastEthernet0/0\r\n no ip address\r\n shutdown\r\n!", defaultRunning);
+            StringAssert.Contains("interface FastEthernet0/0.10\r\n no ip address\r\n!", defaultRunning);
             StringAssert.Contains("\r\n!\r\n", defaultRunning);
-            Assert.Less(defaultRunning.IndexOf("interface GigabitEthernet0/0.2", StringComparison.Ordinal), defaultRunning.IndexOf("interface GigabitEthernet0/0.10", StringComparison.Ordinal));
+            Assert.Less(defaultRunning.IndexOf("interface FastEthernet0/0.2", StringComparison.Ordinal), defaultRunning.IndexOf("interface FastEthernet0/0.10", StringComparison.Ordinal));
             Assert.IsFalse(processor.Execute("switchport mode trunk").Accepted);
             Assert.IsTrue(processor.Execute("encapsulation dot1q 10").Accepted);
             Assert.IsTrue(processor.Execute("ip add 192.168.10.1 255.255.255.0").Accepted);

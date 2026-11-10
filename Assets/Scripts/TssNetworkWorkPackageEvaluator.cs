@@ -298,8 +298,8 @@ public sealed class TssNetworkWorkPackageEvaluator
         if (device == null || !device.Vlans.TryGetValue(vlan, out var value))
             return false;
 
-        var suspended = value.IndexOf("(suspended)", StringComparison.OrdinalIgnoreCase) >= 0;
-        var actualName = value.Replace("(suspended)", string.Empty, StringComparison.OrdinalIgnoreCase).Trim();
+        var suspended = device.IsVlanSuspended(vlan);
+        var actualName = device.GetVlanName(vlan);
         return string.Equals(actualName, name, StringComparison.OrdinalIgnoreCase)
             && (!suspended || vlan == _state.Profile.DeadVlan);
     }
@@ -309,8 +309,8 @@ public sealed class TssNetworkWorkPackageEvaluator
         if (device == null || !device.Vlans.TryGetValue(vlan, out var value))
             return false;
 
-        return value.IndexOf("(suspended)", StringComparison.OrdinalIgnoreCase) >= 0
-            && string.Equals(value.Replace("(suspended)", string.Empty, StringComparison.OrdinalIgnoreCase).Trim(), name, StringComparison.OrdinalIgnoreCase);
+        return device.IsVlanSuspended(vlan)
+            && string.Equals(device.GetVlanName(vlan), name, StringComparison.OrdinalIgnoreCase);
     }
 
     private void CheckWp4Condition(bool condition, string id, string label, TssWorkPackageResult result)
