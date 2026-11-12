@@ -25,6 +25,10 @@ public sealed class TssTrainingSession : MonoBehaviour
     private HashSet<string> _effectiveEndpointCache;
     private bool _effectivePhysicalPathsCacheValid;
     private GameObject _carryVisual;
+    private EquipmentDefinition _carryVisualEquipment;
+    private Vector3 _appliedCarryLocalOffset;
+    private Vector3 _appliedCarryLocalEuler;
+    private Vector3 _appliedCarryLocalScale;
     private TssPortEndpoint _selectedCableEndpoint;
     private int _nextConnectionNumber = 1;
 
@@ -46,6 +50,23 @@ public sealed class TssTrainingSession : MonoBehaviour
     private void Awake()
     {
         Instance = this;
+        AttachCarryAnchorToAnimatedChest();
+    }
+
+    private void AttachCarryAnchorToAnimatedChest()
+    {
+        if (!carryAnchor)
+            return;
+
+        var player = GameObject.FindGameObjectWithTag("Player");
+        var animator = player ? player.GetComponent<Animator>() : null;
+        var chest = animator && animator.isHuman
+            ? animator.GetBoneTransform(HumanBodyBones.Chest)
+            : null;
+        if (!chest && animator && animator.isHuman)
+            chest = animator.GetBoneTransform(HumanBodyBones.Spine);
+        if (chest && carryAnchor.parent != chest)
+            carryAnchor.SetParent(chest, true);
     }
 
     private void Start()
@@ -64,6 +85,29 @@ public sealed class TssTrainingSession : MonoBehaviour
         else if (fallbackScenario)
         {
             BeginScenario(fallbackScenario);
+        }
+    }
+
+    private void LateUpdate()
+    {
+        if (!_carryVisual || !_carryVisualEquipment || _carryVisualEquipment != HeldItem)
+            return;
+
+        // Reapply asset edits live while leaving direct gizmo adjustments alone.
+        if (_carryVisualEquipment.carryLocalOffset != _appliedCarryLocalOffset)
+        {
+            _carryVisual.transform.localPosition = _carryVisualEquipment.carryLocalOffset;
+            _appliedCarryLocalOffset = _carryVisualEquipment.carryLocalOffset;
+        }
+        if (_carryVisualEquipment.carryLocalEuler != _appliedCarryLocalEuler)
+        {
+            _carryVisual.transform.localRotation = Quaternion.Euler(_carryVisualEquipment.carryLocalEuler);
+            _appliedCarryLocalEuler = _carryVisualEquipment.carryLocalEuler;
+        }
+        if (_carryVisualEquipment.carryLocalScale != _appliedCarryLocalScale)
+        {
+            _carryVisual.transform.localScale = _carryVisualEquipment.carryLocalScale;
+            _appliedCarryLocalScale = _carryVisualEquipment.carryLocalScale;
         }
     }
 
@@ -969,6 +1013,7 @@ public sealed class TssTrainingSession : MonoBehaviour
     private void CreateCarryVisual(EquipmentDefinition equipment)
     {
         ClearCarryVisual();
+        AttachCarryAnchorToAnimatedChest();
         if (!carryAnchor || !equipment)
             return;
 
@@ -980,6 +1025,10 @@ public sealed class TssTrainingSession : MonoBehaviour
         _carryVisual.transform.localPosition = equipment.carryLocalOffset;
         _carryVisual.transform.localRotation = Quaternion.Euler(equipment.carryLocalEuler);
         _carryVisual.transform.localScale = equipment.carryLocalScale;
+        _carryVisualEquipment = equipment;
+        _appliedCarryLocalOffset = equipment.carryLocalOffset;
+        _appliedCarryLocalEuler = equipment.carryLocalEuler;
+        _appliedCarryLocalScale = equipment.carryLocalScale;
 
         foreach (var collider in _carryVisual.GetComponentsInChildren<Collider>(true))
             collider.enabled = false;
@@ -991,6 +1040,7 @@ public sealed class TssTrainingSession : MonoBehaviour
     private void CreateCableCarryVisual(TssCableDefinition cable)
     {
         ClearCarryVisual();
+        AttachCarryAnchorToAnimatedChest();
         if (!carryAnchor || !cable || !cable.carryPrefab)
             return;
 
@@ -1007,6 +1057,7 @@ public sealed class TssTrainingSession : MonoBehaviour
         if (_carryVisual)
             DestroyUnityObject(_carryVisual);
         _carryVisual = null;
+        _carryVisualEquipment = null;
     }
 
     private static string CleanDeviceName(string deviceName)

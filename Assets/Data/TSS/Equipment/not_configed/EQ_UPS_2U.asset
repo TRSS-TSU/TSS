@@ -23,8 +23,14 @@ MonoBehaviour:
   rackLocalEuler: {x: 0, y: 0, z: 0}
   rackLocalScale: {x: 1, y: 1, z: 1}
   carryLocalOffset: {x: 0, y: 0, z: 0}
-  carryLocalEuler: {x: -90, y: 0, z: 0}
-  carryLocalScale: {x: 1, y: 1, z: 1}
+  carryLocalEuler: {x: 0, y: 0, z: 0}
+  carryLocalScale: {x: 0, y: 0, z: 0}
+  carryHandSurfaceOffset: 0.04
+
+  carryHandPositionOffset: {x: 0, y: 0, z: 0}
+
+  carryLeftHandRotationOffset: {x: 0, y: 0, z: 0}
+  carryRightHandRotationOffset: {x: 0, y: 0, z: 0}
   placementPrefab: {fileID: 1676661429941216207, guid: 5f0c00a5cb292c1469df0615ac791b4c, type: 3}
   placementLocalOffset: {x: 0, y: 0, z: 0}
   placementLocalEuler: {x: 0, y: 0, z: 0}

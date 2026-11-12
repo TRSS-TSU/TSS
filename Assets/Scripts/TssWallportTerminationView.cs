@@ -476,7 +476,8 @@ public sealed class TssWallportTerminationView : MonoBehaviour
             var slotButton = _slots[pin - 1].gameObject.AddComponent<Button>();
             slotButton.targetGraphic = _slotImages[pin - 1];
             slotButton.onClick.AddListener(() => ClickSlot(pin));
-            var pinLabel = Label(_slots[pin - 1], "Pin label", pin.ToString(), new Vector2(0f, -2f), new Vector2(29f, 20f), 15, FontStyle.Bold, new Color(0.95f, 1f, 0.77f));
+            var labelY = !isPatchPanel && i >= 4 ? -26f : -2f;
+            var pinLabel = Label(_slots[pin - 1], "Pin label", pin.ToString(), new Vector2(0f, labelY), new Vector2(29f, 20f), 15, FontStyle.Bold, new Color(0.95f, 1f, 0.77f));
             pinLabel.alignment = TextAnchor.MiddleCenter;
         }
         Panel(_board, "Cable sheath", new Vector2(586f, -145f), new Vector2(185f, 112f), new Color(0.12f, 0.33f, 0.43f));

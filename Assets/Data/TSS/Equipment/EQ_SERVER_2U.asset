@@ -22,17 +22,16 @@ MonoBehaviour:
   rackLocalOffset: {x: -0.002, y: 0.0225, z: -0.2161}
   rackLocalEuler: {x: 0, y: 0, z: 0}
   rackLocalScale: {x: 1, y: 1, z: 1.06}
-  carryLocalOffset: {x: 0, y: -0.267, z: 0}
-  carryLocalEuler: {x: -90, y: 0, z: 180}
+  carryLocalOffset: {x: -0.05, y: -0.15, z: -0.08}
+  carryLocalEuler: {x: 278.5, y: 180, z: 179.59001}
   carryLocalScale: {x: 1, y: 1, z: 1}
-  placementPrefab: {fileID: 6430748568416650616, guid: a066c94de7f9cf244a42ef0c634aaab6, type: 3}
+  carryHandSurfaceOffset: 0.03
+  carryHandPositionOffset: {x: 0.015, y: 0.06, z: 0.01}
+  carryLeftHandRotationOffset: {x: 143.8, y: 0, z: 90}
+  carryRightHandRotationOffset: {x: 145.36, y: 0, z: -90}
+  swapCarryHandSides: 0
+  placementPrefab: {fileID: 0}
   placementLocalOffset: {x: 0, y: 0, z: 0}
   placementLocalEuler: {x: 0, y: 0, z: 0}
   placementLocalScale: {x: 1, y: 1, z: 1}
-  interfaces:
-  - name: GE01
-    connectorType: RJ45
-    label: GE0/1
-    supportedCableTypes: 0000000001000000
-    portAnchorPath: Model/Rack_Server_2U_A/Model/Ports/RS2U_Rear_RJ45_Port_01/GE01
-    interfaceFace: 1
+  interfaces: []

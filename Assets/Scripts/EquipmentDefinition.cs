@@ -37,6 +37,14 @@ public sealed class EquipmentDefinition : ScriptableObject
     public Vector3 carryLocalOffset;
     public Vector3 carryLocalEuler;
     public Vector3 carryLocalScale = Vector3.one;
+    [Min(0f), Tooltip("Distance beyond each side of the carried item's bounds; edits apply live while carrying in Play Mode.")]
+    public float carryHandSurfaceOffset = 0.04f;
+    [Tooltip("Local XYZ adjustment applied to both hand attach points; edits apply live while carrying in Play Mode.")]
+    public Vector3 carryHandPositionOffset;
+    [Tooltip("Euler adjustments from the carried item's rotation for each hand.")]
+    public Vector3 carryLeftHandRotationOffset;
+    public Vector3 carryRightHandRotationOffset;
+    public bool swapCarryHandSides;
     public GameObject placementPrefab;
     public Vector3 placementLocalOffset;
     public Vector3 placementLocalEuler;

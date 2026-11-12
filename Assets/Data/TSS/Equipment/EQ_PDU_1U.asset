@@ -22,17 +22,16 @@ MonoBehaviour:
   rackLocalOffset: {x: 0.646, y: 0.0225, z: -0.039}
   rackLocalEuler: {x: 0, y: 180, z: 0}
   rackLocalScale: {x: 1.045, y: 1, z: 1}
-  carryLocalOffset: {x: -0.6135, y: -0.0361, z: -0.0388}
-  carryLocalEuler: {x: -90, y: 0, z: 0}
+  carryLocalOffset: {x: -0.6249, y: 0.0695, z: -0.1263}
+  carryLocalEuler: {x: 353.49, y: -0.000000013426788, z: 2.000005}
   carryLocalScale: {x: 1, y: 1, z: 1}
-  placementPrefab: {fileID: 4005364528288020029, guid: 27049e98755a9a5438d897418555db5b, type: 3}
+  carryHandSurfaceOffset: 0.03
+  carryHandPositionOffset: {x: 0, y: 0.01, z: -0.08}
+  carryLeftHandRotationOffset: {x: 0, y: 0, z: 90}
+  carryRightHandRotationOffset: {x: 0, y: 0, z: -90}
+  swapCarryHandSides: 0
+  placementPrefab: {fileID: 0}
   placementLocalOffset: {x: 0, y: 0, z: 0}
   placementLocalEuler: {x: 0, y: 0, z: 0}
   placementLocalScale: {x: 1, y: 1, z: 1}
-  interfaces:
-  - name: Data-ready
-    connectorType: TBD
-    label: Future ports
-    supportedCableTypes: 
-    portAnchorPath: 
-    interfaceFace: 0
+  interfaces: []

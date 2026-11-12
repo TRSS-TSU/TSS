@@ -103,15 +103,13 @@ public sealed class TssCableVisual : MonoBehaviour
             prefab,
             endpointA.CableAnchorPosition,
             endpointA.CableConnectorRotation(routePoints[1] - routePoints[0]),
-            endpointA.CableConnectorScale(cable.radiusMeters),
             cable.visualMaterial,
             "Start Connector"
         );
         _endConnector = CreateEndpointConnector(
             prefab,
             endpointB.CableAnchorPosition,
-            endpointB.CableConnectorRotation(routePoints[routePoints.Length - 2] - routePoints[routePoints.Length - 1]),
-            endpointB.CableConnectorScale(cable.radiusMeters),
+            endpointB.CableConnectorRotation(routePoints[routePoints.Length - 1] - routePoints[routePoints.Length - 2]),
             cable.visualMaterial,
             "End Connector"
         );
@@ -121,7 +119,6 @@ public sealed class TssCableVisual : MonoBehaviour
         GameObject prefab,
         Vector3 position,
         Quaternion rotation,
-        Vector3 scale,
         Material cableMaterial,
         string label
     )
@@ -133,7 +130,7 @@ public sealed class TssCableVisual : MonoBehaviour
             transform
         );
         connector.name = label;
-        connector.transform.localScale = scale;
+        connector.transform.localScale = Vector3.one * -0.01f;
         ApplyCableColorToSphere(connector, cableMaterial);
         foreach (var collider in connector.GetComponentsInChildren<Collider>(true))
             collider.enabled = false;

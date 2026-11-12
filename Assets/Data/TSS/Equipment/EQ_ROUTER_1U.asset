@@ -22,35 +22,16 @@ MonoBehaviour:
   rackLocalOffset: {x: -0.002, y: 0, z: 0.0039}
   rackLocalEuler: {x: 0, y: 0, z: 0}
   rackLocalScale: {x: 1, y: 1, z: 1}
-  carryLocalOffset: {x: 0, y: -0.03, z: -0.093}
-  carryLocalEuler: {x: -90, y: 0, z: 0}
+  carryLocalOffset: {x: -0.06, y: -0.0872, z: -0.1216}
+  carryLocalEuler: {x: 271.8536, y: 142.24805, z: 215.66171}
   carryLocalScale: {x: 1, y: 1, z: 1}
-  placementPrefab: {fileID: 2141176143751956238, guid: deb098b16bd21874b99deafbac121d72, type: 3}
+  carryHandSurfaceOffset: 0.05
+  carryHandPositionOffset: {x: 0.008, y: 0.09, z: 0.1}
+  carryLeftHandRotationOffset: {x: 87.34, y: 0, z: 90}
+  carryRightHandRotationOffset: {x: 110.59, y: 0, z: -90}
+  swapCarryHandSides: 0
+  placementPrefab: {fileID: 0}
   placementLocalOffset: {x: 0, y: 0, z: 0}
   placementLocalEuler: {x: 0, y: 0, z: 0}
   placementLocalScale: {x: 1, y: 1, z: 1}
-  interfaces:
-  - name: Aux01
-    connectorType: RJ45
-    label: Aux
-    supportedCableTypes: 0000000001000000
-    portAnchorPath: Model/RackRouter_1U_RearFourLED_19in/RearPorts/Ports/Router_rear_AUX_port_cavity/Aux01
-    interfaceFace: 1
-  - name: Con01
-    connectorType: RJ45
-    label: Console
-    supportedCableTypes: 02000000
-    portAnchorPath: Model/RackRouter_1U_RearFourLED_19in/RearPorts/Ports/Router_rear_CONSOLE_port_cavity/Con01
-    interfaceFace: 1
-  - name: Fa00
-    connectorType: RJ45
-    label: FastEthernet 0/0
-    supportedCableTypes: 0000000001000000
-    portAnchorPath: Model/RackRouter_1U_RearFourLED_19in/RearPorts/Ports/Router_rear_GE00_port_cavity/GE00
-    interfaceFace: 1
-  - name: Fa01
-    connectorType: RJ45
-    label: FastEthernet 0/1
-    supportedCableTypes: 0000000001000000
-    portAnchorPath: Model/RackRouter_1U_RearFourLED_19in/RearPorts/Ports/Router_rear_GE01_port_cavity/GE00
-    interfaceFace: 1
+  interfaces: []

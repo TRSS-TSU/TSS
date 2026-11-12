@@ -22,17 +22,16 @@ MonoBehaviour:
   rackLocalOffset: {x: 0, y: 0, z: 0}
   rackLocalEuler: {x: 0, y: 0, z: 0}
   rackLocalScale: {x: 1, y: 1, z: 1}
-  carryLocalOffset: {x: 0, y: 0, z: 0}
-  carryLocalEuler: {x: 0, y: 0, z: 0}
-  carryLocalScale: {x: 1.2, y: 1.2, z: 1.2}
-  placementPrefab: {fileID: 1117057867297052066, guid: dfd0d61edaef77848802aaa979858c44, type: 3}
+  carryLocalOffset: {x: 0, y: 0, z: -0.04}
+  carryLocalEuler: {x: 335, y: 0, z: 0}
+  carryLocalScale: {x: 1.5, y: 1.5, z: 1.5}
+  carryHandSurfaceOffset: 0.03
+  carryHandPositionOffset: {x: 0, y: 0, z: -0.04}
+  carryLeftHandRotationOffset: {x: 0, y: 0, z: 90}
+  carryRightHandRotationOffset: {x: 0, y: 0, z: -90}
+  swapCarryHandSides: 0
+  placementPrefab: {fileID: 0}
   placementLocalOffset: {x: 0, y: 0, z: 0}
   placementLocalEuler: {x: 0, y: 0, z: 0}
   placementLocalScale: {x: 1, y: 1, z: 1}
-  interfaces:
-  - name: Eth01
-    connectorType: RJ45
-    label: Ethernet Port
-    supportedCableTypes: 000000000100000002000000
-    portAnchorPath: EthernetPort
-    interfaceFace: 1
+  interfaces: []

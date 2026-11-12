@@ -395,23 +395,28 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         sign.name = NameSignRootName;
         sign.transform.localPosition = signOffset;
         sign.transform.localRotation = Quaternion.Euler(signEuler);
-        sign.transform.localScale = signPanelSize;
+        // The prefab contains a full model with authored proportions and text placement.
+        // Keep its scale intact; panel sizing only applies to the generated fallback.
+        sign.transform.localScale = nameSignPrefab ? Vector3.one : signPanelSize;
 
         var text = GetNameSignText(sign);
         if (!text)
             return;
 
         text.name = NameSignTextName;
-        text.alignment = TextAlignmentOptions.Center;
-        text.fontSize = nameSignTextSize;
-        text.textWrappingMode = TextWrappingModes.NoWrap;
-        text.overflowMode = TextOverflowModes.Truncate;
-        text.color = nameSignTextColor;
         text.text = GetSignText(record.DeviceName, record.Equipment);
-        text.rectTransform.sizeDelta = new Vector2(1.02f, 0.2f);
-        text.transform.localPosition = new Vector3(0f, 0f, -0.56f);
-        text.transform.localRotation = Quaternion.identity;
-        text.transform.localScale = new Vector3(1f / signPanelSize.x, 1f / signPanelSize.y, 1f);
+        if (!nameSignPrefab)
+        {
+            text.alignment = TextAlignmentOptions.Center;
+            text.fontSize = nameSignTextSize;
+            text.textWrappingMode = TextWrappingModes.NoWrap;
+            text.overflowMode = TextOverflowModes.Truncate;
+            text.color = nameSignTextColor;
+            text.rectTransform.sizeDelta = new Vector2(1.02f, 0.2f);
+            text.transform.localPosition = new Vector3(0f, 0f, -0.56f);
+            text.transform.localRotation = Quaternion.identity;
+            text.transform.localScale = new Vector3(1f / signPanelSize.x, 1f / signPanelSize.y, 1f);
+        }
     }
 
     private GameObject CreateGeneratedNameSign(Transform root, Vector3 signPanelSize)
