@@ -174,7 +174,7 @@ public sealed class TssScenarioAutomation
             Terminate(link, link.wallportEndpointId, false, result);
         }
 
-        _session.NotifyStateChanged();
+        _session.NotifyNetworkStateChanged();
         return result;
     }
 

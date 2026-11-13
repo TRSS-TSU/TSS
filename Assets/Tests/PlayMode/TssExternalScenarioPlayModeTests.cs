@@ -56,7 +56,7 @@ public sealed class TssExternalScenarioPlayModeTests
             yield return WaitUntil(() => SceneManager.GetActiveScene().name == "TSS" && TssTrainingSession.Instance && TssTrainingSession.Instance.Scenario);
             yield return null;
             var data = JsonUtility.FromJson<TssExternalScenarioData>(File.ReadAllText(Path.Combine(Application.streamingAssetsPath, "Scenarios", entry.jsonFile)));
-            AssertLiveScenario(data, true);
+            AssertLiveScenario(data);
             var session = TssTrainingSession.Instance;
             var first = session.GetScenarioInventory().First(x => x.equipment.category == EquipmentCategory.Switch);
             Assert.IsTrue(session.TryCheckout(first.equipment, out var message), message);
@@ -117,34 +117,57 @@ public sealed class TssExternalScenarioPlayModeTests
     }
 
     [UnityTest]
-    public IEnumerator MissingManifestLaunchesBuiltInFallback()
+    public IEnumerator MissingManifestShowsNoScenarios()
     {
         File.Delete(manifestPath);
         yield return OpenMenu();
         File.WriteAllText(manifestPath, originalManifest);
-        yield return LaunchFallback();
+        Assert.AreEqual(0, ScenarioButtons().Length);
+        StringAssert.Contains("Cannot load JSON scenarios", GameObject.Find("ScenarioLoadStatus").GetComponent<Text>().text);
     }
 
     [UnityTest]
-    public IEnumerator MalformedManifestLaunchesBuiltInFallback()
+    public IEnumerator DirectTssSceneDoesNotStartBuiltInScenario()
+    {
+        TssScenarioLaunchState.Select(null);
+        SceneManager.LoadScene("TSS");
+        yield return WaitUntil(() => TssTrainingSession.Instance);
+        yield return null;
+        Assert.IsNull(TssTrainingSession.Instance.Scenario);
+    }
+
+    [UnityTest]
+    public IEnumerator BuiltInSelectionCannotStartTssScene()
+    {
+        var builtIn = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        TssScenarioLaunchState.Select(builtIn);
+        SceneManager.LoadScene("TSS");
+        yield return WaitUntil(() => TssTrainingSession.Instance);
+        yield return null;
+        Assert.IsNull(TssTrainingSession.Instance.Scenario);
+        Object.Destroy(builtIn);
+    }
+
+    [UnityTest]
+    public IEnumerator MalformedManifestShowsNoScenarios()
     {
         File.WriteAllText(manifestPath, "{ invalid json");
         yield return OpenMenu();
         File.WriteAllText(manifestPath, originalManifest);
-        yield return LaunchFallback();
+        Assert.AreEqual(0, ScenarioButtons().Length);
+        StringAssert.Contains("Cannot load JSON scenarios", GameObject.Find("ScenarioLoadStatus").GetComponent<Text>().text);
     }
 
     [UnityTest]
-    public IEnumerator InvalidScenarioIsExcludedAndFallbackRemainsAvailable()
+    public IEnumerator InvalidScenarioIsExcludedWithoutFallback()
     {
         var data = JsonUtility.FromJson<TssExternalScenarioData>(originalScenario);
         data.inventory[0].equipmentId = "DOES_NOT_EXIST";
         File.WriteAllText(scenarioPath, JsonUtility.ToJson(data));
         yield return OpenMenu();
         File.WriteAllText(scenarioPath, originalScenario);
-        Assert.AreEqual(1, ScenarioButtons().Length, "One external Capstone choice plus built-in fallback.");
-        Assert.IsFalse(ScenarioButtons().Any(x => x.GetComponentInChildren<Text>().text == data.displayName));
-        yield return LaunchFallback();
+        Assert.AreEqual(0, ScenarioButtons().Length);
+        StringAssert.Contains("JSON scenario unavailable", GameObject.Find("ScenarioLoadStatus").GetComponent<Text>().text);
     }
 
     [UnityTest]
@@ -154,11 +177,11 @@ public sealed class TssExternalScenarioPlayModeTests
         SetStudentInputs();
         File.WriteAllText(scenarioPath, "{}");
         ScenarioButtons()[0].onClick.Invoke();
-        yield return WaitUntil(() => ScenarioButtons().Any(x => x.GetComponentInChildren<Text>().text.EndsWith("(Built-in)")));
+        yield return WaitUntil(() => GameObject.Find("ScenarioLoadStatus").GetComponent<Text>().text.Contains("JSON scenario unavailable"));
         Assert.AreEqual("MainMenu", SceneManager.GetActiveScene().name);
         Assert.IsNull(TssScenarioLaunchState.ConsumeSelectedScenario(out _));
+        Assert.AreEqual(1, ScenarioButtons().Length);
         File.WriteAllText(scenarioPath, originalScenario);
-        yield return LaunchFallback();
     }
 
     [UnityTest]
@@ -194,17 +217,7 @@ public sealed class TssExternalScenarioPlayModeTests
         GameObject.Find("ComputerNumberInput").GetComponent<InputField>().text = "017";
     }
 
-    private IEnumerator LaunchFallback()
-    {
-        StringAssert.Contains("unavailable", GameObject.Find("ScenarioLoadStatus").GetComponent<Text>().text.ToLowerInvariant());
-        var fallback = ScenarioButtons().Single(x => x.GetComponentInChildren<Text>().text.EndsWith("(Built-in)"));
-        SetStudentInputs();
-        fallback.onClick.Invoke();
-        yield return WaitUntil(() => SceneManager.GetActiveScene().name == "TSS" && TssTrainingSession.Instance && TssTrainingSession.Instance.Scenario);
-        AssertLiveScenario(JsonUtility.FromJson<TssExternalScenarioData>(originalScenario), false);
-    }
-
-    private static void AssertLiveScenario(TssExternalScenarioData data, bool external)
+    private static void AssertLiveScenario(TssExternalScenarioData data)
     {
         var sessions = Object.FindObjectsByType<TssTrainingSession>(FindObjectsSortMode.None);
         Assert.AreEqual(1, sessions.Length);
@@ -214,7 +227,7 @@ public sealed class TssExternalScenarioPlayModeTests
         Assert.AreEqual(data.scenarioId, session.Scenario.scenarioId);
         Assert.AreEqual(data.facilityId, session.Scenario.facilityId);
         Assert.AreEqual(data.catalogId, session.Scenario.catalogId);
-        Assert.AreEqual(external, session.Scenario.IsExternalRuntime);
+        Assert.IsTrue(session.Scenario.IsExternalRuntime);
         Assert.AreEqual("SMITH-17", session.StudentId);
         var catalog = Resources.Load<TssScenarioCatalog>(TssScenarioCatalog.ResourcePath);
         foreach (var row in data.inventory) Assert.AreEqual(row.quantity, session.GetRemaining(catalog.FindEquipment(row.equipmentId)));
@@ -294,8 +307,8 @@ public sealed class TssExternalScenarioPlayModeTests
         var endpoints = Object.FindObjectsByType<TssPortEndpoint>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         foreach (var status in statuses)
         {
-            var endpointA = endpoints.SingleOrDefault(x => x.EndpointId == status.EndpointAId);
-            var endpointB = endpoints.SingleOrDefault(x => x.EndpointId == status.EndpointBId);
+            var endpointA = endpoints.FirstOrDefault(x => x.EndpointId == status.EndpointAId);
+            var endpointB = endpoints.FirstOrDefault(x => x.EndpointId == status.EndpointBId);
             Assert.IsNotNull(endpointA, "Required endpoint is not present: " + status.EndpointAId);
             Assert.IsNotNull(endpointB, "Required endpoint is not present: " + status.EndpointBId);
             var cable = session.GetScenarioCableInventory().First(x => x.cable.cableType == status.RequiredCableType).cable;

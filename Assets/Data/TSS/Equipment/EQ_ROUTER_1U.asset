@@ -34,4 +34,16 @@ MonoBehaviour:
   placementLocalOffset: {x: 0, y: 0, z: 0}
   placementLocalEuler: {x: 0, y: 0, z: 0}
   placementLocalScale: {x: 1, y: 1, z: 1}
-  interfaces: []
+  interfaces:
+  - name: Fa00
+    connectorType: RJ45
+    label: FastEthernet 0/0
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/RackRouter_1U_RearFourLED_19in/RearPorts/Ports/Router_rear_Fa00_port_cavity/Fa00
+    interfaceFace: 1
+  - name: Fa01
+    connectorType: RJ45
+    label: FastEthernet 0/1
+    supportedCableTypes: 0000000001000000
+    portAnchorPath: Model/RackRouter_1U_RearFourLED_19in/RearPorts/Ports/Router_rear_Fa01_port_cavity/Fa01
+    interfaceFace: 1

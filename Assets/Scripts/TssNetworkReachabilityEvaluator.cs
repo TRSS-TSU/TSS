@@ -89,7 +89,12 @@ public sealed class TssNetworkReachabilityEvaluator
                 return Fail(destinationPath.FailedLayer, destinationPath.FaultCategory, destinationPath.Diagnostic.Substring(destinationPath.Diagnostic.IndexOf(':') + 1).Trim(), source.Role, destinationRole, hops.ToArray());
         }
 
-        var routeFailure = ValidateDeviceRoute(sourceDevice, sourceInterface, source, destinationAddress, destinationRole, hops);
+        // Switch SVIs on the same subnet communicate over the trunk without a router.
+        var directSwitchPing = sourceDevice.Category == EquipmentCategory.Switch
+            && destinationDevice != null && destinationDevice.Category == EquipmentCategory.Switch
+            && destinationSvi != null
+            && TssNetworkAddress.IsInSameSubnet(source.Address, source.Mask, destinationAddress);
+        var routeFailure = directSwitchPing ? null : ValidateDeviceRoute(sourceDevice, sourceInterface, source, destinationAddress, destinationRole, hops);
         if (routeFailure.HasValue)
             return routeFailure.Value;
 
@@ -99,9 +104,13 @@ public sealed class TssNetworkReachabilityEvaluator
                 return Fail(3, TssReachabilityFaultCategory.InterfaceUnavailable, "destination SVI is unavailable.", source.Role, destinationRole, hops.ToArray());
             var vlan = profile.ManagementVlan;
             var pathSwitch = destinationDevice.ExpectedRole ?? destinationDevice.Hostname;
-            var trunkNames = pathSwitch.Equals("AN-2", StringComparison.OrdinalIgnoreCase)
+            var trunkNames = directSwitchPing
+                ? new[] { "AN-1:Fa0/1", "AN-2:Fa0/1" }
+                : pathSwitch.Equals("AN-2", StringComparison.OrdinalIgnoreCase)
                 ? new[] { "AN-1:Fa0/6", "AN-2:Fa0/1" }
                 : new[] { "AN-1:Fa0/6" };
+            if (directSwitchPing && (!ActiveVlan(sourceDevice, vlan) || !ActiveVlan(destinationDevice, vlan)))
+                return Fail(2, TssReachabilityFaultCategory.VlanNotCarried, "management VLAN is unavailable.", source.Role, destinationRole, hops.ToArray());
             foreach (var trunkName in trunkNames)
             {
                 var split = trunkName.IndexOf(':');
@@ -109,6 +118,8 @@ public sealed class TssNetworkReachabilityEvaluator
                 var trunk = FindInterface(trunkDevice, trunkName.Substring(split + 1));
                 if (trunkDevice == null || trunk == null || !trunk.IsTrunk || !trunkDevice.IsInterfaceOperational(trunk) || !trunk.AllowedVlans.Contains(vlan))
                     return Fail(2, TssReachabilityFaultCategory.VlanNotCarried, "management VLAN is not carried to the destination SVI.", source.Role, destinationRole, hops.ToArray());
+                if (directSwitchPing && trunk.NativeVlan != profile.NativeVlan)
+                    return Fail(2, TssReachabilityFaultCategory.VlanNotCarried, "trunk native VLANs do not agree.", source.Role, destinationRole, hops.ToArray());
             }
         }
 

@@ -8,7 +8,6 @@ public sealed class TssTrainingSession : MonoBehaviour
     private const string ProviderDemarcEndpointId = "Demarc:Provider:Port01";
     public static TssTrainingSession Instance { get; private set; }
 
-    [SerializeField] private TssScenarioDefinition fallbackScenario;
     [SerializeField] private Transform carryAnchor;
     [SerializeField] private GameObject scenarioMenuHost;
     [SerializeField] private GameObject endpointConnectorPrefab;
@@ -31,6 +30,7 @@ public sealed class TssTrainingSession : MonoBehaviour
     private Vector3 _appliedCarryLocalScale;
     private TssPortEndpoint _selectedCableEndpoint;
     private int _nextConnectionNumber = 1;
+    private float _scenarioStartedAt;
 
     public event Action StateChanged;
     public TssScenarioDefinition Scenario { get; private set; }
@@ -44,6 +44,7 @@ public sealed class TssTrainingSession : MonoBehaviour
     public TssNetworkRunProfile NetworkProfile { get; private set; }
     public TssNetworkSessionState NetworkState { get; private set; }
     public string StudentId { get; private set; }
+    public float ElapsedScenarioSeconds => Scenario ? Mathf.Max(0f, Time.time - _scenarioStartedAt) : 0f;
 
     public void NotifyStateChanged() => StateChanged?.Invoke();
 
@@ -72,20 +73,17 @@ public sealed class TssTrainingSession : MonoBehaviour
     private void Start()
     {
         var selected = TssScenarioLaunchState.ConsumeSelectedScenario(out var studentId);
-        if (selected)
+        if (selected && selected.IsExternalRuntime)
         {
             if (scenarioMenuHost)
                 scenarioMenuHost.SetActive(false);
             BeginScenario(selected, studentId);
         }
-        else if (fallbackScenario && scenarioMenuHost)
+        else if (scenarioMenuHost)
         {
             scenarioMenuHost.SetActive(true);
         }
-        else if (fallbackScenario)
-        {
-            BeginScenario(fallbackScenario);
-        }
+        else Debug.LogWarning("No JSON scenario selected. Start from MainMenu.");
     }
 
     private void LateUpdate()
@@ -116,6 +114,7 @@ public sealed class TssTrainingSession : MonoBehaviour
         if (Scenario != scenario)
             TssScenarioLaunchState.ReleaseRuntime(Scenario);
         Scenario = scenario;
+        _scenarioStartedAt = Time.time;
         StudentId = studentId ?? string.Empty;
         HeldItem = null;
         HeldCable = null;
@@ -534,11 +533,6 @@ public sealed class TssTrainingSession : MonoBehaviour
         return false;
     }
 
-    public TssScenarioDefinition GetFallbackScenario()
-    {
-        return fallbackScenario;
-    }
-
     public bool TryUsePort(TssPortEndpoint endpoint, out string message, bool notifyStateChanged = true)
     {
         if (!endpoint)
@@ -632,6 +626,17 @@ public sealed class TssTrainingSession : MonoBehaviour
     {
         EnsureEffectivePhysicalPathsCache();
         return new List<TssPhysicalPathRecord>(_effectivePhysicalPathsCache);
+    }
+
+    public bool HasEffectivePhysicalPath(string endpointAId, string endpointBId)
+    {
+        var endpoints = FindObjectsByType<TssPortEndpoint>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        var a = ResolveRequiredRackEndpoint(endpointAId, endpoints);
+        var b = ResolveRequiredRackEndpoint(endpointBId, endpoints);
+        if (string.IsNullOrWhiteSpace(a) || string.IsNullOrWhiteSpace(b) || string.Equals(a, b, StringComparison.OrdinalIgnoreCase))
+            return false;
+        EnsureEffectivePhysicalPathsCache();
+        return _effectivePhysicalPathsCache.Any(path => EndpointPairMatches(path.EndpointAId, path.EndpointBId, a, b));
     }
 
     private void EnsureEffectivePhysicalPathsCache()
@@ -876,7 +881,7 @@ public sealed class TssTrainingSession : MonoBehaviour
                 connection.CableType,
                 required,
                 true,
-                connection.CableType == required));
+                IsCableTypeCorrect(connection, endpoints)));
         }
 
         foreach (var requirement in Scenario?.cableTypeRequirements ?? System.Array.Empty<ScenarioCableTypeRequirement>())
@@ -953,7 +958,7 @@ public sealed class TssTrainingSession : MonoBehaviour
         ReconcilePermanentConnection(state.connectionId);
         message = "Termination state saved.";
         if (notifyStateChanged)
-            StateChanged?.Invoke();
+            NotifyNetworkStateChanged();
         return true;
     }
 
@@ -1392,7 +1397,20 @@ public sealed class TssTrainingSession : MonoBehaviour
 
     private bool IsCableTypeCorrect(TssPhysicalConnectionRecord connection, TssPortEndpoint[] endpoints)
     {
-        return connection.IsPermanent || connection.CableType == RequiredCableType(connection.EndpointAId, connection.EndpointBId, endpoints);
+        if (connection.IsPermanent)
+            return true;
+        foreach (var requirement in Scenario?.cableTypeRequirements ?? Array.Empty<ScenarioCableTypeRequirement>())
+            if (requirement != null && !string.IsNullOrWhiteSpace(requirement.crossoverGroupId)
+                && EndpointPairMatches(ResolveRequiredRackEndpoint(requirement.endpointAId, endpoints),
+                    ResolveRequiredRackEndpoint(requirement.endpointBId, endpoints), connection.EndpointAId, connection.EndpointBId))
+                return connection.CableType == TssCableType.StraightThrough || connection.CableType == TssCableType.Crossover;
+        return connection.CableType == RequiredCableType(connection.EndpointAId, connection.EndpointBId, endpoints);
+    }
+
+    public string ResolveScenarioEndpointId(string endpointId)
+    {
+        var endpoints = FindObjectsByType<TssPortEndpoint>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+        return ResolveRequiredRackEndpoint(endpointId, endpoints);
     }
 
     private TssCableType RequiredCableType(string endpointAId, string endpointBId, TssPortEndpoint[] endpoints)

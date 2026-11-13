@@ -23,6 +23,8 @@ public sealed class TssNetworkRunProfile
     public readonly string EnableSecret;
     public readonly string ConsolePassword;
     public readonly string VtyPassword;
+    public readonly string LocalUsername;
+    public readonly string LocalPassword;
     public readonly string Motd;
     public readonly string Ssid;
     public readonly string WifiPassphrase;
@@ -89,6 +91,8 @@ public sealed class TssNetworkRunProfile
         EnableSecret = config?.enableSecret ?? string.Empty;
         ConsolePassword = config?.consolePassword ?? string.Empty;
         VtyPassword = config?.vtyPassword ?? string.Empty;
+        LocalUsername = config?.localUsername ?? string.Empty;
+        LocalPassword = config?.localPassword ?? string.Empty;
         Motd = config?.motd ?? string.Empty;
         Ssid = config?.ssid ?? string.Empty;
         WifiPassphrase = config?.wifiPassphrase ?? string.Empty;

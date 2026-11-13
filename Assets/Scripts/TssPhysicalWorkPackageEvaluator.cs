@@ -33,15 +33,14 @@ public sealed class TssPhysicalWorkPackageEvaluator
         }
 
         var requirements = _scenario.cableTypeRequirements ?? Array.Empty<ScenarioCableTypeRequirement>();
+        var statuses = _session.GetCableTypeStatuses();
         foreach (var requirement in requirements)
         {
-            if (requirement == null)
+            if (requirement == null || !string.IsNullOrWhiteSpace(requirement.crossoverGroupId))
                 continue;
 
             hasRequirements = true;
-            var status = _session.GetCableTypeStatuses().FirstOrDefault(x =>
-                string.Equals(x.ConnectionId, requirement.requirementId, StringComparison.OrdinalIgnoreCase)
-                || EndpointPairMatches(x.EndpointAId, x.EndpointBId, requirement.endpointAId, requirement.endpointBId));
+            var status = FindStatus(requirement, statuses);
             var id = "WP1.CableTypes." + (string.IsNullOrWhiteSpace(requirement.requirementId) ? "Required" : requirement.requirementId);
             var endpoints = requirement.endpointAId + " to " + requirement.endpointBId;
             var complete = status.IsConnected && status.IsCorrect;
@@ -53,31 +52,51 @@ public sealed class TssPhysicalWorkPackageEvaluator
                     : $"{endpoints} is not connected with the required {requirement.requiredCableType} cable.");
         }
 
-        var requiresTermination = false;
-        var terminationsComplete = true;
-        foreach (var connection in _scenario.permanentConnections ?? Array.Empty<ScenarioPermanentCableConnection>())
+        var groupedConnections = new System.Collections.Generic.HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var crossoverGroups = requirements.Where(x => x != null && !string.IsNullOrWhiteSpace(x.crossoverGroupId))
+            .GroupBy(x => x.crossoverGroupId, StringComparer.OrdinalIgnoreCase).ToArray();
+        foreach (var group in crossoverGroups)
         {
-            if (connection == null)
+            hasRequirements = true;
+            var pair = group.Select(x => FindStatus(x, statuses)).ToArray();
+            foreach (var status in pair)
+                if (status.IsConnected) groupedConnections.Add(status.ConnectionId);
+            var complete = pair.Length == 2 && pair.All(x => x.IsConnected)
+                && pair.Count(x => x.ActualCableType == TssCableType.Crossover) == 1
+                && pair.Count(x => x.ActualCableType == TssCableType.StraightThrough) == 1;
+            Add(result, complete, "WP1.CableTypes.CrossoverGroup." + group.Key,
+                $"{group.Key} uses one crossover and one straight-through patch cord.");
+        }
+        if (crossoverGroups.Length > 0)
+        {
+            var othersStraight = statuses.Where(x => x.IsConnected && !groupedConnections.Contains(x.ConnectionId))
+                .All(x => x.ActualCableType == TssCableType.StraightThrough);
+            Add(result, othersStraight, "WP1.CableTypes.OtherCables", "All other player cables are straight-through.");
+        }
+
+        foreach (var path in _scenario.expectedEffectivePaths ?? Array.Empty<ScenarioEffectivePathRequirement>())
+        {
+            if (path == null)
                 continue;
 
             hasRequirements = true;
-            var id = string.IsNullOrWhiteSpace(connection.connectionId) ? "Required" : connection.connectionId;
-            var connected = _session.PhysicalConnections.Any(x => x.IsPermanent && string.Equals(x.ConnectionId, connection.connectionId, StringComparison.OrdinalIgnoreCase));
-            Add(result, connected, "WP1.PermanentConnections." + id, $"Permanent connection {id} is installed.");
-
-            if (!connection.requiresPunchDownTermination)
-                continue;
-
-            requiresTermination = true;
-            terminationsComplete &= _session.IsTerminationCorrectForResults(connection.connectionId, connection.patchPanelEndpointId)
-                && _session.IsTerminationCorrectForResults(connection.connectionId, connection.wallportEndpointId);
+            var id = string.IsNullOrWhiteSpace(path.requirementId) ? "Required" : path.requirementId;
+            Add(result, _session.HasEffectivePhysicalPath(path.endpointAId, path.endpointBId),
+                "WP1.EffectivePaths." + id, $"Effective path {path.endpointAId} to {path.endpointBId} is connected.");
         }
 
-        if (requiresTermination)
-            Add(result, terminationsComplete, "WP1.Terminations", "Permanent cable runs are terminated.");
         if (!hasRequirements)
             result.Add("WP1.Requirements", "No physical installation requirements are defined for this scenario.");
         return result;
+    }
+
+    private TssCableTypeStatus FindStatus(ScenarioCableTypeRequirement requirement, System.Collections.Generic.IReadOnlyList<TssCableTypeStatus> statuses)
+    {
+        var a = _session.ResolveScenarioEndpointId(requirement.endpointAId);
+        var b = _session.ResolveScenarioEndpointId(requirement.endpointBId);
+        return statuses.FirstOrDefault(x =>
+            string.Equals(x.ConnectionId, requirement.requirementId, StringComparison.OrdinalIgnoreCase)
+            || EndpointPairMatches(x.EndpointAId, x.EndpointBId, a, b));
     }
 
     private static void Add(TssWorkPackageResult result, bool complete, string id, string label)

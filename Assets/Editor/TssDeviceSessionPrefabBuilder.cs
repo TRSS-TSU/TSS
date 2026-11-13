@@ -595,6 +595,7 @@ public static class TssDeviceSessionPrefabBuilder
         PositionAnchor(historyDownBtn.GetComponent<RectTransform>(), 0.90f, 1f, new Vector2(0f, -54f), new Vector2(58f, 32f));
 
         var outputViewport = MakeImage(pcCard.transform, "CommandOutputViewport", InputBg);
+        outputViewport.gameObject.AddComponent<RectMask2D>();
         Stretch(outputViewport.rectTransform, 0f, 0f, 1f, 1f, 12f, 12f, -12f, -96f);
         var pcDiagText = MakeText(outputViewport.transform, "CommandOutputText", "Endpoint command prompt ready.\n", 11, TextAnchor.UpperLeft);
         var pcdRt = pcDiagText.rectTransform;

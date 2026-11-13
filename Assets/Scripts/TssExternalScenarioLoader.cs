@@ -134,12 +134,6 @@ public sealed class TssExternalScenarioLoader
         }
     }
 
-    public static TssScenarioDefinition[] GetFallbackScenarios(TssScenarioDefinition[] serialized, TssScenarioDefinition sessionFallback)
-    {
-        var choices = (serialized ?? Array.Empty<TssScenarioDefinition>()).Where(x => x).Distinct().ToArray();
-        return choices.Length > 0 ? choices : sessionFallback ? new[] { sessionFallback } : Array.Empty<TssScenarioDefinition>();
-    }
-
     private async Task<string> ReadJsonAsync(string file)
     {
         if (!TssExternalScenarioValidator.IsLocalJsonFile(file)) throw new InvalidDataException("Invalid local scenario filename.");

@@ -26,7 +26,7 @@ public sealed class TssObjectInteractable : MonoBehaviour
     [SerializeField] private float rackFirstPersonOrthographicSize = 0.14f;
     [SerializeField] private float rackFirstPersonNearClipPlane = -0.36f;
     [SerializeField] private float rackFirstPersonFarClipPlane = 2f;
-    [SerializeField] private float endpointFirstPersonFarClipPlane = 8f;
+    [SerializeField] private float endpointFirstPersonFarClipPlane = 25f;
 
     [Header("Player")]
     [SerializeField] private ThirdPersonController playerController;
@@ -158,6 +158,10 @@ public sealed class TssObjectInteractable : MonoBehaviour
     private void OnGUI()
     {
         if (!_isFirstPerson || _canvasInstance || IsGameplayInputBlocked())
+            return;
+
+        var terminationEntry = GetComponent<TssTerminationEntryAdapter>();
+        if (terminationEntry && terminationEntry.HasVisibleControls)
             return;
 
         if (TssDeviceSessionController.Instance && TssDeviceSessionController.Instance.IsSessionOpen)

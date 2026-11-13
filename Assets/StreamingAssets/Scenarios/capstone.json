@@ -60,13 +60,15 @@
       "requirementId": "InterClosetRack01",
       "endpointAId": "Rack:Rack01:U35:Fa01",
       "endpointBId": "PatchPanel:Rack01:Port48",
-      "requiredCableType": 1
+      "requiredCableType": 1,
+      "crossoverGroupId": "InterCloset"
     },
     {
       "requirementId": "InterClosetRack02",
       "endpointAId": "Rack:Rack02:U35:Fa01",
       "endpointBId": "PatchPanel:Rack02:Port48",
-      "requiredCableType": 0
+      "requiredCableType": 0,
+      "crossoverGroupId": "InterCloset"
     },
     {
       "requirementId": "DemarcWan",
@@ -90,36 +92,6 @@
       "requirementId": "IT2ToAN1",
       "endpointAId": "IT2",
       "endpointBId": "Rack:Rack01:U35:Fa05",
-      "requiredCableType": 0
-    },
-    {
-      "requirementId": "Reception1ToWallport01",
-      "endpointAId": "Reception1",
-      "endpointBId": "WallPort:Reception:Port01",
-      "requiredCableType": 0
-    },
-    {
-      "requirementId": "Reception2ToWallport02",
-      "endpointAId": "Reception2",
-      "endpointBId": "WallPort:Reception:Port02",
-      "requiredCableType": 0
-    },
-    {
-      "requirementId": "Data1ToWallport01",
-      "endpointAId": "Data1",
-      "endpointBId": "WallPort:Floor02:Office01:Wallport01:Port01",
-      "requiredCableType": 0
-    },
-    {
-      "requirementId": "Data2ToWallport01",
-      "endpointAId": "Data2",
-      "endpointBId": "WallPort:Floor02:Office02:Wallport01:Port01",
-      "requiredCableType": 0
-    },
-    {
-      "requirementId": "Data3ToWallport02",
-      "endpointAId": "Data3",
-      "endpointBId": "WallPort:Floor02:Office02:Wallport01:Port02",
       "requiredCableType": 0
     }
   ],
@@ -545,6 +517,15 @@
       "endpointBTerminationModuleId": ""
     }
   ],
+  "expectedEffectivePaths": [
+    { "requirementId": "InterCloset", "endpointAId": "Rack:Rack01:U35:Fa01", "endpointBId": "Rack:Rack02:U35:Fa01" },
+    { "requirementId": "Reception1", "endpointAId": "Reception1", "endpointBId": "Rack:Rack01:U35:Fa03" },
+    { "requirementId": "Reception2", "endpointAId": "Reception2", "endpointBId": "Rack:Rack01:U35:Fa04" },
+    { "requirementId": "Data1", "endpointAId": "Data1", "endpointBId": "Rack:Rack02:U35:Fa02" },
+    { "requirementId": "Data2", "endpointAId": "Data2", "endpointBId": "Rack:Rack02:U35:Fa03" },
+    { "requirementId": "Data3", "endpointAId": "Data3", "endpointBId": "Rack:Rack02:U35:Fa04" },
+    { "requirementId": "AccessPoint", "endpointAId": "AP-1", "endpointBId": "Rack:Rack01:U35:Fa07" }
+  ],
   "cableSchedule": [
     {
       "fromEndpoint": "AN-1",
@@ -895,6 +876,8 @@
     "enableSecret": "enspass",
     "consolePassword": "conpass",
     "vtyPassword": "vtypass",
+    "localUsername": "admin",
+    "localPassword": "12#$Qwert",
     "motd": "You are accessing a U.S. Government (USG) Information System (IS) that is provided for USG-authorized use only. By using this IS (which includes any device attached to this IS), you consent to the following conditions:\nThe USG routinely intercepts and monitors communications on this IS for purposes including, but not limited to, penetration testing, COMSEC monitoring, network operations and defense, personnel misconduct (PM), law enforcement (LE), and counterintelligence (CI) investigations.\nAt any time, the USG may inspect and seize data stored on this IS.\nCommunications using, or data stored on, this IS are not private, are subject to routine monitoring, interception, and search, and may be disclosed or used for any USG authorized purpose.\nThis IS includes security measures (e.g., authentication and access controls) to protect USG interests--not for your personal benefit or privacy.\nNotwithstanding the above, using this IS does not constitute consent to PM, LE or CI investigative searching or monitoring of the content of privileged communications, or work product, related to personal representation or services by attorneys, psychotherapists, or clergy, and their assistants. Such communications and work product are private and confidential. See User Agreement for details.",
     "managementVlanName": "Management",
     "receptionVlanName": "Reception",
@@ -1080,14 +1063,9 @@
             "conditionIdPrefixes": ["WP1.CableTypes."]
           },
           {
-            "id": "permanent-connections",
-            "heading": "Complete all permanent infrastructure connections",
-            "conditionIdPrefixes": ["WP1.PermanentConnections."]
-          },
-          {
-            "id": "terminations",
-            "heading": "Terminate every required permanent run",
-            "conditionIdPrefixes": ["WP1.Terminations"]
+            "id": "effective-paths",
+            "heading": "Complete all required effective device paths",
+            "conditionIdPrefixes": ["WP1.EffectivePaths."]
           }
         ]
       },
@@ -1221,7 +1199,7 @@
     "vlans": {
       "sectionTitle": "VLANs",
       "scenarioHeading": "VLAN ASSIGNMENT - {ScenarioId}",
-      "intro": "Interface VLAN 1 stays shut and unaddressed. Configure interface Vlan{ManagementVlan} with the seeded Management network's .2/24 address. Tag Management on the required trunks; create and name Native on both switches, keep it consistent on AN-1 Fa0/1, AN-1 Fa0/6, and AN-2 Fa0/1, and do not use it as an access, user, or routed VLAN.",
+      "intro": "Interface VLAN 1 stays shut and unaddressed. Configure interface Vlan{ManagementVlan} with the seeded Management network's .2/24 address on AN-1 and .3/24 on AN-2. Tag Management on the required trunks; create and name Native on both switches, keep it consistent on AN-1 Fa0/1, AN-1 Fa0/6, and AN-2 Fa0/1, and do not use it as an access, user, or routed VLAN.",
       "endingParagraph": "Management is included in the allowed trunk list. Native VLAN {NativeVlan} is omitted from this scenario's explicit allowed list, has no switch management IP, and has no CN-1 subinterface or gateway. Every unused port uses access VLAN {DeadVlan} and shutdown."
     },
     "ipPlan": {
@@ -1233,7 +1211,7 @@
     "cableSchedule": {
       "sectionTitle": "Cable Schedule",
       "scenarioHeading": "CABLE RUN SCHEDULE - {ScenarioId}",
-      "introParagraph": "Punch-downs are permanent copper through walls and ceiling. Patch cords are field-replaceable. Cable type identifies the expected connection class."
+      "introParagraph": "Port numbers below show one example. Any available wallport and its paired patch-panel port may complete a required device path. For the inter-closet link, use one crossover patch cord on either side and one straight-through patch cord on the other. All other player cables are straight-through."
     },
     "circuitLetter": {
       "sectionTitle": "Circuit Letter",

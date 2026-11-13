@@ -619,6 +619,45 @@ public sealed class TssDeviceSessionTests
     }
 
     [Test]
+    public void SwitchCliCanMoveBetweenLineAndVlanConfiguration()
+    {
+        var sessionObject = new GameObject("CliLineVlanSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        session.BeginScenario(scenario);
+        try
+        {
+            var sw = new TssCliCommandProcessor(session, "Switch", EquipmentCategory.Switch, "Switch");
+            sw.Execute("enable");
+            sw.Execute("configure terminal");
+            Assert.IsTrue(sw.Execute("line vty 0 4").Accepted);
+            Assert.IsTrue(sw.Execute("password secret").Accepted);
+            Assert.IsFalse(sw.Execute("vlan 4095").Accepted);
+            Assert.AreEqual(TssNetworkCliMode.LineConfig, sw.Device.Mode);
+            Assert.IsTrue(sw.Execute("vlan 20").Accepted);
+            Assert.AreEqual(TssNetworkCliMode.VlanConfig, sw.Device.Mode);
+            Assert.IsTrue(sw.Execute("name Data").Accepted);
+            Assert.IsTrue(sw.Execute("line vty 5 15").Accepted);
+            Assert.AreEqual(TssNetworkCliMode.LineConfig, sw.Device.Mode);
+            Assert.IsTrue(sw.Execute("exit").Accepted);
+            Assert.AreEqual(TssNetworkCliMode.GlobalConfig, sw.Device.Mode);
+
+            var router = new TssCliCommandProcessor(session, "Router", EquipmentCategory.Router, "Router");
+            router.Execute("enable");
+            router.Execute("configure terminal");
+            router.Execute("line vty 0 4");
+            Assert.IsFalse(router.Execute("vlan 20").Accepted);
+            Assert.AreEqual(TssNetworkCliMode.LineConfig, router.Device.Mode);
+        }
+        finally
+        {
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
     public void SwitchCommandReferenceCommandsAreAcceptedAndPersisted()
     {
         var sessionObject = new GameObject("CliReferenceSession", typeof(TssTrainingSession));
@@ -1223,6 +1262,35 @@ public sealed class TssDeviceSessionTests
             Object.DestroyImmediate(scenario);
             Object.DestroyImmediate(sessionObject);
         }
+    }
+
+    [Test]
+    public void SwitchManagementSvisPingDirectlyAcrossTrunk()
+    {
+        var profile = TssNetworkRunProfile.Create(8, new NetworkScenarioConfig());
+        var state = new TssNetworkSessionState(profile);
+        var an1 = state.GetOrCreateDevice("AN1", EquipmentCategory.Switch, "AN-1");
+        var an2 = state.GetOrCreateDevice("AN2", EquipmentCategory.Switch, "AN-2");
+        foreach (var device in new[] { an1, an2 })
+        {
+            device.Vlans[profile.ManagementVlan] = profile.ManagementVlanName;
+            device.Interfaces["Fa0/1"] = new NetworkInterfaceState
+            {
+                Name = "Fa0/1", AdminUp = true, CarrierUp = true, IsTrunk = true,
+                NativeVlan = profile.NativeVlan,
+                AllowedVlans = new System.Collections.Generic.HashSet<int> { profile.ManagementVlan }
+            };
+        }
+        an1.Svis[profile.ManagementVlan] = new NetworkInterfaceState { Name = "Vlan" + profile.ManagementVlan, AdminUp = true, Address = profile.ManagementNetwork + ".2", Mask = "255.255.255.0" };
+        an2.Svis[profile.ManagementVlan] = new NetworkInterfaceState { Name = "Vlan" + profile.ManagementVlan, AdminUp = true, Address = profile.ManagementNetwork + ".3", Mask = "255.255.255.0" };
+
+        var evaluator = new TssNetworkReachabilityEvaluator(state);
+        Assert.IsTrue(evaluator.EvaluateDevice(an1.Key, an2.Svis[profile.ManagementVlan].Address).Success);
+        Assert.IsTrue(evaluator.EvaluateDevice(an2.Key, an1.Svis[profile.ManagementVlan].Address).Success);
+        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2().IsComplete("WP2.AN-2.ManagementSvi"));
+
+        an2.Interfaces["Fa0/1"].AllowedVlans.Clear();
+        Assert.IsFalse(evaluator.EvaluateDevice(an1.Key, an2.Svis[profile.ManagementVlan].Address).Success);
     }
 
     [Test]

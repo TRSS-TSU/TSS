@@ -7,10 +7,6 @@ using UnityEngine.UI;
 
 public sealed class TssScenarioStartupMenu : MonoBehaviour
 {
-    [Header("Scenarios")]
-    [SerializeField] private TssScenarioDefinition[] scenarios;
-    [SerializeField] private TssTrainingSession session;
-
     [Header("UI Prefabs")]
     [SerializeField] private GameObject scenarioMenuCanvasPrefab;
     [SerializeField] private GameObject scenarioButtonPrefab;
@@ -26,15 +22,11 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
     private TssExternalScenarioLoader loader;
     private readonly List<Button> buttons = new();
     private bool launching;
-    private bool fallbackAdded;
     public bool IsReady { get; private set; }
 
     private async void Start()
     {
         TssResultsHandoff.Clear();
-        if (!session)
-            session = FindFirstObjectByType<TssTrainingSession>();
-
         BuildMenu();
         if (!buttonsContainer) return;
         loader = new TssExternalScenarioLoader(Resources.Load<TssScenarioCatalog>(TssScenarioCatalog.ResourcePath));
@@ -49,7 +41,7 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
                     var preview = await loader.LoadScenarioAsync(entry.scenarioId);
                     TssScenarioLaunchState.ReleaseRuntime(preview);
                     if (!this) return;
-                    AddButton(entry.displayName, () => LaunchAsync(entry, null));
+                    AddButton(entry.displayName, () => LaunchAsync(entry));
                 }
                 catch (Exception ex)
                 {
@@ -60,9 +52,10 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
             if (loader.Warnings.Count > 0 || buttons.Count == 0)
             {
                 manifestStatus.text = $"Manifest loaded with issues: {buttons.Count}/{manifest.scenarios.Length} available.";
-                loadStatus.text = "Some external scenarios are unavailable. Built-in fallback is listed below.";
+                loadStatus.text = loader.Warnings.Count > 0
+                    ? "JSON scenario unavailable: " + loader.Warnings[0]
+                    : "No valid JSON scenarios in the manifest.";
                 foreach (var warning in loader.Warnings) Debug.LogWarning("[TSS Scenarios] " + warning);
-                AddFallbackButtons();
             }
             else
             {
@@ -74,14 +67,12 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
         {
             if (!this) return;
             Debug.LogWarning("[TSS Scenarios] " + ex.Message);
-            manifestStatus.text = "Manifest not loaded: using built-in scenario(s).";
-            loadStatus.text = "External scenarios unavailable. Using built-in scenarios.";
-            AddFallbackButtons();
+            manifestStatus.text = "Scenario manifest unavailable.";
+            loadStatus.text = "Cannot load JSON scenarios: " + ex.Message;
         }
         if (!this) return;
         IsReady = true;
         foreach (var button in buttons) button.interactable = true;
-        if (buttons.Count == 0) loadStatus.text = "No scenarios available. Check the scenario catalog and menu configuration.";
     }
 
     private void BuildMenu()
@@ -146,14 +137,6 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
         if (!layoutDriven) manifestStatus.rectTransform.sizeDelta = new Vector2(540f, 28f);
     }
 
-    private void AddFallbackButtons()
-    {
-        if (fallbackAdded) return;
-        fallbackAdded = true;
-        foreach (var scenario in TssExternalScenarioLoader.GetFallbackScenarios(scenarios, session ? session.GetFallbackScenario() : null))
-            AddButton(scenario.displayName + " (Built-in)", () => LaunchAsync(null, scenario));
-    }
-
     private void AddButton(string title, Func<Task> launch)
     {
         if (!scenarioButtonPrefab) throw new InvalidOperationException("Scenario button prefab is missing.");
@@ -170,7 +153,7 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
         button.onClick.AddListener(async () => await launch());
     }
 
-    private async Task LaunchAsync(TssScenarioManifestEntry entry, TssScenarioDefinition fallback)
+    private async Task LaunchAsync(TssScenarioManifestEntry entry)
     {
         if (launching || !IsReady) return;
         if (!TssScenarioLaunchState.TryCreateStudentId(lastNameInput.text, computerNumberInput.text, out var studentId))
@@ -185,7 +168,7 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
         TssScenarioDefinition selected = null;
         try
         {
-            selected = entry != null ? await loader.LoadScenarioAsync(entry.scenarioId) : fallback;
+            selected = await loader.LoadScenarioAsync(entry.scenarioId);
             if (!this) { TssScenarioLaunchState.ReleaseRuntime(selected); return; }
             if (!selected || !Application.CanStreamedLevelBeLoaded(selected.sceneName)) throw new InvalidOperationException("Selected scene is unavailable.");
             TssScenarioLaunchState.Select(selected, studentId);
@@ -197,8 +180,7 @@ public sealed class TssScenarioStartupMenu : MonoBehaviour
             TssScenarioLaunchState.ReleaseRuntime(selected);
             if (!this) return;
             Debug.LogWarning("[TSS Scenarios] Launch rejected: " + ex.Message);
-            loadStatus.text = "Scenario unavailable. Select another scenario or the built-in fallback.";
-            AddFallbackButtons();
+            loadStatus.text = "JSON scenario unavailable: " + ex.Message;
             foreach (var button in buttons) button.interactable = true;
             launching = false;
         }

@@ -135,6 +135,7 @@ public sealed class TssResultsSnapshot
     public readonly TssScenarioAssessment Assessment;
     public readonly TssScenarioDataSnapshot Scenario;
     public readonly string StudentId;
+    public readonly float ElapsedSeconds;
     public readonly TssNetworkRunProfileSnapshot NetworkProfile;
     public readonly List<TssInventorySnapshot> Inventory = new();
     public readonly List<TssCableInventorySnapshot> CableInventory = new();
@@ -150,6 +151,7 @@ public sealed class TssResultsSnapshot
         Assessment = assessment;
         Scenario = TssScenarioDataSnapshot.Copy(session ? session.Scenario : null);
         StudentId = session ? session.StudentId ?? string.Empty : string.Empty;
+        ElapsedSeconds = session ? session.ElapsedScenarioSeconds : 0f;
         NetworkProfile = TssNetworkRunProfileSnapshot.Copy(session ? session.NetworkProfile : null);
 
         if (!session)

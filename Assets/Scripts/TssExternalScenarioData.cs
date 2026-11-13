@@ -21,6 +21,7 @@ public sealed class TssExternalScenarioData
     public TssCableType defaultPlayerCableType;
     public ScenarioCableTypeRequirement[] cableTypeRequirements;
     public TssExternalPermanentConnection[] permanentConnections;
+    public ScenarioEffectivePathRequirement[] expectedEffectivePaths;
     public ScenarioCableScheduleEntry[] cableSchedule;
     public ScenarioNamingEntry[] namingRows;
     public RackScenarioConfig[] racks;

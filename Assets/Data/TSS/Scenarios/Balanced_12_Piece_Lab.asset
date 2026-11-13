@@ -45,10 +45,12 @@ MonoBehaviour:
     endpointAId: Rack:Rack01:U35:Fa01
     endpointBId: PatchPanel:Rack01:Port48
     requiredCableType: 1
+    crossoverGroupId: InterCloset
   - requirementId: InterClosetRack02
     endpointAId: Rack:Rack02:U35:Fa01
     endpointBId: PatchPanel:Rack02:Port48
     requiredCableType: 0
+    crossoverGroupId: InterCloset
   - requirementId: DemarcWan
     endpointAId: Rack:Rack01:U30:Fa01
     endpointBId: PatchPanel:Rack01:Port18
@@ -394,6 +396,28 @@ MonoBehaviour:
     requiresPunchDownTermination: 0
     endpointATerminationModuleId: 
     endpointBTerminationModuleId: 
+  expectedEffectivePaths:
+  - requirementId: InterCloset
+    endpointAId: Rack:Rack01:U35:Fa01
+    endpointBId: Rack:Rack02:U35:Fa01
+  - requirementId: Reception1
+    endpointAId: Reception1
+    endpointBId: Rack:Rack01:U35:Fa03
+  - requirementId: Reception2
+    endpointAId: Reception2
+    endpointBId: Rack:Rack01:U35:Fa04
+  - requirementId: Data1
+    endpointAId: Data1
+    endpointBId: Rack:Rack02:U35:Fa02
+  - requirementId: Data2
+    endpointAId: Data2
+    endpointBId: Rack:Rack02:U35:Fa03
+  - requirementId: Data3
+    endpointAId: Data3
+    endpointBId: Rack:Rack02:U35:Fa04
+  - requirementId: AccessPoint
+    endpointAId: AP-1
+    endpointBId: Rack:Rack01:U35:Fa07
   cableSchedule:
   - fromEndpoint: AN-1
     fromPort: Port 1
@@ -637,6 +661,8 @@ MonoBehaviour:
   networkScenario:
     enableLayer23Simulation: 1
     profileSeed: 20261008
+    localUsername: admin
+    localPassword: 12#$Qwert
     managementVlanName: Management
     receptionVlanName: Reception
     dataVlanName: Data
@@ -712,7 +738,7 @@ MonoBehaviour:
     cableSchedule:
       sectionTitle: Cable Schedule
       scenarioHeading: CABLE RUN SCHEDULE - {ScenarioId}
-      introParagraph: Punch-downs are permanent copper through walls and ceiling. Patch cords are field-replaceable. Cable type identifies the expected connection class.
+      introParagraph: Port numbers below show one example. Any available wallport and its paired patch-panel port may complete a required device path. For the inter-closet link, use one crossover patch cord on either side and one straight-through patch cord on the other. All other player cables are straight-through.
     circuitLetter:
       sectionTitle: CIRCUIT HANDOFF LETTER
       scenarioHeading: CIRCUIT LETTER - {ScenarioId}

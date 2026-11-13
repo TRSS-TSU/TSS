@@ -318,6 +318,95 @@ public sealed class TssPlacementEvaluatorTests
         }
     }
 
+    [TestCase(true, false, true)]
+    [TestCase(false, true, true)]
+    [TestCase(false, false, false)]
+    public void InterClosetAcceptsCrossoverOnEitherSide(bool leftCrossover, bool rightCrossover, bool expected)
+    {
+        var root = new GameObject("Inter-closet cable types");
+        var session = root.AddComponent<TssTrainingSession>();
+        var scenario = CreateScenario();
+        var straight = Cable(TssCableType.StraightThrough);
+        var crossover = Cable(TssCableType.Crossover);
+        var leftSwitch = EndpointObject("AN-1 Fa01").AddComponent<TssPortEndpoint>();
+        var leftPatch = EndpointObject("PP1 Port48").AddComponent<TssPortEndpoint>();
+        var rightPatch = EndpointObject("PP2 Port48").AddComponent<TssPortEndpoint>();
+        var rightSwitch = EndpointObject("AN-2 Fa01").AddComponent<TssPortEndpoint>();
+        var otherDevice = EndpointObject("Other device").AddComponent<TssPortEndpoint>();
+        var otherSwitchPort = EndpointObject("AN-1 Fa02").AddComponent<TssPortEndpoint>();
+
+        try
+        {
+            leftSwitch.Configure("Rack:Rack01:U35:Fa01", Port("Fa01"));
+            leftPatch.Configure("PatchPanel:Rack01:Port48", Port("Port48"));
+            rightPatch.Configure("PatchPanel:Rack02:Port48", Port("Port48"));
+            rightSwitch.Configure("Rack:Rack02:U35:Fa01", Port("Fa01"));
+            otherDevice.Configure("Endpoint:Other:Eth01", Port("Eth01"));
+            otherSwitchPort.Configure("Rack:Rack01:U35:Fa02", Port("Fa02"));
+            scenario.cableInventory = new[]
+            {
+                new ScenarioCableInventoryItem { cable = straight, quantity = 2 },
+                new ScenarioCableInventoryItem { cable = crossover, quantity = 2 }
+            };
+            scenario.networkScenario = new NetworkScenarioConfig
+            {
+                roleBindings = new[]
+                {
+                    new NetworkRoleBinding { role = "AN-1", deviceKey = "Rack:Rack01:U35", category = EquipmentCategory.Switch },
+                    new NetworkRoleBinding { role = "AN-2", deviceKey = "Rack:Rack02:U35", category = EquipmentCategory.Switch }
+                }
+            };
+            scenario.cableTypeRequirements = new[]
+            {
+                new ScenarioCableTypeRequirement { requirementId = "Left", endpointAId = leftSwitch.EndpointId, endpointBId = leftPatch.EndpointId, requiredCableType = TssCableType.Crossover, crossoverGroupId = "InterCloset" },
+                new ScenarioCableTypeRequirement { requirementId = "Right", endpointAId = rightSwitch.EndpointId, endpointBId = rightPatch.EndpointId, requiredCableType = TssCableType.StraightThrough, crossoverGroupId = "InterCloset" }
+            };
+            scenario.permanentConnections = new[]
+            {
+                new ScenarioPermanentCableConnection { connectionId = "InterCloset", patchPanelEndpointId = leftPatch.EndpointId, wallportEndpointId = rightPatch.EndpointId }
+            };
+            scenario.expectedEffectivePaths = new[]
+            {
+                new ScenarioEffectivePathRequirement { requirementId = "InterCloset", endpointAId = leftSwitch.EndpointId, endpointBId = rightSwitch.EndpointId }
+            };
+            session.BeginScenario(scenario);
+            var leftCable = leftCrossover ? crossover : straight;
+            var rightCable = rightCrossover ? crossover : straight;
+            Assert.IsTrue(session.TryCheckoutCable(leftCable, out _));
+            Assert.IsTrue(session.TryUsePort(leftSwitch, out _));
+            Assert.IsTrue(session.TryUsePort(leftPatch, out _));
+            Assert.IsTrue(session.TryCheckoutCable(rightCable, out _));
+            Assert.IsTrue(session.TryUsePort(rightPatch, out _));
+            Assert.IsTrue(session.TryUsePort(rightSwitch, out _));
+
+            var result = new TssPhysicalWorkPackageEvaluator(session).Evaluate();
+            Assert.AreEqual(expected, result.IsComplete("WP1.CableTypes.CrossoverGroup.InterCloset"));
+            Assert.AreEqual(expected, result.IsComplete("WP1.EffectivePaths.InterCloset"));
+            Assert.IsTrue(session.IsCableTypeCorrect(session.PhysicalConnections[1]));
+            Assert.IsTrue(session.IsCableTypeCorrect(session.PhysicalConnections[2]));
+            if (expected)
+            {
+                Assert.IsTrue(session.TryCheckoutCable(crossover, out _));
+                Assert.IsTrue(session.TryUsePort(otherDevice, out _));
+                Assert.IsTrue(session.TryUsePort(otherSwitchPort, out _));
+                Assert.IsFalse(new TssPhysicalWorkPackageEvaluator(session).Evaluate().IsComplete("WP1.CableTypes.OtherCables"));
+            }
+        }
+        finally
+        {
+            Object.DestroyImmediate(leftSwitch.gameObject);
+            Object.DestroyImmediate(leftPatch.gameObject);
+            Object.DestroyImmediate(rightPatch.gameObject);
+            Object.DestroyImmediate(rightSwitch.gameObject);
+            Object.DestroyImmediate(otherDevice.gameObject);
+            Object.DestroyImmediate(otherSwitchPort.gameObject);
+            Object.DestroyImmediate(straight);
+            Object.DestroyImmediate(crossover);
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(root);
+        }
+    }
+
     [Test]
     public void PhysicalCarrierSurvivesAdministrativeShutdown()
     {
@@ -471,7 +560,7 @@ public sealed class TssPlacementEvaluatorTests
         var patch = EndpointObject("Patch").AddComponent<TssPortEndpoint>();
         var wall = EndpointObject("Wall").AddComponent<TssPortEndpoint>();
         var switchPort = EndpointObject("SwitchPort").AddComponent<TssPortEndpoint>();
-        var accessPoint = EndpointObject("AccessPoint").AddComponent<TssPortEndpoint>();
+        var reception = EndpointObject("Reception1").AddComponent<TssPortEndpoint>();
 
         try
         {
@@ -484,9 +573,13 @@ public sealed class TssPlacementEvaluatorTests
             };
             patch.Configure("PatchPanel:Rack01:Port03", Port("Port 03"));
             wall.Configure("WallPort:Reception:Port03", Port("Reception Port 03"));
-            switchPort.Configure("Rack:Rack01:U37:Fa14", Port("FastEthernet 0/14"));
-            accessPoint.Configure("Endpoint:AP-1:Eth01", Port("Ethernet Port 01"));
+            switchPort.Configure("Rack:Rack01:U37:Fa03", Port("FastEthernet 0/3"));
+            reception.Configure("Endpoint:Reception1:Nic01", Port("Ethernet Port 01"), "Reception1");
             scenario.cableInventory = new[] { new ScenarioCableInventoryItem { cable = cable, quantity = 2 } };
+            scenario.expectedEffectivePaths = new[]
+            {
+                new ScenarioEffectivePathRequirement { requirementId = "Reception1", endpointAId = "Reception1", endpointBId = switchPort.EndpointId }
+            };
             scenario.permanentConnections = new[]
             {
                 new ScenarioPermanentCableConnection
@@ -499,7 +592,7 @@ public sealed class TssPlacementEvaluatorTests
 
             session.BeginScenario(scenario);
             Assert.IsTrue(session.TryCheckoutCable(cable, out _));
-            Assert.IsTrue(session.TryUsePort(accessPoint, out _));
+            Assert.IsTrue(session.TryUsePort(reception, out _));
             Assert.IsTrue(session.TryUsePort(wall, out _));
             Assert.IsTrue(session.TryCheckoutCable(cable, out _));
             Assert.IsTrue(session.TryUsePort(patch, out _));
@@ -508,15 +601,16 @@ public sealed class TssPlacementEvaluatorTests
             var paths = session.GetEffectivePhysicalPaths();
             Assert.AreEqual(1, paths.Count);
             Assert.IsTrue(
-                (paths[0].EndpointAId == accessPoint.EndpointId && paths[0].EndpointBId == switchPort.EndpointId)
-                || (paths[0].EndpointAId == switchPort.EndpointId && paths[0].EndpointBId == accessPoint.EndpointId));
+                (paths[0].EndpointAId == reception.EndpointId && paths[0].EndpointBId == switchPort.EndpointId)
+                || (paths[0].EndpointAId == switchPort.EndpointId && paths[0].EndpointBId == reception.EndpointId));
+            Assert.IsTrue(new TssPhysicalWorkPackageEvaluator(session).Evaluate().IsComplete("WP1.EffectivePaths.Reception1"));
         }
         finally
         {
             Object.DestroyImmediate(patch.gameObject);
             Object.DestroyImmediate(wall.gameObject);
             Object.DestroyImmediate(switchPort.gameObject);
-            Object.DestroyImmediate(accessPoint.gameObject);
+            Object.DestroyImmediate(reception.gameObject);
             Object.DestroyImmediate(go);
             Object.DestroyImmediate(cable);
             Object.DestroyImmediate(scenario);

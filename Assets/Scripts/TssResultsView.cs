@@ -54,9 +54,11 @@ public sealed class TssResultsView : MonoBehaviour
             scenarioText.text = string.IsNullOrWhiteSpace(assessment.ScenarioName) ? "Scenario unavailable" : assessment.ScenarioName;
         if (overallSummary)
         {
+            var elapsed = Mathf.FloorToInt(snapshot.ElapsedSeconds);
+            var elapsedText = $"TIME: {elapsed / 3600:00}:{elapsed / 60 % 60:00}:{elapsed % 60:00}";
             overallSummary.text = assessment.IsComplete
-                ? "COMPLETE — all four work packages passed at exit."
-                : "INCOMPLETE — review the remaining criteria below.";
+                ? "COMPLETE — all four work packages passed at exit.\n" + elapsedText
+                : "INCOMPLETE — review the remaining criteria below.\n" + elapsedText;
             overallSummary.color = assessment.IsComplete ? new Color(.35f, 1f, .55f) : new Color(1f, .75f, .3f);
         }
 

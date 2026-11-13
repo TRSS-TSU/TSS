@@ -15,6 +15,7 @@ public sealed class TssScenarioDefinition : ScriptableObject
     public TssCableType defaultPlayerCableType = TssCableType.StraightThrough;
     public ScenarioCableTypeRequirement[] cableTypeRequirements;
     public ScenarioPermanentCableConnection[] permanentConnections;
+    public ScenarioEffectivePathRequirement[] expectedEffectivePaths;
     public ScenarioCableScheduleEntry[] cableSchedule;
     public ScenarioNamingEntry[] namingRows;
     public RackScenarioConfig[] racks;
@@ -108,6 +109,7 @@ public sealed class ScenarioCableTypeRequirement
     public string endpointAId;
     public string endpointBId;
     public TssCableType requiredCableType = TssCableType.StraightThrough;
+    public string crossoverGroupId;
 }
 
 [Serializable]
@@ -121,6 +123,14 @@ public sealed class ScenarioPermanentCableConnection
     public bool requiresPunchDownTermination;
     public string endpointATerminationModuleId;
     public string endpointBTerminationModuleId;
+}
+
+[Serializable]
+public sealed class ScenarioEffectivePathRequirement
+{
+    public string requirementId;
+    public string endpointAId;
+    public string endpointBId;
 }
 
 [Serializable]
@@ -196,6 +206,8 @@ public sealed class NetworkScenarioConfig
     public string enableSecret = "TrainingEnable";
     public string consolePassword = "TrainingConsole";
     public string vtyPassword = "TrainingVty";
+    public string localUsername;
+    public string localPassword;
     [TextArea] public string motd = "AUTHORIZED TRAINING ACCESS ONLY";
     public string managementVlanName = "Management";
     public string receptionVlanName = "Reception";

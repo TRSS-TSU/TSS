@@ -206,6 +206,10 @@ public sealed class TssScenarioResultsTests
         {
             new ScenarioPermanentCableConnection { connectionId = "Infrastructure", patchPanelEndpointId = "Patch", wallportEndpointId = "Wall", requiresPunchDownTermination = true }
         };
+        scenario.expectedEffectivePaths = new[]
+        {
+            new ScenarioEffectivePathRequirement { requirementId = "RequiredPath", endpointAId = "A", endpointBId = "B" }
+        };
         var sessionObject = new GameObject("PhysicalResultsSession");
         var session = sessionObject.AddComponent<TssTrainingSession>();
         session.BeginScenario(scenario, "STUDENT-1");
@@ -217,8 +221,8 @@ public sealed class TssScenarioResultsTests
 
             Assert.IsNull(session.NetworkState);
             Assert.IsTrue(physical.UnmetCategories.Exists(x => x.Id == "WP1.CableTypes.RequiredCable"));
-            Assert.IsTrue(physical.UnmetCategories.Exists(x => x.Id == "WP1.PermanentConnections.Infrastructure"));
-            Assert.IsTrue(physical.UnmetCategories.Exists(x => x.Id == "WP1.Terminations"));
+            Assert.IsTrue(physical.UnmetCategories.Exists(x => x.Id == "WP1.EffectivePaths.RequiredPath"));
+            Assert.IsFalse(physical.Conditions.Exists(x => x.Id.StartsWith("WP1.PermanentConnections.") || x.Id == "WP1.Terminations"));
             Assert.IsFalse(assessment.WorkPackages[0].IsComplete);
             Assert.IsFalse(assessment.WorkPackages[1].UnmetCriteria.Any(x => x.Contains("cable", System.StringComparison.OrdinalIgnoreCase)));
         }
@@ -289,15 +293,55 @@ public sealed class TssScenarioResultsTests
     }
 
     [Test]
-    public void HardeningRequiresNoLoginOnVty5To15()
+    public void HardeningIgnoresUnlistedVtyDetails()
     {
         var state = CompleteLayer2State(out var an1, out _);
 
         an1.Vty5To15LoginRequired = true;
-        Assert.IsTrue(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2().UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Hardening"));
-
-        an1.Vty5To15LoginRequired = false;
+        an1.Vty5To15ExecDisabled = false;
+        an1.VtyExecTimeoutMinutes = 0;
+        an1.VtyTransportInputSsh = false;
+        an1.VtyLoggingSynchronous = false;
         Assert.IsFalse(new TssNetworkWorkPackageEvaluator(state).EvaluateLayer2().UnmetCategories.Exists(x => x.Id == "WP2.AN-1.Hardening"));
+    }
+
+    [Test]
+    public void HardeningReportsScenarioRequirementsAndHonorsOptionalLineFlags()
+    {
+        var config = new NetworkScenarioConfig
+        {
+            enableSecret = "secret", motd = "banner", localUsername = "admin", localPassword = "password",
+            requireConsoleLogin = false, requireVtyLogin = false,
+            requirePasswordEncryption = false, requireDomainLookupDisabled = false
+        };
+        var state = new TssNetworkSessionState(TssNetworkRunProfile.Create(42, config));
+        var router = state.GetOrCreateDevice("router", EquipmentCategory.Router, "CN-1");
+        router.Hostname = "CN-1";
+        router.EnableSecret = "secret";
+        router.Motd = "banner";
+        router.UserPasswords["admin"] = "wrong";
+        var evaluator = new TssNetworkWorkPackageEvaluator(state);
+
+        var unmet = evaluator.EvaluateLayer3().UnmetCategories.Find(x => x.Id == "WP3.Hardening");
+        StringAssert.Contains("CN-1 hardening needs: local user admin", unmet.Label);
+        Assert.IsFalse(unmet.Label.Contains("console") || unmet.Label.Contains("VTY") || unmet.Label.Contains("password encryption"));
+
+        router.UserPasswords["admin"] = "password";
+        Assert.IsTrue(evaluator.EvaluateLayer3().IsComplete("WP3.Hardening"));
+
+        config.requireConsoleLogin = true;
+        config.requireVtyLogin = true;
+        var requiredState = new TssNetworkSessionState(TssNetworkRunProfile.Create(42, config));
+        var requiredRouter = requiredState.GetOrCreateDevice("router", EquipmentCategory.Router, "CN-1");
+        requiredRouter.Hostname = "CN-1";
+        requiredRouter.EnableSecret = "secret";
+        requiredRouter.Motd = "banner";
+        requiredRouter.UserPasswords["admin"] = "password";
+        var requiredUnmet = new TssNetworkWorkPackageEvaluator(requiredState).EvaluateLayer3().UnmetCategories.Find(x => x.Id == "WP3.Hardening");
+        StringAssert.Contains("console login", requiredUnmet.Label);
+        StringAssert.Contains("console password", requiredUnmet.Label);
+        StringAssert.Contains("VTY local login", requiredUnmet.Label);
+        StringAssert.Contains("VTY password", requiredUnmet.Label);
     }
 
     [Test]

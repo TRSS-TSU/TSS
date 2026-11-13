@@ -270,17 +270,14 @@ public sealed class TssExternalScenarioTests
     }
 
     [Test]
-    public void FallbackSelectionAndHandoffPreserveAuthoredAsset()
+    public void JsonSelectionAndHandoffPreserveAuthoredAsset()
     {
-        var choices = TssExternalScenarioLoader.GetFallbackScenarios(new[] { null, baseline, baseline }, null);
-        Assert.AreEqual(1, choices.Length);
-        Assert.AreSame(baseline, choices[0]);
-        Assert.AreSame(baseline, TssExternalScenarioLoader.GetFallbackScenarios(null, baseline).Single());
-        TssScenarioLaunchState.Select(baseline, "SMITH-17");
-        Assert.AreSame(baseline, TssScenarioLaunchState.ConsumeSelectedScenario(out var student));
+        Assert.IsTrue(TssExternalScenarioLoader.TryCreate(BaselineData(), catalog, out var runtime, out var errors), string.Join("\n", errors));
+        TssScenarioLaunchState.Select(runtime, "SMITH-17");
+        Assert.AreSame(runtime, TssScenarioLaunchState.ConsumeSelectedScenario(out var student));
         Assert.AreEqual("SMITH-17", student);
         Assert.IsNull(TssScenarioLaunchState.ConsumeSelectedScenario(out _));
-        TssScenarioLaunchState.ReleaseRuntime(baseline);
+        TssScenarioLaunchState.ReleaseRuntime(runtime);
         Assert.IsTrue(baseline);
     }
 

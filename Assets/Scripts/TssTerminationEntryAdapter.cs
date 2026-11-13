@@ -10,6 +10,7 @@ public sealed class TssTerminationEntryAdapter : MonoBehaviour
 
     private TssPortEndpoint _sourceEndpoint;
     private TssTerminationFirstPersonControls _controlsInstance;
+    public bool HasVisibleControls => _controlsInstance && _controlsInstance.gameObject.activeInHierarchy;
 
     private void Awake()
     {

@@ -159,7 +159,7 @@ public sealed class TssNetworkWorkPackageEvaluator
     private void CheckManagementSvi(NetworkDeviceState device, string name, TssWorkPackageResult result)
     {
         var id = "WP2." + name + ".ManagementSvi";
-        var expectedAddress = _state.Profile?.ManagementNetwork + ".2";
+        var expectedAddress = _state.Profile?.ManagementNetwork + (name.Equals("AN-2", StringComparison.OrdinalIgnoreCase) ? ".3" : ".2");
         var valid = device != null && device.Svis.TryGetValue(1, out var vlan1) && !vlan1.AdminUp && string.IsNullOrWhiteSpace(vlan1.Address)
             && device.Svis.TryGetValue(_state.Profile.ManagementVlan, out var svi)
             && svi.AdminUp && string.Equals(svi.Address, expectedAddress, StringComparison.OrdinalIgnoreCase)
@@ -173,16 +173,25 @@ public sealed class TssNetworkWorkPackageEvaluator
 
     private void CheckHardening(NetworkDeviceState device, string id, TssWorkPackageResult result, string expectedHostname = null)
     {
-        if (device != null && (!string.IsNullOrWhiteSpace(device.EnablePassword) || !string.IsNullOrWhiteSpace(device.EnableSecret) || !string.IsNullOrWhiteSpace(device.ConsolePassword) || !string.IsNullOrWhiteSpace(device.VtyPassword) || !string.IsNullOrWhiteSpace(device.Motd) || device.PasswordEncryption || device.DomainLookupDisabled || device.VtyLoginLocal || device.VtyExecTimeoutMinutes > 0 || device.VtyTransportInputSsh || device.VtyLoggingSynchronous))
+        if (device != null && (!string.IsNullOrWhiteSpace(device.EnablePassword) || !string.IsNullOrWhiteSpace(device.EnableSecret) || !string.IsNullOrWhiteSpace(device.ConsolePassword) || !string.IsNullOrWhiteSpace(device.VtyPassword) || !string.IsNullOrWhiteSpace(device.Motd) || device.PasswordEncryption || device.DomainLookupDisabled || device.VtyLoginLocal || device.UserPasswords.Count > 0))
             result.Attempt(id);
         var p = _state.Profile;
-        if (p == null || device == null || (p.RequirePasswordEncryption && !device.PasswordEncryption) || (p.RequireDomainLookupDisabled && !device.DomainLookupDisabled)
-            || (p.RequireConsoleLogin && !device.ConsoleLoginRequired) || (p.RequireVtyLogin && (!device.VtyLoginRequired || !device.VtyLoginLocal || device.VtyExecTimeoutMinutes != 10 || !device.VtyTransportInputSsh || !device.VtyLoggingSynchronous || !device.Vty5To15ExecDisabled))
-            || (p.RequireNoEnablePassword && !string.IsNullOrWhiteSpace(device.EnablePassword)) || device.EnableSecret != p.EnableSecret
-            || device.ConsolePassword != p.ConsolePassword || device.VtyPassword != p.VtyPassword || device.Motd != p.Motd
-            || (!string.IsNullOrWhiteSpace(expectedHostname) && !string.Equals(device.Hostname, expectedHostname, StringComparison.OrdinalIgnoreCase)))
-            result.Add(id, "Required device hardening is incomplete.");
-        else result.Pass(id, "Required device hardening is complete.");
+        var name = string.IsNullOrWhiteSpace(expectedHostname) ? device?.ExpectedRole ?? "Device" : expectedHostname;
+        if (p == null || device == null) { result.Add(id, name + " hardening configuration is unavailable."); return; }
+        var missing = new List<string>();
+        if (!string.IsNullOrWhiteSpace(expectedHostname) && !string.Equals(device.Hostname, expectedHostname, StringComparison.OrdinalIgnoreCase)) missing.Add("hostname");
+        if (p.RequirePasswordEncryption && !device.PasswordEncryption) missing.Add("password encryption");
+        if (p.RequireDomainLookupDisabled && !device.DomainLookupDisabled) missing.Add("domain lookup disabled");
+        if (p.RequireNoEnablePassword && !string.IsNullOrWhiteSpace(device.EnablePassword)) missing.Add("no enable password");
+        if (device.EnableSecret != p.EnableSecret) missing.Add("enable secret");
+        if (p.RequireConsoleLogin && !device.ConsoleLoginRequired) missing.Add("console login");
+        if (p.RequireConsoleLogin && device.ConsolePassword != p.ConsolePassword) missing.Add("console password");
+        if (p.RequireVtyLogin && (!device.VtyLoginRequired || !device.VtyLoginLocal)) missing.Add("VTY local login");
+        if (p.RequireVtyLogin && device.VtyPassword != p.VtyPassword) missing.Add("VTY password");
+        if (!string.IsNullOrWhiteSpace(p.LocalUsername) && (!device.UserPasswords.TryGetValue(p.LocalUsername, out var password) || password != p.LocalPassword)) missing.Add("local user " + p.LocalUsername);
+        if (device.Motd != p.Motd) missing.Add("login banner");
+        if (missing.Count > 0) result.Add(id, name + " hardening needs: " + string.Join(", ", missing) + ".");
+        else result.Pass(id, name + " hardening is complete.");
     }
 
     private void CheckVlans(NetworkDeviceState device, string name, TssWorkPackageResult result)

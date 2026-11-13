@@ -52,6 +52,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
     private Text _objectiveText;
     private Text _contextText;
     private Text _progressText;
+    private Text _timerText;
+    private int _shownElapsedSecond = -1;
     private GameObject _cancelHeldButton;
     private Button _sopButton;
     private Button _connectionsButton;
@@ -189,6 +191,16 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
     private void Update()
     {
+        if (session && _timerText)
+        {
+            var elapsedSecond = Mathf.FloorToInt(session.ElapsedScenarioSeconds);
+            if (elapsedSecond != _shownElapsedSecond)
+            {
+                _shownElapsedSecond = elapsedSecond;
+                _timerText.text = "TIME  " + FormatElapsed(elapsedSecond);
+            }
+        }
+
         if (WasEscapePressed())
         {
             CloseOpenUi();
@@ -1030,6 +1042,20 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
         _objectiveText = _hudRoot.Find("ObjectiveText")?.GetComponent<Text>();
         _contextText = _hudRoot.Find("ContextText")?.GetComponent<Text>();
+        var timerObject = new GameObject("CompletionTimer", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+        timerObject.transform.SetParent(_hudRoot, false);
+        var timerRect = (RectTransform)timerObject.transform;
+        timerRect.anchorMin = new Vector2(1f, 1f);
+        timerRect.anchorMax = new Vector2(1f, 1f);
+        timerRect.pivot = new Vector2(1f, 1f);
+        timerRect.anchoredPosition = new Vector2(-80f, -80f);
+        timerRect.sizeDelta = new Vector2(420f, 70f);
+        _timerText = timerObject.GetComponent<Text>();
+        _timerText.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        _timerText.fontSize = 32;
+        _timerText.alignment = TextAnchor.MiddleRight;
+        _timerText.color = Color.white;
+        _timerText.raycastTarget = false;
 
         var oldProgressText = _hudRoot.Find("ProgressText");
         if (oldProgressText)
@@ -1052,6 +1078,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
             oldConnectionsButton.gameObject.SetActive(false);
         }
     }
+
+    private static string FormatElapsed(int totalSeconds) => $"{totalSeconds / 3600:00}:{totalSeconds / 60 % 60:00}:{totalSeconds % 60:00}";
 
     private void BuildHudInfoButtons()
     {
@@ -1211,12 +1239,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 playerCables++;
         }
 
-        var requiredTerminations = RequiredTerminationCount();
         var savedTerminations = session.GetTerminationModuleStates().Count;
-        var terminations =
-            requiredTerminations > 0
-                ? $"Terminations {savedTerminations}/{requiredTerminations}"
-                : "Terminations n/a";
+        var terminations = $"Terminations saved {savedTerminations}";
 
         return $"Placement {completePlacements}/{totalPlacements}   Cables {playerCables}   Permanent {permanent}   Effective paths {session.GetEffectivePhysicalPaths().Count}   {terminations}";
     }
@@ -1371,13 +1395,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
         builder.AppendLine();
         builder.AppendLine("Terminations");
 
-        var requiredTerminations = RequiredTerminationCount();
         var states = session.GetTerminationModuleStates();
-        builder.AppendLine(
-            requiredTerminations > 0
-                ? $"{states.Count}/{requiredTerminations} saved"
-                : "No required terminations"
-        );
+        builder.AppendLine($"{states.Count} saved");
 
         foreach (var state in states)
             builder.AppendLine(
@@ -1706,27 +1725,16 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 prefix: true
             );
         }
-        if (result.Conditions.Any(x => x.Id.StartsWith("WP1.PermanentConnections.")))
+        if (result.Conditions.Any(x => x.Id.StartsWith("WP1.EffectivePaths.")))
         {
             total++;
             AppendChecklistLine(
                 builder,
                 result,
-                "Complete all permanent infrastructure connections",
-                "WP1.PermanentConnections.",
+                "Complete all required effective device paths",
+                "WP1.EffectivePaths.",
                 ref complete,
                 prefix: true
-            );
-        }
-        if (result.Conditions.Any(x => x.Id == "WP1.Terminations"))
-        {
-            total++;
-            AppendChecklistLine(
-                builder,
-                result,
-                "Terminate every required permanent run",
-                "WP1.Terminations",
-                ref complete
             );
         }
         var text = builder.ToString();
@@ -1792,21 +1800,6 @@ public sealed class TssRuntimeUi : MonoBehaviour
             return false;
 
         return result.IsComplete(id, prefix);
-    }
-
-    private int RequiredTerminationCount()
-    {
-        if (!session.Scenario || session.Scenario.permanentConnections == null)
-            return 0;
-
-        var count = 0;
-        foreach (var connection in session.Scenario.permanentConnections)
-        {
-            if (connection != null && connection.requiresPunchDownTermination)
-                count += 2;
-        }
-
-        return count;
     }
 
     private void RefreshSopPanel()
@@ -2052,11 +2045,11 @@ public sealed class TssRuntimeUi : MonoBehaviour
             case 3:
                 return BinderHeading("Cable schedule")
                     + "INTER-CLOSET LINK\nRack01 Patch1 Port48 to Rack02 Patch2 Port48: permanent punch-down run; complete both terminations.\n"
-                    + "Patch cords: AN-1 Fa0/1 to Patch1 Port48: crossover; AN-2 Fa0/1 to Patch2 Port48: straight-through.\n"
+                    + "Patch cords: use one crossover on either switch side and one straight-through on the other.\n"
                     + "CN-1 Fa0/0 to AN-1 Fa0/6: straight-through.\n\n"
                     + "DEMARC\nCN-1 Fa0/1 to Patch1 Port18: straight-through.\n\n"
-                    + "GROUND FLOOR\nIT1 to AN-1 Fa0/2; IT2 to AN-1 Fa0/5\nReception1/2 to wall ports 1/2, then Patch1 ports 1/2 to AN-1 Fa0/3/4.\n\n"
-                    + "SECOND FLOOR\nData1/2/3 to Office wall ports, then Patch2 ports 1/5/6 to AN-2 Fa0/2/3/4.\n\n"
+                    + "GROUND FLOOR\nIT1 to AN-1 Fa0/2; IT2 to AN-1 Fa0/5\nReception1/2 may use any available wallport and its paired patch-panel port; connect to AN-1 Fa0/3/4.\n\n"
+                    + "SECOND FLOOR\nData1/2/3 may use any available wallport and its paired patch-panel port; connect to AN-2 Fa0/2/3/4.\n\n"
                     + "CIRCUIT AND WIRELESS\nCN-1 Fa0/1 to Patch1 Port18; AP-1 to any Reception Wall Port 01-04, then the matching Patch1 Port 01-04 to AN-1 Fa0/7.\n"
                     + "Complete each punch-down and patch cord in the structured path.";
             case 4:

@@ -92,6 +92,65 @@ public sealed class TssTerminationTests
         Object.DestroyImmediate(sessionObject);
     }
 
+    [Test]
+    public void CompletingPunchDownRefreshesSwitchCarrier()
+    {
+        var sessionObject = new GameObject("Session");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        var switchPort = Endpoint("Rack:Rack01:U35:Fa01");
+        var patch = Endpoint("Patch:01");
+        var wall = Endpoint("Wall:01");
+        var host = Endpoint("Endpoint:Host:Eth01");
+        var cable = ScriptableObject.CreateInstance<TssCableDefinition>();
+        cable.cableType = TssCableType.StraightThrough;
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.cableInventory = new[] { new ScenarioCableInventoryItem { cable = cable, quantity = 2 } };
+        scenario.networkScenario = new NetworkScenarioConfig
+        {
+            enableLayer23Simulation = true,
+            roleBindings = new[] { new NetworkRoleBinding { role = "AN-1", deviceKey = "Rack:Rack01:U35", category = EquipmentCategory.Switch } }
+        };
+        scenario.permanentConnections = new[]
+        {
+            new ScenarioPermanentCableConnection
+            {
+                connectionId = "Infrastructure001", patchPanelEndpointId = patch.EndpointId, wallportEndpointId = wall.EndpointId,
+                requiresPunchDownTermination = true, endpointATerminationModuleId = "Infrastructure001:A", endpointBTerminationModuleId = "Infrastructure001:B"
+            }
+        };
+
+        try
+        {
+            session.BeginScenario(scenario);
+            var device = session.NetworkState.GetOrCreateDevice("Rack:Rack01:U35", EquipmentCategory.Switch, "AN-1");
+            device.Interfaces["Fa0/1"] = new NetworkInterfaceState { Name = "Fa0/1", EndpointId = switchPort.EndpointId, AdminUp = true };
+            Assert.IsTrue(session.TryCheckoutCable(cable, out _));
+            Assert.IsTrue(session.TryUsePort(switchPort, out _));
+            Assert.IsTrue(session.TryUsePort(patch, out _));
+            Assert.IsTrue(session.TryCheckoutCable(cable, out _));
+            Assert.IsTrue(session.TryUsePort(wall, out _));
+            Assert.IsTrue(session.TryUsePort(host, out _));
+            Assert.IsFalse(device.Interfaces["Fa0/1"].CarrierUp);
+
+            Assert.IsTrue(session.SetTerminationModuleState(Module("Infrastructure001", patch.EndpointId, "Infrastructure001:A", true), true, out _));
+            Assert.IsFalse(device.Interfaces["Fa0/1"].CarrierUp);
+            Assert.IsTrue(session.SetTerminationModuleState(Module("Infrastructure001", wall.EndpointId, "Infrastructure001:B", true), true, out _));
+            Assert.IsTrue(device.Interfaces["Fa0/1"].CarrierUp);
+            Assert.IsTrue(session.NetworkState.IsEndpointLogicalLayer1Available(session, switchPort.EndpointId));
+            Assert.IsTrue(session.NetworkState.IsEndpointLogicalLayer2Available(session, switchPort.EndpointId));
+        }
+        finally
+        {
+            Object.DestroyImmediate(switchPort.gameObject);
+            Object.DestroyImmediate(patch.gameObject);
+            Object.DestroyImmediate(wall.gameObject);
+            Object.DestroyImmediate(host.gameObject);
+            Object.DestroyImmediate(cable);
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
     private static TssTerminationModuleState Module(string connectionId, string endpointId, string moduleId, bool correct)
     {
         var colors = new[]

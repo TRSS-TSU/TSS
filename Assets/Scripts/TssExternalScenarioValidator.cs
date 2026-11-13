@@ -106,6 +106,21 @@ public static class TssExternalScenarioValidator
             KnownCableEndpoint(row.endpointBId, endpoints, names, "endpointBId", errors);
             CheckEnum(row.requiredCableType, "requiredCableType", errors);
         }
+        foreach (var group in (data.cableTypeRequirements ?? Array.Empty<ScenarioCableTypeRequirement>())
+                     .Where(x => x != null && !string.IsNullOrWhiteSpace(x.crossoverGroupId))
+                     .GroupBy(x => x.crossoverGroupId, StringComparer.OrdinalIgnoreCase))
+            if (group.Count() != 2 || group.Count(x => x.requiredCableType == TssCableType.Crossover) != 1
+                || group.Count(x => x.requiredCableType == TssCableType.StraightThrough) != 1)
+                errors.Add("Crossover group must contain one crossover and one straight-through cable: " + group.Key);
+        var pathRequirements = NewIds();
+        foreach (var row in Rows(data.expectedEffectivePaths ?? Array.Empty<ScenarioEffectivePathRequirement>(), "expectedEffectivePaths", errors))
+        {
+            Unique(row.requirementId, pathRequirements, "effective path requirementId", errors);
+            KnownCableEndpoint(row.endpointAId, endpoints, names, "effective path endpointAId", errors);
+            KnownCableEndpoint(row.endpointBId, endpoints, names, "effective path endpointBId", errors);
+            if (string.Equals(row.endpointAId, row.endpointBId, StringComparison.OrdinalIgnoreCase))
+                errors.Add("An effective path cannot connect an endpoint to itself.");
+        }
         var connections = NewIds();
         var modules = NewIds();
         foreach (var row in Rows(data.permanentConnections, "permanentConnections", errors))
@@ -148,8 +163,12 @@ public static class TssExternalScenarioValidator
         HashSet<string> names, List<EquipmentDefinition> equipment, List<string> errors)
     {
         if (network == null) { errors.Add("networkScenario is required."); return; }
-        foreach (var value in new[] { network.circuitId, network.ssid, network.wifiPassphrase, network.apAdminPassword, network.enableSecret, network.consolePassword, network.vtyPassword, network.motd })
+        foreach (var value in new[] { network.circuitId, network.ssid, network.wifiPassphrase, network.apAdminPassword, network.enableSecret, network.motd })
             Required(value, "networkScenario instructor-authored value", errors);
+        if (network.requireConsoleLogin) Required(network.consolePassword, "networkScenario consolePassword", errors);
+        if (network.requireVtyLogin) Required(network.vtyPassword, "networkScenario vtyPassword", errors);
+        if (string.IsNullOrWhiteSpace(network.localUsername) != string.IsNullOrWhiteSpace(network.localPassword))
+            errors.Add("networkScenario localUsername and localPassword must be provided together.");
         if (network.wirelessChannel != 1 && network.wirelessChannel != 6 && network.wirelessChannel != 11)
             errors.Add("wirelessChannel must be 1, 6, or 11.");
         // The current generator uses tens from 10..390 and needs four different values.
