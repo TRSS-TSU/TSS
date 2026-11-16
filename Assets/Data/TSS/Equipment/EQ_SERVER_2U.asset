@@ -34,4 +34,10 @@ MonoBehaviour:
   placementLocalOffset: {x: 0, y: 0, z: 0}
   placementLocalEuler: {x: 0, y: 0, z: 0}
   placementLocalScale: {x: 1, y: 1, z: 1}
-  interfaces: []
+  interfaces:
+  - name: GE01
+    connectorType: RJ45
+    label: GE01
+    supportedCableTypes: []
+    portAnchorPath: Model/Rack_Server_2U_A/Model/Ports/RS2U_Rear_RJ45_Port_01/GE01
+    interfaceFace: 1

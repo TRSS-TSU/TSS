@@ -81,7 +81,24 @@ public sealed class TssNetworkReachabilityEvaluator
 
         if (FindEndpointByAddress(destinationAddress) is { } destination)
         {
-            if (!destination.HasValidAddress || !GatewayMatches(destination, profile))
+            if (!destination.HasValidAddress)
+                return Fail(3, TssReachabilityFaultCategory.DestinationUnavailable, "destination addressing is invalid.", source.Role, destinationRole, hops.ToArray());
+
+            if (sourceDevice.Category == EquipmentCategory.Switch
+                && TssNetworkAddress.IsInSameSubnet(source.Address, source.Mask, destinationAddress))
+            {
+                if (!TssNetworkAddress.IsInSameSubnet(destination.Address, destination.Mask, source.Address))
+                    return Fail(3, TssReachabilityFaultCategory.DestinationUnavailable, "destination addressing is invalid.", source.Role, destinationRole, hops.ToArray());
+                var localFailure = CheckLocalEndpoint(destination, source.Role, destinationRole);
+                if (localFailure.HasValue) return localFailure.Value;
+                var access = FindAccessDevice(destination, FindDevice(destination));
+                var trunkFailure = CheckLocalSwitchPath(sourceDevice, access, profile.ManagementVlan, source.Role, destinationRole);
+                if (trunkFailure.HasValue) return trunkFailure.Value;
+                Add(hops, destinationAddress);
+                return new TssReachabilityResult(true, 0, TssReachabilityFaultCategory.None, "Reachable.", source.Role, destinationRole, hops);
+            }
+
+            if (!GatewayMatches(destination, profile))
                 return Fail(3, TssReachabilityFaultCategory.DestinationUnavailable, "destination addressing is invalid.", source.Role, destinationRole, hops.ToArray());
 
             var destinationPath = Evaluate(destination.Key, destination.Gateway);
@@ -131,9 +148,71 @@ public sealed class TssNetworkReachabilityEvaluator
     {
         var profile = _state.Profile;
 
-        var destinationRole = ResolveRole(destinationAddress, profile);
+        if (source.HasValidAddress && string.Equals(source.Address, destinationAddress, StringComparison.OrdinalIgnoreCase))
+            return new TssReachabilityResult(true, 0, TssReachabilityFaultCategory.None, "Reachable.", source.Role, source.Role, new[] { source.Address });
+
+        var destinationEndpoint = FindEndpointByAddress(destinationAddress);
+        var destinationDevice = FindDeviceInterfaceByAddress(destinationAddress, out var destinationInterface);
+        var destinationRole = destinationDevice != null ? destinationDevice.ExpectedRole ?? destinationDevice.Hostname
+            : destinationEndpoint != null ? destinationEndpoint.Role : ResolveRole(destinationAddress, profile);
         if (string.IsNullOrEmpty(destinationRole))
             return Fail(3, TssReachabilityFaultCategory.DestinationUnavailable, "destination does not respond.", source.Role, string.Empty, source.Address);
+
+        var isGateway = destinationAddress == profile.ManagementNetwork + ".1"
+            || destinationAddress == profile.ReceptionNetwork + ".1"
+            || destinationAddress == profile.DataNetwork + ".1";
+        var local = !isGateway && source.HasValidAddress
+            && TssNetworkAddress.IsInSameSubnet(source.Address, source.Mask, destinationAddress)
+            && (destinationEndpoint != null || destinationDevice?.Category == EquipmentCategory.Switch
+                && destinationInterface != null && destinationInterface.Name.StartsWith("Vlan", StringComparison.OrdinalIgnoreCase));
+        if (local)
+        {
+            var sourceFailure = CheckLocalEndpoint(source, source.Role, destinationRole);
+            if (sourceFailure.HasValue) return sourceFailure.Value;
+            var sourceSwitch = FindAccessDevice(source, sourceDevice);
+            var destinationSwitch = destinationEndpoint != null
+                ? FindAccessDevice(destinationEndpoint, FindDevice(destinationEndpoint)) : destinationDevice;
+            var trunkFailure = CheckLocalSwitchPath(sourceSwitch, destinationSwitch,
+                VlanFor(source.Role, source.Address, profile), source.Role, destinationRole);
+            if (trunkFailure.HasValue) return trunkFailure.Value;
+            if (destinationEndpoint != null)
+            {
+                if (!destinationEndpoint.HasValidAddress
+                    || !TssNetworkAddress.IsInSameSubnet(destinationEndpoint.Address, destinationEndpoint.Mask, source.Address))
+                    return Fail(3, TssReachabilityFaultCategory.DestinationUnavailable, "destination addressing is invalid.", source.Role, destinationRole);
+                var destinationFailure = CheckLocalEndpoint(destinationEndpoint, source.Role, destinationRole);
+                if (destinationFailure.HasValue) return destinationFailure.Value;
+            }
+            else if (!ActiveVlan(destinationDevice, VlanFor(destinationRole, destinationAddress, profile)))
+                return Fail(2, TssReachabilityFaultCategory.VlanNotCarried, "management VLAN is unavailable.", source.Role, destinationRole);
+            else if (!TssNetworkAddress.IsMask(destinationInterface.Mask)
+                || !IsDeviceInterfaceOperational(destinationDevice, destinationInterface, profile))
+                return Fail(3, TssReachabilityFaultCategory.InterfaceUnavailable, "destination SVI is unavailable.", source.Role, destinationRole);
+            return new TssReachabilityResult(true, 0, TssReachabilityFaultCategory.None, "Reachable.", source.Role, destinationRole, new[] { source.Address, destinationAddress });
+        }
+
+        if (isGateway && HasStructuredTopology(sourceDevice))
+        {
+            var sourceFailure = CheckLocalEndpoint(source, source.Role, destinationRole);
+            if (sourceFailure.HasValue) return sourceFailure.Value;
+            if (!source.HasValidAddress || !TssNetworkAddress.IsAddress(source.Gateway)
+                || !SameSubnet(source.Address, source.Mask, source.Gateway)
+                || !string.Equals(source.Gateway, destinationAddress, StringComparison.OrdinalIgnoreCase))
+                return Fail(3, TssReachabilityFaultCategory.GatewayUnavailable, "endpoint addressing is invalid.", source.Role, destinationRole);
+            var gatewayVlan = VlanFor(source.Role, source.Address, profile);
+            var accessSwitch = FindAccessDevice(source, sourceDevice);
+            var switchPathFailure = CheckLocalSwitchPath(accessSwitch, FindDevice("AN-1"), gatewayVlan, source.Role, destinationRole);
+            if (switchPathFailure.HasValue) return switchPathFailure.Value;
+            var router = FindDevice("CN-1");
+            var gatewayInterface = FindRouterInterface(gatewayVlan, profile);
+            var trunk = FindInterface(FindDevice("AN-1"), "Fa0/6");
+            if (router == null || gatewayInterface == null || !router.IsInterfaceOperational(gatewayInterface)
+                || gatewayInterface.Dot1qVlan != gatewayVlan || gatewayInterface.Mask != "255.255.255.0"
+                || trunk == null || !FindDevice("AN-1").IsInterfaceOperational(trunk)
+                || !trunk.IsTrunk || !trunk.AllowedVlans.Contains(gatewayVlan))
+                return Fail(3, TssReachabilityFaultCategory.GatewayUnavailable, "router gateway is unavailable.", source.Role, destinationRole);
+            return new TssReachabilityResult(true, 0, TssReachabilityFaultCategory.None, "Reachable.", source.Role, destinationRole, new[] { source.Address, destinationAddress });
+        }
 
         var sourceInterface = FindSourceInterface(source, sourceDevice);
         if (!source.Layer1Connected)
@@ -192,6 +271,47 @@ public sealed class TssNetworkReachabilityEvaluator
 
         Add(hops, destinationAddress);
         return new TssReachabilityResult(true, 0, TssReachabilityFaultCategory.None, "Reachable.", source.Role, destinationRole, hops);
+    }
+
+    private TssReachabilityResult? CheckLocalEndpoint(EndpointNetworkState endpoint, string sourceRole, string destinationRole)
+    {
+        if (!endpoint.Layer1Connected)
+            return Fail(1, TssReachabilityFaultCategory.PhysicalPathUnavailable, "no usable physical path.", sourceRole, destinationRole);
+        var device = FindDevice(endpoint);
+        var ownInterface = FindSourceInterface(endpoint, device);
+        if (ownInterface != null && !device.IsInterfaceOperational(ownInterface))
+            return Fail(1, TssReachabilityFaultCategory.InterfaceUnavailable, "a participating interface is unavailable.", sourceRole, destinationRole);
+        if (!endpoint.Layer2Connected)
+            return Fail(2, TssReachabilityFaultCategory.VlanNotCarried, "switching path is unavailable.", sourceRole, destinationRole);
+        var accessDevice = FindAccessDevice(endpoint, device);
+        if (!HasStructuredTopology(device))
+            return null;
+        var access = FindAccessInterface(accessDevice, endpoint.Role);
+        if (accessDevice == null || access == null)
+            return Fail(2, TssReachabilityFaultCategory.VlanNotCarried, "source access VLAN is unavailable.", sourceRole, destinationRole);
+        if (!accessDevice.IsInterfaceOperational(access))
+            return Fail(1, TssReachabilityFaultCategory.InterfaceUnavailable, "a participating interface is unavailable.", sourceRole, destinationRole);
+        var vlan = VlanFor(endpoint.Role, endpoint.Address, _state.Profile);
+        if (access.IsTrunk || access.AccessVlan != vlan || !ActiveVlan(accessDevice, vlan))
+            return Fail(2, TssReachabilityFaultCategory.VlanNotCarried, "source access VLAN is unavailable.", sourceRole, destinationRole);
+        return null;
+    }
+
+    private TssReachabilityResult? CheckLocalSwitchPath(NetworkDeviceState sourceSwitch, NetworkDeviceState destinationSwitch, int vlan, string sourceRole, string destinationRole)
+    {
+        if (sourceSwitch == null || destinationSwitch == null)
+            return null;
+        if (sourceSwitch == destinationSwitch)
+            return null;
+        var profile = _state.Profile;
+        foreach (var device in new[] { sourceSwitch, destinationSwitch })
+        {
+            var trunk = FindInterface(device, "Fa0/1");
+            if (trunk == null || !device.IsInterfaceOperational(trunk) || !trunk.IsTrunk
+                || !trunk.AllowedVlans.Contains(vlan) || trunk.NativeVlan != profile.NativeVlan)
+                return Fail(2, TssReachabilityFaultCategory.VlanNotCarried, "VLAN is not carried across the trunk.", sourceRole, destinationRole);
+        }
+        return null;
     }
 
     private NetworkInterfaceState SelectDeviceSourceInterface(NetworkDeviceState device, string destinationAddress, TssNetworkRunProfile profile)

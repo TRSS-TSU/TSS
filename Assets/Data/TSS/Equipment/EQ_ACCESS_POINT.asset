@@ -34,4 +34,10 @@ MonoBehaviour:
   placementLocalOffset: {x: 0, y: 0, z: 0}
   placementLocalEuler: {x: 0, y: 0, z: 0}
   placementLocalScale: {x: 1, y: 1, z: 1}
-  interfaces: []
+  interfaces:
+  - name: Eth01
+    connectorType: RJ45
+    label: Eth01
+    supportedCableTypes: 00000000
+    portAnchorPath: EthernetPort
+    interfaceFace: 0

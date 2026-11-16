@@ -1,8 +1,35 @@
 using NUnit.Framework;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
 using UnityEngine;
 
 public sealed class TssTerminationTests
 {
+    [Test]
+    public void TerminationWireShuffleUsesBothRows()
+    {
+        var root = new GameObject("Termination shuffle", typeof(RectTransform));
+        try
+        {
+            var view = root.AddComponent<TssWallportTerminationView>();
+            var scramble = typeof(TssWallportTerminationView).GetMethod("ScrambleBankPositions", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(scramble);
+            scramble.Invoke(view, null);
+            var field = typeof(TssWallportTerminationView).GetField("_bankPositions", BindingFlags.Instance | BindingFlags.NonPublic);
+            Assert.IsNotNull(field);
+            var positions = (Vector2[])field.GetValue(view);
+            Assert.AreEqual(8, new HashSet<Vector2>(positions).Count);
+            Assert.AreEqual(4, positions.Count(position => position.y == -105f));
+            Assert.AreEqual(4, positions.Count(position => position.y == -305f));
+            Assert.IsTrue(positions.Take(4).Any(position => position.y == -305f));
+        }
+        finally
+        {
+            Object.DestroyImmediate(root);
+        }
+    }
+
     [Test]
     public void T568BValidatorRequiresExactPunchedOrder()
     {

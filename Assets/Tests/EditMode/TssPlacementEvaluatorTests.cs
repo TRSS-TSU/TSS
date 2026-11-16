@@ -1,10 +1,122 @@
 using System.Collections.Generic;
 using System.Reflection;
 using NUnit.Framework;
+using UnityEditor;
 using UnityEngine;
 
 public sealed class TssPlacementEvaluatorTests
 {
+    [Test]
+    public void WiredEquipmentPortsBindToTheirPlacementIdentity()
+    {
+        var cases = new[]
+        {
+            ("EQ_DESKTOP_PC", "Endpoint:ITDesk:EQ_DESKTOP_PC:1", "Eth01"),
+            ("EQ_PRINTER", "Endpoint:ReceptionDesk:EQ_PRINTER:1", "Eth01"),
+            ("EQ_SERVER_2U", "Rack:Rack01:U03", "GE01"),
+            ("EQ_ACCESS_POINT", "Endpoint:ReceptionAP:EQ_ACCESS_POINT:1", "Eth01")
+        };
+        var ids = new HashSet<string>();
+        foreach (var (assetName, owner, portName) in cases)
+        {
+            var equipment = AssetDatabase.LoadAssetAtPath<EquipmentDefinition>("Assets/Data/TSS/Equipment/" + assetName + ".asset");
+            Assert.IsNotNull(equipment, assetName);
+            var prefab = equipment.rackPrefab ? equipment.rackPrefab : equipment.GetPlacementPrefab();
+            Assert.IsNotNull(prefab, assetName);
+            Assert.AreEqual(1, equipment.interfaces.Length, assetName);
+            Assert.AreEqual(portName, equipment.interfaces[0].name, assetName);
+            Assert.IsNotNull(prefab.transform.Find(equipment.interfaces[0].portAnchorPath), assetName);
+
+            var instance = Object.Instantiate(prefab);
+            try
+            {
+                TssPortEndpointBinder.ConfigureEndpoints(instance, owner, equipment, assetName);
+                var ports = instance.GetComponentsInChildren<TssPortEndpoint>(true);
+                Assert.AreEqual(1, ports.Length, assetName);
+                Assert.AreEqual(owner + ":" + portName, ports[0].EndpointId, assetName);
+                Assert.AreEqual(portName, ports[0].DisplayLabel, assetName);
+                Assert.IsTrue(ids.Add(ports[0].EndpointId), assetName + " duplicated another device's port ID");
+            }
+            finally
+            {
+                Object.DestroyImmediate(instance);
+            }
+        }
+    }
+
+    [Test]
+    public void ConnectedIt1PortDoesNotMarkPrinterPortConnected()
+    {
+        var pc = AssetDatabase.LoadAssetAtPath<EquipmentDefinition>("Assets/Data/TSS/Equipment/EQ_DESKTOP_PC.asset");
+        var printer = AssetDatabase.LoadAssetAtPath<EquipmentDefinition>("Assets/Data/TSS/Equipment/EQ_PRINTER.asset");
+        var pcVisual = Object.Instantiate(pc.GetPlacementPrefab());
+        var printerVisual = Object.Instantiate(printer.GetPlacementPrefab());
+        var switchPort = new GameObject("Fa02").AddComponent<TssPortEndpoint>();
+        var sessionObject = new GameObject("Session");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        var cable = Cable(TssCableType.StraightThrough);
+        var switchEquipment = Equipment(EquipmentCategory.Switch);
+        scenario.cableInventory = new[] { new ScenarioCableInventoryItem { cable = cable, quantity = 1 } };
+        try
+        {
+            TssPortEndpointBinder.ConfigureEndpoints(pcVisual, "Endpoint:ITDesk:EQ_DESKTOP_PC:1", pc, "IT1");
+            TssPortEndpointBinder.ConfigureEndpoints(printerVisual, "Endpoint:ReceptionDesk:EQ_PRINTER:1", printer, "Reception2");
+            var it1Port = pcVisual.GetComponentInChildren<TssPortEndpoint>(true);
+            var printerPort = printerVisual.GetComponentInChildren<TssPortEndpoint>(true);
+            switchPort.Configure("Rack:Rack01:U38:Fa02", Port("Fa02"), "AN-1");
+            session.BeginScenario(scenario);
+            ((List<InstalledEquipmentRecord>)session.Installed).Add(new InstalledEquipmentRecord("Rack01", switchEquipment, 38, 1, "AN-1"));
+
+            Assert.IsTrue(session.TryCheckoutCable(cable, out _));
+            Assert.IsTrue(session.TryUsePort(it1Port, out _));
+            Assert.IsTrue(session.TryUsePort(switchPort, out _));
+            Assert.IsTrue(session.IsEndpointConnected(it1Port.EndpointId));
+            Assert.IsFalse(session.IsEndpointConnected(printerPort.EndpointId));
+            Assert.AreEqual(1, session.GetEffectivePhysicalPaths().Count);
+            Assert.AreEqual(it1Port.EndpointId, session.GetEffectivePhysicalPaths()[0].EndpointAId);
+            Assert.AreEqual("IT1 Eth01", TssPhysicalConnectionPanel.EndpointLabel(it1Port.EndpointId, session));
+        }
+        finally
+        {
+            Object.DestroyImmediate(pcVisual);
+            Object.DestroyImmediate(printerVisual);
+            Object.DestroyImmediate(switchPort.gameObject);
+            Object.DestroyImmediate(sessionObject);
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(cable);
+            Object.DestroyImmediate(switchEquipment);
+        }
+    }
+
+    [Test]
+    public void It2ServerPortUsesRack01CableRoute()
+    {
+        var server = AssetDatabase.LoadAssetAtPath<EquipmentDefinition>("Assets/Data/TSS/Equipment/EQ_SERVER_2U.asset");
+        var serverVisual = Object.Instantiate(server.rackPrefab);
+        var switchPort = new GameObject("AN-1 Fa02").AddComponent<TssPortEndpoint>();
+        var routeObject = new GameObject("Rack01 route");
+        var profile = routeObject.AddComponent<RackCableRouteProfile>();
+        profile.Configure("Rack01", -1f, 1f, 0f, 2f, 3f);
+        var provider = routeObject.AddComponent<TssCableRouteProvider>();
+        try
+        {
+            TssPortEndpointBinder.ConfigureEndpoints(serverVisual, "Rack:Rack01:U03", server, "IT2");
+            var it2Port = serverVisual.GetComponentInChildren<TssPortEndpoint>(true);
+            switchPort.Configure("Rack:Rack01:U38:Fa05", Port("Fa05"), "AN-1");
+            var route = provider.GetRouteResult(it2Port, switchPort);
+            Assert.IsTrue(route.IsValid, route.FailureReason);
+            Assert.Greater(route.RenderPoints.Count, 2);
+            Assert.IsTrue(route.Edges[0].Key.Contains("Rack:Rack01:"));
+        }
+        finally
+        {
+            Object.DestroyImmediate(serverVisual);
+            Object.DestroyImmediate(switchPort.gameObject);
+            Object.DestroyImmediate(routeObject);
+        }
+    }
+
     [Test]
     public void ValidatesWp1InventoryCounts()
     {

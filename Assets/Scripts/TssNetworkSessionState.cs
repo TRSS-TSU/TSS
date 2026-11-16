@@ -685,13 +685,13 @@ public sealed class NetworkDeviceState
         MacAddress = profile != null ? TssNetworkRunProfile.MacFor(profile.Seed, key) : string.Empty;
         // A switch SVI is unconfigured until the student enters its IP address.
         ManagementAddress = string.Empty;
-        DefaultGateway = category == EquipmentCategory.Router || profile == null
+        DefaultGateway = category == EquipmentCategory.Router || category == EquipmentCategory.Switch || profile == null
             ? string.Empty
             : profile.ManagementNetwork + ".1";
         if (category == EquipmentCategory.Switch)
         {
             Vlans[1] = "default";
-            Svis[1] = new NetworkInterfaceState { Name = "Vlan1", AdminUp = false };
+            Svis[1] = new NetworkInterfaceState { Name = "Vlan1", AdminUp = true };
         }
     }
     public bool IsInterfaceAdminUp(NetworkInterfaceState iface)
@@ -752,6 +752,7 @@ public sealed class NetworkInterfaceState
     public bool IsTrunk;
     public bool SwitchportModeConfigured;
     public bool SwitchportAccessVlanConfigured;
+    public bool SpanningTreePortFast;
     public bool TrunkEncapsulationDot1q;
     public int AccessVlan = 1;
     public HashSet<int> AllowedVlans = new();

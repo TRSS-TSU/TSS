@@ -542,7 +542,8 @@ public sealed class TssDeviceSessionTests
             StringAssert.Contains("spanning-tree mode pvst", defaults);
             StringAssert.Contains("interface FastEthernet0/24" + Environment.NewLine + " switchport mode dynamic auto", defaults);
             StringAssert.DoesNotContain("GigabitEthernet", defaults);
-            StringAssert.Contains("interface Vlan1" + Environment.NewLine + " no ip address" + Environment.NewLine + " shutdown", defaults);
+            StringAssert.Contains("interface Vlan1" + Environment.NewLine + " no ip address" + Environment.NewLine + "!", defaults);
+            StringAssert.DoesNotContain("ip default-gateway", defaults);
             StringAssert.Contains("ip classless", defaults);
             StringAssert.Contains("line con 0" + Environment.NewLine + "!" + Environment.NewLine + "line vty 0 4" + Environment.NewLine + " login" + Environment.NewLine + "!" + Environment.NewLine + "line vty 5 15" + Environment.NewLine + " login", defaults);
             StringAssert.Contains("vlan 1" + Environment.NewLine + "!", defaults);
@@ -1252,7 +1253,7 @@ public sealed class TssDeviceSessionTests
             StringAssert.Contains("Success rate is 100 percent", routerPing.Output);
             StringAssert.Contains("Success rate is 100 percent", switchPing.Output);
 
-            router.Interfaces["Fa0/0." + profile.ManagementVlan].AdminUp = false;
+            router.Interfaces["Fa0/0"].AdminUp = false;
             var failedPing = new TssCliCommandProcessor(session, "router", EquipmentCategory.Router, "CN-1").Execute("ping " + target);
             StringAssert.Contains("Success rate is 0 percent", failedPing.Output);
             StringAssert.Contains("operational Layer 3 interface", failedPing.Output);
@@ -1273,6 +1274,8 @@ public sealed class TssDeviceSessionTests
         var an2 = state.GetOrCreateDevice("AN2", EquipmentCategory.Switch, "AN-2");
         foreach (var device in new[] { an1, an2 })
         {
+            device.Svis[1].AdminUp = false;
+            device.DefaultGateway = profile.ManagementNetwork + ".1";
             device.Vlans[profile.ManagementVlan] = profile.ManagementVlanName;
             device.Interfaces["Fa0/1"] = new NetworkInterfaceState
             {
@@ -1291,6 +1294,60 @@ public sealed class TssDeviceSessionTests
 
         an2.Interfaces["Fa0/1"].AllowedVlans.Clear();
         Assert.IsFalse(evaluator.EvaluateDevice(an1.Key, an2.Svis[profile.ManagementVlan].Address).Success);
+    }
+
+    [Test]
+    public void ManagementEndpointsAndSwitchesPingLocallyWithoutRouter()
+    {
+        var profile = TssNetworkRunProfile.Create(8, new NetworkScenarioConfig());
+        var state = new TssNetworkSessionState(profile);
+        var an1 = state.GetOrCreateDevice("AN1", EquipmentCategory.Switch, "AN-1");
+        var an2 = state.GetOrCreateDevice("AN2", EquipmentCategory.Switch, "AN-2");
+        foreach (var device in new[] { an1, an2 })
+        {
+            device.Vlans[profile.ManagementVlan] = profile.ManagementVlanName;
+            device.Interfaces["Fa0/1"] = new NetworkInterfaceState
+            {
+                Name = "Fa0/1", AdminUp = true, CarrierUp = true, IsTrunk = true,
+                NativeVlan = profile.NativeVlan,
+                AllowedVlans = new System.Collections.Generic.HashSet<int> { profile.ManagementVlan }
+            };
+        }
+        an1.Svis[profile.ManagementVlan] = new NetworkInterfaceState { Name = "Vlan" + profile.ManagementVlan, AdminUp = true, Address = profile.ManagementNetwork + ".2", Mask = "255.255.255.0" };
+        an2.Svis[profile.ManagementVlan] = new NetworkInterfaceState { Name = "Vlan" + profile.ManagementVlan, AdminUp = true, Address = profile.ManagementNetwork + ".3", Mask = "255.255.255.0" };
+        an1.Interfaces["Fa0/2"] = new NetworkInterfaceState { Name = "Fa0/2", AdminUp = true, CarrierUp = true, AccessVlan = profile.ManagementVlan };
+        an1.Interfaces["Fa0/5"] = new NetworkInterfaceState { Name = "Fa0/5", AdminUp = true, CarrierUp = true, AccessVlan = profile.ManagementVlan };
+        an1.Interfaces["Fa0/6"] = new NetworkInterfaceState { Name = "Fa0/6", AdminUp = true, CarrierUp = false, IsTrunk = true };
+        var it1 = state.GetOrCreateEndpoint("IT1", "IT1");
+        var it2 = state.GetOrCreateEndpoint("IT2", "IT2");
+        it1.Address = profile.ManagementNetwork + ".11"; it1.Mask = "255.255.255.0"; it1.Layer1Connected = it1.Layer2Connected = true;
+        it2.Address = profile.ManagementNetwork + ".12"; it2.Mask = "255.255.255.0"; it2.Layer1Connected = it2.Layer2Connected = true;
+        var evaluator = new TssNetworkReachabilityEvaluator(state);
+
+        foreach (var endpoint in new[] { it1, it2 })
+        {
+            Assert.IsTrue(evaluator.Evaluate(endpoint.Key, endpoint.Address).Success);
+            Assert.IsTrue(evaluator.Evaluate(endpoint.Key, an1.Svis[profile.ManagementVlan].Address).Success);
+            Assert.IsTrue(evaluator.Evaluate(endpoint.Key, an2.Svis[profile.ManagementVlan].Address).Success);
+            Assert.IsTrue(evaluator.EvaluateDevice(an1.Key, endpoint.Address).Success);
+            Assert.IsTrue(evaluator.EvaluateDevice(an2.Key, endpoint.Address).Success);
+        }
+        Assert.IsTrue(evaluator.Evaluate(it1.Key, it2.Address).Success);
+        Assert.IsTrue(evaluator.Evaluate(it2.Key, it1.Address).Success);
+        it1.Gateway = profile.ManagementNetwork + ".1";
+        Assert.AreEqual(3, evaluator.Evaluate(it1.Key, it1.Gateway).FailedLayer);
+        Assert.IsFalse(evaluator.Evaluate(it1.Key, profile.WanProviderAddress).Success);
+        Assert.AreEqual(TssReachabilityFaultCategory.DestinationUnavailable, evaluator.Evaluate(it1.Key, "192.0.2.10").FaultCategory);
+
+        it2.Layer1Connected = false;
+        Assert.AreEqual(1, evaluator.Evaluate(it1.Key, it2.Address).FailedLayer);
+        Assert.IsTrue(evaluator.Evaluate(it2.Key, it2.Address).Success);
+        it2.Layer1Connected = true;
+        an1.Interfaces["Fa0/5"].AccessVlan = profile.DataVlan;
+        Assert.AreEqual(2, evaluator.Evaluate(it1.Key, it2.Address).FailedLayer);
+        an1.Interfaces["Fa0/5"].AccessVlan = profile.ManagementVlan;
+        an2.Interfaces["Fa0/1"].AllowedVlans.Clear();
+        Assert.AreEqual(2, evaluator.Evaluate(it1.Key, an2.Svis[profile.ManagementVlan].Address).FailedLayer);
     }
 
     [Test]

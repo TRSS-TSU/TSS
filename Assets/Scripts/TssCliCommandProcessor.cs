@@ -211,8 +211,24 @@ public sealed class TssCliCommandProcessor
         return Result(d, string.Empty, false, true);
     }
 
+    private static string ExpandTrunkAlias(string command)
+    {
+        var parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (parts.Length >= 5 && (parts[0].Equals("sw", StringComparison.OrdinalIgnoreCase) || parts[0].Equals("swi", StringComparison.OrdinalIgnoreCase)))
+        {
+            if (parts[1].Equals("tr", StringComparison.OrdinalIgnoreCase) || parts[1].Equals("trunk", StringComparison.OrdinalIgnoreCase))
+            {
+                var action = parts[2].Equals("all", StringComparison.OrdinalIgnoreCase) ? "allowed" : parts[2];
+                if (action.Equals("native", StringComparison.OrdinalIgnoreCase) || action.Equals("allowed", StringComparison.OrdinalIgnoreCase))
+                    return "switchport trunk " + action + " " + string.Join(" ", parts.Skip(3));
+            }
+        }
+        return command;
+    }
+
     private TssCliResult Interface(NetworkDeviceState d, string command)
     {
+        command = ExpandTrunkAlias(command);
         var lower = command.ToLowerInvariant(); var parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (lower == "ip add" || lower.StartsWith("ip add "))
         {
@@ -238,12 +254,14 @@ public sealed class TssCliCommandProcessor
         if (lower == "switchport trunk encapsulation dot1q") { if (d.Category != EquipmentCategory.Switch) return Invalid(d); foreach (var i in Selected(d)) i.TrunkEncapsulationDot1q = true; return Changed(d, string.Empty); }
         if (IsNoAccessVlanCommand(lower)) { if (d.Category != EquipmentCategory.Switch) return Invalid(d); foreach (var i in Selected(d)) { i.AccessVlan = 1; i.SwitchportAccessVlanConfigured = false; } return Changed(d, string.Empty); }
         if (TryAccessVlanCommand(lower, parts, out var vlan)) { foreach (var i in Selected(d)) { i.AccessVlan = vlan; i.SwitchportAccessVlanConfigured = true; } return Changed(d, string.Empty); }
+        if (d.Category == EquipmentCategory.Switch && lower is "spanning-tree portfast" or "no spanning-tree portfast")
+        { foreach (var i in Selected(d)) i.SpanningTreePortFast = lower == "spanning-tree portfast"; return Changed(d, string.Empty); }
         if (lower == "no switchport trunk native vlan") { if (d.Category != EquipmentCategory.Switch) return Invalid(d); foreach (var i in Selected(d)) i.NativeVlan = 1; return Changed(d, string.Empty); }
         if (d.Category == EquipmentCategory.Switch && lower.StartsWith("switchport trunk native vlan ") && int.TryParse(parts.LastOrDefault(), out var native) && ValidVlan(native)) { foreach (var i in Selected(d)) i.NativeVlan = native; return Changed(d, string.Empty); }
         if (lower == "no switchport trunk allowed vlan") { if (d.Category != EquipmentCategory.Switch) return Invalid(d); foreach (var i in Selected(d)) i.AllowedVlans.Clear(); return Changed(d, string.Empty); }
         if (lower.StartsWith("switchport trunk allowed vlan "))
         {
-            if (d.Category != EquipmentCategory.Switch || !TryVlans(parts.LastOrDefault(), out var vlans)) return Invalid(d); foreach (var i in Selected(d)) { i.AllowedVlans.Clear(); foreach (var allowedVlan in vlans) i.AllowedVlans.Add(allowedVlan); } return Changed(d, string.Empty);
+            if (d.Category != EquipmentCategory.Switch || !TryVlans(string.Concat(parts.Skip(4)), out var vlans)) return Invalid(d); foreach (var i in Selected(d)) { i.AllowedVlans.Clear(); foreach (var allowedVlan in vlans) i.AllowedVlans.Add(allowedVlan); } return Changed(d, string.Empty);
         }
         if (lower is "no ip address" or "no ip add")
         {
@@ -341,7 +359,7 @@ public sealed class TssCliCommandProcessor
         if (lower.StartsWith("show mac")) return d.Category == EquipmentCategory.Switch
             ? Result(d, "Mac Address Table\n(no dynamic entries until endpoints are reachable)\n", false, true)
             : Invalid(d);
-        if (lower is "show ip route" or "show ip ro") { RecordEvidence(d, "show ip route"); return Result(d, Routes(d), false, true); }
+        if (lower is "show ip route" or "show ip ro") { if (d.Category != EquipmentCategory.Router) return Invalid(d); RecordEvidence(d, "show ip route"); return Result(d, Routes(d), false, true); }
         if (lower.StartsWith("ping "))
         {
             var target = command.Split(' ', StringSplitOptions.RemoveEmptyEntries).LastOrDefault() ?? string.Empty;
@@ -457,7 +475,7 @@ public sealed class TssCliCommandProcessor
             : new[] { "show interfaces\tDisplay interface details", "show vlan brief\tDisplay VLANs and assigned ports", "show interfaces trunk\tVerify trunks, allowed VLANs, and native VLAN", "ping <address>\tTest reachability" };
         var interfaceCommands = isRouter
             ? new[] { "description <text>\tDescribe the interface", "no description\tRemove the interface description", "encapsulation dot1q <vlan>\tAssociate a VLAN with a router subinterface", "ip address <address> <mask>\tAssign an IPv4 address", "shutdown\tSet the interface administrative state" }
-            : new[] { "description <text>\tDescribe the switchport", "no description\tRemove the switchport description", "switchport mode access\tSet an access port", "switchport access vlan <id>\tAssign the access VLAN", "switchport mode trunk\tSet a trunk port", "switchport trunk allowed vlan <list>\tSet VLANs carried by the trunk", "switchport trunk native vlan <id>\tSet the trunk's untagged VLAN", "shutdown\tSet the port administrative state" };
+            : new[] { "description <text>\tDescribe the switchport", "no description\tRemove the switchport description", "switchport mode access\tSet an access port", "switchport access vlan <id>\tAssign the access VLAN", "spanning-tree portfast\tEnable PortFast on an access port", "switchport mode trunk\tSet a trunk port", "switchport trunk allowed vlan <list>\tSet VLANs carried by the trunk", "switchport trunk native vlan <id>\tSet the trunk's untagged VLAN", "shutdown\tSet the port administrative state" };
 
         var sb = new StringBuilder("\n");
         sb.AppendLine("  COMMAND".PadRight(36) + " | WHAT IT DOES");
@@ -610,6 +628,8 @@ public sealed class TssCliCommandProcessor
                 sb.AppendLine(" switchport trunk native vlan " + i.NativeVlan);
             if (!i.IsTrunk && i.SwitchportAccessVlanConfigured)
                 sb.AppendLine(" switchport access vlan " + i.AccessVlan);
+            if (!i.IsTrunk && i.SpanningTreePortFast)
+                sb.AppendLine(" spanning-tree portfast");
             if (!i.AdminUp && i.Name.IndexOf('.') < 0) sb.AppendLine(" shutdown");
             if (i.Dot1qVlan > 0) sb.AppendLine(" encapsulation dot1q " + i.Dot1qVlan);
             if (!string.IsNullOrEmpty(i.Address)) sb.AppendLine(" ip address " + i.Address + " " + i.Mask);
@@ -855,7 +875,7 @@ public sealed class TssCliCommandProcessor
         if (lower == "show vlan brief") return Vlans(device);
         if (lower == "show interfaces trunk") return Trunks(device);
         if (lower == "show ip interface brief" || lower == "show interfaces") return Interfaces(device);
-        if (lower is "show ip route" or "show ip ro") return ResultsRoutes(device);
+        if (lower is "show ip route" or "show ip ro") return device.Category == EquipmentCategory.Router ? ResultsRoutes(device) : "% Invalid show command.\n";
         if (lower == "show mac address-table") return "Mac Address Table\n(no dynamic entries until endpoints are reachable)\n";
         return "% Invalid show command.\n";
     }

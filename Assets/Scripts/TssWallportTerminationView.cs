@@ -319,29 +319,25 @@ public sealed class TssWallportTerminationView : MonoBehaviour
         for (var i = 0; i < 8; i++)
             slots[i] = i;
 
-        // Fisher-Yates shuffle with a random non-identity permutation
+        // Fisher-Yates shuffle; guarantee at least one upper/lower row swap.
         for (var i = slots.Length - 1; i > 0; i--)
         {
             var j = UnityEngine.Random.Range(0, i + 1);
             (slots[i], slots[j]) = (slots[j], slots[i]);
         }
+        if (slots[0] < 4 && slots[1] < 4 && slots[2] < 4 && slots[3] < 4)
+            (slots[0], slots[4]) = (slots[4], slots[0]);
 
         for (var i = 0; i < 8; i++)
         {
             var slotIndex = slots[i];
-            _bankPositions[i] = new Vector2(370f + slotIndex * 19f, IsUpperPin(i + 1) ? -105f : -305f);
+            _bankPositions[i] = new Vector2(370f + (slotIndex % 4) * 19f, slotIndex < 4 ? -105f : -305f);
         }
     }
 
     private Vector2 GetStagingPosition(int wireIndex)
     {
-        var wire = _wires[wireIndex];
-        var staging = _bankPositions[wireIndex];
-        if (wire && wire.CanEnterBank(true))
-            staging.y = -105f;
-        else if (wire && wire.CanEnterBank(false))
-            staging.y = -305f;
-        return staging;
+        return _bankPositions[wireIndex];
     }
 
     private int WireOrientation(int wireIndex)
@@ -381,12 +377,7 @@ public sealed class TssWallportTerminationView : MonoBehaviour
             }
             if (!found)
             {
-                var staging = _bankPositions[i];
-                if (wire.CanEnterBank(true))
-                    staging.y = -105f;
-                else if (wire.CanEnterBank(false))
-                    staging.y = -305f;
-                wire.SetPlacement(staging, wire.RotationSteps, wire.Flipped, false);
+                wire.SetPlacement(_bankPositions[i], wire.RotationSteps, wire.Flipped, false);
             }
             wire.SetSelected(wire == _selected);
         }
@@ -476,7 +467,7 @@ public sealed class TssWallportTerminationView : MonoBehaviour
             var slotButton = _slots[pin - 1].gameObject.AddComponent<Button>();
             slotButton.targetGraphic = _slotImages[pin - 1];
             slotButton.onClick.AddListener(() => ClickSlot(pin));
-            var labelY = !isPatchPanel && i >= 4 ? -26f : -2f;
+            var labelY = i >= 4 ? -26f : -2f;
             var pinLabel = Label(_slots[pin - 1], "Pin label", pin.ToString(), new Vector2(0f, labelY), new Vector2(29f, 20f), 15, FontStyle.Bold, new Color(0.95f, 1f, 0.77f));
             pinLabel.alignment = TextAnchor.MiddleCenter;
         }
