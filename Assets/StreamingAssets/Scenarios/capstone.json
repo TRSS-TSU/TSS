@@ -780,7 +780,8 @@
       "startingU": 35,
       "endingU": 38,
       "category": 1,
-      "requiredName": "AN-1"
+      "requiredName": "AN-1",
+      "networkRole": "AN-1"
     },
     {
       "phaseLabel": "Phase 1",
@@ -788,7 +789,8 @@
       "startingU": 30,
       "endingU": 34,
       "category": 0,
-      "requiredName": "CN-1"
+      "requiredName": "CN-1",
+      "networkRole": "CN-1"
     },
     {
       "phaseLabel": "Phase 1",
@@ -796,7 +798,8 @@
       "startingU": 3,
       "endingU": 8,
       "category": 4,
-      "requiredName": "IT2"
+      "requiredName": "IT2",
+      "networkRole": "IT2"
     },
     {
       "phaseLabel": "Phase 2",
@@ -812,7 +815,8 @@
       "startingU": 35,
       "endingU": 38,
       "category": 1,
-      "requiredName": "AN-2"
+      "requiredName": "AN-2",
+      "networkRole": "AN-2"
     }
   ],
   "expectedEndpointPlacements": [
@@ -820,49 +824,57 @@
       "phaseLabel": "Phase 3",
       "stationId": "ITDesk",
       "category": 6,
-      "requiredName": "IT1"
+      "requiredName": "IT1",
+      "networkRole": "IT1"
     },
     {
       "phaseLabel": "Phase 3",
       "stationId": "ReceptionDesk",
       "category": 6,
-      "requiredName": "Reception1"
+      "requiredName": "Reception1",
+      "networkRole": "Reception1"
     },
     {
       "phaseLabel": "Phase 3",
       "stationId": "ReceptionDesk",
       "category": 7,
-      "requiredName": "Reception2"
+      "requiredName": "Reception2",
+      "networkRole": "Reception2"
     },
     {
       "phaseLabel": "Phase 4",
       "stationId": "Office1Desk",
       "category": 6,
-      "requiredName": "Data1"
+      "requiredName": "Data1",
+      "networkRole": "Data1"
     },
     {
       "phaseLabel": "Phase 4",
       "stationId": "Office2Desk",
       "category": 6,
-      "requiredName": "Data2"
+      "requiredName": "Data2",
+      "networkRole": "Data2"
     },
     {
       "phaseLabel": "Phase 4",
       "stationId": "Office2Desk",
       "category": 7,
-      "requiredName": "Data3"
+      "requiredName": "Data3",
+      "networkRole": "Data3"
     },
     {
       "phaseLabel": "Phase 4",
       "stationId": "LobbyTable01",
       "category": 8,
-      "requiredName": "AP-1"
+      "requiredName": "AP-1",
+      "networkRole": "AP-1"
     },
     {
       "phaseLabel": "Phase 4",
       "stationId": "LobbyTable01",
       "category": 9,
-      "requiredName": "TestLaptop"
+      "requiredName": "TestLaptop",
+      "networkRole": "TestLaptop"
     }
   ],
   "networkScenario": {
@@ -902,13 +914,15 @@
         "role": "AN-1",
         "deviceKey": "Rack:Rack01:U35",
         "category": 1,
-        "displayName": "AN-1"
+        "displayName": "AN-1",
+        "managementAddressSuffix": 2
       },
       {
         "role": "AN-2",
         "deviceKey": "Rack:Rack02:U35",
         "category": 1,
-        "displayName": "AN-2"
+        "displayName": "AN-2",
+        "managementAddressSuffix": 3
       },
       {
         "role": "CN-1",
@@ -965,18 +979,24 @@
       {
         "deviceRole": "AN-1",
         "interfaceName": "Fa0/1",
+      "peerDeviceRole": "AN-2",
+      "peerInterfaceName": "Fa0/1",
         "nativeVlanName": "Native",
         "allowedVlanNames": ["Management", "Reception", "Data"]
       },
       {
         "deviceRole": "AN-1",
         "interfaceName": "Fa0/6",
+      "peerDeviceRole": "CN-1",
+      "peerInterfaceName": "Fa0/0",
         "nativeVlanName": "Native",
         "allowedVlanNames": ["Management", "Reception", "Data"]
       },
       {
         "deviceRole": "AN-2",
         "interfaceName": "Fa0/1",
+      "peerDeviceRole": "AN-1",
+      "peerInterfaceName": "Fa0/1",
         "nativeVlanName": "Native",
         "allowedVlanNames": ["Management", "Reception", "Data"]
       }

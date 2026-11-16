@@ -279,7 +279,8 @@ public sealed class TssDeviceSessionController : MonoBehaviour
         TssDeviceLogicalState state;
         if (network != null)
         {
-            var device = network.GetOrCreateDevice(ctx.Key, ctx.Category, ctx.DeviceName);
+            var deviceRole = TssTrainingSession.Instance.NetworkRoleForDevice(ctx.Key, ctx.PlacementId, ctx.Category, ctx.Equipment);
+            var device = network.GetOrCreateDevice(ctx.Key, ctx.Category, ctx.DeviceName, deviceRole);
             foreach (var endpoint in endpoints)
             {
                 var name = SessionInterfaceName(endpoint, ctx.Category);
@@ -369,7 +370,8 @@ public sealed class TssDeviceSessionController : MonoBehaviour
         TssDeviceLogicalState state;
         if (network != null)
         {
-            var endpoint = network.GetOrCreateEndpoint(ctx.Key, ctx.DeviceName, ctx.Category);
+            var endpointRole = TssTrainingSession.Instance.NetworkRoleForDevice(ctx.Key, ctx.PlacementId, ctx.Category, ctx.Equipment);
+            var endpoint = network.GetOrCreateEndpoint(ctx.Key, endpointRole, ctx.Category);
             endpoint.DeviceKey = ctx.Key;
             var session = TssTrainingSession.Instance;
             network.SetProviderDemarcConnected(ProviderDemarcConnected(network, session));

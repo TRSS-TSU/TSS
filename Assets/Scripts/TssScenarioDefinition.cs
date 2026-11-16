@@ -174,6 +174,8 @@ public sealed class ExpectedRackPlacement
     public int endingU;
     public EquipmentCategory category;
     public string requiredName;
+    // Stable network identity, independent of the name entered during placement.
+    public string networkRole;
 }
 
 [Serializable]
@@ -183,6 +185,8 @@ public sealed class ExpectedEndpointPlacement
     public string stationId;
     public EquipmentCategory category;
     public string requiredName;
+    // Stable network identity, independent of the name entered during placement.
+    public string networkRole;
 }
 
 [Serializable]
@@ -224,12 +228,12 @@ public sealed class NetworkScenarioConfig
     public NetworkUnusedPortRequirement[] unusedPortRequirements;
     public NetworkRouterSubinterfaceRequirement[] routerSubinterfaceRequirements;
     public NetworkEvidenceRequirement[] evidenceRequirements;
-    public string routerRole = "CN-1";
-    public string routerParentInterface = "Fa0/0";
-    public string routerWanInterface = "Fa0/1";
-    public string accessPointSwitchRole = "AN-1";
-    public string accessPointSwitchPort = "Fa0/7";
-    public string testLaptopRole = "TestLaptop";
+    public string routerRole;
+    public string routerParentInterface;
+    public string routerWanInterface;
+    public string accessPointSwitchRole;
+    public string accessPointSwitchPort;
+    public string testLaptopRole;
     public string routeEvidenceCommand = "show ip route";
     public string[] testLaptopDiagnosticEvidenceIds = { "ipconfig", "TestLaptop-provider" };
     public string redWolfEvidenceId = "redwolf";
@@ -258,6 +262,7 @@ public sealed class NetworkRoleBinding
     public string deviceKey;
     public EquipmentCategory category;
     public string displayName;
+    public int managementAddressSuffix;
 }
 
 [Serializable]
@@ -275,6 +280,8 @@ public sealed class NetworkTrunkRequirement
 {
     public string deviceRole;
     public string interfaceName;
+    public string peerDeviceRole;
+    public string peerInterfaceName;
     public string nativeVlanName;
     public string[] allowedVlanNames;
 }

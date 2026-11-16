@@ -77,9 +77,9 @@ public sealed class TssNetworkWorkPackageEvaluator
     {
         if (_state == null) return new TssWorkPackageResult();
         var result = new TssWorkPackageResult();
-        var router = Find(_state.Profile?.RouterRole ?? "CN-1");
+        var router = Find(_state.Profile?.RouterRole);
         if (router == null) { result.Add("WP3.Router", "Router configuration is unavailable."); return result; }
-        CheckHardening(router, "WP3.Hardening", result, _state.Profile?.ExpectedHostname(_state.Profile.RouterRole ?? "CN-1"));
+        CheckHardening(router, "WP3.Hardening", result, _state.Profile?.ExpectedHostname(_state.Profile.RouterRole));
         CheckRouterInterfaces(router, result);
         if (_state.Profile.RequireRouteEvidence)
         {
@@ -159,12 +159,19 @@ public sealed class TssNetworkWorkPackageEvaluator
     private void CheckManagementSvi(NetworkDeviceState device, string name, TssWorkPackageResult result)
     {
         var id = "WP2." + name + ".ManagementSvi";
-        var expectedAddress = _state.Profile?.ManagementNetwork + (name.Equals("AN-2", StringComparison.OrdinalIgnoreCase) ? ".3" : ".2");
+        var binding = _state.Profile?.RoleBindings.FirstOrDefault(x => x != null && string.Equals(x.role, name, StringComparison.OrdinalIgnoreCase));
+        var expectedAddress = binding != null && binding.managementAddressSuffix > 0
+            ? _state.Profile.ManagementNetwork + "." + binding.managementAddressSuffix
+            : string.Empty;
+        var gatewayRequirement = _state.Profile?.RouterSubinterfaceRequirements.FirstOrDefault(x => x != null && _state.Profile.VlanId(x.vlanName) == _state.Profile.ManagementVlan);
+        var expectedGateway = gatewayRequirement != null
+            ? _state.Profile.NetworkAddress(gatewayRequirement.networkName, gatewayRequirement.addressSuffix)
+            : string.Empty;
         var valid = device != null && device.Svis.TryGetValue(1, out var vlan1) && !vlan1.AdminUp && string.IsNullOrWhiteSpace(vlan1.Address)
-            && string.Equals(device.DefaultGateway, _state.Profile.ManagementNetwork + ".1", StringComparison.OrdinalIgnoreCase)
+            && string.Equals(device.DefaultGateway, expectedGateway, StringComparison.OrdinalIgnoreCase)
             && device.Svis.TryGetValue(_state.Profile.ManagementVlan, out var svi)
             && svi.AdminUp && string.Equals(svi.Address, expectedAddress, StringComparison.OrdinalIgnoreCase)
-            && string.Equals(svi.Mask, "255.255.255.0", StringComparison.OrdinalIgnoreCase)
+            && gatewayRequirement != null && string.Equals(svi.Mask, gatewayRequirement.mask, StringComparison.OrdinalIgnoreCase)
             && ActiveVlan(device, _state.Profile.ManagementVlan, _state.Profile.ManagementVlanName)
             && device.Interfaces.Values.Any(port => device.IsInterfaceOperational(port) && (port.IsTrunk ? port.AllowedVlans.Contains(_state.Profile.ManagementVlan) : port.AccessVlan == _state.Profile.ManagementVlan));
 
@@ -336,8 +343,7 @@ public sealed class TssNetworkWorkPackageEvaluator
     private EndpointNetworkState FindLaptop()
     {
         foreach (var endpoint in _state.Endpoints)
-            if (string.Equals(endpoint.Role, _state.Profile?.TestLaptopRole, StringComparison.OrdinalIgnoreCase)
-                || endpoint.Category == EquipmentCategory.Laptop)
+            if (endpoint.Category == EquipmentCategory.Laptop)
                 return endpoint;
         return null;
     }
@@ -345,8 +351,12 @@ public sealed class TssNetworkWorkPackageEvaluator
     {
         if (!string.IsNullOrWhiteSpace(requirement.vlanName))
             return _state.Profile.VlanId(requirement.vlanName);
-        var endpointId = requirement.endpointId ?? string.Empty;
-        return endpointId.IndexOf("Reception", StringComparison.OrdinalIgnoreCase) >= 0 ? _state.Profile.ReceptionVlan : endpointId.IndexOf("Data", StringComparison.OrdinalIgnoreCase) >= 0 ? _state.Profile.DataVlan : _state.Profile.ManagementVlan;
+        if (_state.Profile.EndpointAddresses.TryGetValue(requirement.endpointId ?? string.Empty, out var address))
+        {
+            if (address.StartsWith(_state.Profile.ReceptionNetwork + ".", StringComparison.Ordinal)) return _state.Profile.ReceptionVlan;
+            if (address.StartsWith(_state.Profile.DataNetwork + ".", StringComparison.Ordinal)) return _state.Profile.DataVlan;
+        }
+        return _state.Profile.ManagementVlan;
     }
 
     private static bool Equivalent(NetworkDeviceState a, NetworkDeviceState b)
@@ -368,14 +378,19 @@ public sealed class TssNetworkWorkPackageEvaluator
         foreach (var required in _state.Profile?.RequiredPorts ?? Array.Empty<NetworkRequiredPort>())
             if (required != null && !string.IsNullOrWhiteSpace(required.deviceRole))
                 roles.Add(required.deviceRole);
-        if (roles.Count == 0) { roles.Add("AN-1"); roles.Add("AN-2"); }
+        if (roles.Count == 0)
+            foreach (var device in _state.Devices)
+                if (device.Category == EquipmentCategory.Switch)
+                    roles.Add(string.IsNullOrWhiteSpace(device.ExpectedRole) ? device.Key : device.ExpectedRole);
         return roles;
     }
 
-    private NetworkDeviceState Find(string hostname)
+    private NetworkDeviceState Find(string role)
     {
+        if (string.IsNullOrWhiteSpace(role)) return null;
+        if (_state.TryGetDevice(role, out var keyed)) return keyed;
         foreach (var device in _state.Devices)
-            if (string.Equals(device.Hostname, hostname, StringComparison.OrdinalIgnoreCase) || string.Equals(device.ExpectedRole, hostname, StringComparison.OrdinalIgnoreCase)) return device;
+            if (string.Equals(device.ExpectedRole, role, StringComparison.OrdinalIgnoreCase)) return device;
         return null;
     }
 }

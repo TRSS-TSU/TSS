@@ -15,6 +15,8 @@ public sealed class TssScenarioResultsTests
 
         Assert.IsEmpty(device.ManagementAddress);
         var vlanOutput = TssCliCommandProcessor.BuildResultsShowOutput(device, "show vlan brief");
+        StringAssert.Contains("VLAN | Name", vlanOutput);
+        StringAssert.Contains("-----+----------------------------------+-----------+", vlanOutput);
         Assert.Less(vlanOutput.IndexOf("Fa0/2", System.StringComparison.Ordinal), vlanOutput.IndexOf("Fa0/10", System.StringComparison.Ordinal));
 
         var review = TssCliCommandProcessor.BuildResultsShowReview(device, new[]
@@ -26,6 +28,14 @@ public sealed class TssScenarioResultsTests
         StringAssert.DoesNotContain("SHOW MAC ADDRESS-TABLE =====", review);
         StringAssert.DoesNotContain("<color=#FF4D4D>!</color>", review);
         StringAssert.Contains("<color=#FF4D4D>Fa0/7", review);
+    }
+
+    [Test]
+    public void VlanPortWrapContinuesUnderPortsColumn()
+    {
+        var wrapped = TssCliCommandProcessor.FormatVlanPorts(new[] { "Fa0/1", "Fa0/2", "Fa0/3", "Fa0/4", "Fa0/5", "Fa0/6", "Fa0/7" });
+
+        StringAssert.Contains("\n" + new string('\u00A0', 62), wrapped);
     }
 
     [Test]

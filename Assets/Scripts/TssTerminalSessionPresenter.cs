@@ -1078,8 +1078,8 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
     private string BuildShowVlanBrief()
     {
         var sb = new StringBuilder();
-        sb.AppendLine("VLAN Name                             Status    Ports");
-        sb.AppendLine("---- -------------------------------- --------- -------------------------------");
+        sb.AppendLine("VLAN | Name                             | Status    | Ports");
+        sb.AppendLine("-----+----------------------------------+-----------+-------------------------------");
         var portsByVlan = new Dictionary<int, List<string>>();
         if (_state != null)
         {
@@ -1106,7 +1106,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         {
             var name = networkDevice != null ? networkDevice.GetVlanName(vlanId) : vlanId == 1 ? "default" : "VLAN" + vlanId;
             portsByVlan.TryGetValue(vlanId, out var ports);
-            sb.AppendLine($"{vlanId,-4} {name,-32} {(networkDevice != null && networkDevice.IsVlanSuspended(vlanId) ? "suspend" : "active"),-9} {string.Join(", ", ports ?? new List<string>())}");
+            sb.AppendLine($"{vlanId,4} | {name,-32} | {(networkDevice != null && networkDevice.IsVlanSuspended(vlanId) ? "suspend" : "active"),-9} | {TssCliCommandProcessor.FormatVlanPorts(ports ?? new List<string>())}");
         }
         sb.AppendLine("1002 fddi-default                     act/unsup ");
         sb.AppendLine("1003 token-ring-default               act/unsup ");

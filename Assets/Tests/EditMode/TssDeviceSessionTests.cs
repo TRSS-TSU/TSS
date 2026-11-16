@@ -55,7 +55,7 @@ public sealed class TssDeviceSessionTests
             StringAssert.Contains("name Management", TssCliCommandProcessor.BuildRunningConfig(sw.Device));
             Assert.IsTrue(sw.Execute("configure terminal").Accepted);
             Assert.IsTrue(sw.Execute("vlan 10").Accepted);
-            Assert.IsTrue(sw.Execute("no state suspend").Accepted);
+            Assert.IsTrue(sw.Execute("state active").Accepted);
             Assert.AreEqual("Sales", sw.Device.Vlans[10]);
             StringAssert.DoesNotContain("state suspend", TssCliCommandProcessor.BuildRunningConfig(sw.Device));
 
@@ -717,7 +717,7 @@ public sealed class TssDeviceSessionTests
             Assert.IsTrue(processor.Execute("name Data").Accepted);
             Assert.IsTrue(processor.Execute("state suspend").Accepted);
             Assert.IsTrue(processor.Execute("exit").Accepted);
-            Assert.IsTrue(processor.Execute("ip route 10.10.10.0 255.255.255.0 192.0.2.1").Accepted);
+            Assert.IsFalse(processor.Execute("ip route 10.10.10.0 255.255.255.0 192.0.2.1").Accepted);
             Assert.IsTrue(processor.Execute("end").Accepted);
             var runningConfig = TssCliCommandProcessor.BuildRunningConfig(processor.Device);
             StringAssert.Contains("line vty 0 4" + Environment.NewLine + " password vtypw" + Environment.NewLine + " login local" + Environment.NewLine + " exec-timeout 10" + Environment.NewLine + " transport input ssh" + Environment.NewLine + " logging synchronous", runningConfig);
@@ -1194,6 +1194,29 @@ public sealed class TssDeviceSessionTests
         Assert.AreEqual(3, result.FailedLayer);
         Assert.AreEqual(TssReachabilityFaultCategory.DestinationUnavailable, result.FaultCategory);
         Assert.IsFalse(result.Success);
+    }
+
+    [Test]
+    public void ScenarioEndpointAddressDoesNotReplyWithoutInstalledConfiguredEndpoint()
+    {
+        var profile = TssNetworkRunProfile.Create(7, new NetworkScenarioConfig());
+        var state = new TssNetworkSessionState(profile);
+        var source = state.GetOrCreateEndpoint("Endpoint:IT1", "IT1");
+        source.Address = profile.EndpointAddresses["IT1"];
+        source.Mask = "255.255.255.0";
+        source.Gateway = profile.ManagementNetwork + ".1";
+        source.Layer1Connected = source.Layer2Connected = true;
+        var expectedTarget = profile.EndpointAddresses["IT2"];
+        var evaluator = new TssNetworkReachabilityEvaluator(state);
+
+        var endpointPing = evaluator.Evaluate(source.Key, expectedTarget);
+        Assert.IsFalse(endpointPing.Success);
+        Assert.AreEqual(TssReachabilityFaultCategory.DestinationUnavailable, endpointPing.FaultCategory);
+
+        state.GetOrCreateDevice("AN-1", EquipmentCategory.Switch, "AN-1");
+        var devicePing = evaluator.EvaluateDevice("AN-1", expectedTarget);
+        Assert.IsFalse(devicePing.Success);
+        Assert.AreEqual(TssReachabilityFaultCategory.DestinationUnavailable, devicePing.FaultCategory);
     }
 
     [Test]

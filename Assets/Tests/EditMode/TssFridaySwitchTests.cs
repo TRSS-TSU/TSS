@@ -45,6 +45,8 @@ public sealed class TssFridaySwitchTests
             Assert.IsFalse(device.Svis[1].AdminUp);
             cli.Execute("end");
             Assert.IsFalse(cli.Execute("show ip route").Accepted);
+            Assert.IsFalse(cli.Execute("ip route 0.0.0.0 0.0.0.0 10.1.95.2").Accepted);
+            Assert.IsEmpty(device.Routes);
             Assert.IsFalse(cli.Execute("sh ip ro").Accepted);
             Assert.IsFalse(device.Evidence.Contains("show ip route"));
             StringAssert.Contains("% Invalid show command", TssCliCommandProcessor.BuildResultsShowOutput(device, "show ip route"));

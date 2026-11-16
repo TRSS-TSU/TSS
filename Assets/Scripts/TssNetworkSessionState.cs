@@ -106,17 +106,17 @@ public sealed class TssNetworkRunProfile
         foreach (var name in config?.dhcpNetworkNames is { Length: > 0 } configured ? configured : new[] { ReceptionVlanName })
             if (!string.IsNullOrWhiteSpace(name)) DhcpNetworkNames.Add(name.Trim());
         RoleBindings = config?.roleBindings ?? Array.Empty<NetworkRoleBinding>();
-        RequiredPorts = config?.requiredPorts is { Length: > 0 } ? config.requiredPorts : DefaultPorts();
-        TrunkRequirements = config?.trunkRequirements is { Length: > 0 } ? config.trunkRequirements : DefaultTrunks();
-        UnusedPortRequirements = config?.unusedPortRequirements is { Length: > 0 } ? config.unusedPortRequirements : DefaultUnusedPorts();
-        RouterSubinterfaceRequirements = config?.routerSubinterfaceRequirements is { Length: > 0 } ? config.routerSubinterfaceRequirements : DefaultRouterSubinterfaces();
-        EvidenceRequirements = config?.evidenceRequirements is { Length: > 0 } ? config.evidenceRequirements : DefaultEvidence();
-        RouterRole = string.IsNullOrWhiteSpace(config?.routerRole) ? "CN-1" : config.routerRole;
-        RouterParentInterface = string.IsNullOrWhiteSpace(config?.routerParentInterface) ? "Fa0/0" : config.routerParentInterface;
-        RouterWanInterface = string.IsNullOrWhiteSpace(config?.routerWanInterface) ? "Fa0/1" : config.routerWanInterface;
-        AccessPointSwitchRole = string.IsNullOrWhiteSpace(config?.accessPointSwitchRole) ? "AN-1" : config.accessPointSwitchRole;
-        AccessPointSwitchPort = string.IsNullOrWhiteSpace(config?.accessPointSwitchPort) ? "Fa0/7" : config.accessPointSwitchPort;
-        TestLaptopRole = string.IsNullOrWhiteSpace(config?.testLaptopRole) ? "TestLaptop" : config.testLaptopRole;
+        RequiredPorts = config?.requiredPorts ?? Array.Empty<NetworkRequiredPort>();
+        TrunkRequirements = config?.trunkRequirements ?? Array.Empty<NetworkTrunkRequirement>();
+        UnusedPortRequirements = config?.unusedPortRequirements ?? Array.Empty<NetworkUnusedPortRequirement>();
+        RouterSubinterfaceRequirements = config?.routerSubinterfaceRequirements ?? Array.Empty<NetworkRouterSubinterfaceRequirement>();
+        EvidenceRequirements = config?.evidenceRequirements ?? Array.Empty<NetworkEvidenceRequirement>();
+        RouterRole = config?.routerRole ?? string.Empty;
+        RouterParentInterface = config?.routerParentInterface ?? string.Empty;
+        RouterWanInterface = config?.routerWanInterface ?? string.Empty;
+        AccessPointSwitchRole = config?.accessPointSwitchRole ?? string.Empty;
+        AccessPointSwitchPort = config?.accessPointSwitchPort ?? string.Empty;
+        TestLaptopRole = config?.testLaptopRole ?? string.Empty;
         RouteEvidenceCommand = string.IsNullOrWhiteSpace(config?.routeEvidenceCommand) ? "show ip route" : config.routeEvidenceCommand;
         TestLaptopDiagnosticEvidenceIds = config?.testLaptopDiagnosticEvidenceIds is { Length: > 0 } ? config.testLaptopDiagnosticEvidenceIds : new[] { "ipconfig", "TestLaptop-provider" };
         RedWolfEvidenceId = string.IsNullOrWhiteSpace(config?.redWolfEvidenceId) ? "redwolf" : config.redWolfEvidenceId;
@@ -159,37 +159,6 @@ public sealed class TssNetworkRunProfile
 
         return (int)(hash % 2147483646u) + 1;
     }
-    private static NetworkRequiredPort[] DefaultPorts() => new[]
-    {
-        new NetworkRequiredPort { deviceRole = "AN-1", interfaceName = "Fa0/2", endpointId = "IT1" },
-        new NetworkRequiredPort { deviceRole = "AN-1", interfaceName = "Fa0/3", endpointId = "Reception1" },
-        new NetworkRequiredPort { deviceRole = "AN-1", interfaceName = "Fa0/4", endpointId = "Reception2" },
-        new NetworkRequiredPort { deviceRole = "AN-1", interfaceName = "Fa0/5", endpointId = "IT2" },
-        new NetworkRequiredPort { deviceRole = "AN-2", interfaceName = "Fa0/2", endpointId = "Data1" },
-        new NetworkRequiredPort { deviceRole = "AN-2", interfaceName = "Fa0/3", endpointId = "Data2" },
-        new NetworkRequiredPort { deviceRole = "AN-2", interfaceName = "Fa0/4", endpointId = "Data3" }
-    };
-    private NetworkEvidenceRequirement[] DefaultEvidence() => new[]
-    {
-        new NetworkEvidenceRequirement { evidenceId = "IT1-provider", command = "ping " + WanProviderAddress, description = "Endpoint-originated provider diagnostic" }
-    };
-    private static NetworkTrunkRequirement[] DefaultTrunks() => new[]
-    {
-        new NetworkTrunkRequirement { deviceRole = "AN-1", interfaceName = "Fa0/1", nativeVlanName = "Native", allowedVlanNames = new[] { "Management", "Reception", "Data" } },
-        new NetworkTrunkRequirement { deviceRole = "AN-1", interfaceName = "Fa0/6", nativeVlanName = "Native", allowedVlanNames = new[] { "Management", "Reception", "Data" } },
-        new NetworkTrunkRequirement { deviceRole = "AN-2", interfaceName = "Fa0/1", nativeVlanName = "Native", allowedVlanNames = new[] { "Management", "Reception", "Data" } }
-    };
-    private static NetworkUnusedPortRequirement[] DefaultUnusedPorts() => new[]
-    {
-        new NetworkUnusedPortRequirement { deviceRole = "AN-1", firstPort = 7, lastPort = 24, deadVlanName = "Dead_Vlan" },
-        new NetworkUnusedPortRequirement { deviceRole = "AN-2", firstPort = 5, lastPort = 24, deadVlanName = "Dead_Vlan" }
-    };
-    private static NetworkRouterSubinterfaceRequirement[] DefaultRouterSubinterfaces() => new[]
-    {
-        new NetworkRouterSubinterfaceRequirement { vlanName = "Management", networkName = "Management", addressSuffix = 1 },
-        new NetworkRouterSubinterfaceRequirement { vlanName = "Reception", networkName = "Reception", addressSuffix = 1 },
-        new NetworkRouterSubinterfaceRequirement { vlanName = "Data", networkName = "Data", addressSuffix = 1 }
-    };
     public string ExpectedHostname(string role)
     {
         foreach (var binding in RoleBindings)
@@ -260,14 +229,18 @@ public sealed class TssNetworkSessionState
     public IEnumerable<EndpointNetworkState> Endpoints => _endpoints.Values;
     public IReadOnlyDictionary<string, TssNetworkSessionSnapshot> Checkpoints => _checkpoints;
     public TssNetworkSessionState(TssNetworkRunProfile profile) { Profile = profile; }
-    public NetworkDeviceState GetOrCreateDevice(string key, EquipmentCategory category, string displayName)
+    public NetworkDeviceState GetOrCreateDevice(string key, EquipmentCategory category, string displayName, string expectedRole = null)
     {
-        if (_devices.TryGetValue(key, out var state)) return state;
+        if (_devices.TryGetValue(key, out var state))
+        {
+            if (!string.IsNullOrWhiteSpace(expectedRole)) state.ExpectedRole = expectedRole;
+            return state;
+        }
         state = new NetworkDeviceState(key, category, displayName, Profile);
+        state.ExpectedRole = expectedRole;
         foreach (var binding in Profile?.RoleBindings ?? Array.Empty<NetworkRoleBinding>())
-            if (binding != null && string.Equals(binding.deviceKey, key, StringComparison.OrdinalIgnoreCase))
+            if (string.IsNullOrWhiteSpace(state.ExpectedRole) && binding != null && string.Equals(binding.deviceKey, key, StringComparison.OrdinalIgnoreCase))
             { state.ExpectedRole = binding.role; break; }
-        if (string.IsNullOrWhiteSpace(state.ExpectedRole)) state.ExpectedRole = displayName;
         _devices.Add(key, state); return state;
     }
     public bool TryGetDevice(string key, out NetworkDeviceState state) => _devices.TryGetValue(key, out state);
@@ -443,7 +416,7 @@ public sealed class TssNetworkSessionState
 
     public bool IsAccessPointSwitchPortReady()
     {
-        var accessSwitch = FindDeviceByRole(Profile?.AccessPointSwitchRole ?? "AN-1");
+        var accessSwitch = FindDeviceByRole(Profile?.AccessPointSwitchRole);
         return accessSwitch != null
             && accessSwitch.Interfaces.TryGetValue(Profile?.AccessPointSwitchPort ?? "Fa0/7", out var port)
             && accessSwitch.IsInterfaceOperational(port) && !port.IsTrunk
@@ -462,7 +435,7 @@ public sealed class TssNetworkSessionState
         if (!ProviderDemarcConnected)
             return false;
 
-        var router = FindDeviceByRole(Profile?.RouterRole ?? "CN-1");
+        var router = FindDeviceByRole(Profile?.RouterRole);
         if (router == null || !router.Interfaces.TryGetValue(Profile?.RouterWanInterface ?? "Fa0/1", out var wan)
             || !router.IsInterfaceOperational(wan)
             || wan.Address != Profile.WanCustomerAddress || wan.Mask != "255.255.255.252")
@@ -550,9 +523,9 @@ public sealed class TssNetworkSessionState
 
     private NetworkDeviceState FindDeviceByRole(string role)
     {
+        if (string.IsNullOrWhiteSpace(role)) return null;
         foreach (var device in _devices.Values)
-            if (string.Equals(device.ExpectedRole, role, StringComparison.OrdinalIgnoreCase)
-                || string.Equals(device.Hostname, role, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(device.ExpectedRole, role, StringComparison.OrdinalIgnoreCase))
                 return device;
         return null;
     }

@@ -182,6 +182,7 @@ public static class TssExternalScenarioValidator
         foreach (var alias in network.endpointAliases ?? Array.Empty<string>()) Known(alias, names, "endpoint alias", errors);
         var roles = new Dictionary<string, NetworkRoleBinding>(StringComparer.OrdinalIgnoreCase);
         var keys = NewIds();
+        var managementHostSuffixes = NewIds();
         foreach (var row in Rows(network.roleBindings, "roleBindings", errors))
         {
             Required(row.role, "role", errors);
@@ -190,6 +191,10 @@ public static class TssExternalScenarioValidator
             if (!string.IsNullOrWhiteSpace(row.role) && !roles.TryAdd(row.role, row)) errors.Add("Duplicate role: " + row.role);
             if (string.IsNullOrEmpty(row.deviceKey) || !owners.TryGetValue(row.deviceKey, out var categories) || !categories.Contains(row.category))
                 errors.Add("Unknown role device/category: " + row.deviceKey);
+            if (network.enableLayer23Simulation && row.category == EquipmentCategory.Switch
+                && (row.managementAddressSuffix < 2 || row.managementAddressSuffix > 254
+                    || !managementHostSuffixes.Add(row.managementAddressSuffix.ToString())))
+                errors.Add("Switch role requires a unique managementAddressSuffix from 2..254: " + row.role);
         }
         if (network.enableLayer23Simulation && (!roles.TryGetValue(network.routerRole, out var routerBinding) || routerBinding.category != EquipmentCategory.Router))
             errors.Add("Missing router role/category: " + network.routerRole);
@@ -207,6 +212,29 @@ public static class TssExternalScenarioValidator
                 Known(row.vlanName, new[] { network.managementVlanName, network.receptionVlanName, network.dataVlanName }, "required-port VLAN", errors);
         }
         if (network.enableLayer23Simulation && (network.requiredPorts == null || network.requiredPorts.Length == 0)) errors.Add("Enabled network requires ports.");
+        foreach (var row in Rows(network.trunkRequirements, "trunkRequirements", errors))
+        {
+            if (!roles.TryGetValue(row.deviceRole, out var localRole) || localRole.category != EquipmentCategory.Switch)
+                errors.Add("Unsupported trunk role: " + row.deviceRole);
+            if (string.IsNullOrWhiteSpace(row.peerDeviceRole) || string.IsNullOrWhiteSpace(row.peerInterfaceName))
+            {
+                if (network.enableLayer23Simulation) errors.Add("Enabled network trunks require peerDeviceRole and peerInterfaceName: " + row.deviceRole + ":" + row.interfaceName);
+                continue;
+            }
+            if (!roles.TryGetValue(row.peerDeviceRole, out var peerRole)
+                || peerRole.category is not (EquipmentCategory.Switch or EquipmentCategory.Router))
+            {
+                errors.Add("Unsupported trunk peer role: " + row.peerDeviceRole);
+                continue;
+            }
+            if (string.Equals(row.deviceRole, row.peerDeviceRole, StringComparison.OrdinalIgnoreCase))
+                errors.Add("A trunk cannot peer with the same device role: " + row.deviceRole);
+            foreach (var port in new[] { (Category: localRole?.category, Name: row.interfaceName), (Category: peerRole.category, Name: row.peerInterfaceName) })
+                if (string.IsNullOrEmpty(port.Name) || !Regex.IsMatch(port.Name, @"\A(?:Fa|Gi)0/[0-9]+\z")
+                    || !equipment.Where(x => x.category == port.Category).SelectMany(x => x.interfaces ?? Array.Empty<EquipmentInterface>())
+                        .Any(x => x != null && x.name == port.Name.Replace("/", string.Empty)))
+                    errors.Add("Unknown trunk interface: " + port.Name);
+        }
         var evidence = NewIds();
         foreach (var row in Rows(network.evidenceRequirements, "evidenceRequirements", errors))
         {

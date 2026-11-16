@@ -507,6 +507,42 @@ public sealed class TssTrainingSession : MonoBehaviour
         return false;
     }
 
+    public string NetworkRoleForDevice(string deviceKey, string placementId, EquipmentCategory category, EquipmentDefinition equipment)
+    {
+        if (!string.IsNullOrWhiteSpace(placementId))
+        {
+            var placement = _endpointPlacements.FirstOrDefault(x => string.Equals(x.PlacementId, placementId, StringComparison.OrdinalIgnoreCase));
+            if (placement.Equipment)
+                foreach (var expected in Scenario?.expectedEndpointPlacements ?? Array.Empty<ExpectedEndpointPlacement>())
+                    if (expected != null && expected.category == category
+                        && string.Equals(expected.stationId, placement.StationId, StringComparison.OrdinalIgnoreCase)
+                        && !string.IsNullOrWhiteSpace(expected.networkRole))
+                        return expected.networkRole.Trim();
+        }
+
+        var installed = _installed.FirstOrDefault(x => string.Equals(GetRackOwnerPrefix(x.RackId, x.StartingU), deviceKey, StringComparison.OrdinalIgnoreCase));
+        if (installed.Equipment)
+        {
+            foreach (var expected in Scenario?.expectedRackPlacements ?? Array.Empty<ExpectedRackPlacement>())
+            {
+                var endU = expected == null ? 0 : expected.endingU > 0 ? expected.endingU : expected.startingU;
+                if (expected != null && expected.category == category && expected.rackId == installed.RackId
+                    && installed.StartingU >= expected.startingU && installed.StartingU <= endU
+                    && !string.IsNullOrWhiteSpace(expected.networkRole))
+                    return expected.networkRole.Trim();
+            }
+
+            foreach (var binding in Scenario?.networkScenario?.roleBindings ?? Array.Empty<NetworkRoleBinding>())
+                if (binding != null && binding.category == category
+                    && string.Equals(binding.deviceKey, deviceKey, StringComparison.OrdinalIgnoreCase))
+                    return binding.role ?? string.Empty;
+        }
+
+        return equipment && !string.IsNullOrWhiteSpace(equipment.equipmentId)
+            ? equipment.equipmentId.Trim()
+            : deviceKey ?? string.Empty;
+    }
+
     public bool RenameNetworkDevice(string deviceKey, string deviceName)
     {
         if (string.IsNullOrWhiteSpace(deviceKey))
@@ -827,13 +863,12 @@ public sealed class TssTrainingSession : MonoBehaviour
         return false;
     }
 
-    private static bool IsOperationalAccessSwitch(NetworkDeviceState device)
+    private bool IsOperationalAccessSwitch(NetworkDeviceState device)
     {
-        if (device == null
-            || (!string.Equals(device.ExpectedRole, "AN-1", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(device.ExpectedRole, "AN-2", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(device.Hostname, "AN-1", StringComparison.OrdinalIgnoreCase)
-                && !string.Equals(device.Hostname, "AN-2", StringComparison.OrdinalIgnoreCase)))
+        if (device == null || device.Category != EquipmentCategory.Switch
+            || !(Scenario?.networkScenario?.roleBindings ?? Array.Empty<NetworkRoleBinding>())
+                .Any(binding => binding != null && binding.category == EquipmentCategory.Switch
+                    && string.Equals(binding.role, device.ExpectedRole, StringComparison.OrdinalIgnoreCase)))
             return false;
 
         foreach (var iface in device.Interfaces.Values)
@@ -1437,14 +1472,14 @@ public sealed class TssTrainingSession : MonoBehaviour
             if (binding == null || string.IsNullOrEmpty(binding.deviceKey) || !endpointId.StartsWith(binding.deviceKey + ":", StringComparison.Ordinal)) continue;
             foreach (var expected in Scenario.expectedRackPlacements ?? Array.Empty<ExpectedRackPlacement>())
             {
-                if (expected == null || expected.requiredName != binding.role || expected.category != binding.category) continue;
+                if (expected == null || expected.networkRole != binding.role || expected.category != binding.category) continue;
                 var firstU = expected.endingU == 0 ? expected.startingU : Math.Min(expected.startingU, expected.endingU);
                 var lastU = Math.Max(expected.startingU, expected.endingU);
                 var prefix = $"Rack:{expected.rackId}:U";
                 if (!binding.deviceKey.StartsWith(prefix, StringComparison.Ordinal) ||
                     !int.TryParse(binding.deviceKey.Substring(prefix.Length), out var authoredU) || authoredU < firstU || authoredU > lastU) continue;
                 foreach (var installed in _installed)
-                    if (installed.RackId == expected.rackId && installed.DeviceName == expected.requiredName &&
+                    if (installed.RackId == expected.rackId &&
                         installed.Equipment && installed.Equipment.category == expected.category &&
                         installed.StartingU >= firstU && installed.StartingU <= lastU)
                         return GetRackOwnerPrefix(installed.RackId, installed.StartingU) + endpointId.Substring(binding.deviceKey.Length);
