@@ -189,12 +189,6 @@ public sealed class TssWallportTerminationView : MonoBehaviour
     public void FinishWireDrag(TssTerminationDraggable wire, PointerEventData eventData)
     {
         var pin = FindSlot(eventData);
-        if (pin > 0 && !wire.CanEnterBank(IsUpperPin(pin)))
-        {
-            Refresh();
-            _status.text = "Flip the conductor toward this IDC bank";
-            return;
-        }
         if (pin > 0 && !wire.Terminated && !_pins[pin].isPunched && _link != null)
         {
             for (var i = 1; i <= 8; i++)
@@ -331,7 +325,7 @@ public sealed class TssWallportTerminationView : MonoBehaviour
         for (var i = 0; i < 8; i++)
         {
             var slotIndex = slots[i];
-            _bankPositions[i] = new Vector2(370f + (slotIndex % 4) * 19f, slotIndex < 4 ? -105f : -305f);
+            _bankPositions[i] = new Vector2(370f + (slotIndex % 4) * 70f, slotIndex < 4 ? -105f : -305f);
         }
     }
 
@@ -371,7 +365,7 @@ public sealed class TssWallportTerminationView : MonoBehaviour
                 if (!state.hasConductor || state.conductor != wire.Conductor)
                     continue;
                 var slot = _slots[pin - 1];
-                wire.SetPlacement(slot.anchoredPosition + new Vector2(14f, -23f), state.rotationSteps, state.flipped, state.isPunched);
+                wire.SetPlacement(GetPinWirePosition(slot, pin), state.rotationSteps, state.flipped, state.isPunched);
                 found = true;
                 break;
             }
@@ -436,7 +430,6 @@ public sealed class TssWallportTerminationView : MonoBehaviour
 
         _board = Panel(page, "Conductor placement", new Vector2(24f, -354f), new Vector2(790f, 378f), new Color(0.12f, 0.16f, 0.18f));
         Label(_board, "Board title", isPatchPanel ? "PATCH PANEL PUNCH-DOWN" : "WALLPORT PUNCH-DOWN", new Vector2(19f, -12f), new Vector2(400f, 28f), 18, FontStyle.Bold);
-        Button(_board, "Flip", new Vector2(585f, -12f), new Vector2(68f, 29f), () => { if (_selected) { _selected.Flip(); RememberSelectedOrientation(); Refresh(); } });
         Panel(_board, "Tool dock", new Vector2(626f, -293f), new Vector2(145f, 66f), new Color(0.28f, 0.37f, 0.39f));
         _tool = Draggable(_board, "Punch tool", new Vector2(635f, -297f), new Vector2(126f, 42f), Color.white, string.Empty, TssConductorColor.None, true);
         if (punchToolSprite)
@@ -476,7 +469,8 @@ public sealed class TssWallportTerminationView : MonoBehaviour
         ScrambleBankPositions();
         for (var i = 0; i < 8; i++)
         {
-            _wires[i] = Draggable(_board, Names[i], _bankPositions[i], new Vector2(28f, 28f), Colors[i], string.Empty, Order[i], false);
+            // The visible grab marker and its hit target stay centered on the shuffled wire tip.
+            _wires[i] = Draggable(_board, Names[i], _bankPositions[i], new Vector2(64f, 42f), Colors[i], string.Empty, Order[i], false);
             _wires[i].SetPlacement(GetStagingPosition(i), WireOrientation(i), false, false);
         }
 
@@ -528,6 +522,12 @@ public sealed class TssWallportTerminationView : MonoBehaviour
     private bool IsUpperPin(int pin)
     {
         return pin <= 2 || pin >= 7;
+    }
+
+    private static Vector2 GetPinWirePosition(RectTransform slot, int pin)
+    {
+        // Upper row numbers sit above the drop point; lower row numbers sit below it.
+        return slot.anchoredPosition + new Vector2(14f, pin <= 2 || pin >= 7 ? -36f : -10f);
     }
 
     private static RectTransform Panel(RectTransform parent, string name, Vector2 pos, Vector2 size, Color color, bool stretch = false, bool center = false)

@@ -10,6 +10,8 @@ public sealed class TssTerminationDraggable : MonoBehaviour, IBeginDragHandler, 
     private Image[] _strand;
     private Image[] _stripe;
     private Image _end;
+    private Image _grabFrame;
+    private Image _grabCenter;
     private Vector2 _home;
     private Vector2 _cableEnd;
     private bool _tool;
@@ -34,6 +36,27 @@ public sealed class TssTerminationDraggable : MonoBehaviour, IBeginDragHandler, 
         _rect = GetComponent<RectTransform>();
         if (_tool)
             return;
+
+        // Keep a visible, generous grab target at the wire's movable tip. The
+        // parent Image remains the raycast target; these marker Images are visual only.
+        var grab = new GameObject("Wire grab point", typeof(RectTransform), typeof(Image));
+        var grabRect = grab.GetComponent<RectTransform>();
+        grabRect.SetParent(transform, false);
+        grabRect.anchorMin = grabRect.anchorMax = new Vector2(0.5f, 0.5f);
+        grabRect.pivot = new Vector2(0.5f, 0.5f);
+        grabRect.sizeDelta = new Vector2(20f, 20f);
+        _grabFrame = grab.GetComponent<Image>();
+        _grabFrame.color = new Color(0.035f, 0.055f, 0.065f, 0.96f);
+        _grabFrame.raycastTarget = false;
+        var center = new GameObject("Grip", typeof(RectTransform), typeof(Image));
+        var centerRect = center.GetComponent<RectTransform>();
+        centerRect.SetParent(grabRect, false);
+        centerRect.anchorMin = centerRect.anchorMax = new Vector2(0.5f, 0.5f);
+        centerRect.pivot = new Vector2(0.5f, 0.5f);
+        centerRect.sizeDelta = new Vector2(12f, 12f);
+        _grabCenter = center.GetComponent<Image>();
+        _grabCenter.color = color;
+        _grabCenter.raycastTarget = false;
 
         _strand = new Image[2];
         _stripe = new Image[2];
@@ -106,6 +129,8 @@ public sealed class TssTerminationDraggable : MonoBehaviour, IBeginDragHandler, 
         if (_tool)
             return;
         _end.color = selected ? new Color(1f, 0.92f, 0.45f) : _color;
+        _grabFrame.color = selected ? new Color(1f, 0.86f, 0.25f, 0.98f) : new Color(0.035f, 0.055f, 0.065f, 0.96f);
+        _grabCenter.color = selected ? Color.white : _color;
     }
 
     public void SetToolSelected(bool selected)
@@ -141,7 +166,10 @@ public sealed class TssTerminationDraggable : MonoBehaviour, IBeginDragHandler, 
                 Draw(_stripe[i], points[i], points[i + 1], 3f);
         }
 
-        var direction = (Vector2)(Quaternion.Euler(0f, 0f, RotationSteps * 90f) * Vector2.left) * (Flipped ? -1f : 1f);
+        // Point the visible tail out from the row the wire currently occupies.
+        // This keeps it visible for correct and incorrect row placements alike.
+        var rowCenterY = -_board.rect.height * 0.5f;
+        var direction = tip.y > rowCenterY ? Vector2.up : Vector2.down;
         Draw(_end, tip, tip + direction * (_terminated ? 4f : 56f), 7f);
     }
 
