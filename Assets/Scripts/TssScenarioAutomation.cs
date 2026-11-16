@@ -274,7 +274,7 @@ public sealed class TssScenarioAutomation
                 if (expected == null || expected.requiredName != binding.role || expected.category != binding.category || !binding.deviceKey.StartsWith($"Rack:{expected.rackId}:U", StringComparison.Ordinal)) continue;
                 foreach (var installed in _session.Installed)
                     if (installed.RackId == expected.rackId && installed.DeviceName == expected.requiredName && installed.Equipment && installed.Equipment.category == expected.category)
-                        return TssTrainingSession.GetRackOwnerPrefix(installed.RackId, installed.StartingU) + authored.Substring(binding.deviceKey.Length);
+                        return TssTrainingSession.GetRackOwnerPrefix(installed.RackId, installed.StartingU, installed.Equipment) + authored.Substring(binding.deviceKey.Length);
             }
         }
         return authored;

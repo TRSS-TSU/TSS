@@ -107,7 +107,7 @@ public sealed class TssObjectInteractable : MonoBehaviour
     private void OnMouseDown()
     {
         if (!IsPlacedEndpointBlockedWithoutCable()
-            && IsPlayerInInteractionRange() && !_isFirstPerson && _transition == null && !IsGameplayInputBlocked())
+            && IsPlayerInInteractionRange() && _isHovered && !_isFirstPerson && _transition == null && !IsGameplayInputBlocked())
             EnterFirstPerson();
     }
 
@@ -449,19 +449,10 @@ public sealed class TssObjectInteractable : MonoBehaviour
         }
 
         var ray = mainCamera.ScreenPointToRay(GetMousePosition());
-        var hits = Physics.RaycastAll(ray, Mathf.Infinity, ~0, QueryTriggerInteraction.Ignore);
-        Array.Sort(hits, (left, right) => left.distance.CompareTo(right.distance));
-
-        foreach (var hit in hits)
-        {
-            if (hit.collider && (hit.collider.transform == transform || hit.collider.transform.IsChildOf(transform)))
-            {
-                SetHovered(true);
-                return;
-            }
-        }
-
-        SetHovered(false);
+        var hitThisObject = Physics.Raycast(ray, out var hit, Mathf.Infinity, ~0, QueryTriggerInteraction.Ignore)
+            && hit.collider
+            && (hit.collider.transform == transform || hit.collider.transform.IsChildOf(transform));
+        SetHovered(hitThisObject);
     }
 
     private void SetHovered(bool hovered)

@@ -179,7 +179,7 @@ public sealed class TssNetworkReachabilityEvaluator
             return new TssReachabilityResult(true, 0, TssReachabilityFaultCategory.None, "Reachable.", source.Role, destinationRole, new[] { source.Address, destinationAddress });
         }
 
-        if (isGateway && HasStructuredTopology(sourceDevice))
+        if (isGateway && RequiresConfiguredTopology(sourceDevice))
         {
             var sourceFailure = CheckLocalEndpoint(source, source.Role, destinationRole);
             if (sourceFailure.HasValue) return sourceFailure.Value;
@@ -233,7 +233,7 @@ public sealed class TssNetworkReachabilityEvaluator
 
         var vlan = VlanForEndpoint(source, profile);
         var routerInterface = FindRouterInterface(vlan, profile);
-        if (HasStructuredTopology(sourceDevice) && routerInterface == null)
+        if (RequiresConfiguredTopology(sourceDevice) && routerInterface == null)
             return Fail(3, TssReachabilityFaultCategory.GatewayUnavailable, "router gateway is unavailable.", source.Role, destinationRole, hops.ToArray());
         if (routerInterface != null)
         {
@@ -244,7 +244,7 @@ public sealed class TssNetworkReachabilityEvaluator
         }
 
         if (destinationAddress.Equals(profile.WanProviderAddress, StringComparison.OrdinalIgnoreCase))
-            return CheckProvider(source, profile, destinationRole, hops, HasStructuredTopology(sourceDevice));
+            return CheckProvider(source, profile, destinationRole, hops, RequiresConfiguredTopology(sourceDevice));
 
         var destination = FindEndpointByAddress(destinationAddress);
         if (destination != null && (!destination.HasValidAddress || !GatewayMatches(destination, profile)))
@@ -608,6 +608,11 @@ public sealed class TssNetworkReachabilityEvaluator
         foreach (var device in _state.Devices)
             if ((device.Category == EquipmentCategory.Switch || device.Category == EquipmentCategory.Router) && device.Interfaces.Count > 0) return true;
         return false;
+    }
+    private bool RequiresConfiguredTopology(NetworkDeviceState sourceDevice)
+    {
+        return HasStructuredTopology(sourceDevice)
+            || _state?.Profile?.RouterSubinterfaceRequirements?.Any(requirement => requirement != null) == true;
     }
     private static bool ActiveVlan(NetworkDeviceState device, int vlan) => device != null && device.Vlans.ContainsKey(vlan) && !device.IsVlanSuspended(vlan);
     private static bool HasProviderRoute(NetworkDeviceState router, TssNetworkRunProfile profile)

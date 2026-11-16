@@ -184,8 +184,8 @@ public sealed class TssResultsSnapshot
             if (binding == null || !IsConfigurable(binding.category)) continue;
             var key = binding.deviceKey ?? string.Empty;
             var installed = session.Installed.FirstOrDefault(x => x.Equipment && x.Equipment.category == binding.category &&
-                (TssTrainingSession.GetRackOwnerPrefix(x.RackId, x.StartingU).Equals(key, StringComparison.OrdinalIgnoreCase) || x.DeviceName.Equals(binding.role, StringComparison.OrdinalIgnoreCase)));
-            var actualKey = installed.Equipment ? TssTrainingSession.GetRackOwnerPrefix(installed.RackId, installed.StartingU) : key;
+                (TssTrainingSession.GetRackOwnerPrefix(x.RackId, x.StartingU, x.Equipment).Equals(key, StringComparison.OrdinalIgnoreCase) || x.DeviceName.Equals(binding.role, StringComparison.OrdinalIgnoreCase)));
+            var actualKey = installed.Equipment ? TssTrainingSession.GetRackOwnerPrefix(installed.RackId, installed.StartingU, installed.Equipment) : key;
             var device = session.NetworkState?.Devices.FirstOrDefault(x => x.Key.Equals(actualKey, StringComparison.OrdinalIgnoreCase) || string.Equals(x.ExpectedRole, binding.role, StringComparison.OrdinalIgnoreCase));
             AddDevice(byKey, actualKey, binding.category, binding.role, device?.Hostname ?? installed.DeviceName ?? binding.displayName ?? binding.role,
                 installed.Equipment ? installed.RackId + " U" + installed.StartingU : string.Empty, installed.Equipment, device);
@@ -194,7 +194,7 @@ public sealed class TssResultsSnapshot
         foreach (var installed in session.Installed)
         {
             if (!installed.Equipment || !IsConfigurable(installed.Equipment.category)) continue;
-            var key = TssTrainingSession.GetRackOwnerPrefix(installed.RackId, installed.StartingU);
+            var key = TssTrainingSession.GetRackOwnerPrefix(installed.RackId, installed.StartingU, installed.Equipment);
             var device = session.NetworkState?.Devices.FirstOrDefault(x => x.Key.Equals(key, StringComparison.OrdinalIgnoreCase));
             AddDevice(byKey, key, installed.Equipment.category, ExpectedRoleFor(bindings, key, device), device?.Hostname ?? installed.DeviceName,
                 installed.RackId + " U" + installed.StartingU, true, device);

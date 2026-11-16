@@ -163,9 +163,9 @@ public sealed class TssDeviceFirstPersonControls : MonoBehaviour
             newName = newName.Trim();
             if (ctx.Rack != null && TssTrainingSession.Instance)
             {
-                if (TssTrainingSession.Instance.RenameRackInstalled(ctx.Rack.RackId, ctx.StartingU, newName))
+                if (TssTrainingSession.Instance.RenameRackInstalled(ctx.Rack.RackId, ctx.StartingU, ctx.Equipment, newName))
                 {
-                    ctx.Rack.SetInstalledDeviceName(ctx.StartingU, newName);
+                    ctx.Rack.SetInstalledDeviceName(ctx.StartingU, ctx.Equipment, newName);
                     ctx.DeviceName = newName;
                     BindToActiveDevice();
                 }

@@ -281,7 +281,8 @@ public sealed class EndpointPlacementStation : MonoBehaviour
         var computerTitle = string.IsNullOrWhiteSpace(currentName) ? equipment.displayName : currentName.Trim();
         var canAccessComputer = equipment.category == EquipmentCategory.DesktopPc
             || equipment.category == EquipmentCategory.Laptop
-            || equipment.category == EquipmentCategory.Printer;
+            || equipment.category == EquipmentCategory.Printer
+            || equipment.category == EquipmentCategory.AccessPoint;
         Action accessComputer = canAccessComputer
             ? () =>
             {

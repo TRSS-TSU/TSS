@@ -211,9 +211,9 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         SetInputInteractable(!state.UseDhcp);
 
         if (pcToolsCard)
-            pcToolsCard.SetActive(category == EquipmentCategory.DesktopPc || category == EquipmentCategory.Laptop);
+            pcToolsCard.SetActive(category == EquipmentCategory.DesktopPc || category == EquipmentCategory.Laptop || category == EquipmentCategory.AccessPoint);
         if (openAccessPointBrowserButton)
-            openAccessPointBrowserButton.gameObject.SetActive(category == EquipmentCategory.DesktopPc || category == EquipmentCategory.Laptop);
+            openAccessPointBrowserButton.gameObject.SetActive(category == EquipmentCategory.DesktopPc || category == EquipmentCategory.Laptop || category == EquipmentCategory.AccessPoint);
         if (checkServerConnectionButton)
             checkServerConnectionButton.gameObject.SetActive(category == EquipmentCategory.DesktopPc || category == EquipmentCategory.Laptop);
         if (accessPointBrowserCard)
@@ -241,6 +241,10 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         {
             SetButtonLabel(openAccessPointBrowserButton, "Join Guest Wi-Fi");
             SetButtonLabel(checkServerConnectionButton, "Open RedWolf Page");
+        }
+        else if (category == EquipmentCategory.AccessPoint)
+        {
+            SetButtonLabel(openAccessPointBrowserButton, "AP Management Page");
         }
         else
         {
@@ -422,6 +426,7 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
             accessPointBrowserFeedbackText.text = saved ? "Saved. Guest wireless is secured and ready for association." : error;
             accessPointBrowserFeedbackText.color = saved ? new Color(0.35f, 1f, 0.5f, 1f) : new Color(1f, 0.45f, 0.45f, 1f);
         }
+        TssRuntimeUi.Instance?.ShowHudMessage(saved ? "AP settings saved. Guest wireless is ready for association." : error);
         if (saved)
             TssTrainingSession.Instance?.NotifyNetworkStateChanged();
     }

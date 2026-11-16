@@ -71,12 +71,12 @@ public static class TssExternalScenarioValidator
             { errors.Add("Invalid placement rack/U range: " + row.requiredName); continue; }
             var matches = available.Where(x => x.category == row.category).ToArray();
             if (matches.Length == 0) errors.Add("No inventory for placement: " + row.requiredName);
+            foreach (var equipment in matches)
             for (var u = row.startingU; u <= end; u++)
             {
-                var owner = TssTrainingSession.GetRackOwnerPrefix(row.rackId, u);
+                var owner = TssTrainingSession.GetRackOwnerPrefix(row.rackId, u, equipment);
                 if (!owners.TryGetValue(owner, out var categories)) owners[owner] = categories = new HashSet<EquipmentCategory>();
                 categories.Add(row.category);
-                foreach (var equipment in matches)
                 foreach (var port in equipment.interfaces ?? Array.Empty<EquipmentInterface>())
                     if (port != null && !string.IsNullOrWhiteSpace(port.name)) endpoints.Add(owner + ":" + port.name.Trim());
             }

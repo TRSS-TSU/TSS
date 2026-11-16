@@ -7,13 +7,142 @@ using Object = UnityEngine.Object;
 public sealed class TssComputerConnectivityPresenterTests
 {
     [Test]
+    public void DataGatewayRequiresRouterStateBeforeShowingConnectedLayer3()
+    {
+        var sessionObject = new GameObject("UnconfiguredRouterSession");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        typeof(TssTrainingSession).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(session, null);
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig
+        {
+            enableLayer23Simulation = true,
+            routerRole = "CN-1",
+            routerParentInterface = "Fa0/0",
+            routerWanInterface = "Fa0/1",
+            routerSubinterfaceRequirements = new[]
+            {
+                new NetworkRouterSubinterfaceRequirement { vlanName = "Management", networkName = "Management", addressSuffix = 1 },
+                new NetworkRouterSubinterfaceRequirement { vlanName = "Reception", networkName = "Reception", addressSuffix = 1 },
+                new NetworkRouterSubinterfaceRequirement { vlanName = "Data", networkName = "Data", addressSuffix = 1 }
+                },
+                roleBindings = new[]
+                {
+                    new NetworkRoleBinding { role = "TestSwitch", deviceKey = "Rack:Rack02:U35", category = EquipmentCategory.Switch }
+                }
+        };
+        session.BeginScenario(scenario);
+
+        var roots = new System.Collections.Generic.List<GameObject>();
+        try
+        {
+            var state = session.NetworkState;
+            var profile = state.Profile;
+            foreach (var role in new[] { "Data1", "Data2" })
+            {
+                var key = "Endpoint:" + role;
+                var address = profile.EndpointAddresses[role];
+                var endpointState = state.GetOrCreateEndpoint(key, role);
+                endpointState.Address = address;
+                endpointState.Mask = "255.255.255.0";
+                endpointState.Gateway = EndpointNetworkState.GatewayFor(address, profile);
+                endpointState.Layer1Connected = true;
+                endpointState.Layer2Connected = true;
+
+                var root = new GameObject(role + "Workstation");
+                roots.Add(root);
+                root.transform.position = new Vector3(10000f, 10000f, 10000f);
+                CreateMonitor("Screen1", root.transform, out var monitor, out _, out var monitorTextures1);
+                CreateMonitor("Screen2", root.transform, out var secondaryMonitor, out _, out var monitorTextures2);
+                var endpointObject = new GameObject("Endpoint");
+                endpointObject.transform.SetParent(root.transform, false);
+                var endpoint = endpointObject.AddComponent<TssPortEndpoint>();
+                endpoint.Configure(key + ":Eth01", null);
+                var presenter = root.AddComponent<TssComputerConnectivityPresenter>();
+                BindPresenter(presenter, endpoint, monitor, secondaryMonitor);
+                AddPhysicalPathWithoutDeviceState(session, root.transform, endpoint, role == "Data1" ? "Fa02" : "Fa03");
+                session.NotifyNetworkStateChanged();
+                typeof(TssComputerConnectivityPresenter).GetMethod("OnEnable", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(presenter, null);
+
+                AssertScreens(monitor, secondaryMonitor, monitorTextures1.Layer2Connected, monitorTextures2.Layer3Disconnected);
+            }
+
+            var printerObject = new GameObject("Data3Printer");
+            roots.Add(printerObject);
+            var printerEndpointObject = new GameObject("Endpoint");
+            printerEndpointObject.transform.SetParent(printerObject.transform, false);
+            var printerEndpoint = printerEndpointObject.AddComponent<TssPortEndpoint>();
+            printerEndpoint.Configure("Endpoint:Data3:Eth01", null);
+            var printerState = state.GetOrCreateEndpoint("Endpoint:Data3", "Data3");
+            printerState.Address = profile.EndpointAddresses["Data3"];
+            printerState.Mask = "255.255.255.0";
+            printerState.Gateway = EndpointNetworkState.GatewayFor(printerState.Address, profile);
+            printerState.Layer1Connected = true;
+            printerState.Layer2Connected = true;
+            AddPhysicalPathWithoutDeviceState(session, printerObject.transform, printerEndpoint, "Fa04");
+            session.NotifyNetworkStateChanged();
+
+            var data1 = state.TryGetEndpoint("Endpoint:Data1", out var endpointData1) ? endpointData1 : null;
+            Assert.IsNotNull(data1);
+            var evaluator = new TssNetworkReachabilityEvaluator(state);
+            Assert.AreEqual(3, evaluator.Evaluate(data1.Key, data1.Gateway).FailedLayer);
+            Assert.AreEqual(3, evaluator.Evaluate(data1.Key, profile.WanProviderAddress).FailedLayer);
+            Assert.AreEqual(3, evaluator.Evaluate(printerState.Key, printerState.Gateway).FailedLayer,
+                "Data3's printer gateway probe must also require the configured router subinterface.");
+            foreach (var role in new[] { "IT1", "Reception1" })
+            {
+                var address = profile.EndpointAddresses[role];
+                var endpoint = state.GetOrCreateEndpoint("Endpoint:" + role, role);
+                endpoint.Address = address;
+                endpoint.Mask = "255.255.255.0";
+                endpoint.Gateway = EndpointNetworkState.GatewayFor(address, profile);
+                Assert.AreEqual(1, evaluator.Evaluate(endpoint.Key, endpoint.Gateway).FailedLayer,
+                    role + " without a physical path must remain Layer 1 down.");
+            }
+            Assert.AreEqual(0, System.Linq.Enumerable.Count(state.Devices));
+        }
+        finally
+        {
+            foreach (var root in roots)
+                Object.DestroyImmediate(root);
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
     public void WorkstationScreensFollowGatewayThenProviderReachability()
     {
         var sessionObject = new GameObject("ConnectivitySession");
         var session = sessionObject.AddComponent<TssTrainingSession>();
         typeof(TssTrainingSession).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(session, null);
         var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
-        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        scenario.networkScenario = new NetworkScenarioConfig
+        {
+            enableLayer23Simulation = true,
+            routerRole = "CN-1",
+            routerParentInterface = "Fa0/0",
+            routerWanInterface = "Fa0/1",
+            routerSubinterfaceRequirements = new[]
+            {
+                new NetworkRouterSubinterfaceRequirement { vlanName = "Management", networkName = "Management", addressSuffix = 1 }
+            },
+            trunkRequirements = new[]
+            {
+                new NetworkTrunkRequirement
+                {
+                    deviceRole = "AN-1", interfaceName = "Fa0/6",
+                    peerDeviceRole = "CN-1", peerInterfaceName = "Fa0/0",
+                    nativeVlanName = "Native", allowedVlanNames = new[] { "Management", "Reception", "Data" }
+                }
+            },
+            requiredPorts = new[]
+            {
+                new NetworkRequiredPort
+                {
+                    deviceRole = "AN-1", interfaceName = "Fa0/2", endpointId = "IT1", vlanName = "Management"
+                }
+            }
+        };
         session.BeginScenario(scenario);
 
         var state = session.NetworkState;
@@ -56,7 +185,10 @@ public sealed class TssComputerConnectivityPresenterTests
             AssertScreens(monitor, secondaryMonitor, monitorTextures1.Layer2Connected, monitorTextures2.Layer3Disconnected);
 
             endpointState.Gateway = profile.ManagementNetwork + ".1";
+            endpointState.Layer2Connected = true;
             state.SetProviderDemarcConnected(false);
+            var managementGatewayProbe = new TssNetworkReachabilityEvaluator(state).Evaluate(endpointState.Key, endpointState.Gateway);
+            Assert.IsTrue(managementGatewayProbe.Success, managementGatewayProbe.Diagnostic);
             session.NotifyNetworkStateChanged();
             AssertScreens(monitor, secondaryMonitor, monitorTextures1.Layer3Connected, monitorTextures2.Layer4Disconnected);
 
@@ -169,6 +301,19 @@ public sealed class TssComputerConnectivityPresenterTests
         var switchEndpoint = switchObject.AddComponent<TssPortEndpoint>();
         switchEndpoint.Configure("AN-1:Fa0/2", null);
         accessSwitch.Interfaces["Fa0/2"].EndpointId = switchEndpoint.EndpointId;
+        var connections = (System.Collections.IList)typeof(TssTrainingSession)
+            .GetField("_physicalConnections", BindingFlags.Instance | BindingFlags.NonPublic)
+            .GetValue(session);
+        connections.Add(new TssPhysicalConnectionRecord("TestCable", null, TssCableType.StraightThrough,
+            endpoint.EndpointId, switchEndpoint.EndpointId, null));
+    }
+
+    private static void AddPhysicalPathWithoutDeviceState(TssTrainingSession session, Transform parent, TssPortEndpoint endpoint, string switchPort)
+    {
+        var switchObject = new GameObject("UnmodeledSwitchPort");
+        switchObject.transform.SetParent(parent, false);
+        var switchEndpoint = switchObject.AddComponent<TssPortEndpoint>();
+        switchEndpoint.Configure("Rack:Rack02:U35:" + switchPort, null);
         var connections = (System.Collections.IList)typeof(TssTrainingSession)
             .GetField("_physicalConnections", BindingFlags.Instance | BindingFlags.NonPublic)
             .GetValue(session);

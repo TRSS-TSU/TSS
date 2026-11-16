@@ -141,13 +141,13 @@ public sealed class TssDeviceSessionController : MonoBehaviour
         {
             if (rack.TryGetInstalledAtVisual(deviceObject, out var u, out var eq))
             {
-                var devName = rack.GetInstalledDeviceName(u);
+                var devName = rack.GetInstalledDeviceName(u, eq);
                 return new DeviceContext
                 {
                     Root = deviceObject,
                     DeviceName = !string.IsNullOrWhiteSpace(devName) ? devName : $"{rack.RackId} U{u}",
                     Category = eq ? eq.category : EquipmentCategory.Switch,
-                    Key = TssTrainingSession.GetRackOwnerPrefix(rack.RackId, u),
+                    Key = TssTrainingSession.GetRackOwnerPrefix(rack.RackId, u, eq),
                     Rack = rack,
                     StartingU = u,
                     Equipment = eq
@@ -161,25 +161,33 @@ public sealed class TssDeviceSessionController : MonoBehaviour
         {
             var rackId = rackTarget.Rack.RackId;
             var u = rackTarget.StartingU;
-            var devName = rackTarget.Rack.GetInstalledDeviceName(u);
+            var eq = rackTarget.Visual && rackTarget.Rack.TryGetInstalledAtVisual(rackTarget.Visual, out _, out var visualEquipment)
+                ? visualEquipment : null;
+            var devName = rackTarget.Rack.GetInstalledDeviceName(u, eq);
             var cat = EquipmentCategory.Switch;
-            EquipmentDefinition eq = null;
 
             if (session != null)
             {
+                InstalledEquipmentRecord match = default;
+                var matches = 0;
                 foreach (var rec in session.Installed)
                 {
-                    if (rec.RackId == rackId && rec.StartingU == u)
+                    if (rec.RackId == rackId && rec.StartingU == u && (!eq || rec.Equipment == eq))
                     {
-                        if (rec.Equipment)
-                        {
-                            cat = rec.Equipment.category;
-                            eq = rec.Equipment;
-                        }
-                        if (!string.IsNullOrWhiteSpace(rec.DeviceName))
-                            devName = rec.DeviceName.Trim();
-                        break;
+                        match = rec;
+                        matches++;
                     }
+                }
+
+                if (matches > 1)
+                    return null;
+                if (matches == 1)
+                {
+                    eq = match.Equipment;
+                    if (eq)
+                        cat = eq.category;
+                    if (!string.IsNullOrWhiteSpace(match.DeviceName))
+                        devName = match.DeviceName.Trim();
                 }
             }
 
@@ -188,7 +196,7 @@ public sealed class TssDeviceSessionController : MonoBehaviour
                 Root = rackTarget.gameObject,
                 DeviceName = !string.IsNullOrWhiteSpace(devName) ? devName : $"{rackId} U{u}",
                 Category = cat,
-                Key = TssTrainingSession.GetRackOwnerPrefix(rackId, u),
+                Key = TssTrainingSession.GetRackOwnerPrefix(rackId, u, eq),
                 Rack = rackTarget.Rack,
                 StartingU = u,
                 Equipment = eq

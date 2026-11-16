@@ -212,7 +212,7 @@ public sealed class RackMountController : MonoBehaviour
         instance.transform.localPosition = GetInstalledLocalPosition(equipment, startingU);
         instance.transform.localRotation = Quaternion.Euler(installedLocalEuler + equipment.rackLocalEuler);
         instance.transform.localScale = equipment.rackLocalScale;
-        var ownerPrefix = TssTrainingSession.GetRackOwnerPrefix(RackId, startingU);
+        var ownerPrefix = TssTrainingSession.GetRackOwnerPrefix(RackId, startingU, equipment);
         TssPortEndpointBinder.ConfigureEndpoints(instance, ownerPrefix, equipment);
         TssRackDeviceNamePlaque.Ensure(instance)?.Configure(ownerPrefix, equipment.displayName);
 
@@ -261,7 +261,7 @@ public sealed class RackMountController : MonoBehaviour
                 var message = "Training session is unavailable.";
                 if (session && session.TryInstallHeld(this, selectedU, deviceName, out message))
                 {
-                    SetInstalledDeviceName(selectedU, deviceName);
+                    SetInstalledDeviceName(selectedU, held, deviceName);
                     TssRuntimeUi.Instance.ShowHudMessage(message);
                 }
                 else
@@ -277,7 +277,7 @@ public sealed class RackMountController : MonoBehaviour
         SetSelectedU(selectedU);
         if (TssTrainingSession.Instance.TryInstallHeld(this, selectedU, string.Empty, out var fallbackMessage))
         {
-            SetInstalledDeviceName(selectedU, string.Empty);
+            SetInstalledDeviceName(selectedU, held, string.Empty);
             TssRuntimeUi.Instance?.ShowHudMessage(fallbackMessage);
         }
         else
@@ -289,10 +289,23 @@ public sealed class RackMountController : MonoBehaviour
 
     public void SetInstalledDeviceName(int startingU, string name)
     {
-        if (_installedItems.TryGetValue(startingU, out var item) && item.Visual)
+        if (TryGetUniqueInstalledItem(startingU, out var item) && item.Visual)
         {
             foreach (var ep in item.Visual.GetComponentsInChildren<TssPortEndpoint>(true))
                 ep.SetDeviceName(name);
+        }
+    }
+
+    public void SetInstalledDeviceName(int startingU, EquipmentDefinition equipment, string name)
+    {
+        foreach (var pair in _installedItemsByVisual)
+        {
+            if (!pair.Key || pair.Value.Equipment != equipment
+                || !_installedStartingUByVisual.TryGetValue(pair.Key, out var itemU) || itemU != startingU)
+                continue;
+
+            foreach (var endpoint in pair.Key.GetComponentsInChildren<TssPortEndpoint>(true))
+                endpoint.SetDeviceName(name);
         }
     }
 
@@ -304,24 +317,31 @@ public sealed class RackMountController : MonoBehaviour
         InstalledRackItem item;
         if (clickedVisual && _installedItemsByVisual.TryGetValue(clickedVisual, out var visualItem))
             item = visualItem;
-        else if (!_installedItems.TryGetValue(startingU, out item))
+        else if (!TryGetUniqueInstalledItem(startingU, out item))
             return;
 
-        if (TryEnterInstalledCableView(item))
+        var isAccessPoint = item.Equipment && item.Equipment.category == EquipmentCategory.AccessPoint;
+        if (!isAccessPoint && TryEnterInstalledCableView(item))
             return;
 
         if (TssRuntimeUi.Instance)
         {
             TssRuntimeUi.Instance.ShowPlacementCorrection(
                 $"{RackId} U{startingU}",
-                GetInstalledDeviceName(startingU),
+                GetInstalledDeviceName(startingU, item.Equipment),
                 deviceName =>
                 {
-                    if (TssTrainingSession.Instance.RenameRackInstalled(RackId, startingU, deviceName))
-                        SetInstalledDeviceName(startingU, deviceName);
+                    if (TssTrainingSession.Instance.RenameRackInstalled(RackId, startingU, item.Equipment, deviceName))
+                        SetInstalledDeviceName(startingU, item.Equipment, deviceName);
                 },
                 () => PickupInstalled(startingU, item),
-                () => TryEnterInstalledCableView(item));
+                () =>
+                {
+                    if (isAccessPoint)
+                        TssDeviceSessionController.Instance?.OpenSessionForDevice(item.Visual, false);
+                    else
+                        TryEnterInstalledCableView(item);
+                });
             return;
         }
 
@@ -330,7 +350,7 @@ public sealed class RackMountController : MonoBehaviour
 
     public void PickupInstalled(int startingU)
     {
-        if (_installedItems.TryGetValue(startingU, out var item))
+        if (TryGetUniqueInstalledItem(startingU, out var item))
             PickupInstalled(startingU, item);
     }
 
@@ -380,6 +400,25 @@ public sealed class RackMountController : MonoBehaviour
         return true;
     }
 
+    private bool TryGetUniqueInstalledItem(int startingU, out InstalledRackItem item)
+    {
+        item = default;
+        var found = false;
+        foreach (var pair in _installedItemsByVisual)
+        {
+            if (!pair.Key || !_installedStartingUByVisual.TryGetValue(pair.Key, out var itemU) || itemU != startingU)
+                continue;
+            if (found)
+            {
+                item = default;
+                return false;
+            }
+            item = pair.Value;
+            found = true;
+        }
+        return found || _installedItems.TryGetValue(startingU, out item);
+    }
+
     private void PickupInstalled(int startingU, InstalledRackItem item)
     {
         if (!TssTrainingSession.Instance.TryPickupInstalled(this, item.Equipment, startingU, item.RackUnits, out var message))
@@ -420,11 +459,29 @@ public sealed class RackMountController : MonoBehaviour
         if (!session)
             return string.Empty;
 
+        InstalledEquipmentRecord match = default;
+        var matches = 0;
         foreach (var record in session.Installed)
         {
             if (record.RackId == RackId && record.StartingU == startingU)
-                return record.DeviceName;
+            {
+                match = record;
+                matches++;
+            }
         }
+
+        return matches == 1 ? match.DeviceName : string.Empty;
+    }
+
+    public string GetInstalledDeviceName(int startingU, EquipmentDefinition equipment)
+    {
+        var session = TssTrainingSession.Instance;
+        if (!session)
+            return string.Empty;
+
+        foreach (var record in session.Installed)
+            if (record.RackId == RackId && record.StartingU == startingU && record.Equipment == equipment)
+                return record.DeviceName;
 
         return string.Empty;
     }
@@ -461,10 +518,12 @@ public sealed class RackMountController : MonoBehaviour
             _selectedU = 0;
 
         ApplyScenarioConfig();
-        foreach (var item in _installedItems)
+        foreach (var item in _installedItemsByVisual)
         {
-            SetInstalledDeviceName(item.Key, GetInstalledDeviceName(item.Key));
-            item.Value.Visual?.GetComponentInChildren<TssRackDeviceNamePlaque>(true)?.RefreshCurrentName();
+            if (!item.Key || !_installedStartingUByVisual.TryGetValue(item.Key, out var u))
+                continue;
+            SetInstalledDeviceName(u, item.Value.Equipment, GetInstalledDeviceName(u, item.Value.Equipment));
+            item.Key.GetComponentInChildren<TssRackDeviceNamePlaque>(true)?.RefreshCurrentName();
         }
         RefreshHighlights();
     }

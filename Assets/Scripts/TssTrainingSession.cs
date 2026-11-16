@@ -378,7 +378,8 @@ public sealed class TssTrainingSession : MonoBehaviour
             return false;
         }
 
-        if (HasConnectionForOwnerPrefix(GetRackOwnerPrefix(rack.RackId, startingU)))
+        var ownerPrefix = GetRackOwnerPrefix(rack.RackId, startingU, equipment);
+        if (HasConnectionForOwnerPrefix(ownerPrefix))
         {
             message = "Disconnect cables before moving this equipment.";
             return false;
@@ -398,7 +399,7 @@ public sealed class TssTrainingSession : MonoBehaviour
             }
         }
 
-        NetworkState?.RemoveDevice(GetRackOwnerPrefix(rack.RackId, startingU));
+        NetworkState?.RemoveDevice(ownerPrefix);
 
         message = $"Picked up {equipment.displayName}";
         StateChanged?.Invoke();
@@ -472,15 +473,28 @@ public sealed class TssTrainingSession : MonoBehaviour
 
     public bool RenameRackInstalled(string rackId, int startingU, string deviceName)
     {
+        InstalledEquipmentRecord match = default;
+        var matches = 0;
+        foreach (var record in _installed)
+            if (record.RackId == rackId && record.StartingU == startingU)
+            {
+                match = record;
+                matches++;
+            }
+        return matches == 1 && RenameRackInstalled(rackId, startingU, match.Equipment, deviceName);
+    }
+
+    public bool RenameRackInstalled(string rackId, int startingU, EquipmentDefinition equipment, string deviceName)
+    {
         for (var i = 0; i < _installed.Count; i++)
         {
             var record = _installed[i];
-            if (record.RackId != rackId || record.StartingU != startingU)
+            if (record.RackId != rackId || record.StartingU != startingU || record.Equipment != equipment)
                 continue;
 
             _installed[i] = record.WithDeviceName(CleanDeviceName(deviceName));
             InvalidateEffectivePhysicalPathsCache();
-            if (NetworkState != null && NetworkState.TryGetDevice(GetRackOwnerPrefix(rackId, startingU), out var device))
+            if (NetworkState != null && NetworkState.TryGetDevice(GetRackOwnerPrefix(rackId, startingU, equipment), out var device))
                 device.Hostname = _installed[i].DeviceName;
             StateChanged?.Invoke();
             return true;
@@ -520,7 +534,7 @@ public sealed class TssTrainingSession : MonoBehaviour
                         return expected.networkRole.Trim();
         }
 
-        var installed = _installed.FirstOrDefault(x => string.Equals(GetRackOwnerPrefix(x.RackId, x.StartingU), deviceKey, StringComparison.OrdinalIgnoreCase));
+        var installed = _installed.FirstOrDefault(x => string.Equals(GetRackOwnerPrefix(x.RackId, x.StartingU, x.Equipment), deviceKey, StringComparison.OrdinalIgnoreCase));
         if (installed.Equipment)
         {
             foreach (var expected in Scenario?.expectedRackPlacements ?? Array.Empty<ExpectedRackPlacement>())
@@ -555,8 +569,8 @@ public sealed class TssTrainingSession : MonoBehaviour
         for (var i = 0; i < _installed.Count; i++)
         {
             var record = _installed[i];
-            if (GetRackOwnerPrefix(record.RackId, record.StartingU).Equals(deviceKey, StringComparison.OrdinalIgnoreCase))
-                return RenameRackInstalled(record.RackId, record.StartingU, cleanName);
+            if (GetRackOwnerPrefix(record.RackId, record.StartingU, record.Equipment).Equals(deviceKey, StringComparison.OrdinalIgnoreCase))
+                return RenameRackInstalled(record.RackId, record.StartingU, record.Equipment, cleanName);
         }
 
         for (var i = 0; i < _endpointPlacements.Count; i++)
@@ -810,7 +824,7 @@ public sealed class TssTrainingSession : MonoBehaviour
             }
 
         foreach (var installed in _installed)
-            if (installed.Equipment && endpointId.StartsWith(GetRackOwnerPrefix(installed.RackId, installed.StartingU) + ":", StringComparison.OrdinalIgnoreCase))
+            if (installed.Equipment && endpointId.StartsWith(GetRackOwnerPrefix(installed.RackId, installed.StartingU, installed.Equipment) + ":", StringComparison.OrdinalIgnoreCase))
             {
                 category = installed.Equipment.category;
                 return true;
@@ -1108,6 +1122,14 @@ public sealed class TssTrainingSession : MonoBehaviour
     public static string GetRackOwnerPrefix(string rackId, int startingU)
     {
         return $"Rack:{rackId}:U{startingU:00}";
+    }
+
+    public static string GetRackOwnerPrefix(string rackId, int startingU, EquipmentDefinition equipment)
+    {
+        var ownerPrefix = GetRackOwnerPrefix(rackId, startingU);
+        return equipment && equipment.useRearRackPlacement && equipment.category != EquipmentCategory.Server
+            ? ownerPrefix + ":Rear"
+            : ownerPrefix;
     }
 
     public static string GetEndpointOwnerPrefix(string placementId)
@@ -1482,7 +1504,7 @@ public sealed class TssTrainingSession : MonoBehaviour
                     if (installed.RackId == expected.rackId &&
                         installed.Equipment && installed.Equipment.category == expected.category &&
                         installed.StartingU >= firstU && installed.StartingU <= lastU)
-                        return GetRackOwnerPrefix(installed.RackId, installed.StartingU) + endpointId.Substring(binding.deviceKey.Length);
+                        return GetRackOwnerPrefix(installed.RackId, installed.StartingU, installed.Equipment) + endpointId.Substring(binding.deviceKey.Length);
             }
         }
         return endpointId;

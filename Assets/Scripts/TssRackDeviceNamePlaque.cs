@@ -162,7 +162,7 @@ public sealed class TssRackDeviceNamePlaque : MonoBehaviour
             var installedMatch = false;
             foreach (var record in session.Installed)
             {
-                if (!TssTrainingSession.GetRackOwnerPrefix(record.RackId, record.StartingU)
+                if (!TssTrainingSession.GetRackOwnerPrefix(record.RackId, record.StartingU, record.Equipment)
                     .Equals(_deviceKey, System.StringComparison.OrdinalIgnoreCase))
                     continue;
 

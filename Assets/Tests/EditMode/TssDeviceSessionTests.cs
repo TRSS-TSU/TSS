@@ -2072,6 +2072,76 @@ public sealed class TssDeviceSessionTests
     }
 
     [Test]
+    public void FrontSwitchAndRearPduAtSameUHaveIndependentIdentityAndNames()
+    {
+        var sessionObject = new GameObject("SharedRackUSession");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        typeof(TssTrainingSession).GetMethod("Awake", BindingFlags.Instance | BindingFlags.NonPublic).Invoke(session, null);
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        var switchEquipment = ScriptableObject.CreateInstance<EquipmentDefinition>();
+        switchEquipment.equipmentId = "EQ_SWITCH";
+        switchEquipment.category = EquipmentCategory.Switch;
+        var pduEquipment = ScriptableObject.CreateInstance<EquipmentDefinition>();
+        pduEquipment.equipmentId = "EQ_PDU";
+        pduEquipment.category = EquipmentCategory.Pdu;
+        pduEquipment.useRearRackPlacement = true;
+        var rackObject = new GameObject("SharedRack");
+        var targetObject = new GameObject("AmbiguousRackTarget");
+
+        try
+        {
+            session.BeginScenario(scenario);
+            ((System.Collections.Generic.List<InstalledEquipmentRecord>)session.Installed).Add(
+                new InstalledEquipmentRecord("Rack01", pduEquipment, 38, 1, "PDU1"));
+            ((System.Collections.Generic.List<InstalledEquipmentRecord>)session.Installed).Add(
+                new InstalledEquipmentRecord("Rack01", switchEquipment, 38, 1, "AN-1"));
+
+            var frontKey = TssTrainingSession.GetRackOwnerPrefix("Rack01", 38, switchEquipment);
+            var rearKey = TssTrainingSession.GetRackOwnerPrefix("Rack01", 38, pduEquipment);
+            Assert.AreEqual("Rack:Rack01:U38", frontKey, "Front switch IDs keep their existing form.");
+            Assert.AreEqual("Rack:Rack01:U38:Rear", rearKey);
+            Assert.AreNotEqual(frontKey, rearKey);
+
+            var frontDevice = session.NetworkState.GetOrCreateDevice(frontKey, EquipmentCategory.Switch, "AN-1", "AN-1");
+            var rearDevice = session.NetworkState.GetOrCreateDevice(rearKey, EquipmentCategory.Pdu, "PDU1");
+            Assert.AreNotSame(frontDevice, rearDevice);
+
+            Assert.IsTrue(session.RenameRackInstalled("Rack01", 38, pduEquipment, "PDU1-RENAMED"));
+            Assert.IsFalse(session.RenameRackInstalled("Rack01", 38, "AMBIGUOUS"), "Legacy rack/U rename must refuse a shared U.");
+            Assert.IsTrue(session.RenameNetworkDevice(frontKey, "AN-1-RENAMED"));
+
+            Assert.AreEqual("PDU1-RENAMED", FindInstalledName(session, pduEquipment));
+            Assert.AreEqual("AN-1-RENAMED", FindInstalledName(session, switchEquipment));
+            Assert.AreEqual("PDU1-RENAMED", rearDevice.Hostname);
+            Assert.AreEqual("AN-1-RENAMED", frontDevice.Hostname);
+
+            var rack = rackObject.AddComponent<RackMountController>();
+            var target = targetObject.AddComponent<RackInstalledEquipmentTarget>();
+            var controller = targetObject.AddComponent<TssDeviceSessionController>();
+            target.Initialize(rack, 38);
+            Assert.IsNull(controller.ResolveContext(targetObject), "A rack/U target without its visual must not choose between front and rear equipment.");
+        }
+        finally
+        {
+            Object.DestroyImmediate(targetObject);
+            Object.DestroyImmediate(rackObject);
+            Object.DestroyImmediate(pduEquipment);
+            Object.DestroyImmediate(switchEquipment);
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    private static string FindInstalledName(TssTrainingSession session, EquipmentDefinition equipment)
+    {
+        foreach (var record in session.Installed)
+            if (record.Equipment == equipment)
+                return record.DeviceName;
+        return string.Empty;
+    }
+
+    [Test]
     public void RackSelectionLocksTheMountedUAndCancelReleasesIt()
     {
         var sessionObject = new GameObject("RackSession");

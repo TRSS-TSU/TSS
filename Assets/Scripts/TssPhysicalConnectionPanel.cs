@@ -286,7 +286,7 @@ public sealed class TssPhysicalConnectionPanel : MonoBehaviour
         {
             foreach (var record in session.Installed)
             {
-                if (endpointId.StartsWith(TssTrainingSession.GetRackOwnerPrefix(record.RackId, record.StartingU) + ":", System.StringComparison.Ordinal))
+                if (endpointId.StartsWith(TssTrainingSession.GetRackOwnerPrefix(record.RackId, record.StartingU, record.Equipment) + ":", System.StringComparison.Ordinal))
                 {
                     if (!string.IsNullOrWhiteSpace(record.DeviceName))
                         return record.DeviceName.Trim();
