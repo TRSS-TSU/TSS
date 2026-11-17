@@ -205,7 +205,7 @@ public sealed class TssObjectInteractable : MonoBehaviour
         if (!mainCamera)
             mainCamera = Camera.main ? Camera.main : FindFirstObjectByType<Camera>();
 
-        if (!_isFirstPerson || _transition != null || !mainCamera)
+        if (!_isFirstPerson || !mainCamera)
             return;
 
         if (TssDeviceSessionController.Instance && TssDeviceSessionController.Instance.IsSessionOpen)

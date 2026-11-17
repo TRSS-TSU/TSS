@@ -41,7 +41,7 @@ public sealed class TssPhysicalWorkPackageEvaluator
 
             hasRequirements = true;
             var status = FindStatus(requirement, statuses);
-            var id = "WP1.CableTypes." + (string.IsNullOrWhiteSpace(requirement.requirementId) ? "Required" : requirement.requirementId);
+            var id = "WP1.CableRuns." + (string.IsNullOrWhiteSpace(requirement.requirementId) ? "Required" : requirement.requirementId);
             var endpoints = requirement.endpointAId + " to " + requirement.endpointBId;
             var complete = status.IsConnected && status.IsCorrect;
             if (complete)
@@ -64,25 +64,28 @@ public sealed class TssPhysicalWorkPackageEvaluator
             var complete = pair.Length == 2 && pair.All(x => x.IsConnected)
                 && pair.Count(x => x.ActualCableType == TssCableType.Crossover) == 1
                 && pair.Count(x => x.ActualCableType == TssCableType.StraightThrough) == 1;
-            Add(result, complete, "WP1.CableTypes.CrossoverGroup." + group.Key,
+            Add(result, complete, "WP1.CableRuns.CrossoverGroup." + group.Key,
                 $"{group.Key} uses one crossover and one straight-through patch cord.");
         }
         if (crossoverGroups.Length > 0)
         {
             var othersStraight = statuses.Where(x => x.IsConnected && !groupedConnections.Contains(x.ConnectionId))
                 .All(x => x.ActualCableType == TssCableType.StraightThrough);
-            Add(result, othersStraight, "WP1.CableTypes.OtherCables", "All other player cables are straight-through.");
+            Add(result, othersStraight, "WP1.CableRuns.OtherCables", "All other player cables are straight-through.");
         }
 
-        foreach (var path in _scenario.expectedEffectivePaths ?? Array.Empty<ScenarioEffectivePathRequirement>())
+        var terminationRequirements = (_scenario.permanentConnections ?? Array.Empty<ScenarioPermanentCableConnection>())
+            .Where(link => link != null && link.requiresPunchDownTermination);
+        foreach (var link in terminationRequirements)
         {
-            if (path == null)
-                continue;
-
             hasRequirements = true;
-            var id = string.IsNullOrWhiteSpace(path.requirementId) ? "Required" : path.requirementId;
-            Add(result, _session.HasEffectivePhysicalPath(path.endpointAId, path.endpointBId),
-                "WP1.EffectivePaths." + id, $"Effective path {path.endpointAId} to {path.endpointBId} is connected.");
+            var connectionId = string.IsNullOrWhiteSpace(link.connectionId) ? "Required" : link.connectionId;
+            Add(result, _session.IsTerminationCorrectForResults(link.connectionId, link.patchPanelEndpointId),
+                $"WP1.Terminations.{connectionId}.PatchPanel",
+                $"{connectionId}: patch-panel module at {link.patchPanelEndpointId} is correctly terminated.");
+            Add(result, _session.IsTerminationCorrectForResults(link.connectionId, link.wallportEndpointId),
+                $"WP1.Terminations.{connectionId}.Wallport",
+                $"{connectionId}: wallport module at {link.wallportEndpointId} is correctly terminated.");
         }
 
         if (!hasRequirements)

@@ -74,6 +74,7 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
     private bool _useDhcp;
     private TssEndpointCommandProcessor _commands;
     private TssTrainingSession _subscribedSession;
+    private GameObject _redWolfPage;
     private readonly List<string> _commandHistory = new();
     private int _historyIndex = -1;
 
@@ -218,6 +219,8 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
             checkServerConnectionButton.gameObject.SetActive(category == EquipmentCategory.DesktopPc || category == EquipmentCategory.Laptop);
         if (accessPointBrowserCard)
             accessPointBrowserCard.SetActive(false);
+        if (_redWolfPage)
+            _redWolfPage.SetActive(false);
         if (serverRolesCard)
             serverRolesCard.SetActive(category == EquipmentCategory.Server);
         if (printerConsoleCard)
@@ -316,8 +319,20 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         if (_state != null && _state.Category == EquipmentCategory.Laptop)
         {
             var error = string.Empty;
-            var loaded = network != null && network.TryLoadRedWolfPage(_deviceKey, out error);
+            var pageReady = EnsureRedWolfPage();
+            var loaded = pageReady && network != null && network.TryLoadRedWolfPage(_deviceKey, out error);
+            if (!pageReady) error = "RedWolf browser page is unavailable.";
             if (!loaded && string.IsNullOrEmpty(error)) error = "Network state unavailable.";
+            if (_redWolfPage) _redWolfPage.SetActive(loaded);
+            if (loaded)
+            {
+                accessPointBrowserCard.SetActive(true);
+                var title = accessPointBrowserCard.transform.Find("Header/Title")?.GetComponent<Text>();
+                if (title) title.text = "REDWOLF BROWSER";
+                if (accessPointBrowserStatusText) accessPointBrowserStatusText.text = "RedWolf Search  |  Page loaded";
+            }
+            else if (accessPointBrowserCard)
+                accessPointBrowserCard.SetActive(false);
             if (applyFeedbackText)
             {
                 applyFeedbackText.text = loaded ? "RedWolf Search loaded. Guest provider access confirmed." : error;
@@ -345,6 +360,8 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
         var session = TssTrainingSession.Instance;
         if (network == null || session == null)
             return;
+
+        if (_redWolfPage) _redWolfPage.SetActive(false);
 
         if (_state != null
             && _state.Category == EquipmentCategory.DesktopPc
@@ -435,6 +452,37 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
     {
         if (accessPointBrowserCard)
             accessPointBrowserCard.SetActive(false);
+    }
+
+    private bool EnsureRedWolfPage()
+    {
+        if (_redWolfPage) return true;
+        if (!accessPointBrowserCard) return false;
+
+        _redWolfPage = new GameObject("RedWolfPage", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image));
+        var page = (RectTransform)_redWolfPage.transform;
+        page.SetParent(accessPointBrowserCard.transform, false);
+        page.anchorMin = Vector2.zero;
+        page.anchorMax = Vector2.one;
+        page.offsetMin = new Vector2(14, 12);
+        page.offsetMax = new Vector2(-14, -86);
+        _redWolfPage.GetComponent<Image>().color = new Color(0.96f, 0.97f, 0.98f, 1f);
+
+        var content = new GameObject("RedWolfContent", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
+        var contentRect = (RectTransform)content.transform;
+        contentRect.SetParent(page, false);
+        contentRect.anchorMin = Vector2.zero;
+        contentRect.anchorMax = Vector2.one;
+        contentRect.offsetMin = new Vector2(24, 20);
+        contentRect.offsetMax = new Vector2(-24, -20);
+        var label = content.GetComponent<Text>();
+        label.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+        label.fontSize = 20;
+        label.alignment = TextAnchor.MiddleCenter;
+        label.color = new Color(0.12f, 0.18f, 0.24f, 1f);
+        label.text = "<color=#A32D35><size=42><b>RedWolf</b></size></color>\nSEARCH\n\n<color=#617180>Search the web</color>\n\nRedWolf Search is ready.";
+        _redWolfPage.SetActive(false);
+        return true;
     }
 
     private void RefreshDeviceSpecificCard(bool isPhysicalLinkUp)

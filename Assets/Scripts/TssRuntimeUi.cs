@@ -1148,8 +1148,40 @@ public sealed class TssRuntimeUi : MonoBehaviour
         {
             var section = wp1?.Find($"WorkPackage{i + 1}");
             _workPackageTitleTexts[i] = section?.Find("Title")?.GetComponent<TMP_Text>();
-            _workPackageBodyTexts[i] = section?.Find("Body")?.GetComponent<TMP_Text>();
+            _workPackageBodyTexts[i] = (section?.Find("Body") ?? section?.Find("Viewport/Body"))?.GetComponent<TMP_Text>();
+            if (i > 0 && _workPackageBodyTexts[i])
+                EnsureWorkPackageScroll(section, _workPackageBodyTexts[i]);
         }
+    }
+
+    private static void EnsureWorkPackageScroll(Transform section, TMP_Text body)
+    {
+        if (section.Find("Viewport")) return;
+        var viewport = new GameObject("Viewport", typeof(RectTransform), typeof(CanvasRenderer), typeof(Image), typeof(Mask), typeof(ScrollRect));
+        var rect = (RectTransform)viewport.transform;
+        rect.SetParent(section, false);
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = new Vector2(18, 18);
+        rect.offsetMax = new Vector2(-18, -65);
+        viewport.GetComponent<Image>().color = new Color(1f, 1f, 1f, 0.01f);
+        viewport.GetComponent<Mask>().showMaskGraphic = false;
+
+        var content = body.rectTransform;
+        content.SetParent(rect, false);
+        content.anchorMin = new Vector2(0, 1);
+        content.anchorMax = Vector2.one;
+        content.pivot = new Vector2(0.5f, 1);
+        content.anchoredPosition = Vector2.zero;
+        content.sizeDelta = Vector2.zero;
+        body.fontSize = 16;
+
+        var scroll = viewport.GetComponent<ScrollRect>();
+        scroll.viewport = rect;
+        scroll.content = content;
+        scroll.horizontal = false;
+        scroll.vertical = true;
+        scroll.scrollSensitivity = 22;
     }
 
     private void RefreshHudAdditions()
@@ -1273,7 +1305,11 @@ public sealed class TssRuntimeUi : MonoBehaviour
             if (_workPackageTitleTexts[i])
                 _workPackageTitleTexts[i].text = $"WP{i + 1}";
             if (_workPackageBodyTexts[i])
+            {
                 _workPackageBodyTexts[i].text = WorkPackageChecklistText(i + 1);
+                if (i > 0)
+                    _workPackageBodyTexts[i].rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, _workPackageBodyTexts[i].preferredHeight + 12);
+            }
         }
 
         if (_wp1SlideTitleText)
@@ -1632,6 +1668,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
         var builder = new StringBuilder();
         var complete = 0;
         var displayed = 0;
+        var shownConditions = new HashSet<TssWorkPackageCondition>();
         builder.AppendLine(TssWorkPackageTitles.Get(workPackage));
         builder.AppendLine("Complete: 0/0");
         builder.AppendLine();
@@ -1643,12 +1680,38 @@ public sealed class TssRuntimeUi : MonoBehaviour
 
             var matches = MatchingConditions(result, group.conditionIdPrefixes);
             displayed++;
-            var isComplete = matches.Count > 0 && matches.All(x => x.IsComplete);
+            var hasEveryRequirement = group.conditionIdPrefixes != null
+                && group.conditionIdPrefixes.Length > 0
+                && group.conditionIdPrefixes.All(prefix => !string.IsNullOrWhiteSpace(prefix)
+                    && matches.Any(x => x.Id.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)));
+            var isComplete = hasEveryRequirement && matches.All(x => x.IsComplete);
             if (isComplete)
                 complete++;
 
             builder.Append(isComplete ? "[x] " : "[ ] ");
             builder.AppendLine(group.heading.Trim());
+            if (workPackage < 2)
+                continue;
+
+            foreach (var condition in matches)
+            {
+                shownConditions.Add(condition);
+                builder.AppendLine($"    {(condition.IsComplete ? "[x]" : "[ ]")} {condition.Label}");
+            }
+            if (!hasEveryRequirement)
+                builder.AppendLine("    [ ] Requirement status unavailable.");
+        }
+
+        if (workPackage >= 2 && result?.Conditions != null)
+        {
+            foreach (var condition in result.Conditions)
+            {
+                if (shownConditions.Contains(condition))
+                    continue;
+                displayed++;
+                if (condition.IsComplete) complete++;
+                builder.AppendLine($"{(condition.IsComplete ? "[x]" : "[ ]")} {condition.Label}");
+            }
         }
 
         if (displayed == 0)
@@ -1713,26 +1776,26 @@ public sealed class TssRuntimeUi : MonoBehaviour
                 prefix: true
             );
         }
-        if (result.Conditions.Any(x => x.Id.StartsWith("WP1.CableTypes.")))
+        if (result.Conditions.Any(x => x.Id.StartsWith("WP1.CableRuns.")))
         {
             total++;
             AppendChecklistLine(
                 builder,
                 result,
-                "Install all required player cable runs with the specified types",
-                "WP1.CableTypes.",
+                "Install all required player cable runs, including endpoint-to-wallport connections",
+                "WP1.CableRuns.",
                 ref complete,
                 prefix: true
             );
         }
-        if (result.Conditions.Any(x => x.Id.StartsWith("WP1.EffectivePaths.")))
+        if (result.Conditions.Any(x => x.Id.StartsWith("WP1.Terminations.")))
         {
             total++;
             AppendChecklistLine(
                 builder,
                 result,
-                "Complete all required effective device paths",
-                "WP1.EffectivePaths.",
+                "Terminate all required patch-panel and wallport modules",
+                "WP1.Terminations.",
                 ref complete,
                 prefix: true
             );

@@ -74,24 +74,25 @@ public sealed class TssComputerConnectivityPresenter : MonoBehaviour, ITssEndpoi
             var connected = session.IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId);
             if (session.NetworkState != null)
             {
+                var network = session.NetworkState;
                 var separator = endpoint.EndpointId.LastIndexOf(':');
                 var key = separator > 0 ? endpoint.EndpointId.Substring(0, separator) : endpoint.EndpointId;
-                if (session.NetworkState.TryGetEndpoint(key, out var state))
+                var layer1 = connected && network.IsEndpointLogicalLayer1Available(session, endpoint.EndpointId);
+                var layer2 = layer1 && network.IsEndpointLogicalLayer2Available(session, endpoint.EndpointId);
+                var layer3 = false;
+                var providerReachable = false;
+
+                if (layer2 && network.TryGetEndpoint(key, out var state)
+                    && !string.IsNullOrWhiteSpace(state.Gateway))
                 {
-                    var evaluator = new TssNetworkReachabilityEvaluator(session.NetworkState);
+                    var evaluator = new TssNetworkReachabilityEvaluator(network);
                     var gatewayProbe = evaluator.Evaluate(key, state.Gateway);
-                    var providerProbe = gatewayProbe.Success
-                        ? evaluator.Evaluate(key, session.NetworkState.Profile.WanProviderAddress)
-                        : default;
-                    var layer1 = connected && gatewayProbe.FailedLayer != 1;
-                    var layer2 = layer1 && gatewayProbe.FailedLayer != 2;
-                    var layer3 = layer2 && gatewayProbe.Success;
-                    var providerReachable = layer3 && providerProbe.Success;
-                    ApplyLayerStates(layer1, layer2, layer3, providerReachable);
-                    return;
+                    layer3 = gatewayProbe.Success;
+                    if (layer3 && network.Profile != null)
+                        providerReachable = evaluator.Evaluate(key, network.Profile.WanProviderAddress).Success;
                 }
 
-                ApplyLayerStates(false, false, false, false);
+                ApplyLayerStates(layer1, layer2, layer3, providerReachable);
                 return;
             }
 

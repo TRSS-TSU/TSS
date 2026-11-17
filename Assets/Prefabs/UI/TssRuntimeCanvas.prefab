@@ -2036,10 +2036,10 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: "WP1 \u2014 Physical Installation\nComplete: 0/4\n\n[ ] Place all required
-    rack and endpoint equipment\n[ ] Install all required player cable runs with
-    the specified types\n[ ] Complete all permanent infrastructure connections\n[
-    ] Terminate every required permanent run"
+  m_text: "WP1 \u2014 Physical Installation\nComplete: 0/3\n\n[ ] Place all required
+    rack and endpoint equipment\n[ ] Install all required player cable runs, including
+    endpoint-to-wallport connections\n[ ] Terminate all required patch-panel and
+    wallport modules"
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}

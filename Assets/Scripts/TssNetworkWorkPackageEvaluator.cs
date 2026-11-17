@@ -167,16 +167,26 @@ public sealed class TssNetworkWorkPackageEvaluator
         var expectedGateway = gatewayRequirement != null
             ? _state.Profile.NetworkAddress(gatewayRequirement.networkName, gatewayRequirement.addressSuffix)
             : string.Empty;
-        var valid = device != null && device.Svis.TryGetValue(1, out var vlan1) && !vlan1.AdminUp && string.IsNullOrWhiteSpace(vlan1.Address)
-            && string.Equals(device.DefaultGateway, expectedGateway, StringComparison.OrdinalIgnoreCase)
-            && device.Svis.TryGetValue(_state.Profile.ManagementVlan, out var svi)
-            && svi.AdminUp && string.Equals(svi.Address, expectedAddress, StringComparison.OrdinalIgnoreCase)
-            && gatewayRequirement != null && string.Equals(svi.Mask, gatewayRequirement.mask, StringComparison.OrdinalIgnoreCase)
-            && ActiveVlan(device, _state.Profile.ManagementVlan, _state.Profile.ManagementVlanName)
-            && device.Interfaces.Values.Any(port => device.IsInterfaceOperational(port) && (port.IsTrunk ? port.AllowedVlans.Contains(_state.Profile.ManagementVlan) : port.AccessVlan == _state.Profile.ManagementVlan));
+        var missing = new List<string>();
+        NetworkInterfaceState vlan1 = null;
+        if (device == null || !device.Svis.TryGetValue(1, out vlan1) || vlan1.AdminUp)
+            missing.Add("shut down VLAN 1");
+        if (vlan1 != null && !string.IsNullOrWhiteSpace(vlan1.Address))
+            missing.Add("remove VLAN 1 IP address");
+        if (device == null || !string.Equals(device.DefaultGateway, expectedGateway, StringComparison.OrdinalIgnoreCase))
+            missing.Add("set the management default gateway");
+        if (device == null || !device.Svis.TryGetValue(_state.Profile.ManagementVlan, out var svi) || !svi.AdminUp ||
+            !string.Equals(svi.Address, expectedAddress, StringComparison.OrdinalIgnoreCase) || gatewayRequirement == null ||
+            !string.Equals(svi.Mask, gatewayRequirement.mask, StringComparison.OrdinalIgnoreCase))
+            missing.Add("configure the management VLAN SVI address, mask, and enabled state");
+        if (device == null || !ActiveVlan(device, _state.Profile.ManagementVlan, _state.Profile.ManagementVlanName))
+            missing.Add("activate the management VLAN");
+        if (device == null || !device.Interfaces.Values.Any(port => device.IsInterfaceOperational(port) &&
+            (port.IsTrunk ? port.AllowedVlans.Contains(_state.Profile.ManagementVlan) : port.AccessVlan == _state.Profile.ManagementVlan)))
+            missing.Add("provide an operational management VLAN port");
 
-        if (valid) result.Pass(id, name + " VLAN 1 management interface is correct.");
-        else result.Add(id, name + " VLAN 1 management interface is incomplete.");
+        if (missing.Count == 0) result.Pass(id, name + " management interface is correct.");
+        else result.Add(id, name + " management interface needs: " + string.Join(", ", missing) + ".");
     }
 
     private void CheckHardening(NetworkDeviceState device, string id, TssWorkPackageResult result, string expectedHostname = null)
@@ -335,7 +345,17 @@ public sealed class TssNetworkWorkPackageEvaluator
         if (condition)
             result.Attempt(id);
         if (condition)
-            result.Pass(id, id + " verified.");
+            result.Pass(id, id switch
+            {
+                "WP4.APUplink" => "AP uplink is connected.",
+                "WP4.SwitchPort" => "AP switchport is ready.",
+                "WP4.APConfig" => "AP wireless settings are complete.",
+                "WP4.LaptopAssociation" => "TestLaptop is associated to the guest AP.",
+                "WP4.Dhcp" => "TestLaptop has a DHCP lease.",
+                "WP4.Diagnostics" => "TestLaptop diagnostics are complete.",
+                "WP4.RedWolf" => "RedWolf page was opened.",
+                _ => label
+            });
         else
             result.Add(id, label);
     }

@@ -492,8 +492,9 @@ public sealed class TssPlacementEvaluatorTests
             Assert.IsTrue(session.TryUsePort(rightSwitch, out _));
 
             var result = new TssPhysicalWorkPackageEvaluator(session).Evaluate();
-            Assert.AreEqual(expected, result.IsComplete("WP1.CableTypes.CrossoverGroup.InterCloset"));
-            Assert.AreEqual(expected, result.IsComplete("WP1.EffectivePaths.InterCloset"));
+            Assert.AreEqual(expected, result.IsComplete("WP1.CableRuns.CrossoverGroup.InterCloset"));
+            Assert.IsFalse(result.Conditions.Exists(x => x.Id.StartsWith("WP1.EffectivePaths.")));
+            Assert.AreEqual(expected, session.HasEffectivePhysicalPath(leftSwitch.EndpointId, rightSwitch.EndpointId));
             Assert.IsTrue(session.IsCableTypeCorrect(session.PhysicalConnections[1]));
             Assert.IsTrue(session.IsCableTypeCorrect(session.PhysicalConnections[2]));
             if (expected)
@@ -501,7 +502,7 @@ public sealed class TssPlacementEvaluatorTests
                 Assert.IsTrue(session.TryCheckoutCable(crossover, out _));
                 Assert.IsTrue(session.TryUsePort(otherDevice, out _));
                 Assert.IsTrue(session.TryUsePort(otherSwitchPort, out _));
-                Assert.IsFalse(new TssPhysicalWorkPackageEvaluator(session).Evaluate().IsComplete("WP1.CableTypes.OtherCables"));
+                Assert.IsFalse(new TssPhysicalWorkPackageEvaluator(session).Evaluate().IsComplete("WP1.CableRuns.OtherCables"));
             }
         }
         finally
@@ -715,7 +716,7 @@ public sealed class TssPlacementEvaluatorTests
             Assert.IsTrue(
                 (paths[0].EndpointAId == reception.EndpointId && paths[0].EndpointBId == switchPort.EndpointId)
                 || (paths[0].EndpointAId == switchPort.EndpointId && paths[0].EndpointBId == reception.EndpointId));
-            Assert.IsTrue(new TssPhysicalWorkPackageEvaluator(session).Evaluate().IsComplete("WP1.EffectivePaths.Reception1"));
+            Assert.IsFalse(new TssPhysicalWorkPackageEvaluator(session).Evaluate().Conditions.Exists(x => x.Id.StartsWith("WP1.EffectivePaths.")));
         }
         finally
         {

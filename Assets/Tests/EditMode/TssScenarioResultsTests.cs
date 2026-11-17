@@ -31,6 +31,26 @@ public sealed class TssScenarioResultsTests
     }
 
     [Test]
+    public void ResultsReviewDoesNotMarkCorrectTrunkOrMissingVlan1AddressRed()
+    {
+        var profile = TssNetworkRunProfile.Create(42, null);
+        var device = new NetworkDeviceState("AN1", EquipmentCategory.Switch, "AN-1", profile) { ExpectedRole = "AN-1" };
+        device.Interfaces["Fa0/6"] = new NetworkInterfaceState
+        {
+            Name = "Fa0/6", AdminUp = true, IsTrunk = true, SwitchportModeConfigured = true
+        };
+        var review = TssCliCommandProcessor.BuildResultsShowReview(device, new[]
+        {
+            "AN-1 Fa0/1 trunk is incomplete.",
+            "AN-1 management interface needs: shut down VLAN 1."
+        });
+
+        StringAssert.Contains("<color=#FFFFFF> switchport mode trunk</color>", review);
+        StringAssert.Contains("<color=#FFFFFF> no ip address</color>", review);
+        StringAssert.DoesNotContain("<color=#FF4D4D>Fa0/6", review);
+    }
+
+    [Test]
     public void VlanPortWrapContinuesUnderPortsColumn()
     {
         var wrapped = TssCliCommandProcessor.FormatVlanPorts(new[] { "Fa0/1", "Fa0/2", "Fa0/3", "Fa0/4", "Fa0/5", "Fa0/6", "Fa0/7" });
@@ -210,11 +230,16 @@ public sealed class TssScenarioResultsTests
         var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
         scenario.cableTypeRequirements = new[]
         {
-            new ScenarioCableTypeRequirement { requirementId = "RequiredCable", endpointAId = "A", endpointBId = "B", requiredCableType = TssCableType.Crossover }
+            new ScenarioCableTypeRequirement { requirementId = "RequiredCable", endpointAId = "A", endpointBId = "B", requiredCableType = TssCableType.Crossover },
+            new ScenarioCableTypeRequirement { requirementId = "RequiredEndpointWallport", endpointAId = "Endpoint", endpointBId = "WallPort:Required:Port01" }
+        };
+        scenario.expectedEndpointPlacements = new[]
+        {
+            new ExpectedEndpointPlacement { requiredName = "Endpoint" }
         };
         scenario.permanentConnections = new[]
         {
-            new ScenarioPermanentCableConnection { connectionId = "Infrastructure", patchPanelEndpointId = "Patch", wallportEndpointId = "Wall", requiresPunchDownTermination = true }
+            new ScenarioPermanentCableConnection { connectionId = "Infrastructure", patchPanelEndpointId = "Patch", wallportEndpointId = "WallPort:Required:Port01", requiresPunchDownTermination = true }
         };
         scenario.expectedEffectivePaths = new[]
         {
@@ -230,9 +255,10 @@ public sealed class TssScenarioResultsTests
             var assessment = TssScenarioAssessmentCoordinator.Assess(session);
 
             Assert.IsNull(session.NetworkState);
-            Assert.IsTrue(physical.UnmetCategories.Exists(x => x.Id == "WP1.CableTypes.RequiredCable"));
-            Assert.IsTrue(physical.UnmetCategories.Exists(x => x.Id == "WP1.EffectivePaths.RequiredPath"));
-            Assert.IsFalse(physical.Conditions.Exists(x => x.Id.StartsWith("WP1.PermanentConnections.") || x.Id == "WP1.Terminations"));
+            Assert.IsTrue(physical.UnmetCategories.Exists(x => x.Id == "WP1.CableRuns.RequiredCable"));
+            Assert.IsTrue(physical.UnmetCategories.Exists(x => x.Id == "WP1.Terminations.Infrastructure.PatchPanel"));
+            Assert.IsTrue(physical.UnmetCategories.Exists(x => x.Id == "WP1.Terminations.Infrastructure.Wallport"));
+            Assert.IsFalse(physical.Conditions.Exists(x => x.Id.StartsWith("WP1.EffectivePaths.")));
             Assert.IsFalse(assessment.WorkPackages[0].IsComplete);
             Assert.IsFalse(assessment.WorkPackages[1].UnmetCriteria.Any(x => x.Contains("cable", System.StringComparison.OrdinalIgnoreCase)));
         }
@@ -483,6 +509,64 @@ public sealed class TssScenarioResultsTests
             StringAssert.Contains("Complete: 0/7", wp4Hud);
             Assert.IsFalse(assessment.WorkPackages[2].IsComplete);
             Assert.IsFalse(assessment.WorkPackages[3].IsComplete);
+        }
+        finally
+        {
+            Object.DestroyImmediate(uiObject);
+            Object.DestroyImmediate(sessionObject);
+            Object.DestroyImmediate(scenario);
+        }
+    }
+
+    [Test]
+    public void ConfiguredChecklistShowsConditionsAndRequiresEveryGroupCondition()
+    {
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig
+        {
+            workPackageObjectives = new[]
+            {
+                new NetworkWorkPackageObjective
+                {
+                    workPackage = 3,
+                    groups = new[]
+                    {
+                        new NetworkWorkPackageObjectiveGroup
+                        {
+                            heading = "Verify and save CN-1",
+                            conditionIdPrefixes = new[] { "WP3.RouteEvidence", "WP3.Save" }
+                        }
+                    }
+                }
+            }
+        };
+        var sessionObject = new GameObject("ChecklistSession");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        var uiObject = new GameObject("ChecklistUi");
+        var ui = uiObject.AddComponent<TssRuntimeUi>();
+        typeof(TssRuntimeUi).GetField("session", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic).SetValue(ui, session);
+        var render = typeof(TssRuntimeUi).GetMethod("ConfiguredWorkPackageChecklistText", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+
+        try
+        {
+            session.BeginScenario(scenario, "STUDENT-1");
+            var result = new TssWorkPackageResult();
+            result.Pass("WP3.RouteEvidence", "Route table inspected.");
+            var missing = (string)render.Invoke(ui, new object[] { 3, result });
+            StringAssert.Contains("Complete: 0/1", missing);
+            StringAssert.Contains("Route table inspected.", missing);
+            StringAssert.Contains("Requirement status unavailable.", missing);
+
+            result.Add("WP3.Save", "CN-1 has not been saved.");
+            var incomplete = (string)render.Invoke(ui, new object[] { 3, result });
+            StringAssert.Contains("CN-1 has not been saved.", incomplete);
+            StringAssert.Contains("Complete: 0/1", incomplete);
+
+            result.Conditions.Clear();
+            result.Pass("WP3.RouteEvidence", "Route table inspected.");
+            result.Pass("WP3.Save", "CN-1 saved.");
+            var complete = (string)render.Invoke(ui, new object[] { 3, result });
+            StringAssert.Contains("Complete: 1/1", complete);
         }
         finally
         {

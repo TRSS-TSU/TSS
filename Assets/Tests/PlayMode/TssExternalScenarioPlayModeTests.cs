@@ -318,7 +318,7 @@ public sealed class TssExternalScenarioPlayModeTests
         }
         Assert.IsTrue(session.GetCableTypeStatuses().All(x => x.IsConnected && x.IsCorrect));
         var physical = new TssPhysicalWorkPackageEvaluator(session).Evaluate();
-        Assert.IsTrue(physical.Conditions.Where(x => x.Id.StartsWith("WP1.CableTypes.")).All(x => x.IsComplete));
+        Assert.IsTrue(physical.Conditions.Where(x => x.Id.StartsWith("WP1.CableRuns.")).All(x => x.IsComplete));
         var layer2 = new TssNetworkWorkPackageEvaluator(session.NetworkState).EvaluateLayer2();
         Assert.IsFalse(layer2.Conditions.Any(x => x.Id.StartsWith("WP2.CableTypes.") || x.Id == "WP2.Terminations"));
         Assert.AreEqual(authoredRequirements, JsonUtility.ToJson(TssExternalScenarioLoader.Export(session.Scenario)), "Resolving installed ports must not mutate the scenario.");

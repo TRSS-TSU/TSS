@@ -30,11 +30,20 @@ public sealed class TssResultsCard : MonoBehaviour
         {
             completedDetail.text = completed.ToString();
             unmetDetail.text = unmet.ToString();
+            FitScrollContent(completedDetail);
+            FitScrollContent(unmetDetail);
             if (detail) detail.gameObject.SetActive(false);
         }
         else if (detail)
         {
             detail.text = completed + "\n" + unmet;
         }
+    }
+
+    private static void FitScrollContent(Text text)
+    {
+        var viewport = text.GetComponentInParent<ScrollRect>()?.viewport;
+        text.rectTransform.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical,
+            Mathf.Max(viewport ? viewport.rect.height : 0f, text.preferredHeight));
     }
 }

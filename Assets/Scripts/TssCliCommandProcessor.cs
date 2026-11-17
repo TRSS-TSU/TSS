@@ -837,11 +837,18 @@ public sealed class TssCliCommandProcessor
             if (lowerLine.StartsWith("vlan name") || lowerLine.StartsWith("----") || lowerLine.StartsWith("interface ")) continue;
             if (warning.Contains("extra device") && lowerLine.StartsWith("hostname ")) return true;
             var interfaceName = ExtractInterfaceName(warning);
-            if (!string.IsNullOrEmpty(interfaceName) && (lowerContext == interfaceName || lowerLine.Contains(interfaceName))) return true;
+            if (!string.IsNullOrEmpty(interfaceName))
+            {
+                if (lowerContext == interfaceName || lowerLine.Contains(interfaceName)) return true;
+                continue;
+            }
             if (warning.Contains("unused ports") && TryGetFastEthernetPort(lowerLine, out var port) && port >= (string.Equals(device?.ExpectedRole, "AN-2", StringComparison.OrdinalIgnoreCase) ? 5 : 7)) return true;
             if (warning.Contains("vlan database") && (lowerCommand.Contains("vlan") || lowerLine.StartsWith("vlan "))) return true;
             if (warning.Contains("trunk") && (lowerCommand.Contains("trunk") || lowerLine.Contains("trunk") || lowerLine.Contains("native vlan") || lowerLine.Contains("vlans allowed"))) return true;
-            if (warning.Contains("management interface") && (lowerContext == "vlan1" || lowerLine.Contains("vlan1") || lowerLine.Contains("ip address"))) return true;
+            if (warning.Contains("management interface") &&
+                ((lowerContext == "vlan1" && lowerLine.StartsWith(" ip address ")) ||
+                 (lowerCommand.Contains("interface brief") && lowerLine.StartsWith("vlan1 ") &&
+                  device.Svis.TryGetValue(1, out var vlan1) && vlan1.AdminUp))) return true;
             if (warning.Contains("subinterfaces") && (lowerContext.Contains(".") || lowerLine.Contains("fa0/0."))) return true;
             if (warning.Contains("wan configuration") && (lowerContext == "fa0/1" || lowerLine.Contains("fa0/1"))) return true;
             if (warning.Contains("default route") && (lowerCommand.Contains("route") || lowerLine.StartsWith("s*"))) return true;

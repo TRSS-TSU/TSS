@@ -1119,6 +1119,8 @@ public sealed class TssDeviceSessionTests
         var profile = TssNetworkRunProfile.Create(8, new NetworkScenarioConfig());
         var state = new TssNetworkSessionState(profile);
         var laptop = state.GetOrCreateEndpoint("laptop", "TestLaptop", EquipmentCategory.Laptop);
+        Assert.IsFalse(state.TryLoadRedWolfPage(laptop.Key, out _));
+        Assert.IsFalse(laptop.Evidence.Contains(profile.RedWolfEvidenceId));
         state.SetAccessPointUplink(true);
         state.AccessPoint.Configured = true;
         var accessSwitch = state.GetOrCreateDevice("switch", EquipmentCategory.Switch, "AN-1");
