@@ -996,7 +996,7 @@ public sealed class TssTerminalSessionPresenter : MonoBehaviour
         return sb.ToString();
     }
 
-    private static bool IsLineEndpoint(string name) => !string.IsNullOrWhiteSpace(name) && (name.Equals("Console", StringComparison.OrdinalIgnoreCase) || name.Equals("Con", StringComparison.OrdinalIgnoreCase) || name.Equals("Aux", StringComparison.OrdinalIgnoreCase) || name.Equals("Auxiliary", StringComparison.OrdinalIgnoreCase));
+    private static bool IsLineEndpoint(string name) => !string.IsNullOrWhiteSpace(name) && (name.Equals("Console", StringComparison.OrdinalIgnoreCase) || name.Equals("Con", StringComparison.OrdinalIgnoreCase) || name.Equals("Con01", StringComparison.OrdinalIgnoreCase) || name.Equals("Aux", StringComparison.OrdinalIgnoreCase) || name.Equals("Aux01", StringComparison.OrdinalIgnoreCase) || name.Equals("Auxiliary", StringComparison.OrdinalIgnoreCase));
 
     private static string InterfaceOrderKey(string name)
     {

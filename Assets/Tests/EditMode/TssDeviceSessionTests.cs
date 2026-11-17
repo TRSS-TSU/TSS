@@ -1844,6 +1844,52 @@ public sealed class TssDeviceSessionTests
     }
 
     [Test]
+    public void RouterDefaultRouteIsUniqueRemovableAndOmitsLinePorts()
+    {
+        var sessionObject = new GameObject("RouteConfigSession", typeof(TssTrainingSession));
+        var session = sessionObject.GetComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        try
+        {
+            session.BeginScenario(scenario);
+            var cli = new TssCliCommandProcessor(session, "Router", EquipmentCategory.Router, "CN-1");
+            cli.Device.Interfaces["Con01"] = new NetworkInterfaceState { Name = "Con01", EndpointId = "Con01" };
+            cli.Device.Interfaces["Aux01"] = new NetworkInterfaceState { Name = "Aux01", EndpointId = "Aux01" };
+            Assert.IsTrue(cli.Execute("enable").Accepted);
+            Assert.IsTrue(cli.Execute("configure terminal").Accepted);
+            const string route = "ip route 0.0.0.0 0.0.0.0 10.173.76.2";
+            Assert.IsTrue(cli.Execute(route).Accepted);
+            Assert.IsTrue(cli.Execute(route).Accepted);
+            Assert.AreEqual(1, cli.Device.Routes.Count);
+
+            var config = cli.Execute("do show running-config").Output;
+            Assert.AreEqual(1, config.Split(new[] { route }, StringSplitOptions.None).Length - 1);
+            StringAssert.DoesNotContain("interface Con01", config);
+            StringAssert.DoesNotContain("interface Aux01", config);
+            StringAssert.Contains("line con 0", config);
+            StringAssert.Contains("line aux 0", config);
+            var brief = cli.Execute("do show ip interface brief").Output;
+            StringAssert.DoesNotContain("Con01", brief);
+            StringAssert.DoesNotContain("Aux01", brief);
+
+            cli.Device.Routes.Add(new NetworkRouteState { Network = "0.0.0.0", Mask = "0.0.0.0", NextHop = "10.173.76.2" });
+            Assert.IsTrue(cli.Execute("no " + route).Accepted);
+            Assert.IsEmpty(cli.Device.Routes);
+            StringAssert.DoesNotContain(route, cli.Execute("do show running-config").Output);
+            Assert.IsTrue(cli.Execute(route).Accepted);
+            Assert.IsTrue(cli.Execute("end").Accepted);
+            Assert.IsTrue(cli.Execute("copy running-config startup-config").Accepted);
+            Assert.AreEqual(1, cli.Execute("show startup-config").Output.Split(new[] { route }, StringSplitOptions.None).Length - 1);
+        }
+        finally
+        {
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
     public void RouterRouteDisplayIncludesGatewayLocalAndConnectedEntries()
     {
         var sessionObject = new GameObject("RouteTableTestSession", typeof(TssTrainingSession));

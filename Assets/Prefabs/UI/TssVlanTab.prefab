@@ -73,16 +73,16 @@ MonoBehaviour:
     m_BestFit: 0
     m_MinSize: 10
     m_MaxSize: 40
-    m_Alignment: 3
+    m_Alignment: 0
     m_AlignByGeometry: 0
     m_RichText: 1
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: 'VLAN 1 stays shut and unaddressed. Configure interface Vlan110 with the
-    seeded Management network''s .2/24 address. Tag Management on the required trunks;
+  m_Text: VLAN 1 stays shut and unaddressed. Configure interface Vlan110 with the
+    seeded Management network's .2/24 address. Tag Management on the required trunks;
     create and name Native on both switches, keep it consistent on AN-1 Fa0/1, AN-1
-    Fa0/6, and AN-2 Fa0/1, and do not use it as an access, user, or routed VLAN.'
+    Fa0/6, and AN-2 Fa0/1, and do not use it as an access, user, or routed VLAN.
 --- !u!114 &5193005713409244715
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -97,9 +97,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
   m_IgnoreLayout: 0
   m_MinWidth: -1
-  m_MinHeight: 104
+  m_MinHeight: 350
   m_PreferredWidth: -1
-  m_PreferredHeight: 104
+  m_PreferredHeight: 3
   m_FlexibleWidth: 1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
@@ -1908,11 +1908,11 @@ MonoBehaviour:
     m_Top: 0
     m_Bottom: 0
   m_ChildAlignment: 0
-  m_Spacing: 8
+  m_Spacing: 0
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 0
   m_ChildControlWidth: 1
-  m_ChildControlHeight: 0
+  m_ChildControlHeight: 1
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
@@ -2453,9 +2453,10 @@ MonoBehaviour:
     m_HorizontalOverflow: 0
     m_VerticalOverflow: 1
     m_LineSpacing: 1
-  m_Text: 'Management is included in the allowed trunk list. Native VLAN 350 is omitted
-    from this scenario''s explicit allowed list, has no switch management IP, and has
-    no CN-1 subinterface or gateway. Every unused port uses access VLAN 888 and shutdown.'
+  m_Text: Management is included in the allowed trunk list. Native VLAN 350 is omitted
+    from this scenario's explicit allowed list, has no switch management IP, and
+    has no CN-1 subinterface or gateway. Every unused port uses access VLAN 888 and
+    shutdown.
 --- !u!114 &3604964279913570908
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2470,7 +2471,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
   m_IgnoreLayout: 0
   m_MinWidth: -1
-  m_MinHeight: 86
+  m_MinHeight: 300
   m_PreferredWidth: -1
   m_PreferredHeight: 86
   m_FlexibleWidth: 1
@@ -2711,7 +2712,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 680, y: -624}
-  m_SizeDelta: {x: 1360, y: 600}
+  m_SizeDelta: {x: 1360, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &5092403331222835732
 MonoBehaviour:
@@ -2727,7 +2728,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
   m_IgnoreLayout: 0
   m_MinWidth: -1
-  m_MinHeight: 432
+  m_MinHeight: 600
   m_PreferredWidth: -1
   m_PreferredHeight: 432
   m_FlexibleWidth: 1
@@ -3244,7 +3245,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 680, y: -108}
-  m_SizeDelta: {x: 1360, y: 100}
+  m_SizeDelta: {x: 1360, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &3522169204453353950
 CanvasRenderer:
@@ -3302,9 +3303,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
   m_IgnoreLayout: 0
   m_MinWidth: -1
-  m_MinHeight: 52
+  m_MinHeight: 100
   m_PreferredWidth: -1
-  m_PreferredHeight: 52
+  m_PreferredHeight: 100
   m_FlexibleWidth: 1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
@@ -3696,7 +3697,7 @@ RectTransform:
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
   m_AnchoredPosition: {x: 680, y: 0}
-  m_SizeDelta: {x: 1360, y: 100}
+  m_SizeDelta: {x: 1360, y: 0}
   m_Pivot: {x: 0.5, y: 1}
 --- !u!222 &5545397188919050784
 CanvasRenderer:
@@ -3754,9 +3755,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.LayoutElement
   m_IgnoreLayout: 0
   m_MinWidth: -1
-  m_MinHeight: 64
+  m_MinHeight: 100
   m_PreferredWidth: -1
-  m_PreferredHeight: 64
+  m_PreferredHeight: 100
   m_FlexibleWidth: 1
   m_FlexibleHeight: -1
   m_LayoutPriority: 1
