@@ -134,14 +134,7 @@ public sealed class EndpointPlacementTrigger : MonoBehaviour
             collider => collider.GetComponentInParent<EndpointPlacementTrigger>() == this,
             QueryTriggerInteraction.Collide,
             out _,
-            collider => !IsStructuralOccluder(collider));
-    }
-
-    private static bool IsStructuralOccluder(Collider collider)
-    {
-        var name = collider.gameObject.name;
-        return name.Contains("Floor") || name.Contains("Landing") || name.Contains("Ceiling")
-            || name.Contains("Wall") || name.Contains("Exterior");
+            collider => !TssInteractionRaycast.IsStructuralOccluder(collider));
     }
 
     private void SetColor(Color color)

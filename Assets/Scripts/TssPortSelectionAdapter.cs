@@ -151,7 +151,8 @@ public sealed class TssPortSelectionAdapter : MonoBehaviour
             collider => Array.IndexOf(_endpoints, collider.GetComponentInParent<TssPortEndpoint>()) >= 0,
             QueryTriggerInteraction.Collide,
             out var hit,
-            collider => collider.GetComponentInParent<ThirdPersonController>())
+            collider => collider.GetComponentInParent<ThirdPersonController>()
+                || !TssInteractionRaycast.IsStructuralOccluder(collider))
             ? hit.collider.GetComponentInParent<TssPortEndpoint>()
             : null;
     }
