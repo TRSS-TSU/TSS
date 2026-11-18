@@ -129,13 +129,19 @@ public sealed class EndpointPlacementTrigger : MonoBehaviour
             return false;
 
         var ray = _mainCamera.ScreenPointToRay(GetMousePosition());
-        var placementStation = Station;
         return TssInteractionRaycast.TryGetFirstTarget(
             ray,
             collider => collider.GetComponentInParent<EndpointPlacementTrigger>() == this,
             QueryTriggerInteraction.Collide,
             out _,
-            collider => placementStation && collider.GetComponentInParent<EndpointPlacementStation>() == placementStation);
+            collider => !IsStructuralOccluder(collider));
+    }
+
+    private static bool IsStructuralOccluder(Collider collider)
+    {
+        var name = collider.gameObject.name;
+        return name.Contains("Floor") || name.Contains("Landing") || name.Contains("Ceiling")
+            || name.Contains("Wall") || name.Contains("Exterior");
     }
 
     private void SetColor(Color color)
