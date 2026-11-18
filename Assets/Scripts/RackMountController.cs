@@ -42,6 +42,7 @@ public sealed class RackMountController : MonoBehaviour
     private int _hoveredU;
     private int _selectedU;
     private Camera _mainCamera;
+    private RackInstalledEquipmentTarget _hoveredInstalled;
     private static RackMountController _hoverOwner;
 
     public string RackId => rackId;
@@ -76,6 +77,7 @@ public sealed class RackMountController : MonoBehaviour
         _session = null;
         _selectedU = 0;
         ClearHoveredSlot();
+        SetHoveredInstalled(null);
     }
 
     private void OnDestroy()
@@ -93,22 +95,24 @@ public sealed class RackMountController : MonoBehaviour
 
     private void Update()
     {
-        if (!IsPlayerInRange() || !TssTrainingSession.Instance)
+        if (!IsPlayerInRange() || !TssTrainingSession.Instance
+            || (TssRuntimeUi.Instance && TssRuntimeUi.Instance.IsGameplayInputBlocked)
+            || TssObjectInteractable.ActiveInteractable)
         {
             ClearHoveredSlot();
+            SetHoveredInstalled(null);
             return;
         }
 
-        UpdateSlotHover();
-
-        if (!WasPrimaryPressed(out var screenPosition))
-            return;
-
         var rayCamera = _mainCamera ? _mainCamera : Camera.main;
         if (!rayCamera)
+        {
+            SetHoveredInstalled(null);
             return;
+        }
 
-        var ray = rayCamera.ScreenPointToRay(screenPosition);
+        var pressed = WasPrimaryPressed(out var screenPosition);
+        var ray = rayCamera.ScreenPointToRay(pressed ? (Vector3)screenPosition : GetPointerPosition());
         var held = TssTrainingSession.Instance.HeldItem;
         RackUClickTarget clickedSlot = null;
         RackInstalledEquipmentTarget clickedInstalled = null;
@@ -125,6 +129,12 @@ public sealed class RackMountController : MonoBehaviour
             clickedSlot = held ? hit.collider.GetComponentInParent<RackUClickTarget>() : null;
             clickedInstalled = held ? null : hit.collider.GetComponentInParent<RackInstalledEquipmentTarget>();
         }
+
+        if (_selectedU == 0)
+            SetHoveredSlot(clickedSlot ? clickedSlot.U : 0);
+        SetHoveredInstalled(clickedInstalled);
+        if (!pressed)
+            return;
 
         if (clickedSlot)
             clickedSlot.Click();
@@ -330,7 +340,9 @@ public sealed class RackMountController : MonoBehaviour
                         TssDeviceSessionController.Instance?.OpenSessionForDevice(item.Visual, false);
                     else
                         TryEnterInstalledCableView(item);
-                });
+                },
+                TssTrainingSession.Instance.HasConnectionForOwnerPrefix(
+                    TssTrainingSession.GetRackOwnerPrefix(RackId, startingU, item.Equipment)));
             return;
         }
 
@@ -607,29 +619,15 @@ public sealed class RackMountController : MonoBehaviour
             ClearHoveredSlot();
     }
 
-    private void UpdateSlotHover()
+    private void SetHoveredInstalled(RackInstalledEquipmentTarget target)
     {
-        if (_selectedU != 0)
+        if (_hoveredInstalled == target)
             return;
-
-        var held = TssTrainingSession.Instance ? TssTrainingSession.Instance.HeldItem : null;
-        if (!held || !_mainCamera)
-        {
-            ClearHoveredSlot();
-            return;
-        }
-
-        var ray = _mainCamera.ScreenPointToRay(GetPointerPosition());
-        RackUClickTarget hoveredTarget = null;
-        if (TssInteractionRaycast.TryGetFirstTarget(
-                ray,
-                collider => collider.GetComponentInParent<RackUClickTarget>()?.Rack == this,
-                QueryTriggerInteraction.Collide,
-                out var hit,
-                collider => collider.GetComponentInParent<RackMountController>() == this))
-            hoveredTarget = hit.collider.GetComponentInParent<RackUClickTarget>();
-
-        SetHoveredSlot(hoveredTarget ? hoveredTarget.U : 0);
+        if (_hoveredInstalled)
+            _hoveredInstalled.SetHovered(false);
+        _hoveredInstalled = target;
+        if (_hoveredInstalled)
+            _hoveredInstalled.SetHovered(true);
     }
 
     private void SetHoveredSlot(int u)

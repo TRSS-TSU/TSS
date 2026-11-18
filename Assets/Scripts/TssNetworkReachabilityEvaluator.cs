@@ -183,11 +183,11 @@ public sealed class TssNetworkReachabilityEvaluator
         {
             var sourceFailure = CheckLocalEndpoint(source, source.Role, destinationRole);
             if (sourceFailure.HasValue) return sourceFailure.Value;
+            var gatewayVlan = VlanForEndpoint(source, profile);
             if (!source.HasValidAddress || !TssNetworkAddress.IsAddress(source.Gateway)
                 || !SameSubnet(source.Address, source.Mask, source.Gateway)
-                || !string.Equals(source.Gateway, destinationAddress, StringComparison.OrdinalIgnoreCase))
+                || !string.Equals(source.Gateway, GatewayForVlan(gatewayVlan, profile), StringComparison.OrdinalIgnoreCase))
                 return Fail(3, TssReachabilityFaultCategory.GatewayUnavailable, "endpoint addressing is invalid.", source.Role, destinationRole);
-            var gatewayVlan = VlanForEndpoint(source, profile);
             var accessSwitch = FindAccessDevice(source, sourceDevice);
             var router = FindDevice(profile.RouterRole);
             var switchPathFailure = CheckTrunkPath(accessSwitch, router, gatewayVlan, source.Role, destinationRole);
@@ -196,7 +196,14 @@ public sealed class TssNetworkReachabilityEvaluator
             if (router == null || gatewayInterface == null || !router.IsInterfaceOperational(gatewayInterface)
                 || gatewayInterface.Dot1qVlan != gatewayVlan || gatewayInterface.Mask != RouterMaskForVlan(gatewayVlan, profile))
                 return Fail(3, TssReachabilityFaultCategory.GatewayUnavailable, "router gateway is unavailable.", source.Role, destinationRole);
-            return new TssReachabilityResult(true, 0, TssReachabilityFaultCategory.None, "Reachable.", source.Role, destinationRole, new[] { source.Address, destinationAddress });
+            var targetVlan = VlanFor(destinationAddress, profile);
+            var targetInterface = FindRouterInterface(targetVlan, profile);
+            if (targetInterface == null || !router.IsInterfaceOperational(targetInterface)
+                || targetInterface.Mask != RouterMaskForVlan(targetVlan, profile))
+                return Fail(3, TssReachabilityFaultCategory.DestinationUnavailable, "router destination interface is unavailable.", source.Role, destinationRole);
+            var gatewayHops = new List<string> { source.Address, source.Gateway };
+            Add(gatewayHops, destinationAddress);
+            return new TssReachabilityResult(true, 0, TssReachabilityFaultCategory.None, "Reachable.", source.Role, destinationRole, gatewayHops);
         }
 
         var sourceInterface = FindSourceInterface(source, sourceDevice);

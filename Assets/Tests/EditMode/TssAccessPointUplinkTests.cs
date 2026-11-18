@@ -5,6 +5,91 @@ using UnityEngine;
 
 public sealed class TssAccessPointUplinkTests
 {
+    [TestCase(8)]
+    [TestCase(37)]
+    public void AccessPointCanPingAnotherRouterSubnetOnlyThroughItsValidGatewayAndTrunk(int seed)
+    {
+        var profile = TssNetworkRunProfile.Create(seed, new NetworkScenarioConfig
+        {
+            routerRole = "CN-1", routerParentInterface = "Fa0/0",
+            accessPointSwitchRole = "AN-1", accessPointSwitchPort = "Fa0/7",
+            routerSubinterfaceRequirements = new[]
+            {
+                new NetworkRouterSubinterfaceRequirement { vlanName = "Reception", networkName = "Reception" },
+                new NetworkRouterSubinterfaceRequirement { vlanName = "Management", networkName = "Management" }
+            },
+            trunkRequirements = new[]
+            {
+                new NetworkTrunkRequirement { deviceRole = "AN-1", interfaceName = "Fa0/6", peerDeviceRole = "CN-1", peerInterfaceName = "Fa0/0" }
+            }
+        });
+        var state = new TssNetworkSessionState(profile);
+        var ap = state.GetOrCreateEndpoint("AP-1", "AP-1", EquipmentCategory.AccessPoint);
+        ap.Address = profile.ApManagementAddress;
+        ap.Mask = "255.255.255.0";
+        ap.Gateway = profile.ReceptionNetwork + ".1";
+        ap.Layer1Connected = ap.Layer2Connected = true;
+        var access = state.GetOrCreateDevice("AN-1", EquipmentCategory.Switch, "AN-1");
+        access.Vlans[profile.ReceptionVlan] = profile.ReceptionVlanName;
+        access.Interfaces["Fa0/7"] = new NetworkInterfaceState { Name = "Fa0/7", AdminUp = true, CarrierUp = true, AccessVlan = profile.ReceptionVlan };
+        var trunk = access.Interfaces["Fa0/6"] = new NetworkInterfaceState
+        {
+            Name = "Fa0/6", AdminUp = true, CarrierUp = true, IsTrunk = true,
+            NativeVlan = profile.NativeVlan, AllowedVlans = new HashSet<int> { profile.ReceptionVlan }
+        };
+        var router = state.GetOrCreateDevice("CN-1", EquipmentCategory.Router, "CN-1");
+        var parent = router.Interfaces["Fa0/0"] = new NetworkInterfaceState { Name = "Fa0/0", AdminUp = true, CarrierUp = true };
+        router.Interfaces["Fa0/0." + profile.ReceptionVlan] = new NetworkInterfaceState
+        {
+            Name = "Fa0/0." + profile.ReceptionVlan, Dot1qVlan = profile.ReceptionVlan,
+            Address = ap.Gateway, Mask = "255.255.255.0"
+        };
+        var managementName = "Fa0/0." + profile.ManagementVlan;
+        var management = router.Interfaces[managementName] = new NetworkInterfaceState
+        {
+            Name = managementName, Dot1qVlan = profile.ManagementVlan,
+            Address = profile.ManagementNetwork + ".1", Mask = "255.255.255.0"
+        };
+        var target = management.Address;
+        var evaluator = new TssNetworkReachabilityEvaluator(state);
+        var reachable = evaluator.Evaluate(ap.Key, target);
+        Assert.IsTrue(reachable.Success, reachable.Diagnostic);
+        CollectionAssert.AreEqual(new[] { ap.Address, ap.Gateway, target }, reachable.TraceHops);
+        Assert.IsTrue(evaluator.Evaluate(ap.Key, ap.Gateway).Success);
+
+        access.Interfaces["Fa0/7"].AccessVlan = profile.ManagementVlan;
+        Assert.AreEqual(2, evaluator.Evaluate(ap.Key, target).FailedLayer);
+        access.Interfaces["Fa0/7"].AccessVlan = profile.ReceptionVlan;
+        trunk.AllowedVlans.Clear();
+        Assert.AreEqual(2, evaluator.Evaluate(ap.Key, target).FailedLayer);
+        trunk.AllowedVlans.Add(profile.ReceptionVlan);
+        parent.AdminUp = false;
+        Assert.AreEqual(TssReachabilityFaultCategory.InterfaceUnavailable, evaluator.Evaluate(ap.Key, target).FaultCategory);
+        parent.AdminUp = true;
+        management.Mask = "255.255.0.0";
+        Assert.AreEqual(3, evaluator.Evaluate(ap.Key, target).FailedLayer);
+        management.Mask = "255.255.255.0";
+        management.Dot1qVlan = profile.DataVlan;
+        Assert.AreEqual(3, evaluator.Evaluate(ap.Key, target).FailedLayer);
+        management.Dot1qVlan = profile.ManagementVlan;
+        management.Address = profile.ManagementNetwork + ".99";
+        Assert.AreEqual(3, evaluator.Evaluate(ap.Key, target).FailedLayer);
+        management.Address = target;
+        router.Interfaces.Remove(managementName);
+        Assert.AreEqual(3, evaluator.Evaluate(ap.Key, target).FailedLayer);
+        router.Interfaces[managementName] = management;
+        ap.Gateway = profile.ReceptionNetwork + ".99";
+        Assert.AreEqual(3, evaluator.Evaluate(ap.Key, target).FailedLayer);
+        ap.Gateway = profile.ReceptionNetwork + ".1";
+        ap.Address = string.Empty;
+        Assert.AreEqual(3, evaluator.Evaluate(ap.Key, target).FailedLayer);
+        ap.Address = profile.ApManagementAddress;
+        ap.Gateway = string.Empty;
+        Assert.AreEqual(3, evaluator.Evaluate(ap.Key, target).FailedLayer);
+        ap.Gateway = profile.ReceptionNetwork + ".1";
+        Assert.IsTrue(evaluator.Evaluate(ap.Key, target).Success);
+    }
+
     [Test]
     public void AccessPointUplinkRequiresMatchingReceptionAndPatchPanelPorts()
     {
@@ -30,7 +115,14 @@ public sealed class TssAccessPointUplinkTests
 
         var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
         scenario.permanentConnections = permanent;
-        scenario.networkScenario = new NetworkScenarioConfig { enableLayer23Simulation = true };
+        scenario.networkScenario = new NetworkScenarioConfig
+        {
+            enableLayer23Simulation = true,
+            roleBindings = new[]
+            {
+                new NetworkRoleBinding { role = "AN-1", deviceKey = "Rack:Rack01:U35", category = EquipmentCategory.Switch }
+            }
+        };
         session.BeginScenario(scenario);
         Assert.AreEqual(4, session.PhysicalConnections.Count);
         var accessSwitch = session.NetworkState.GetOrCreateDevice("Rack:Rack01:U35", EquipmentCategory.Switch, "AN-1");
@@ -42,8 +134,9 @@ public sealed class TssAccessPointUplinkTests
             AdminUp = true,
             CarrierUp = true
         };
+        var apEquipment = Equipment(EquipmentCategory.AccessPoint);
         Placements(session).Add(new EndpointPlacementRecord(
-            "APPlacement", "ReceptionDesk", Equipment(EquipmentCategory.AccessPoint), "AP-1"));
+            "APPlacement", "ReceptionDesk", apEquipment, "AP-1"));
 
         try
         {
@@ -75,6 +168,7 @@ public sealed class TssAccessPointUplinkTests
         }
         finally
         {
+            Object.DestroyImmediate(apEquipment);
             Object.DestroyImmediate(scenario);
             Object.DestroyImmediate(root);
         }

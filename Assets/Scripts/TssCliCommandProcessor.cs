@@ -236,6 +236,12 @@ public sealed class TssCliCommandProcessor
             lower = command.ToLowerInvariant();
             parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         }
+        if (lower.StartsWith("desc ", StringComparison.Ordinal)) command = "description" + command.Substring(4);
+        else if (lower == "no desc") command = "no description";
+        else if (lower.StartsWith("encap ", StringComparison.Ordinal)) command = "encapsulation" + command.Substring(5);
+        else if (lower == "no encap dot1q") command = "no encapsulation dot1q";
+        lower = command.ToLowerInvariant();
+        parts = command.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         if (lower is "shutdown" or "shut" or "no shutdown" or "no shut")
         {
             if (d.Mode == TssNetworkCliMode.SubinterfaceConfig) return Result(d, "% Subinterfaces inherit shutdown state from the parent interface.\n", false, false);
@@ -474,8 +480,8 @@ public sealed class TssCliCommandProcessor
             ? new[] { "show ip interface brief\tSummarize interface addresses and status", "show interfaces\tDisplay interface details", "show ip route\tDisplay connected and default routes", "ping <address>\tTest reachability" }
             : new[] { "show interfaces\tDisplay interface details", "show vlan brief\tDisplay VLANs and assigned ports", "show interfaces trunk\tVerify trunks, allowed VLANs, and native VLAN", "ping <address>\tTest reachability" };
         var interfaceCommands = isRouter
-            ? new[] { "description <text>\tDescribe the interface", "no description\tRemove the interface description", "encapsulation dot1q <vlan>\tAssociate a VLAN with a router subinterface", "ip address <address> <mask>\tAssign an IPv4 address", "shutdown\tSet the interface administrative state" }
-            : new[] { "description <text>\tDescribe the switchport", "no description\tRemove the switchport description", "switchport mode access\tSet an access port", "switchport access vlan <id>\tAssign the access VLAN", "spanning-tree portfast\tEnable PortFast on an access port", "switchport mode trunk\tSet a trunk port", "switchport trunk allowed vlan <list>\tSet VLANs carried by the trunk", "switchport trunk native vlan <id>\tSet the trunk's untagged VLAN", "shutdown\tSet the port administrative state" };
+            ? new[] { "description <text>\tDescribe the interface", "desc <text>\tAlias for description", "no description\tRemove the interface description", "encapsulation dot1q <vlan>\tAssociate a VLAN with a router subinterface", "encap dot1q <vlan>\tAlias for encapsulation", "ip address <address> <mask>\tAssign an IPv4 address", "shutdown\tSet the interface administrative state" }
+            : new[] { "description <text>\tDescribe the switchport", "desc <text>\tAlias for description", "no description\tRemove the switchport description", "switchport mode access\tSet an access port", "switchport access vlan <id>\tAssign the access VLAN", "spanning-tree portfast\tEnable PortFast on an access port", "switchport mode trunk\tSet a trunk port", "switchport trunk allowed vlan <list>\tSet VLANs carried by the trunk", "switchport trunk native vlan <id>\tSet the trunk's untagged VLAN", "shutdown\tSet the port administrative state" };
 
         var sb = new StringBuilder("\n");
         sb.AppendLine("  COMMAND".PadRight(36) + " | WHAT IT DOES");
@@ -511,6 +517,7 @@ public sealed class TssCliCommandProcessor
             {
                 "interface Vlan<id>\tSelect a VLAN interface (1-4094)",
                 "description <text>\tDescribe the management SVI",
+                "desc <text>\tAlias for description",
                 "no description\tRemove the management SVI description",
                 "ip address <address> <mask>\tAssign the switch management address",
                 "no ip address\tRemove the switch management address"
@@ -571,12 +578,12 @@ public sealed class TssCliCommandProcessor
         TssNetworkCliMode.GlobalConfig => category == EquipmentCategory.Router
             ? "hostname <name>\nenable password <value>\nenable secret <value>\nservice password-encryption | ser pass\nusername <name> password <value>\ninterface <name>\nip route <network> <mask> <next-hop>\nline console 0|aux 0|vty 0 4|vty 5 15\n"
             : "hostname <name>\nenable password <value>\nenable secret <value>\nservice password-encryption | ser pass\nusername <name> password <value>\nip default-gateway <address>\ninterface <name>|range <first> - <last>|Vlan<id>\nvlan <id>\nline console 0|vty 0 4|vty 5 15\n",
-        TssNetworkCliMode.InterfaceConfig => category == EquipmentCategory.Router
-            ? "shutdown | no shutdown\nip address <address> <mask> | ip add <address> <mask>\nencapsulation dot1q <vlan>\n"
-            : "shutdown | no shutdown\ndescription <text> | no description\nswitchport trunk encapsulation dot1q\nswitchport mode access|trunk\nswitchport access vlan <id> | no switchport access vlan\nswitchport trunk allowed vlan <id>[,<id>]\nswitchport trunk native vlan <id>\ninterface Vlan<id>\nip address <address> <mask> | ip add <address> <mask>\n",
+        TssNetworkCliMode.InterfaceConfig or TssNetworkCliMode.InterfaceRangeConfig => category == EquipmentCategory.Router
+            ? "shutdown | no shutdown\ndescription <text> | desc <text> | no description | no desc\nip address <address> <mask> | ip add <address> <mask>\nencapsulation dot1q <vlan> | encap dot1q <vlan>\nno encapsulation dot1q | no encap dot1q\n"
+            : "shutdown | no shutdown\ndescription <text> | desc <text> | no description | no desc\nswitchport trunk encapsulation dot1q\nswitchport mode access|trunk\nswitchport access vlan <id> | no switchport access vlan\nswitchport trunk allowed vlan <id>[,<id>]\nswitchport trunk native vlan <id>\ninterface Vlan<id>\nip address <address> <mask> | ip add <address> <mask>\n",
         TssNetworkCliMode.SubinterfaceConfig => category == EquipmentCategory.Router
-            ? "description <text> | no description\nip address <address> <mask> | ip add <address> <mask>\nencapsulation dot1q <vlan>\n(no shutdown commands; state is inherited from the parent interface)\n"
-            : "shutdown | no shutdown\ndescription <text> | no description\nswitchport trunk encapsulation dot1q\nswitchport mode access|trunk\nswitchport access vlan <id> | no switchport access vlan\nswitchport trunk allowed vlan <id>[,<id>]\nswitchport trunk native vlan <id>\ninterface Vlan<id>\nip address <address> <mask> | ip add <address> <mask>\n",
+            ? "description <text> | desc <text> | no description | no desc\nip address <address> <mask> | ip add <address> <mask>\nencapsulation dot1q <vlan> | encap dot1q <vlan>\nno encapsulation dot1q | no encap dot1q\n(no shutdown commands; state is inherited from the parent interface)\n"
+            : "shutdown | no shutdown\ndescription <text> | desc <text> | no description | no desc\nswitchport trunk encapsulation dot1q\nswitchport mode access|trunk\nswitchport access vlan <id> | no switchport access vlan\nswitchport trunk allowed vlan <id>[,<id>]\nswitchport trunk native vlan <id>\ninterface Vlan<id>\nip address <address> <mask> | ip add <address> <mask>\n",
         TssNetworkCliMode.LineConfig => "password <value>\nlogin | no login | login local\nno exec | exec (VTY 5-15)\nexec-timeout <minutes>\ntransport input ssh\nlogging synchronous\n",
         TssNetworkCliMode.VlanConfig => category == EquipmentCategory.Switch ? "name <name>\nno name\nstate suspend|active\nvlan <id>\n" : "% VLAN configuration is switch-only.\n",
         _ => category == EquipmentCategory.Router

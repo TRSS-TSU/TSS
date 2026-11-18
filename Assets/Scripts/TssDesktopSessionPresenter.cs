@@ -99,6 +99,8 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
 
         if (submitCommandButton)
             submitCommandButton.onClick.AddListener(SubmitCommand);
+        if (commandInput)
+            commandInput.onSubmit.AddListener(_ => SubmitCommand());
         if (historyUpButton)
             historyUpButton.onClick.AddListener(() => BrowseHistory(-1));
         if (historyDownButton)
@@ -307,7 +309,9 @@ public sealed class TssDesktopSessionPresenter : MonoBehaviour
 
         if (applyFeedbackText)
         {
-            applyFeedbackText.text = $"Settings applied: IP {_state.IpAddress} / Mask {_state.SubnetMask}";
+            applyFeedbackText.text = _useDhcp
+                ? $"Settings applied: IP {_state.IpAddress} / Mask {_state.SubnetMask}"
+                : "Static IP address settings applied.";
             applyFeedbackText.color = new Color(0.35f, 1f, 0.5f, 1f);
             _feedbackTimer = 3.5f;
         }

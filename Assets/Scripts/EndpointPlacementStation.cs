@@ -314,7 +314,8 @@ public sealed class EndpointPlacementStation : MonoBehaviour
                 () => PickupPlaced(placementId, equipment),
                 accessComputer,
                 owner,
-                currentName);
+                currentName,
+                session.HasConnectionForOwnerPrefix(TssTrainingSession.GetEndpointOwnerPrefix(placementId)));
             return;
         }
 

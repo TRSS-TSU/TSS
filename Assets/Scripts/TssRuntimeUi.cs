@@ -501,6 +501,12 @@ public sealed class TssRuntimeUi : MonoBehaviour
             _namePromptPanel = namePanelTransform.gameObject;
             _namePromptTitle = namePanelTransform.Find("Title")?.GetComponent<Text>();
             _namePromptInput = namePanelTransform.Find("DeviceInput")?.GetComponent<InputField>();
+            if (_namePromptInput)
+                _namePromptInput.onSubmit.AddListener(_ =>
+                {
+                    if (_namePromptPanel && _namePromptPanel.activeSelf)
+                        ConfirmNamePrompt();
+                });
             var confirmBtn = namePanelTransform.Find("ConfirmButton")?.GetComponent<Button>();
             if (confirmBtn)
                 confirmBtn.onClick.AddListener(ConfirmNamePrompt);
@@ -516,6 +522,13 @@ public sealed class TssRuntimeUi : MonoBehaviour
             _correctionPanel = corrPanelTransform.gameObject;
             _correctionTitle = corrPanelTransform.Find("Title")?.GetComponent<Text>();
             _correctionInput = corrPanelTransform.Find("DeviceInput")?.GetComponent<InputField>();
+            if (_correctionInput)
+                _correctionInput.onEndEdit.AddListener(_ =>
+                {
+                    if (_correctionPanel && _correctionPanel.activeSelf && _corrRenameButton &&
+                        _corrRenameButton.gameObject.activeSelf && WasEnterPressed())
+                        ConfirmRename();
+                });
 
             var renameBtn = corrPanelTransform.Find("RenameButton")?.GetComponent<Button>();
             if (renameBtn)
@@ -843,8 +856,7 @@ public sealed class TssRuntimeUi : MonoBehaviour
         }
         if (_correctionPanel)
             _correctionPanel.SetActive(false);
-        if (_namePromptInput)
-            _namePromptInput.ActivateInputField();
+        FocusInputField(_namePromptInput);
         ApplyGameplayInputLock(true);
     }
 
@@ -853,7 +865,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
         string currentName,
         Action<string> onRename,
         Action onPickup,
-        Action onInspect = null
+        Action onInspect = null,
+        bool pickupBlocked = false
     )
     {
         ShowEndpointMenu(
@@ -865,7 +878,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
             onPickup,
             onInspect,
             null,
-            currentName
+            currentName,
+            pickupBlocked
         );
     }
 
@@ -878,7 +892,8 @@ public sealed class TssRuntimeUi : MonoBehaviour
         Action onPickup,
         Action onAccessComputer,
         object owner = null,
-        string currentName = ""
+        string currentName = "",
+        bool pickupBlocked = false
     )
     {
         CloseActiveMenu(null, false);
@@ -895,7 +910,15 @@ public sealed class TssRuntimeUi : MonoBehaviour
         if (_corrRenameButton)
             _corrRenameButton.gameObject.SetActive(canRename);
         if (_corrPickupButton)
+        {
             _corrPickupButton.gameObject.SetActive(canPickup);
+            _corrPickupButton.interactable = !pickupBlocked;
+            var label = _corrPickupButton.GetComponentInChildren<Text>(true);
+            if (label)
+                label.text = pickupBlocked
+                    ? "<size=24>Pick Up\nDisconnect cables before picking up this device.</size>"
+                    : "Pick Up";
+        }
         if (_corrAccessComputerButton)
         {
             _corrAccessComputerButton.gameObject.SetActive(canAccessComputer);
@@ -911,9 +934,18 @@ public sealed class TssRuntimeUi : MonoBehaviour
         }
         if (_namePromptPanel)
             _namePromptPanel.SetActive(false);
-        if (_correctionInput && canRename)
-            _correctionInput.ActivateInputField();
+        if (canRename)
+            FocusInputField(_correctionInput);
         ApplyGameplayInputLock(true);
+    }
+
+    private static void FocusInputField(InputField input)
+    {
+        if (!input)
+            return;
+
+        input.Select();
+        input.ActivateInputField();
     }
 
     private void RefreshCasePanel()
@@ -1041,6 +1073,12 @@ public sealed class TssRuntimeUi : MonoBehaviour
             return;
 
         _objectiveText = _hudRoot.Find("ObjectiveText")?.GetComponent<Text>();
+        if (_objectiveText)
+        {
+            _objectiveText.resizeTextMaxSize = _objectiveText.fontSize;
+            _objectiveText.resizeTextMinSize = Mathf.Min(20, _objectiveText.fontSize);
+            _objectiveText.resizeTextForBestFit = true;
+        }
         _contextText = _hudRoot.Find("ContextText")?.GetComponent<Text>();
         var timerObject = new GameObject("CompletionTimer", typeof(RectTransform), typeof(CanvasRenderer), typeof(Text));
         timerObject.transform.SetParent(_hudRoot, false);
@@ -1221,14 +1259,49 @@ public sealed class TssRuntimeUi : MonoBehaviour
             var phase = string.IsNullOrWhiteSpace(status.PhaseLabel)
                 ? "Placement"
                 : status.PhaseLabel;
-            return $"{scenarioName} | {phase}: {status.RequiredName} at {status.Location}";
+            var location = System.Text.RegularExpressions.Regex.Replace(
+                status.Location ?? string.Empty, @"\s+U\d+(?:-U?\d+)?$", string.Empty);
+            return $"{scenarioName} | {phase}: {status.RequiredName} at {location}";
         }
 
         var physical = new TssPhysicalWorkPackageEvaluator(session).Evaluate();
         if (!physical.Complete)
-            return $"{scenarioName} | Verify physical paths: {physical.UnmetConditions[0]}";
+            return $"{scenarioName} | Connect and terminate physical paths";
 
-        return $"{scenarioName} | Work Package 1 complete — select WP2 to continue";
+        if (session.NetworkState == null)
+            return $"{scenarioName} | WP2: Network configuration is unavailable";
+
+        var evaluator = new TssNetworkWorkPackageEvaluator(session.NetworkState);
+        for (var wp = 2; wp <= 4; wp++)
+        {
+            var result = wp == 2 ? evaluator.EvaluateLayer2()
+                : wp == 3 ? evaluator.EvaluateLayer3() : evaluator.EvaluateLayer4();
+            var task = FirstIncompleteWorkPackageTask(wp, result);
+            if (task != null)
+                return $"{scenarioName} | WP{wp}: {task}";
+        }
+        return $"{scenarioName} | Scenario complete";
+    }
+
+    private string FirstIncompleteWorkPackageTask(int workPackage, TssWorkPackageResult result)
+    {
+        var objective = session.Scenario?.networkScenario?.workPackageObjectives?
+            .FirstOrDefault(x => x != null && x.workPackage == workPackage);
+        if (objective?.groups != null)
+        {
+            foreach (var group in objective.groups)
+            {
+                if (group == null || string.IsNullOrWhiteSpace(group.heading))
+                    continue;
+                var matches = MatchingConditions(result, group.conditionIdPrefixes);
+                if (group.conditionIdPrefixes == null || group.conditionIdPrefixes.Length == 0
+                    || group.conditionIdPrefixes.Any(prefix => string.IsNullOrWhiteSpace(prefix)
+                        || !matches.Any(x => x.Id.StartsWith(prefix, StringComparison.OrdinalIgnoreCase)))
+                    || matches.Any(x => !x.IsComplete))
+                    return group.heading.Trim();
+            }
+        }
+        return result.UnmetCategories.FirstOrDefault()?.Label;
     }
 
     private string HudContextText()
@@ -2343,6 +2416,12 @@ public sealed class TssRuntimeUi : MonoBehaviour
         var onConfirm = _namePromptConfirmed;
         HideNamePrompt(false);
         onConfirm?.Invoke(_namePromptInput ? _namePromptInput.text : string.Empty);
+    }
+
+    private static bool WasEnterPressed()
+    {
+        return Keyboard.current != null &&
+               (Keyboard.current.enterKey.wasPressedThisFrame || Keyboard.current.numpadEnterKey.wasPressedThisFrame);
     }
 
     private void HideNamePrompt()

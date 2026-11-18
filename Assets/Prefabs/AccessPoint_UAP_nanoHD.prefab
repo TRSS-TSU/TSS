@@ -368,7 +368,8 @@ MonoBehaviour:
   screenRenderer: {fileID: 0}
   monitor: {fileID: 0}
   onlineScreen: {fileID: 0}
-  onlineLedColor: {r: 0.1, g: 1, b: 0.2, a: 1}
+  onlineLedColor: {r: 0.1, g: 0.55, b: 1, a: 1}
+  layer1LedColor: {r: 1, g: 0.45, b: 0, a: 1}
   offlineLedColor: {r: 0.33962262, g: 0.33962262, b: 0.33962262, a: 1}
 --- !u!114 &910000000000000001
 MonoBehaviour:

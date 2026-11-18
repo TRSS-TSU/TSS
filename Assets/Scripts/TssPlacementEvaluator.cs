@@ -82,6 +82,7 @@ public static class TssPlacementEvaluator
                 ? $"{required.rackId} U{firstU}"
                 : $"{required.rackId} U{firstU}-U{lastU}";
             var found = false;
+            var mismatched = new List<InstalledEquipmentRecord>();
             for (var i = 0; actual != null && i < actual.Count; i++)
             {
                 var record = actual[i];
@@ -90,17 +91,27 @@ public static class TssPlacementEvaluator
                 if (!IsOnExpectedRackSide(required, record))
                     continue;
 
-                found = true;
                 var category = record.Equipment ? record.Equipment.category : (EquipmentCategory?)null;
-                if (category != required.category)
-                    messages.Add($"{location}: expected {required.category}.");
-
-                if (record.DeviceName != required.requiredName)
-                    messages.Add($"{location}: expected name {required.requiredName}.");
+                if (category == required.category && record.DeviceName == required.requiredName)
+                    found = true;
+                else
+                    mismatched.Add(record);
             }
 
             if (!found)
-                messages.Add($"{location}: missing {required.requiredName}.");
+            {
+                if (mismatched.Count == 0)
+                    messages.Add($"{location}: missing {required.requiredName}.");
+                else
+                    foreach (var record in mismatched)
+                    {
+                        var category = record.Equipment ? record.Equipment.category : (EquipmentCategory?)null;
+                        if (category != required.category)
+                            messages.Add($"{location}: expected {required.category}.");
+                        if (record.DeviceName != required.requiredName)
+                            messages.Add($"{location}: expected name {required.requiredName}.");
+                    }
+            }
         }
     }
 
@@ -145,8 +156,7 @@ public static class TssPlacementEvaluator
         {
             var firstU = required.endingU > 0 ? Mathf.Min(required.startingU, required.endingU) : required.startingU;
             var lastU = Mathf.Max(required.startingU, required.endingU);
-            var found = false;
-            var hasMismatch = false;
+            var matches = 0;
             for (var i = 0; actual != null && i < actual.Count; i++)
             {
                 var record = actual[i];
@@ -155,10 +165,9 @@ public static class TssPlacementEvaluator
                 if (!IsOnExpectedRackSide(required, record))
                     continue;
 
-                found = true;
                 var category = record.Equipment ? record.Equipment.category : (EquipmentCategory?)null;
-                if (category != required.category || record.DeviceName != required.requiredName)
-                    hasMismatch = true;
+                if (category == required.category && record.DeviceName == required.requiredName)
+                    matches++;
             }
 
             statuses.Add(new TssPlacementRequirementStatus(
@@ -166,7 +175,7 @@ public static class TssPlacementEvaluator
                 required.requiredName,
                 firstU == lastU ? $"{required.rackId} U{firstU}" : $"{required.rackId} U{firstU}-U{lastU}",
                 required.category,
-                found && !hasMismatch));
+                matches == 1));
         }
     }
 

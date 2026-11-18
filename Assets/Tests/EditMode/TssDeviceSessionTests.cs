@@ -1405,6 +1405,8 @@ public sealed class TssDeviceSessionTests
         endpoint.Layer1Connected = true;
         endpoint.Layer2Connected = true;
 
+        endpoint.Address = profile.EndpointAddresses["IT1"];
+        endpoint.Mask = "255.255.255.0";
         Assert.IsTrue(new TssEndpointCommandProcessor(state).TryApply(endpoint.Key, false, endpoint.Address, endpoint.Mask, "10.255.255.1", endpoint.Dns, out _));
         Assert.AreEqual("10.255.255.1", endpoint.Gateway);
         Assert.AreEqual(3, new TssNetworkReachabilityEvaluator(state).Evaluate(endpoint.Key, profile.ManagementNetwork + ".1").FailedLayer);
@@ -2012,6 +2014,97 @@ public sealed class TssDeviceSessionTests
         Assert.AreEqual(string.Empty, ipInput.text);
 
         Object.DestroyImmediate(go);
+    }
+
+    [TestCase(EquipmentCategory.DesktopPc)]
+    [TestCase(EquipmentCategory.Laptop)]
+    public void EndpointPresenterEnterAndButtonSubmitOnceThroughSharedHistory(EquipmentCategory category)
+    {
+        var go = new GameObject("CommandPresenter", typeof(RectTransform), typeof(TssDesktopSessionPresenter));
+        try
+        {
+            var presenter = go.GetComponent<TssDesktopSessionPresenter>();
+            var inputObject = new GameObject("CommandInput", typeof(RectTransform), typeof(InputField));
+            inputObject.transform.SetParent(go.transform, false);
+            var input = inputObject.GetComponent<InputField>();
+            var outputObject = new GameObject("CommandOutput", typeof(RectTransform), typeof(Text));
+            outputObject.transform.SetParent(go.transform, false);
+            var output = outputObject.GetComponent<Text>();
+            output.font = Resources.GetBuiltinResource<Font>("LegacyRuntime.ttf");
+            var buttonObject = new GameObject("SubmitCommandButton", typeof(RectTransform), typeof(Button));
+            buttonObject.transform.SetParent(go.transform, false);
+            var button = buttonObject.GetComponent<Button>();
+            SetPrivateField(presenter, "commandInput", input);
+            SetPrivateField(presenter, "commandOutputText", output);
+            SetPrivateField(presenter, "submitCommandButton", button);
+            InvokePrivate(presenter, "Awake");
+
+            var network = new TssNetworkSessionState(TssNetworkRunProfile.Create(12345, new NetworkScenarioConfig()));
+            network.GetOrCreateEndpoint("endpoint", "IT1", category);
+            presenter.Initialize(new TssDeviceLogicalState("endpoint", category, "Endpoint"), null, null);
+            SetPrivateField(presenter, "_commands", new TssEndpointCommandProcessor(network));
+            input.text = "  ipconfig  ";
+            input.onSubmit.Invoke(input.text);
+            StringAssert.StartsWith("> ipconfig\nWindows IP Configuration", output.text);
+            Assert.AreEqual(1, output.text.Split(new[] { "> ipconfig" }, StringSplitOptions.None).Length - 1);
+            Assert.AreEqual(string.Empty, input.text);
+            CollectionAssert.AreEqual(new[] { "ipconfig" }, GetPrivateField<System.Collections.Generic.List<string>>(presenter, "_commandHistory"));
+
+            var firstOutput = output.text;
+            input.onSubmit.Invoke(string.Empty);
+            Assert.AreEqual(firstOutput, output.text);
+            input.text = "ipconfig";
+            button.onClick.Invoke();
+            Assert.AreEqual(firstOutput + firstOutput, output.text);
+            Assert.AreEqual(string.Empty, input.text);
+            Assert.AreEqual(1, GetPrivateField<System.Collections.Generic.List<string>>(presenter, "_commandHistory").Count);
+        }
+        finally { Object.DestroyImmediate(go); }
+    }
+
+    [TestCase(EquipmentCategory.Server, "IT2")]
+    [TestCase(EquipmentCategory.DesktopPc, "IT1")]
+    [TestCase(EquipmentCategory.Printer, "Reception2")]
+    [TestCase(EquipmentCategory.AccessPoint, "AP-1")]
+    public void EndpointPresenterUsesSameGreenFeedbackForCorrectAndIncorrectStaticSettings(EquipmentCategory category, string role)
+    {
+        var go = new GameObject("StaticSettingsPresenter", typeof(RectTransform), typeof(TssDesktopSessionPresenter));
+        try
+        {
+            var presenter = go.GetComponent<TssDesktopSessionPresenter>();
+            var fields = new[] { "ipAddressInput", "subnetMaskInput", "defaultGatewayInput", "dnsServerInput" };
+            var inputs = new InputField[fields.Length];
+            for (var i = 0; i < fields.Length; i++)
+            {
+                var fieldObject = new GameObject(fields[i], typeof(RectTransform), typeof(InputField));
+                fieldObject.transform.SetParent(go.transform, false);
+                inputs[i] = fieldObject.GetComponent<InputField>();
+                SetPrivateField(presenter, fields[i], inputs[i]);
+            }
+            var feedbackObject = new GameObject("Feedback", typeof(RectTransform), typeof(Text));
+            feedbackObject.transform.SetParent(go.transform, false);
+            var feedback = feedbackObject.GetComponent<Text>();
+            SetPrivateField(presenter, "applyFeedbackText", feedback);
+            var profile = TssNetworkRunProfile.Create(12345, new NetworkScenarioConfig());
+            var network = new TssNetworkSessionState(profile);
+            var endpoint = network.GetOrCreateEndpoint("endpoint", role, category);
+            presenter.Initialize(new TssDeviceLogicalState(endpoint.Key, category, "Endpoint"), null, null);
+            SetPrivateField(presenter, "_commands", new TssEndpointCommandProcessor(network));
+
+            var expectedAddress = network.ExpectedAddress(endpoint);
+            foreach (var address in new[] { expectedAddress, "192.0.2.99" })
+            {
+                inputs[0].text = address;
+                inputs[1].text = "255.255.255.0";
+                inputs[2].text = EndpointNetworkState.GatewayFor(expectedAddress, profile);
+                inputs[3].text = profile.WanProviderAddress;
+                InvokePrivate(presenter, "ApplySettings");
+                Assert.AreEqual("Static IP address settings applied.", feedback.text);
+                Assert.AreEqual(new Color(0.35f, 1f, 0.5f, 1f), feedback.color);
+                Assert.AreEqual(address, endpoint.Address);
+            }
+        }
+        finally { Object.DestroyImmediate(go); }
     }
 
     [Test]

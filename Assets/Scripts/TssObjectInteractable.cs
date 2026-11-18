@@ -442,6 +442,12 @@ public sealed class TssObjectInteractable : MonoBehaviour
 
     private void UpdateMouseHover()
     {
+        // Mounted equipment uses the rack's whole-device proxy for body feedback.
+        if (GetComponentInParent<RackMountController>())
+        {
+            SetHovered(false);
+            return;
+        }
         if (!IsPlayerInInteractionRange() || !mainCamera || _isFirstPerson)
         {
             SetHovered(false);

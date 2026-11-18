@@ -88,13 +88,6 @@ public sealed class TssEndpointCommandProcessor
             || (!useDhcp && (!TssNetworkAddress.IsAddress(address) || !TssNetworkAddress.IsMask(mask) || !TssNetworkAddress.IsAddress(gateway))))
         { error = "Enter valid IPv4 settings."; return false; }
 
-        var expectedAddress = _state.ExpectedAddress(source);
-        if (!useDhcp && !string.IsNullOrWhiteSpace(expectedAddress)
-            && (address != expectedAddress || mask != "255.255.255.0" || gateway != EndpointNetworkState.GatewayFor(expectedAddress, _state.Profile)))
-        {
-            error = "IPv4 settings do not match this endpoint's SOP address plan.";
-            return false;
-        }
         source.UseDhcp = useDhcp;
         if (!useDhcp) { source.Address = address; source.Mask = mask; source.Gateway = gateway; source.Dns = dns; }
         return true;

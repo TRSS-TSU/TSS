@@ -9,6 +9,7 @@ public sealed class TssDeviceLinkIndicator : MonoBehaviour, ITssEndpointBindingC
     private TssTrainingSession _session;
     private readonly HashSet<string> _warnedBindings = new(StringComparer.Ordinal);
     private bool _hasBeenBound;
+    private MaterialPropertyBlock _ledColors;
 
     private void OnEnable()
     {
@@ -62,6 +63,18 @@ public sealed class TssDeviceLinkIndicator : MonoBehaviour, ITssEndpointBindingC
                 || session.IsProviderDemarcConnected(endpoint.EndpointId))
                 && session.NetworkState != null && session.NetworkState.IsEndpointLogicalLayer1Available(session, endpoint.EndpointId);
             var layer2Up = layer1Up && session.NetworkState.IsEndpointLogicalLayer2Available(session, endpoint.EndpointId);
+            if (binding.useLocalLayerColors && layer2Up)
+            {
+                // Endpoint-only bindings also need their local switchport's VLAN state.
+                foreach (var path in session.GetEffectivePhysicalPaths())
+                {
+                    var peer = string.Equals(path.EndpointAId, endpoint.EndpointId, StringComparison.OrdinalIgnoreCase)
+                        ? path.EndpointBId : string.Equals(path.EndpointBId, endpoint.EndpointId, StringComparison.OrdinalIgnoreCase)
+                            ? path.EndpointAId : null;
+                    if (peer != null && !session.NetworkState.IsEndpointLogicalLayer2Available(session, peer))
+                        layer2Up = false;
+                }
+            }
             var layer3Up = layer1Up && session.NetworkState.IsEndpointLayer3Operational(endpoint.EndpointId);
             var material = binding.mode == IndicatorMode.Status
                 ? layer1Up ? binding.connectedMaterial : binding.disconnectedMaterial
@@ -82,8 +95,24 @@ public sealed class TssDeviceLinkIndicator : MonoBehaviour, ITssEndpointBindingC
                 : layer2Up
                     ? binding.connectedMaterial
                     : binding.protocolDownMaterial ? binding.protocolDownMaterial : binding.disconnectedMaterial;
+            if (binding.useLocalLayerColors && layer1Up)
+                material = binding.connectedMaterial;
             if (material)
                 binding.renderer.sharedMaterial = material;
+            if (binding.useLocalLayerColors)
+            {
+                if (layer1Up)
+                {
+                    _ledColors ??= new MaterialPropertyBlock();
+                    var color = layer2Up ? binding.layer2Color : binding.layer1Color;
+                    _ledColors.SetColor("_BaseColor", color);
+                    _ledColors.SetColor("_Color", color);
+                    _ledColors.SetColor("_EmissionColor", color);
+                    binding.renderer.SetPropertyBlock(_ledColors);
+                }
+                else
+                    binding.renderer.SetPropertyBlock(null);
+            }
         }
     }
 
@@ -112,6 +141,9 @@ public sealed class TssDeviceLinkIndicator : MonoBehaviour, ITssEndpointBindingC
         public Material connectedMaterial;
         public Material protocolDownMaterial;
         public Material disconnectedMaterial;
+        public bool useLocalLayerColors;
+        public Color layer1Color = new(1f, 0.45f, 0f, 1f);
+        public Color layer2Color = new(0.1f, 1f, 0.2f, 1f);
     }
 
     private enum IndicatorMode

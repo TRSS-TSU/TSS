@@ -13,6 +13,7 @@ public sealed class TssPortSelectionAdapter : MonoBehaviour
     private TssPortEndpoint[] _endpoints;
     private TssPortEndpoint _hoveredEndpoint;
     private bool _selecting;
+    private TssTrainingSession _session;
 
     private void Awake()
     {
@@ -73,6 +74,11 @@ public sealed class TssPortSelectionAdapter : MonoBehaviour
 
     private void BeginSelection()
     {
+        if (_session)
+            _session.StateChanged -= RefreshHighlights;
+        _session = TssTrainingSession.Instance;
+        if (_session)
+            _session.StateChanged += RefreshHighlights;
         _selecting = true;
         RefreshEndpointCache();
         RefreshHighlights();
@@ -80,6 +86,9 @@ public sealed class TssPortSelectionAdapter : MonoBehaviour
 
     private void EndSelection()
     {
+        if (_session)
+            _session.StateChanged -= RefreshHighlights;
+        _session = null;
         _selecting = false;
         RefreshEndpointCache();
         var hoveredEndpoint = _hoveredEndpoint;
@@ -114,6 +123,11 @@ public sealed class TssPortSelectionAdapter : MonoBehaviour
 
             endpoint.SetSelectable(session && session.CanSelectEndpoint(endpoint));
             endpoint.SetSelected(session && session.IsFirstSelectedEndpoint(endpoint));
+        }
+        if (_hoveredEndpoint && (!session || !session.CanSelectEndpoint(_hoveredEndpoint)))
+        {
+            _hoveredEndpoint.SetHovered(false);
+            _hoveredEndpoint = null;
         }
     }
 

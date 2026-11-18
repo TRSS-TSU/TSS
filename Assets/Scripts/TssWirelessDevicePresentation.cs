@@ -16,6 +16,7 @@ public sealed class TssWirelessDevicePresentation : MonoBehaviour, ITssEndpointB
     [SerializeField] private MonitorTextureRotator monitor;
     [SerializeField] private Texture onlineScreen;
     [SerializeField] private Color onlineLedColor = new(0.1f, 0.55f, 1f, 1f);
+    [SerializeField] private Color layer1LedColor = new(1f, 0.45f, 0f, 1f);
     [SerializeField] private Color offlineLedColor = new(0.03f, 0.03f, 0.03f, 1f);
 
     private readonly List<TssPortEndpoint> _endpoints = new();
@@ -66,6 +67,11 @@ public sealed class TssWirelessDevicePresentation : MonoBehaviour, ITssEndpointB
         if (_ledMaterial)
         {
             var color = online ? onlineLedColor : offlineLedColor;
+            if (isAccessPoint)
+            {
+                GetAccessPointLinkLayers(out var layer1Up, out var layer2Up);
+                color = !layer1Up ? offlineLedColor : layer2Up ? onlineLedColor : layer1LedColor;
+            }
             if (_ledMaterial.HasProperty("_BaseColor")) _ledMaterial.SetColor("_BaseColor", color);
             if (_ledMaterial.HasProperty("_EmissionColor")) _ledMaterial.SetColor("_EmissionColor", color);
         }
@@ -118,6 +124,33 @@ public sealed class TssWirelessDevicePresentation : MonoBehaviour, ITssEndpointB
             if (endpoint && session.IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId))
                 return true;
         return false;
+    }
+
+    private void GetAccessPointLinkLayers(out bool layer1Up, out bool layer2Up)
+    {
+        layer1Up = layer2Up = false;
+        var session = TssTrainingSession.Instance;
+        var network = session ? session.NetworkState : null;
+        if (network == null)
+            return;
+
+        foreach (var endpoint in _endpoints)
+        {
+            if (!endpoint || !session.IsEndpointOnEffectivePhysicalPath(endpoint.EndpointId)
+                || !network.IsEndpointLogicalLayer1Available(session, endpoint.EndpointId))
+                continue;
+
+            layer1Up = true;
+            foreach (var path in session.GetEffectivePhysicalPaths())
+            {
+                var peer = string.Equals(path.EndpointAId, endpoint.EndpointId, System.StringComparison.OrdinalIgnoreCase)
+                    ? path.EndpointBId : string.Equals(path.EndpointBId, endpoint.EndpointId, System.StringComparison.OrdinalIgnoreCase)
+                        ? path.EndpointAId : null;
+                if (peer != null && network.IsAccessPointSwitchPortReady()
+                    && network.IsEndpointLogicalLayer2Available(session, peer))
+                    layer2Up = true;
+            }
+        }
     }
 
     private static Texture GetTexture(Material material) => material && material.HasProperty("_BaseMap") ? material.GetTexture("_BaseMap") : material ? material.mainTexture : null;

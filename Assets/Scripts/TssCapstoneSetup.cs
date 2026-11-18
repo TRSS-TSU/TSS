@@ -251,7 +251,11 @@ public sealed class TssCapstoneSetup
 
     private IEnumerable<ExpectedEndpointPlacement> ExpectedAddressablePlacements()
     {
-        foreach (var expected in session.Scenario.expectedEndpointPlacements ?? Array.Empty<ExpectedEndpointPlacement>())
+        var rackEndpoints = (session.Scenario.expectedRackPlacements ?? Array.Empty<ExpectedRackPlacement>())
+            .Where(x => x != null && x.category is EquipmentCategory.Server or EquipmentCategory.DesktopPc
+                or EquipmentCategory.Printer or EquipmentCategory.AccessPoint)
+            .Select(x => new ExpectedEndpointPlacement { requiredName = x.requiredName, networkRole = x.networkRole, category = x.category });
+        foreach (var expected in (session.Scenario.expectedEndpointPlacements ?? Array.Empty<ExpectedEndpointPlacement>()).Concat(rackEndpoints))
         {
             if (expected == null || expected.category == EquipmentCategory.Laptop) continue;
             var role = NetworkRole(expected);

@@ -218,6 +218,30 @@ public sealed class TssPlacementEvaluatorTests
     }
 
     [Test]
+    public void CorrectRackRequirementIgnoresMisplacedDeviceInSameUAllowance()
+    {
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.expectedRackPlacements = new[]
+        {
+            Rack("Phase 1", "Rack01", 35, EquipmentCategory.Pdu, "PDU1", 38),
+            Rack("Phase 1", "Rack01", 35, EquipmentCategory.Switch, "AN-1", 38)
+        };
+        var placements = new[]
+        {
+            RackRecord("Rack01", Equipment(EquipmentCategory.Pdu), 38, 1, "PDU1"),
+            RackRecord("Rack01", Equipment(EquipmentCategory.Switch), 38, 1, "AN-1"),
+            RackRecord("Rack01", Equipment(EquipmentCategory.Router), 35, 5, "CN-1")
+        };
+
+        var statuses = TssPlacementEvaluator.EvaluateRequirements(scenario, placements, null);
+
+        Assert.IsTrue(statuses[0].IsComplete);
+        Assert.IsTrue(statuses[1].IsComplete);
+        Assert.IsTrue(TssPlacementEvaluator.Evaluate(scenario, placements, null).IsComplete);
+        Object.DestroyImmediate(scenario);
+    }
+
+    [Test]
     public void RejectsWrongEndpointStationNameAndDuplicate()
     {
         var endpoints = new[]
