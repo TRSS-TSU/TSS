@@ -148,6 +148,10 @@ public sealed class TssRackDeviceNamePlaque : MonoBehaviour
         if (!plaqueText)
             return;
 
+        // Static scene plaques keep their authored labels until bound to a device.
+        if (string.IsNullOrWhiteSpace(_deviceKey) && string.IsNullOrWhiteSpace(_fallbackName))
+            return;
+
         var deviceName = _fallbackName;
         var session = _session ? _session : TssTrainingSession.Instance;
         var network = session ? session.NetworkState : null;

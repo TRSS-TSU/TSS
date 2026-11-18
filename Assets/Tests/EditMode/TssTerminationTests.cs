@@ -73,6 +73,44 @@ public sealed class TssTerminationTests
     }
 
     [Test]
+    public void UsedWallportExposesPairedPortsAndFlagsUnscheduledWork()
+    {
+        var sessionObject = new GameObject("Session");
+        var session = sessionObject.AddComponent<TssTrainingSession>();
+        var scenario = ScriptableObject.CreateInstance<TssScenarioDefinition>();
+        scenario.usedWallportIds = new[] { "WallPort:Reception" };
+        scenario.permanentConnections = Enumerable.Range(1, 4).Select(port => new ScenarioPermanentCableConnection
+        {
+            connectionId = $"Run{port}",
+            patchPanelEndpointId = $"PatchPanel:Rack01:Port{port:00}",
+            wallportEndpointId = $"WallPort:Reception:Port{port:00}",
+            requiresPunchDownTermination = port == 1
+        }).ToArray();
+        try
+        {
+            session.BeginScenario(scenario);
+            Assert.IsTrue(session.TryGetTerminationLinks("WallPort:Reception:Port04", out _));
+            Assert.IsTrue(session.TryGetTerminationLinks("PatchPanel:Rack01:Port04", out _));
+            Assert.IsTrue(session.SetTerminationModuleState(
+                Module("Run4", "WallPort:Reception:Port04", "Run4:B", true), true, out _));
+            Assert.IsTrue(new TssPhysicalWorkPackageEvaluator(session).Evaluate().Conditions
+                .Any(x => x.Id == "WP1.Terminations.Unscheduled.Run4.WallPort:Reception:Port04"));
+
+            var cleared = Module("Run4", "WallPort:Reception:Port04", "Run4:B", true);
+            foreach (var terminal in cleared.terminals)
+                terminal.isPunched = false;
+            Assert.IsTrue(session.SetTerminationModuleState(cleared, false, out _));
+            Assert.IsFalse(new TssPhysicalWorkPackageEvaluator(session).Evaluate().Conditions
+                .Any(x => x.Id == "WP1.Terminations.Unscheduled.Run4.WallPort:Reception:Port04"));
+        }
+        finally
+        {
+            Object.DestroyImmediate(scenario);
+            Object.DestroyImmediate(sessionObject);
+        }
+    }
+
+    [Test]
     public void PunchDownGatesPermanentEdgeAndSupportsRework()
     {
         var sessionObject = new GameObject("Session");

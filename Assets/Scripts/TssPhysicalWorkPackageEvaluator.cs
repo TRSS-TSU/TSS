@@ -88,6 +88,16 @@ public sealed class TssPhysicalWorkPackageEvaluator
                 $"{connectionId}: wallport module at {link.wallportEndpointId} is correctly terminated.");
         }
 
+        foreach (var state in _session.GetTerminationModuleStates())
+        {
+            var link = (_scenario.permanentConnections ?? Array.Empty<ScenarioPermanentCableConnection>())
+                .FirstOrDefault(x => x != null && x.connectionId == state.connectionId);
+            if (link != null && !link.requiresPunchDownTermination
+                && state.terminals != null && state.terminals.All(x => x != null && x.isPunched))
+                result.Add($"WP1.Terminations.Unscheduled.{state.connectionId}.{state.endpointId}",
+                    $"Unscheduled termination completed at {state.endpointId}.");
+        }
+
         if (!hasRequirements)
             result.Add("WP1.Requirements", "No physical installation requirements are defined for this scenario.");
         return result;

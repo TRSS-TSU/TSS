@@ -145,17 +145,13 @@ public sealed class TssPortSelectionAdapter : MonoBehaviour
             return null;
 
         var ray = selectionCamera.ScreenPointToRay(GetMousePosition());
-        var hits = Physics.RaycastAll(ray, Mathf.Infinity, ~0, QueryTriggerInteraction.Collide);
-        Array.Sort(hits, (left, right) => left.distance.CompareTo(right.distance));
-
-        foreach (var hit in hits)
-        {
-            var endpoint = hit.collider ? hit.collider.GetComponentInParent<TssPortEndpoint>() : null;
-            if (endpoint && Array.IndexOf(_endpoints, endpoint) >= 0)
-                return endpoint;
-        }
-
-        return null;
+        return TssInteractionRaycast.TryGetFirstTarget(
+            ray,
+            collider => Array.IndexOf(_endpoints, collider.GetComponentInParent<TssPortEndpoint>()) >= 0,
+            QueryTriggerInteraction.Collide,
+            out var hit)
+            ? hit.collider.GetComponentInParent<TssPortEndpoint>()
+            : null;
     }
 
     private void RefreshEndpointCache()

@@ -112,29 +112,17 @@ public sealed class RackMountController : MonoBehaviour
         var held = TssTrainingSession.Instance.HeldItem;
         RackUClickTarget clickedSlot = null;
         RackInstalledEquipmentTarget clickedInstalled = null;
-        var closestSlotDistance = float.PositiveInfinity;
-        var closestInstalledDistance = float.PositiveInfinity;
-
-        foreach (var hit in Physics.RaycastAll(ray, Mathf.Infinity, ~0, QueryTriggerInteraction.Collide))
+        var hasTarget = TssInteractionRaycast.TryGetFirstTarget(
+            ray,
+            collider => held
+                ? collider.GetComponentInParent<RackUClickTarget>()?.Rack == this
+                : collider.GetComponentInParent<RackInstalledEquipmentTarget>()?.Rack == this,
+            QueryTriggerInteraction.Collide,
+            out var hit);
+        if (hasTarget)
         {
-            if (held)
-            {
-                var target = hit.collider.GetComponentInParent<RackUClickTarget>();
-                if (!target || target.Rack != this || hit.distance >= closestSlotDistance)
-                    continue;
-
-                clickedSlot = target;
-                closestSlotDistance = hit.distance;
-            }
-            else
-            {
-                var target = hit.collider.GetComponentInParent<RackInstalledEquipmentTarget>();
-                if (!target || target.Rack != this || hit.distance >= closestInstalledDistance)
-                    continue;
-
-                clickedInstalled = target;
-                closestInstalledDistance = hit.distance;
-            }
+            clickedSlot = held ? hit.collider.GetComponentInParent<RackUClickTarget>() : null;
+            clickedInstalled = held ? null : hit.collider.GetComponentInParent<RackInstalledEquipmentTarget>();
         }
 
         if (clickedSlot)
@@ -632,16 +620,12 @@ public sealed class RackMountController : MonoBehaviour
 
         var ray = _mainCamera.ScreenPointToRay(GetPointerPosition());
         RackUClickTarget hoveredTarget = null;
-        var closestDistance = float.PositiveInfinity;
-        foreach (var hit in Physics.RaycastAll(ray, Mathf.Infinity, ~0, QueryTriggerInteraction.Collide))
-        {
-            var target = hit.collider.GetComponentInParent<RackUClickTarget>();
-            if (!target || target.Rack != this || hit.distance >= closestDistance)
-                continue;
-
-            hoveredTarget = target;
-            closestDistance = hit.distance;
-        }
+        if (TssInteractionRaycast.TryGetFirstTarget(
+                ray,
+                collider => collider.GetComponentInParent<RackUClickTarget>()?.Rack == this,
+                QueryTriggerInteraction.Collide,
+                out var hit))
+            hoveredTarget = hit.collider.GetComponentInParent<RackUClickTarget>();
 
         SetHoveredSlot(hoveredTarget ? hoveredTarget.U : 0);
     }

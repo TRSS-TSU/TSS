@@ -15,6 +15,8 @@ public sealed class TssScenarioDefinition : ScriptableObject
     public TssCableType defaultPlayerCableType = TssCableType.StraightThrough;
     public ScenarioCableTypeRequirement[] cableTypeRequirements;
     public ScenarioPermanentCableConnection[] permanentConnections;
+    public string[] usedWallportIds;
+    public string[] exposedTerminationEndpointIds;
     public ScenarioEffectivePathRequirement[] expectedEffectivePaths;
     public ScenarioCableScheduleEntry[] cableSchedule;
     public ScenarioNamingEntry[] namingRows;

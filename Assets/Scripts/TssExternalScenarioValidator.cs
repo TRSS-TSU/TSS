@@ -139,6 +139,22 @@ public static class TssExternalScenarioValidator
                 Unique(row.endpointBTerminationModuleId, modules, "termination module", errors);
             }
         }
+        foreach (var wallportId in data.usedWallportIds ?? Array.Empty<string>())
+        {
+            var ports = (data.permanentConnections ?? Array.Empty<TssExternalPermanentConnection>())
+                .Where(x => x != null && !string.IsNullOrWhiteSpace(wallportId)
+                    && x.wallportEndpointId != null
+                    && x.wallportEndpointId.StartsWith(wallportId.Trim() + ":Port", StringComparison.Ordinal))
+                .Select(x => x.wallportEndpointId).Distinct().Count();
+            if (ports != 4) errors.Add("Used wallport must have four mapped ports: " + wallportId);
+        }
+        foreach (var endpointId in data.exposedTerminationEndpointIds ?? Array.Empty<string>())
+        {
+            Known(endpointId, endpoints, "exposed termination endpoint", errors);
+            if (!(data.permanentConnections ?? Array.Empty<TssExternalPermanentConnection>())
+                .Any(x => x != null && (x.patchPanelEndpointId == endpointId || x.wallportEndpointId == endpointId)))
+                errors.Add("Exposed termination endpoint has no permanent run: " + endpointId);
+        }
         foreach (var row in Rows(data.cableSchedule, "cableSchedule", errors))
         {
             Required(row.fromEndpoint, "cableSchedule.fromEndpoint", errors);

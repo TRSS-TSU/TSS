@@ -1224,7 +1224,11 @@ public sealed class TssRuntimeUi : MonoBehaviour
             return $"{scenarioName} | {phase}: {status.RequiredName} at {status.Location}";
         }
 
-        return $"{scenarioName} | Connect, terminate, and verify physical paths";
+        var physical = new TssPhysicalWorkPackageEvaluator(session).Evaluate();
+        if (!physical.Complete)
+            return $"{scenarioName} | Verify physical paths: {physical.UnmetConditions[0]}";
+
+        return $"{scenarioName} | Work Package 1 complete — select WP2 to continue";
     }
 
     private string HudContextText()

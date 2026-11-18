@@ -58,16 +58,11 @@ public sealed class EndpointPlacedEquipmentTarget : MonoBehaviour
             return false;
 
         var ray = _mainCamera.ScreenPointToRay(GetMousePosition());
-        var hits = Physics.RaycastAll(ray, Mathf.Infinity, ~0, QueryTriggerInteraction.Collide);
-        System.Array.Sort(hits, (left, right) => left.distance.CompareTo(right.distance));
-
-        foreach (var hit in hits)
-        {
-            if (hit.collider && hit.collider.transform.IsChildOf(transform))
-                return true;
-        }
-
-        return false;
+        return TssInteractionRaycast.TryGetFirstTarget(
+            ray,
+            collider => collider.transform.IsChildOf(transform),
+            QueryTriggerInteraction.Collide,
+            out _);
     }
 
     private void CacheRenderers()

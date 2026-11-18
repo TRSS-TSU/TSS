@@ -129,16 +129,11 @@ public sealed class EndpointPlacementTrigger : MonoBehaviour
             return false;
 
         var ray = _mainCamera.ScreenPointToRay(GetMousePosition());
-        var hits = Physics.RaycastAll(ray, Mathf.Infinity, ~0, QueryTriggerInteraction.Collide);
-        System.Array.Sort(hits, (left, right) => left.distance.CompareTo(right.distance));
-
-        foreach (var hit in hits)
-        {
-            if (hit.collider && hit.collider.GetComponentInParent<EndpointPlacementTrigger>() == this)
-                return true;
-        }
-
-        return false;
+        return TssInteractionRaycast.TryGetFirstTarget(
+            ray,
+            collider => collider.GetComponentInParent<EndpointPlacementTrigger>() == this,
+            QueryTriggerInteraction.Collide,
+            out _);
     }
 
     private void SetColor(Color color)

@@ -963,7 +963,7 @@ public sealed class TssTrainingSession : MonoBehaviour
             var cleanedEndpoint = endpointId.Trim();
             foreach (var link in Scenario.permanentConnections)
             {
-                if (link == null || !link.requiresPunchDownTermination)
+                if (link == null || !IsTerminationExposed(link))
                     continue;
 
                 if (EndpointMatches(link.patchPanelEndpointId, cleanedEndpoint)
@@ -974,6 +974,25 @@ public sealed class TssTrainingSession : MonoBehaviour
 
         links = results;
         return results.Count > 0;
+    }
+
+    private bool IsTerminationExposed(ScenarioPermanentCableConnection link)
+    {
+        if (link.requiresPunchDownTermination)
+            return true;
+
+        foreach (var wallportId in Scenario.usedWallportIds ?? Array.Empty<string>())
+            if (!string.IsNullOrWhiteSpace(wallportId)
+                && link.wallportEndpointId != null
+                && link.wallportEndpointId.StartsWith(wallportId.Trim() + ":", StringComparison.Ordinal))
+                return true;
+
+        foreach (var endpointId in Scenario.exposedTerminationEndpointIds ?? Array.Empty<string>())
+            if (EndpointMatches(link.patchPanelEndpointId, endpointId)
+                || EndpointMatches(link.wallportEndpointId, endpointId))
+                return true;
+
+        return false;
     }
 
     public bool SetTerminationModuleState(TssTerminationModuleState state, bool isElectricallyCorrect, out string message, bool notifyStateChanged = true)
@@ -1309,9 +1328,9 @@ public sealed class TssTrainingSession : MonoBehaviour
         }
 
         link = FindPermanentConnection(connectionId, out _);
-        if (link == null || !link.requiresPunchDownTermination)
+        if (link == null || !IsTerminationExposed(link))
         {
-            message = "Permanent run is not configured for punch-down termination.";
+            message = "Permanent run is not exposed for punch-down termination.";
             return false;
         }
 

@@ -6,6 +6,15 @@
   "facilityId": "TSS_MAIN",
   "catalogId": "TSS_MAIN_CATALOG",
   "sceneName": "TSS",
+  "usedWallportIds": [
+    "WallPort:Reception",
+    "WallPort:Floor02:Office01:Wallport01",
+    "WallPort:Floor02:Office02:Wallport01"
+  ],
+  "exposedTerminationEndpointIds": [
+    "PatchPanel:Rack01:Port48",
+    "PatchPanel:Rack02:Port48"
+  ],
   "inventory": [
     {
       "equipmentId": "EQ_PDU_1U",
@@ -294,7 +303,7 @@
       "cableType": 0,
       "patchPanelEndpointId": "PatchPanel:Rack01:Port48",
       "wallportEndpointId": "PatchPanel:Rack02:Port48",
-      "requiresPunchDownTermination": false,
+      "requiresPunchDownTermination": true,
       "endpointATerminationModuleId": "Infrastructure013:A",
       "endpointBTerminationModuleId": "Infrastructure013:B"
     },

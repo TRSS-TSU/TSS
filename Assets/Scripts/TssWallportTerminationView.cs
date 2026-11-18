@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.UI;
+#if ENABLE_INPUT_SYSTEM
+using UnityEngine.InputSystem;
+#endif
 
 public sealed class TssWallportTerminationView : MonoBehaviour
 {
@@ -60,6 +63,16 @@ public sealed class TssWallportTerminationView : MonoBehaviour
     private void Awake()
     {
         BuildUi();
+    }
+
+    private void Update()
+    {
+#if ENABLE_INPUT_SYSTEM
+        if (Keyboard.current != null && Keyboard.current.escapeKey.wasPressedThisFrame)
+#else
+        if (Input.GetKeyDown(KeyCode.Escape))
+#endif
+            _close?.Invoke();
     }
 
     public void Bind(TssPortEndpoint source, TssPortEndpoint[] availablePorts, Action close)

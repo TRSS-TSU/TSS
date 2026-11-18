@@ -43056,7 +43056,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2742634849067122029, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
       propertyPath: m_text
-      value: Rack 2
+      value: Rack 02
       objectReference: {fileID: 0}
     - target: {fileID: 2742634849067122029, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
       propertyPath: m_fontSize
@@ -70691,13 +70691,65 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8599225754459074761, guid: 43eee9f9554092940955b82111321ef9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1475727281}
+    - targetCorrespondingSourceObject: {fileID: 8599225754459074761, guid: 43eee9f9554092940955b82111321ef9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1475727280}
   m_SourcePrefab: {fileID: 100100000, guid: 43eee9f9554092940955b82111321ef9, type: 3}
 --- !u!4 &1475727277 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2457523139892605063, guid: 43eee9f9554092940955b82111321ef9, type: 3}
   m_PrefabInstance: {fileID: 1475727276}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &1475727278 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2656026909556406564, guid: 43eee9f9554092940955b82111321ef9, type: 3}
+  m_PrefabInstance: {fileID: 1475727276}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &1475727279 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8599225754459074761, guid: 43eee9f9554092940955b82111321ef9, type: 3}
+  m_PrefabInstance: {fileID: 1475727276}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &1475727280
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1475727279}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 917315bd614bff0478afd0aa330c45ac, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: TSS.Runtime::TssDoorInteractable
+  doorPanel: {fileID: 1475727278}
+  openAngle: 95
+  openSpeed: 8
+--- !u!65 &1475727281
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1475727279}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.10887215, y: 0.80307853, z: 1.9387602}
+  m_Center: {x: 0.01797909, y: -0.39169097, z: 0.9756201}
 --- !u!1 &1478104001
 GameObject:
   m_ObjectHideFlags: 0
@@ -81499,7 +81551,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2742634849067122029, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
       propertyPath: m_text
-      value: Rack 1
+      value: Rack 01
       objectReference: {fileID: 0}
     - target: {fileID: 2742634849067122029, guid: 8b95d3209d98e144ebaa2e257eb5783e, type: 3}
       propertyPath: m_fontSize
@@ -102843,13 +102895,65 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8599225754459074761, guid: 43eee9f9554092940955b82111321ef9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2102470983}
+    - targetCorrespondingSourceObject: {fileID: 8599225754459074761, guid: 43eee9f9554092940955b82111321ef9, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 2102470982}
   m_SourcePrefab: {fileID: 100100000, guid: 43eee9f9554092940955b82111321ef9, type: 3}
 --- !u!4 &2102470979 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2457523139892605063, guid: 43eee9f9554092940955b82111321ef9, type: 3}
   m_PrefabInstance: {fileID: 2102470978}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &2102470980 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2656026909556406564, guid: 43eee9f9554092940955b82111321ef9, type: 3}
+  m_PrefabInstance: {fileID: 2102470978}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &2102470981 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8599225754459074761, guid: 43eee9f9554092940955b82111321ef9, type: 3}
+  m_PrefabInstance: {fileID: 2102470978}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &2102470982
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2102470981}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 917315bd614bff0478afd0aa330c45ac, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: TSS.Runtime::TssDoorInteractable
+  doorPanel: {fileID: 2102470980}
+  openAngle: 95
+  openSpeed: 8
+--- !u!65 &2102470983
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2102470981}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.10887215, y: 0.80307853, z: 1.9387602}
+  m_Center: {x: 0.01797909, y: -0.39169097, z: 0.9756201}
 --- !u!4 &2103009442 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2242876248808109889, guid: ddfc1292959bce64f8c5c758157712f1, type: 3}

@@ -25,7 +25,7 @@ public sealed class TssDoorInteractable : MonoBehaviour
         if (doorPanel == null)
             return;
 
-        var target = _closedRotation * Quaternion.Euler(0f, _isOpen ? _targetOpenAngle : 0f, 0f);
+        var target = Quaternion.Euler(0f, _isOpen ? _targetOpenAngle : 0f, 0f) * _closedRotation;
         doorPanel.localRotation = Quaternion.Slerp(doorPanel.localRotation, target, Time.deltaTime * openSpeed);
     }
 
