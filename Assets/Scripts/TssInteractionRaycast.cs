@@ -3,7 +3,7 @@ using UnityEngine;
 
 public static class TssInteractionRaycast
 {
-    public static bool TryGetFirstTarget(Ray ray, Predicate<Collider> isTarget, QueryTriggerInteraction queryTriggers, out RaycastHit targetHit)
+    public static bool TryGetFirstTarget(Ray ray, Predicate<Collider> isTarget, QueryTriggerInteraction queryTriggers, out RaycastHit targetHit, Predicate<Collider> ignoreOcclusion = null)
     {
         targetHit = default;
         var hits = Physics.RaycastAll(ray, Mathf.Infinity, ~0, queryTriggers);
@@ -21,7 +21,7 @@ public static class TssInteractionRaycast
                 return true;
             }
 
-            if (!collider.isTrigger)
+            if (!collider.isTrigger && (ignoreOcclusion == null || !ignoreOcclusion(collider)))
                 return false;
         }
 

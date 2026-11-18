@@ -118,7 +118,8 @@ public sealed class RackMountController : MonoBehaviour
                 ? collider.GetComponentInParent<RackUClickTarget>()?.Rack == this
                 : collider.GetComponentInParent<RackInstalledEquipmentTarget>()?.Rack == this,
             QueryTriggerInteraction.Collide,
-            out var hit);
+            out var hit,
+            collider => collider.GetComponentInParent<RackMountController>() == this);
         if (hasTarget)
         {
             clickedSlot = held ? hit.collider.GetComponentInParent<RackUClickTarget>() : null;
@@ -624,7 +625,8 @@ public sealed class RackMountController : MonoBehaviour
                 ray,
                 collider => collider.GetComponentInParent<RackUClickTarget>()?.Rack == this,
                 QueryTriggerInteraction.Collide,
-                out var hit))
+                out var hit,
+                collider => collider.GetComponentInParent<RackMountController>() == this))
             hoveredTarget = hit.collider.GetComponentInParent<RackUClickTarget>();
 
         SetHoveredSlot(hoveredTarget ? hoveredTarget.U : 0);
