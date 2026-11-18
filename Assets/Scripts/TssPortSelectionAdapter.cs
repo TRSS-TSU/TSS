@@ -1,4 +1,5 @@
 using System;
+using StarterAssets;
 using UnityEngine;
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -149,7 +150,8 @@ public sealed class TssPortSelectionAdapter : MonoBehaviour
             ray,
             collider => Array.IndexOf(_endpoints, collider.GetComponentInParent<TssPortEndpoint>()) >= 0,
             QueryTriggerInteraction.Collide,
-            out var hit)
+            out var hit,
+            collider => collider.GetComponentInParent<ThirdPersonController>())
             ? hit.collider.GetComponentInParent<TssPortEndpoint>()
             : null;
     }
