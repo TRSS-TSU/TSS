@@ -129,11 +129,13 @@ public sealed class EndpointPlacementTrigger : MonoBehaviour
             return false;
 
         var ray = _mainCamera.ScreenPointToRay(GetMousePosition());
+        var placementStation = Station;
         return TssInteractionRaycast.TryGetFirstTarget(
             ray,
             collider => collider.GetComponentInParent<EndpointPlacementTrigger>() == this,
             QueryTriggerInteraction.Collide,
-            out _);
+            out _,
+            collider => placementStation && collider.GetComponentInParent<EndpointPlacementStation>() == placementStation);
     }
 
     private void SetColor(Color color)
